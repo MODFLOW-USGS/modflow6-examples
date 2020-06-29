@@ -1,0 +1,139 @@
+\documentclass[11pt,twoside,twocolumn]{usgsreport}
+\usepackage{usgsfonts}
+\usepackage{usgsgeo}
+\usepackage{usgsidx}
+\usepackage[tabletoc]{usgsreporta}
+
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{bm}
+\usepackage{calc}
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{longtable}
+
+\makeindex
+\usepackage{setspace}
+% uncomment to make double space 
+%\doublespacing
+\usepackage{etoolbox}
+%\usepackage{verbatim}
+
+\usepackage{titlesec}
+
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+    pdftitle={MODFLOW 6 Groundwater Transport Model Example Problems},
+    pdfauthor={MODFLOW 6 Development Team},
+    pdfsubject={MODFLOW 6 Groundwater Transport Model Example Problems},
+    pdfkeywords={MODFLOW, groundwater model, simulation},
+    bookmarksnumbered=true,     
+    bookmarksopen=true,         
+    bookmarksopenlevel=1,       
+    colorlinks=true,
+    allcolors={blue},          
+    pdfstartview=Fit,           
+    pdfpagemode=UseOutlines,
+    pdfpagelayout=TwoPageRight
+}
+
+
+\graphicspath{{../figures/}}
+\input{./version.tex}
+
+
+\renewcommand{\cooperator}
+{the \textusgs\ Water Availability and Use Science Program}
+\renewcommand{\reporttitle}
+{MODFLOW 6 Groundwater Transport Model Example Problems}
+\renewcommand{\coverphoto}{coverimage.jpg}
+\renewcommand{\GSphotocredit}{Binary computer code illustration.}
+\renewcommand{\reportseries}{}
+\renewcommand{\reportnumber}{}
+\renewcommand{\reportyear}{2019}
+\ifdef{\reportversion}{\renewcommand{\reportversion}{\currentmodflowversion}}{}
+\renewcommand{\theauthors}{MODFLOW 6 Development Team}
+\renewcommand{\thetitlepageauthors}{\theauthors}
+%\renewcommand{\theauthorslastfirst}{}
+\renewcommand{\reportcitingtheauthors}{MODFLOW 6 Development Team}
+\renewcommand{\colophonmoreinfo}{}
+\renewcommand{\theoffice}{Office of Groundwater \\ U.S. Geological Survey \\ Mail Stop 411 \\ 12201 Sunrise Valley Drive \\ Reston, VA 20192 \\ (703) 648-5001}
+\renewcommand{\reportbodypages}{}
+\urlstyle{rm}
+\renewcommand{\reportwebsiteroot}{https://doi.org/10.5066/}
+\renewcommand{\reportwebsiteremainder}{F76Q1VQV}
+%\renewcommand{\doisecretary}{RYAN K. ZINKE}
+%\renewcommand{\usgsdirector}{William H. Werkheiser}
+%\ifdef{\usgsdirectortitle}{\renewcommand{\usgsdirectortitle}{Acting Director}}{}
+\ifdef{\usgsissn}{\renewcommand{\usgsissn}{}}{}
+\renewcommand{\theconventions}{}
+\definecolor{coverbar}{RGB}{32, 18, 88}
+\renewcommand{\bannercolor}{\color{coverbar}}
+%\renewcommand{\thePSC}{the MODFLOW 6 Development Team}
+%\renewcommand{\theeditor}{Christian D. Langevin}
+%\renewcommand{\theillustrator}{None}
+%\renewcommand{\thefirsttypesetter}{Joseph D. Hughes}
+%\renewcommand{\thesecondtypesetter}{Cian Dawson}
+\renewcommand{\reportrefname}{References Cited}
+
+\newcommand{\customcolophon}{
+Publishing support provided by the U.S. Geological Survey \\
+\theauthors
+\newline \newline
+For information concerning this publication, please contact:
+\newline \newline
+Office of Groundwater \\ U.S. Geological Survey \\ Mail Stop 411 \\ 12201 Sunrise Valley Drive \\ Reston, VA 20192 \\ (703) 648--5001 \\
+https://water.usgs.gov/ogw/
+}
+
+\input{./gwffunc.tex}
+
+\begin{document}
+
+%\makefrontcover
+\ifdef{\makefrontcoveralt}{\makefrontcoveralt}{\makefrontcover}
+
+%\makefrontmatter
+%\maketoc
+\ifdef{\makefrontmatterabv}{\makefrontmatterabv}{\makefrontmatter}
+
+\onecolumn
+\pagestyle{body}
+\RaggedRight
+\hbadness=10000
+\pagestyle{body}
+\setlength{\parindent}{1.5pc}
+
+% -------------------------------------------------
+\section{Introduction}
+This document describes example problems for the Groundwater Transport (GWT) Model.
+
+% -------------------------------------------------
+\section{Example Problems}
+
+\subsection{Problem 1--One-Dimensional Transport}
+\input{./gwt_mt3dms_p01.tex}
+
+\clearpage
+\subsection{Stream-Lake Interaction with Solute Transport}
+%\input{./prudic2004test2.tex}
+
+\clearpage
+\subsection{Next one}
+%\input{./nextone.tex}
+
+% -------------------------------------------------
+\clearpage
+\newpage
+\inreferences
+\REFSECTION
+\input{bibliography.tex}
+
+
+\justifying
+\vspace*{\fill}
+\clearpage
+\pagestyle{backofreport}
+\makebackcover
+\end{document}
