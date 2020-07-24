@@ -20,7 +20,6 @@ import config
 
 # Set figure properties
 figure_size = (3, 3)
-figure_ext = ".png"
 
 # Base name and workspace
 basename = "ex_twri"
@@ -192,7 +191,7 @@ def plot_results(sim):
         # save figure
         if config.plotSave:
             fpth = os.path.join("..", "figures",
-                                "{}{}".format(sim_name, figure_ext))
+                                "{}{}".format(sim_name, config.figure_ext))
             fig.savefig(fpth)
 
 
