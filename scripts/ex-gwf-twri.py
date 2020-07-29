@@ -24,11 +24,16 @@ figure_size = (3, 3)
 # Base simulation and model name and workspace
 ws = config.base_ws
 
-# Scenario parameters
+# Scenario parameters - make sure there is at least one blank line before next item
 parameters = {
     "ex-gwf-twri01": {"recharge": 3e-8, "evapotranspiration": 0.0},
     "ex-gwf-twri02": {"recharge": 2e-8, "squids": 15, "dogs": 0},
 }
+
+# Scenario parameter units - make sure there is at least one blank line before next item
+# add parameter_units to add units to the scenario parameter table
+parameter_units = {"recharge": "$ft/s$", "evapotranspiration": "$ft/s$",
+                   "squids": "unitless", "dogs": "unitless"}
 
 # ## Model units
 length_units = "feet"
@@ -39,14 +44,14 @@ nper = 1  # Number of periods
 nlay = 3  # Number of layers
 ncol = 15  # Number of columns
 nrow = 15  # Number of rows
-delr = 5000.0  # Column width, in feet
-delc = 5000.0  # Row width, in feet
-top = 200.0  # Top of the model, in feet
-botm_str = "-200.0, -300.0, -450.0"  # Layer bottom elevations, in feet
-strt = 0.0  # Starting head, in feet
+delr = 5000.0  # Column width ($ft$)
+delc = 5000.0  # Row width ($ft$)
+top = 200.0  # Top of the model ($ft$)
+botm_str = "-200.0, -300.0, -450.0"  # Layer bottom elevations ($ft$)
+strt = 0.0  # Starting head ($ft$)
 icelltype_str = "1, 0, 0"  # Cell conversion type
-k11_str = "1.0e-3, 1e-4, 2.0e-4"  # Horizontal hydraulic conductivity, in feet per second
-k33 = 2.0e-8  # Vertical hydraulic conductivity, in feet per second
+k11_str = "1.0e-3, 1e-4, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
+k33 = 2.0e-8  # Vertical hydraulic conductivity ($ft/s$)
 
 # ## Static temporal data used by TDIS file
 tdis_ds = ((8.640e04, 1, 1.000e00),)

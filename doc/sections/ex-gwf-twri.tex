@@ -1,45 +1,65 @@
 \section{\mf TWRI Example}
 
-Intro text \citep{modflow2005}
+% Describe source of problem
+This example is distributed with the \mff .... \citep{modflow2005}.
 
-\subsection{A sub section}
+\subsection{Example description}
 
-Model parameters...
+% spatial discretization 
+Model discretization and parameters...
 
+% temporal discretization
+
+% material properties
+
+% initial conditions
+
+% boundary conditions
+
+% add static parameter table(s)
 \begin{StandardTable}{TWRI model parameters}{tab:ex-twri01}{../tables/ex-gwf-twri01}
 \end{StandardTable}
 
-Scenario parameters...
+% for examples without scenarios
+\subsection{Example Results}
 
-\begin{ScenarioTable}{TWRI scenarios}{tab:ex-twri-scenario}{../tables/ex-gwf-twri-scenario}
+Describe the scenarios
+
+% for examples with scenarios
+\subsection{Example Scenarios}
+
+Describe the scenarios
+
+% add scenario table
+\begin{ScenarioTable}{
+                                   \textit{TWRI} scenarios
+                                   }{tab:ex-twri-scenario}{../tables/ex-gwf-twri-scenario}
 \end{ScenarioTable}
 
 
-
-\subsection{Results}
+\subsubsection{Scenario 1 Results}
 
 Some results...
 
-\begin{figure}[!ht]
-	\begin{center}
+% a figure
+\begin{StandardFigure}{
+                                     A figure caption that describes the figure. 
+                                     \textit{A}. Plot shows some good stuff.
+                                     \textit{B}. Plot shows more good stuff.
+                                     }{fig:ex-gwf-01}{ex-gwf-twri01}
+\end{StandardFigure}                                 
 
-		\includegraphics{ex-gwf-twri01}
-		\caption{A figure}
-		\label{fig:twri01}
 
-	\end{center}
-\end{figure}
+\subsubsection{Scenario 2 Results}
+
 
 Some more results...
 
-
-\begin{figure}[!ht]
-	\begin{center}
-
-		\includegraphics{ex-gwf-twri02}
-		\caption{Another figure}
-		\label{fig:twri02}
-
-	\end{center}
-\end{figure}
+% a figure
+\begin{StandardFigure}{
+                                     A figure caption that describes the figure. 
+                                     \textit{A}. Plot shows some good stuff.
+                                     \textit{B}. Plot shows more good stuff.
+                                     }{fig:ex-gwf-02}{ex-gwf-twri02}
+\end{StandardFigure}                                 
 

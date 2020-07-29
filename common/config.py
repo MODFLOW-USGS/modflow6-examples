@@ -37,6 +37,7 @@ def is_notebook():
 
 # common figure settings
 figure_ext = ".png"
+plt.rcParams['image.cmap']='jet'
 
 # parse command line arguments
 if is_notebook():

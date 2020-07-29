@@ -58,8 +58,8 @@
     \begin{longtable}[!htbp]{
                                           p{.1\linewidth-2\arraycolsep}
                                           p{.25\linewidth-2\arraycolsep}
-                                          p{.4\linewidth-2\arraycolsep}
-                                          p{.25\linewidth-2\arraycolsep}
+                                          p{.3\linewidth-2\arraycolsep}
+                                          p{.15\linewidth-2\arraycolsep}
                                           }
     \caption{#1} \label{#2} \\
 
@@ -85,8 +85,8 @@
 \newenvironment{StandardTable}[3]{% #1 = caption #2 = label #3 = external file
     \small
     \begin{longtable}[!htbp]{
-                                          p{.66\linewidth-2\arraycolsep}
-                                          p{.33\linewidth-2\arraycolsep}
+                                          p{.5\linewidth-2\arraycolsep}
+                                          p{.3\linewidth-2\arraycolsep}
                                           }
     \caption{#1} \label{#2} \\
 
@@ -107,5 +107,16 @@
     \hline \hline
     \end{longtable}
     \normalsize
+}
+
+\newenvironment{StandardFigure}[3]{% #1 = caption #2 = label #3 = figure file
+\begin{figure}[!htbp]
+	\begin{center}
+		\includegraphics{#3}
+		\caption{#1}
+		\label{#2}
+}{%
+	\end{center}
+\end{figure}
 }
 

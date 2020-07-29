@@ -57,10 +57,12 @@ def make_tables():
         with open(file) as f:
             lines = f.read().splitlines()
 
-        # parameters table
+        # parse optional parameters dictionary
+        parameters = None
+        tag = "parameters ="
         for idx, line in enumerate(lines):
-            if line.lower().startswith("parameters ="):
-                dict_str = line[12:].strip()
+            if line.lower().startswith(tag):
+                dict_str = line[len(tag) + 1:].strip()
                 for jdx in range(idx + 1, len(lines)):
                     if len(lines[jdx].strip()) < 1:
                         break
@@ -68,33 +70,58 @@ def make_tables():
 
                 # parse the dictionary string into a dictionary
                 parameters = eval(dict_str)
+                break
 
-                # scenario table
-                tab_name = "{}-scenario".format(basename)
-                fpth = os.path.join("..", "tables", tab_name + ".tex")
-                f = open(fpth, "w")
+        # parse optional parameter units dictionary, if parameters are
+        # specified in the script
+        if parameters is not None:
+            parameter_units = None
+            tag = "parameter_units ="
+            for idx, line in enumerate(lines):
+                if line.lower().startswith(tag):
+                    dict_str = line[len(tag) + 1:].strip()
+                    for jdx in range(idx + 1, len(lines)):
+                        if len(lines[jdx].strip()) < 1:
+                            break
+                        dict_str += " " + lines[jdx].strip()
 
-                scenario_count = 0
-                for scenario_name, value_dict in parameters.items():
-                    if scenario_count % 2 != 0:
-                        row_color = "\\rowcolor{Gray}\n"
+                    # parse the dictionary string into a dictionary
+                    parameter_units = eval(dict_str)
+                    break
+
+        # create scenario table if parameters are specified in the script
+        if parameters is not None:
+            tab_name = "{}-scenario".format(basename)
+            fpth = os.path.join("..", "tables", tab_name + ".tex")
+            f = open(fpth, "w")
+
+            scenario_count = 0
+            for scenario_name, value_dict in parameters.items():
+                if scenario_count % 2 != 0:
+                    row_color = "\\rowcolor{Gray}\n"
+                else:
+                    row_color = ""
+                scenario_count += 1
+                table_line = "{} & {} & ".format(scenario_count, scenario_name)
+                for text, value in value_dict.items():
+                    units = ""
+                    if parameter_units is not None:
+                        try:
+                            units = " ({})".format(parameter_units[text])
+                        except:
+                            units = " (unknown)"
+                    if len(table_line) > 0:
+                        table_line += "{}{} & {}".format(text, units, value)
                     else:
-                        row_color = ""
-                    scenario_count += 1
-                    table_line = "{} & {} & ".format(scenario_count, scenario_name)
-                    for text, value in value_dict.items():
-                        if len(table_line) > 0:
-                            table_line += "{} & {}".format(text, value)
-                        else:
-                            table_line = "& & {} & {}".format(text, value)
-                        table_line += " \\\\\n"
-                        if len(row_color) > 0:
-                            f.write(row_color)
-                        f.write(table_line)
-                        table_line = ""
+                        table_line = "& & {}{} & {}".format(text, units, value)
+                    table_line += " \\\\\n"
+                    if len(row_color) > 0:
+                        f.write(row_color)
+                    f.write(table_line)
+                    table_line = ""
 
-                # finalize table
-                f.close()
+            # finalize table
+            f.close()
 
         # tables
         table_number = 0
@@ -102,7 +129,7 @@ def make_tables():
             table_text = []
             table_value = []
             if line.lower().startswith("# table"):
-                for table_line in lines[idx + 1 :]:
+                for table_line in lines[idx + 1:]:
                     # skip empty lines
                     if len(table_line.strip()) < 1:
                         continue
@@ -110,7 +137,7 @@ def make_tables():
                         break
                     ipos = table_line.find("# ")
                     if ipos > 0:
-                        table_text.append(table_line[ipos + 1 :].strip())
+                        table_text.append(table_line[ipos + 1:].strip())
                         table_value.append(
                             _replace_quotes(table_line[0:ipos].split("=")[1].strip())
                         )
