@@ -1,0 +1,122 @@
+% redefine equations, figures, and tables in body
+\newcommand{\insection}{%
+\renewcommand{\theequation}{\thesection--\arabic{equation}}%
+\setcounter{equation}{0}%
+\renewcommand{\thefigure}{\thesection--\arabic{figure}}%
+\setcounter{figure}{0}%
+\renewcommand{\thetable}{\thesection--\arabic{table}}%
+\setcounter{table}{0}%
+\renewcommand{\thepage}{\thesection--\arabic{page}}%
+\setcounter{page}{1}%
+}
+
+
+% prepend appendix equations, figures, and tables with R 
+% establish custom counter
+\newcounter{appendixno}
+\setcounter{appendixno}{0}
+
+% redefine equations, figures, and tables in appendix
+\newcommand{\inappendix}{%
+\addtocounter{appendixno}{1}%
+\renewcommand{\theequation}{\Alph{appendixno}--\arabic{equation}}%
+\setcounter{equation}{0}%
+\renewcommand{\thefigure}{\Alph{appendixno}--\arabic{figure}}%
+\setcounter{figure}{0}%
+\renewcommand{\thetable}{\Alph{appendixno}--\arabic{table}}%
+\setcounter{table}{0}%
+\renewcommand{\thepage}{\Alph{appendixno}--\arabic{page}}%
+\setcounter{page}{1}%
+}
+
+% redefine equations, figures, and tables in references
+\newcommand{\inreferences}{%
+\renewcommand{\thepage}{R--\arabic{page}}%
+\setcounter{page}{1}%
+}
+
+
+\def\tsc#1#2{\csdef{#1}{#2\xspace}}
+\tsc{MF}{MODFLOW}
+\tsc{mf}{MODFLOW~6}
+\tsc{mff}{MODFLOW-2005}
+\tsc{mfn}{MODFLOW-NWT}
+\tsc{mfu}{MODFLOW-USG}
+
+%generic command for creating matrix and vector notation \matr{}
+% http://tex.stackexchange.com/questions/199789/which-bold-style-is-recommended-for-matrix-notation
+\newcommand{\matr}[1]{\mathbf{#1}}
+\newcommand{\mli}[1]{\mathit{#1}}
+
+% table variables
+\definecolor{Gray}{gray}{0.9}
+
+
+% table environments
+\newenvironment{ScenarioTable}[3]{% #1 = caption #2 = label #3 = external file
+    \small
+    \begin{longtable}[!htbp]{
+                                          p{.1\linewidth-2\arraycolsep}
+                                          p{.25\linewidth-2\arraycolsep}
+                                          p{.3\linewidth-2\arraycolsep}
+                                          p{.15\linewidth-2\arraycolsep}
+                                          }
+    \caption{#1} \label{#2} \\
+
+    \hline \hline
+    \rowcolor{Gray}
+    \textbf{Scenario} & \textbf{Scenario Name} & \textbf{Parameter} & \textbf{Value}  \\
+    \hline
+    \endfirsthead
+
+    \hline \hline 
+    \rowcolor{Gray}
+    \textbf{Scenario} & \textbf{Scenario Name} & \textbf{Parameter} & \textbf{Value}  \\
+    \hline
+    \endhead    
+
+    \input{#3}
+}{%
+    \hline \hline
+    \end{longtable}
+    \normalsize
+}
+
+\newenvironment{StandardTable}[3]{% #1 = caption #2 = label #3 = external file
+    \small
+    \begin{longtable}[!htbp]{
+                                          p{.5\linewidth-2\arraycolsep}
+                                          p{.3\linewidth-2\arraycolsep}
+                                          }
+    \caption{#1} \label{#2} \\
+
+    \hline \hline
+    \rowcolor{Gray}
+    \textbf{Parameter} & \textbf{Value}  \\
+    \hline
+    \endfirsthead
+
+    \hline \hline 
+    \rowcolor{Gray}
+    \textbf{Parameter} & \textbf{Value} \\
+    \hline
+    \endhead    
+
+    \input{#3}
+}{%
+    \hline \hline
+    \end{longtable}
+    \normalsize
+}
+
+\newenvironment{StandardFigure}[3]{% #1 = caption #2 = label #3 = figure file
+\begin{figure}[!htbp]
+	\begin{center}
+		\includegraphics{#3}
+		\caption{#1}
+		\label{#2}
+}{%
+	\end{center}
+\end{figure}
+}
+
