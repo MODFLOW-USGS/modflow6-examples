@@ -1,0 +1,24 @@
+\section{Zero-Order Growth in a Uniform Flow Field (MT3DMS Supplemental Guide Problem 6.3.1)}
+
+% Describe source of problem
+This example is for zero-order production in a uniform flow field.  It is based on example problem 6.3.1 described in \cite{zheng2010mt3dmsv5.3}.  The problem consists of a one-dimensional model grid with inflow into the first cell and outflow through the last cell.  This example is simulated with the GWT Model in \mf, which receives flow information from a separate simulation with the GWF Model in \mf.  Results from the GWT Model are compared with the results from a MT3DMS simulation \citep{zheng1990mt3d} that uses flows from a separate MODFLOW-2005 simulation \citep{modflow2005}.  
+
+\subsection{Example description}
+
+The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsupp63101}.  The model grid consists of 101 columns, 1 row, and 1 layer.  The flow problem is confined and steady state with an initial head set to the model top.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.  A specified flow condition is assigned to the first model cell.  For the source pulse duration, the inflow concentration is specified as one.  Following the source pulse duration the inflowing water is assigned a concentration of zero.  A specified head condition is assigned to the last model cell.  Water exiting the model through the specified head cell leaves with the simulated concentration of that cell.
+
+% add static parameter table(s)
+\begin{StandardTable}{Parameters used for the example of zero-order growth in a uniform flow field (MT3DMS Supplemental Guide problem 6.3.1 model parameters).}{tab:ex-gwt-mt3dsupp63101}{../tables/ex-gwt-mt3dsupp63101}
+\end{StandardTable}
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Simulated concentrations from the \mf GWT Model and MT3DMS are shown in figure~\ref{fig:ex-gwt-mt3dsupp631}.  The close agreement between the simulated concentrations demonstrate the zero-order-production capabilities implemented in the GWT Model.
+
+% a figure
+\begin{StandardFigure}{
+                                     Concentrations simulated by the \mf GWT Model and MT3DMS for zero-order growth in a uniform flow field.
+                                     }{fig:ex-gwt-mt3dsupp631}{ex-gwt-mt3dsupp631}
+\end{StandardFigure}                                 
+

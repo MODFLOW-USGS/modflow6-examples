@@ -104,6 +104,7 @@ def make_tables():
                 scenario_count += 1
                 table_line = "{} & {} & ".format(scenario_count, scenario_name)
                 for text, value in value_dict.items():
+                    text_to_write = text.replace('_', '~')
                     units = ""
                     if parameter_units is not None:
                         try:
@@ -111,9 +112,9 @@ def make_tables():
                         except:
                             units = " (unknown)"
                     if len(table_line) > 0:
-                        table_line += "{}{} & {}".format(text, units, value)
+                        table_line += "{}{} & {}".format(text_to_write, units, value)
                     else:
-                        table_line = "& & {}{} & {}".format(text, units, value)
+                        table_line = "& & {}{} & {}".format(text_to_write, units, value)
                     table_line += " \\\\\n"
                     if len(row_color) > 0:
                         f.write(row_color)
