@@ -1,6 +1,6 @@
 #
 #
-# Describe the model...
+# # Zero-Order Growth in a Uniform Flow Field (MT3DMS Supplemental Guide Problem 6.3.1)
 #
 #
 #
@@ -30,7 +30,7 @@ example_name = "ex-gwt-mt3dsupp631"
 length_units = "m"
 time_units = "days"
 
-# Table
+# Table of model parameters
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows

@@ -1,6 +1,6 @@
 #
 #
-# Describe the model...
+# # Zero-Order Production in a Dual-Domain System (MT3DMS Supplemental Guide Problem 6.3.2)
 #
 #
 #
@@ -48,7 +48,7 @@ parameter_units = {"distribution_coefficient": "$mL g^{-1}$",
 length_units = "m"
 time_units = "days"
 
-# Table
+# Table of model parameters
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -67,13 +67,14 @@ f = 0.8 # Fraction of sorption sites in contact with mobile water (unitless)
 source_duration = 1000 # Source duration ($d$)
 total_time = 10000 # Simulation time ($t$)
 obs_xloc = 200. # Observation x location ($m$)
+
+# Flags that can be adjusted to change example configuration
 zero_order_decay = True # Flag indicating whether decay is zero or first order
 dual_domain = True # Flag indicating that dual domain is active
 
 # ## Functions to build models
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
-# recharge is the only variable
 #
 def build_mf6gwf(sim_folder):
     print('Building mf6gwf model...{}'.format(sim_folder))
@@ -321,7 +322,7 @@ def run_model(sims):
     return success
 
 
-# ## Function to plot the model results
+# ## Functions to plot the model results
 def plot_results():
     if config.plotModel:
         print('Plotting model results...')
@@ -335,12 +336,6 @@ def plot_results():
 
             sim_ws = os.path.join(ws, sim_name)
 
-            fname = os.path.join(sim_ws, 'mt3d', 'MT3D001.OBS')
-            mt3dms_ra = flopy.mt3d.Mt3dms.load_obs(fname)
-            axs.plot(mt3dms_ra['time'], mt3dms_ra['(1, 1, 82)'],
-                     color=case_colors[icase],
-                     label='Case {}'.format(icase + 1))
-
             fname = os.path.join(sim_ws, 'mf6gwt', 'trans.obs.csv')
             mf6gwt_ra = np.genfromtxt(fname, names=True, delimiter=',',
                                       deletechars='')
@@ -350,6 +345,12 @@ def plot_results():
                      marker='o',
                      markersize='4',
                      linestyle='None')
+
+            fname = os.path.join(sim_ws, 'mt3d', 'MT3D001.OBS')
+            mt3dms_ra = flopy.mt3d.Mt3dms.load_obs(fname)
+            axs.plot(mt3dms_ra['time'], mt3dms_ra['(1, 1, 82)'],
+                     color=case_colors[icase],
+                     label='Scenario {}'.format(icase + 1))
 
         axs.set_ylim(0, 8)
         axs.set_xlabel('Time (days)')
