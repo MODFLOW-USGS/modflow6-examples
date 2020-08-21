@@ -56,7 +56,6 @@ jobs:
         shell: python
         run: |
           import flopy
-          import pymake
           flopy.mf6.utils.generate_classes(branch="develop", backup=False)
 
       - name: Get executables
@@ -66,7 +65,7 @@ jobs:
           import pymake
           pth = os.path.join("bin")
           if not os.path.isdir(pth):
-              os.path.makedirs(pth)
+              os.makedirs(pth)
           pymake.getmfexes(pth, verbose=True)
           print("Available project applications:")
           for v in os.listdir(pth):
