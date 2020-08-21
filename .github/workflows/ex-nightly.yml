@@ -1,0 +1,301 @@
+name: MODFLOW 6 examples
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build_for_os:
+    name: compile on linux, macos, and windows
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-conda
+      uses: s-weigand/setup-conda@v1.0.3
+      with:
+        auto-update-conda: true
+        miniconda-version: "latest"
+
+    - name: Install python packages
+      run: |
+        conda info
+        conda install pip requests appdirs nose numpy matplotlib
+        pip install https://github.com/modflowpy/flopy/zipball/develop
+        pip install https://github.com/modflowpy/pymake/zipball/master
+        pip install https://github.com/Deltares/xmipy/zipball/develop
+
+    - name: Update flopy from GitHub repo
+      shell: python
+      run: |
+        import flopy
+        flopy.mf6.utils.generate_classes(branch="develop")
+
+    - name: Get executables
+      shell: python
+      run: |
+        import os
+        import pymake
+        pth = os.path.join("bin")
+        if not os.path.isdir(pth):
+            os.path.makedirs(pth)
+        pymake.getmfexes(pth, verbose=True)
+        print("Available project applications:")
+        for v in os.listdir(pth):
+            fpth = os.path.join(pth, v)
+            if os.path.isfile(fpth):
+                print("   {}".format(fpth))
+
+#    - name: Clone MODFLOW 6 repo
+#      run: |
+#        git clone https://github.com/MODFLOW-USGS/modflow6.git modflow6
+#      shell: bash
+#
+#    - name: Determine MODFLOW 6 branch
+#      run: |
+#        pwd
+#        cd ./modflow6/
+#        pwd
+#        git branch
+#        cd ../
+#        pwd
+#        ls ./
+#
+#    - name: Update flopy MODFLOW 6 classes
+#      run: |
+#        cd ./modflow6/autotest
+#        python update_flopy.py
+#        cd ../../
+
+    - name: Print python package versions
+      shell: python
+      run: |
+        import sys
+        import nose
+        import numpy as np
+        import matplotlib as mpl
+        import flopy
+        import pymake
+        flopypth = flopy.__path__[0]
+        pymakepth = pymake.__path__[0]
+        print("python version:     {}".format(sys.version))
+        print("nosetest version:   {}".format(nose.__version__))
+        print("numpy version:      {}".format(np.__version__))
+        print("matplotlib version: {}".format(mpl.__version__))
+        print("flopy version:      {}".format(flopy.__version__))
+        print("pymake version:     {}".format(pymake.__version__))
+        print("")
+        print("flopy is installed in:  {}".format(flopypth))
+        print("pymake is installed in: {}".format(pymakepth))
+
+
+#
+#    - name: Build and zip applications
+#      shell: bash
+#      run: |
+#        cd ./modflow6/
+#        nosetests -v -w ./distribution build_nightly.py
+#        cd ../
+#
+#    - name: Move the build zip file
+#      shell: bash
+#      run: |
+#        mv ./modflow6/distribution/temp/${{ matrix.artifact_name }} ./${{ matrix.artifact_name }}
+#        ls -l ./
+#
+#    - name: Build bodyFile with gfortran information
+#      shell: python
+#      run: |
+#        import sys
+#        import subprocess
+#
+#        argv = ["gfortran", "--version"]
+#        with subprocess.Popen(argv,
+#                              stdout=subprocess.PIPE,
+#                              stderr=subprocess.STDOUT,
+#                              cwd=".") as process:
+#            output, unused_err = process.communicate(timeout=10)
+#            buff = output.decode("utf-8")
+#
+#        version = buff.splitlines()[0].split()[-1]
+#        major = version.split(".")[0]
+#
+#        osname = sys.platform.lower()
+#
+#        if osname == "win32":
+#            fpth = "bodyFileWindows"
+#            msg = "Windows executables are statically linked and can be run " + \
+#                  "without gfortran being installed. In order to use the MODFLOW 6 " + \
+#                  "dynamic-link library (libmf6.dll) on Windows, the MinGW  " + \
+#                  "version of gfortran version {} ".format(version) + \
+#                  "will need to be installed locally.\n\n"
+#        elif osname == "darwin":
+#            fpth = "bodyFileMac"
+#            msg = "On MacOS, the gfortran compiler used to compile the " + \
+#                  "MODFLOW 6 executables and shared object (libmf6.so) will need " + \
+#                  "to be installed locally. The MODFLOW 6 executables and shared " + \
+#                  "object were compiled on MacOS using Homebrew gfortran " + \
+#                  "version {}.\n\n".format(version)
+#        else:
+#            fpth = "bodyFileLinux"
+#            msg = "On Linux, the gfortran compiler used to compile the " + \
+#                  "MODFLOW 6 executables and shared object (libmf6.so) will need " + \
+#                  "to be installed locally. The MODFLOW 6 executables and shared " + \
+#                  "object were compiled on Linux using gfortran " + \
+#                  "version {}.\n\n".format(version)
+#
+#        f = open(fpth, "w")
+#        f.write(msg)
+#        f.close()
+#
+#    # Build LaTeX document
+#    - name: Copy the modflow6/docs directory
+#      if: runner.os == 'Linux'
+#      shell: python
+#      run: |
+#        import shutil
+#        src = "/home/runner/work/modflow6-nightly-build/modflow6-nightly-build/modflow6/doc/"
+#        dst = "./doc/"
+#        shutil.copytree(src, dst)
+
+    - name: Install TeX Live
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt install texlive-latex-extra texlive-science
+#
+#    - name: Build mf6io latex document
+#      if: runner.os == 'Linux'
+#      shell: python
+#      run: |
+#        import sys
+#        import subprocess
+#
+#        ws = "./modflow6/doc/mf6io/"
+#        bibnam = "mf6io.nightlybuild"
+#        texnam = bibnam + ".tex"
+#        cmds = [
+#                ["pdflatex", texnam],
+#                ["bibtex", bibnam],
+#                ["pdflatex", texnam],
+#                ["pdflatex", texnam],
+#               ]
+#        for cmd in cmds:
+#            print("running command...'{}'".format(" ".join(cmd)))
+#            with subprocess.Popen(cmd,
+#                                  stdout=subprocess.PIPE,
+#                                  stderr=subprocess.STDOUT,
+#                                  cwd=ws) as process:
+#                stdout, stderr = process.communicate(timeout=10)
+#                if stdout:
+#                    stdout = stdout.decode()
+#                    print(stdout)
+#                if stderr:
+#                    print("\n\nError condition occurred:\n")
+#                    stderr = stderr.decode()
+#                    print(stderr)
+#
+#    - name: Rename and move the LaTeX document
+#      if: runner.os == 'Linux'
+#      shell: bash
+#      run: |
+#        ls -la ./modflow6/doc/mf6io/
+#        mv ./modflow6/doc/mf6io/mf6io.nightlybuild.pdf mf6io.pdf
+#        ls -la ./
+#
+#    - name: Upload a Build Artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: nightly
+#        path: |
+#          ./${{ matrix.artifact_name }}
+#          ./${{ matrix.body_name }}
+#
+#    - name: Upload additional Build Artifacts
+#      if: runner.os == 'Linux'
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: nightly
+#        path: |
+#          ./mf6io.pdf
+#
+#  # make the release if previous job was successful
+#  release:
+#    name: Make a nightly release
+#    needs: build_for_os
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Download a Build Artifact
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: nightly
+#        path: ./nightly/
+#
+#    - name: List files in the artifact directory
+#      shell: bash
+#      run: |
+#        pwd
+#        ls -l ./nightly/
+#
+#    - name: Concatenate os specific bodyFiles
+#      shell: bash
+#      run: |
+#        pwd
+#        cat ./nightly/bodyFileWindows ./nightly/bodyFileMac ./nightly/bodyFileLinux > bodyFile
+#        ls -l ./
+#        rm ./nightly/bodyFile*
+#        ls -l ./nightly/
+#
+#    - name: Get Current Time
+#      uses: 1466587594/get-current-time@v1.0.0
+#      id: current-time
+#      with:
+#        format: YYYYMMDD
+#
+#    - name: Use current time
+#      env:
+#        TIME: "${{ steps.current-time.outputs.time }}"
+#        F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
+#      run: echo $TIME $F_TIME
+#
+#    - name: Delete Older Releases
+#      uses: dev-drprasad/delete-older-releases@v0.1.0
+#      with:
+#        keep_latest: 30
+#        delete_tags: true
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#    - name: Create a Release
+#      uses: ncipollo/release-action@v1
+#      with:
+#        tag: ${{ steps.current-time.outputs.formattedTime }}
+#        name: ${{ steps.current-time.outputs.formattedTime }} nightly build
+#        bodyFile: bodyFile
+#        allowUpdates: true
+#        draft: false
+#        token: ${{ secrets.GITHUB_TOKEN }}
+#
+#    - name: Upload compiled executables to the latest GitHub release
+#      uses: svenstaro/upload-release-action@2.0.0
+#      with:
+#        repo_token: ${{ secrets.GITHUB_TOKEN }}
+#        file: ./nightly/*
+#        tag: ${{ steps.current-time.outputs.formattedTime }}
+#        overwrite: true
+#        file_glob: true
+#
+#    - name: Delete Artifact
+#      uses: GeekyEggo/delete-artifact@v1.0.0
+#      with:
+#        name: nightly
+
