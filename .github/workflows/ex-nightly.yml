@@ -23,12 +23,11 @@ jobs:
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
-        env:
-          # Increase this value to reset cache if requirements.pip.txt has changed
-          CACHE_NUMBER: 0
         with:
           path: ~/.cache/pip
-          key: python3.8-pip-${{ env.CACHE_NUMBER }}-${{ hashFiles('etc/requirements.pip.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('etc/requirements.pip.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Setup Python 3.8
         uses: actions/setup-python@v2
@@ -50,14 +49,15 @@ jobs:
         shell: bash
         run: |
           pip install https://github.com/modflowpy/flopy/zipball/develop
-          pip install https://github.com/modflowpy/pymake/zipball/master
+          pip install https://github.com/jdhughes-usgs/pymake/zipball/fix-download
+#          pip install https://github.com/modflowpy/pymake/zipball/master
           pip install https://github.com/Deltares/xmipy/zipball/develop
 
       - name: Update flopy from GitHub repo
         shell: python
         run: |
           import flopy
-          flopy.mf6.utils.generate_classes(branch="develop")
+          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
 
       - name: Get executables
         shell: python
