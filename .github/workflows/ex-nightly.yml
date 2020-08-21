@@ -77,7 +77,6 @@ jobs:
         shell: python
         run: |
           import sys
-          import nose
           import numpy as np
           import matplotlib as mpl
           import flopy
