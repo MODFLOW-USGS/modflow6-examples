@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           pip install https://github.com/modflowpy/flopy/zipball/develop
-          pip install https://github.com/jdhughes-usgs/pymake/zipball/fix-download
+          pip install https://github.com/modflowpy/pymake/zipball/master
           pip install https://github.com/Deltares/xmipy/zipball/develop
 
       - name: Update flopy from GitHub repo
@@ -86,11 +86,6 @@ jobs:
           if not os.path.isdir(pth):
               os.makedirs(pth)
           pymake.getmfexes(pth, verbose=True)
-
-      - name: List executables
-        shell: bash
-        run: |
-          ls -la ./bin/
 
       - name: Replace MODFLOW 6 executables with the latest versions
         shell: python
