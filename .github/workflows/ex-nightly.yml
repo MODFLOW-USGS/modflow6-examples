@@ -19,16 +19,30 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: setup-conda
-      uses: s-weigand/setup-conda@v1.0.3
-      with:
-        auto-update-conda: true
-        miniconda-version: "latest"
 
-    - name: Install python packages
+    # Standard python fails on windows without GDAL installation
+    # Using custom bash shell ("shell: bash -l {0}") with Miniconda
+    - name: Setup Miniconda
+      uses: goanpeca/setup-miniconda@v1.6.0
+      with:
+        python-version: latest
+        auto-update-conda: true
+        auto-activate-base: true
+        activate-environment: flopy
+
+    - name: Add packages to flopy environment
+      shell: bash -l {0}
+      run: |
+        conda env update --name flopy --file etc/environment.yml
+
+    - name: Determine python environment
+      shell: bash -l {0}
       run: |
         conda info
-        conda install pip requests appdirs nose numpy matplotlib
+        conda list
+
+    - name: Install additional python packages using pip
+      run: |
         pip install https://github.com/modflowpy/flopy/zipball/develop
         pip install https://github.com/modflowpy/pymake/zipball/master
         pip install https://github.com/Deltares/xmipy/zipball/develop
@@ -37,7 +51,6 @@ jobs:
       shell: python
       run: |
         import flopy
-        import pymake
         flopy.mf6.utils.generate_classes(branch="develop")
 
     - name: Get executables
