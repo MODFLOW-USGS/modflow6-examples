@@ -21,38 +21,33 @@ jobs:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2
 
-      - name: Cache Miniconda
+      - name: Cache pip
         uses: actions/cache@v2.1.0
         env:
-          # Increase this value to reset cache if environment.yml has changed
+          # Increase this value to reset cache if requirements.pip.txt has changed
           CACHE_NUMBER: 0
         with:
-          path: ~/conda_pkgs_dir
-          key: python3.8-${{ env.CACHE_NUMBER }}-${{ hashFiles('etc/environment.yml') }}
+          path: ~/.cache/pip
+          key: python3.8-pip-${{ env.CACHE_NUMBER }}-${{ hashFiles('etc/requirements.pip.txt') }}
 
-      # Using custom bash shell ("shell: bash -l {0}") with Miniconda
-      - name: Setup Miniconda
-        uses: goanpeca/setup-miniconda@v1.6.0
+      - name: Setup Python 3.8
+        uses: actions/setup-python@v2
         with:
           python-version: 3.8
-          auto-update-conda: true
-          auto-activate-base: true
-          activate-environment: flopy
-          use-only-tar-bz2: true
 
-      - name: Add packages to flopy environment
-        shell: bash -l {0}
+      - name: Print python version
+        shell: bash
         run: |
-          conda env update --name flopy --file etc/environment.yml
+          python --version
 
-      - name: Determine python environment
-        shell: bash -l {0}
+      - name: Install Python 3.8 packages
+        shell: bash
         run: |
-          conda info
-          conda list
+          python -m pip install --upgrade pip
+          pip install -r etc/requirements.pip.txt
 
       - name: Install additional python packages using pip
-        shell: bash -l {0}
+        shell: bash
         run: |
           pip install https://github.com/modflowpy/flopy/zipball/develop
           pip install https://github.com/modflowpy/pymake/zipball/master
@@ -100,78 +95,7 @@ jobs:
           print("flopy is installed in:  {}".format(flopypth))
           print("pymake is installed in: {}".format(pymakepth))
 
-
-      #
-      #    - name: Build and zip applications
-      #      shell: bash
-      #      run: |
-      #        cd ./modflow6/
-      #        nosetests -v -w ./distribution build_nightly.py
-      #        cd ../
-      #
-      #    - name: Move the build zip file
-      #      shell: bash
-      #      run: |
-      #        mv ./modflow6/distribution/temp/${{ matrix.artifact_name }} ./${{ matrix.artifact_name }}
-      #        ls -l ./
-      #
-      #    - name: Build bodyFile with gfortran information
-      #      shell: python
-      #      run: |
-      #        import sys
-      #        import subprocess
-      #
-      #        argv = ["gfortran", "--version"]
-      #        with subprocess.Popen(argv,
-      #                              stdout=subprocess.PIPE,
-      #                              stderr=subprocess.STDOUT,
-      #                              cwd=".") as process:
-      #            output, unused_err = process.communicate(timeout=10)
-      #            buff = output.decode("utf-8")
-      #
-      #        version = buff.splitlines()[0].split()[-1]
-      #        major = version.split(".")[0]
-      #
-      #        osname = sys.platform.lower()
-      #
-      #        if osname == "win32":
-      #            fpth = "bodyFileWindows"
-      #            msg = "Windows executables are statically linked and can be run " + \
-      #                  "without gfortran being installed. In order to use the MODFLOW 6 " + \
-      #                  "dynamic-link library (libmf6.dll) on Windows, the MinGW  " + \
-      #                  "version of gfortran version {} ".format(version) + \
-      #                  "will need to be installed locally.\n\n"
-      #        elif osname == "darwin":
-      #            fpth = "bodyFileMac"
-      #            msg = "On MacOS, the gfortran compiler used to compile the " + \
-      #                  "MODFLOW 6 executables and shared object (libmf6.so) will need " + \
-      #                  "to be installed locally. The MODFLOW 6 executables and shared " + \
-      #                  "object were compiled on MacOS using Homebrew gfortran " + \
-      #                  "version {}.\n\n".format(version)
-      #        else:
-      #            fpth = "bodyFileLinux"
-      #            msg = "On Linux, the gfortran compiler used to compile the " + \
-      #                  "MODFLOW 6 executables and shared object (libmf6.so) will need " + \
-      #                  "to be installed locally. The MODFLOW 6 executables and shared " + \
-      #                  "object were compiled on Linux using gfortran " + \
-      #                  "version {}.\n\n".format(version)
-      #
-      #        f = open(fpth, "w")
-      #        f.write(msg)
-      #        f.close()
-      #
-      #    # Build LaTeX document
-      #    - name: Copy the modflow6/docs directory
-      #      if: runner.os == 'Linux'
-      #      shell: python
-      #      run: |
-      #        import shutil
-      #        src = "/home/runner/work/modflow6-nightly-build/modflow6-nightly-build/modflow6/doc/"
-      #        dst = "./doc/"
-      #        shutil.copytree(src, dst)
-
       - name: Install TeX Live
-        if: runner.os == 'Linux'
         shell: bash
         run: |
           sudo apt install texlive-latex-extra texlive-science
