@@ -25,7 +25,7 @@ jobs:
     - name: Setup Miniconda
       uses: goanpeca/setup-miniconda@v1.6.0
       with:
-        python-version: latest
+        # python-version: latest
         auto-update-conda: true
         auto-activate-base: true
         activate-environment: flopy
