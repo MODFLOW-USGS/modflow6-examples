@@ -18,14 +18,15 @@ jobs:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout MODFLOW6 examples repo
+      uses: actions/checkout@v2
 
     # Standard python fails on windows without GDAL installation
     # Using custom bash shell ("shell: bash -l {0}") with Miniconda
     - name: Setup Miniconda
       uses: goanpeca/setup-miniconda@v1.6.0
       with:
-        # python-version: latest
+        python-version: 3.8
         auto-update-conda: true
         auto-activate-base: true
         activate-environment: flopy
