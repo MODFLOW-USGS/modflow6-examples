@@ -11,8 +11,8 @@ on:
       - master
 
 jobs:
-  build_for_os:
-    name: compile on linux, macos, and windows
+  build:
+    name: nightly-build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -37,6 +37,7 @@ jobs:
       shell: python
       run: |
         import flopy
+        import pymake
         flopy.mf6.utils.generate_classes(branch="develop")
 
     - name: Get executables
@@ -230,7 +231,7 @@ jobs:
 #  # make the release if previous job was successful
 #  release:
 #    name: Make a nightly release
-#    needs: build_for_os
+#    needs: build
 #    runs-on: ubuntu-latest
 #
 #    steps:
