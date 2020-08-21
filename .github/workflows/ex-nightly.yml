@@ -58,21 +58,6 @@ jobs:
           import flopy
           flopy.mf6.utils.generate_classes(branch="develop", backup=False)
 
-      - name: Get executables
-        shell: python
-        run: |
-          import os
-          import pymake
-          pth = os.path.join("bin")
-          if not os.path.isdir(pth):
-              os.makedirs(pth)
-          pymake.getmfexes(pth, verbose=True)
-          print("Available project applications:")
-          for v in os.listdir(pth):
-              fpth = os.path.join(pth, v)
-              if os.path.isfile(fpth):
-                  print("   {}".format(fpth))
-
       - name: Print python package versions
         shell: python
         run: |
@@ -91,6 +76,34 @@ jobs:
           print("")
           print("flopy is installed in:  {}".format(flopypth))
           print("pymake is installed in: {}".format(pymakepth))
+
+      - name: Get executables
+        shell: python
+        run: |
+          import os
+          import pymake
+          pth = os.path.join("bin")
+          if not os.path.isdir(pth):
+              os.makedirs(pth)
+          pymake.getmfexes(pth, verbose=True)
+          print("Available project applications:")
+          for v in os.listdir(pth):
+              fpth = os.path.join(pth, v)
+              if os.path.isfile(fpth):
+                  print("   {}".format(fpth))
+
+      - name: Replace MODFLOW 6 executables with the latest versions
+        shell: python
+        run: |
+          import os
+          import pymake
+          url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")["linux.zip"]
+          pymake.download_and_unzip(url, "bin")
+          print("Available project applications:")
+          for v in os.listdir(pth):
+              fpth = os.path.join(pth, v)
+              if os.path.isfile(fpth):
+                  print("   {}".format(fpth))
 
       - name: Install TeX Live
         shell: bash
