@@ -144,51 +144,51 @@ jobs:
         run: |
           sudo apt install texlive-latex-extra texlive-science
 
-    - name: Build mf6examples latex document
-      if: runner.os == 'Linux'
-      shell: python
-      run: |
-        import sys
-        import subprocess
+      - name: Build mf6examples latex document
+        if: runner.os == 'Linux'
+        shell: python
+        run: |
+          import sys
+          import subprocess
 
-        ws = "./doc/"
-        bibnam = "mf6examples"
-        texnam = bibnam + ".tex"
-        cmds = [
-                ["pdflatex", texnam],
-                ["bibtex", bibnam],
-                ["pdflatex", texnam],
-                ["pdflatex", texnam],
-               ]
-        for cmd in cmds:
-            print("running command...'{}'".format(" ".join(cmd)))
-            with subprocess.Popen(cmd,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT,
-                                  cwd=ws) as process:
-                stdout, stderr = process.communicate(timeout=10)
-                if stdout:
-                    stdout = stdout.decode()
-                    print(stdout)
-                if stderr:
-                    print("\n\nError condition occurred:\n")
-                    stderr = stderr.decode()
-                    print(stderr)
+          ws = "./doc/"
+          bibnam = "mf6examples"
+          texnam = bibnam + ".tex"
+          cmds = [
+                  ["pdflatex", texnam],
+                  ["bibtex", bibnam],
+                  ["pdflatex", texnam],
+                  ["pdflatex", texnam],
+                 ]
+          for cmd in cmds:
+              print("running command...'{}'".format(" ".join(cmd)))
+              with subprocess.Popen(cmd,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    cwd=ws) as process:
+                  stdout, stderr = process.communicate(timeout=10)
+                  if stdout:
+                      stdout = stdout.decode()
+                      print(stdout)
+                  if stderr:
+                      print("\n\nError condition occurred:\n")
+                      stderr = stderr.decode()
+                      print(stderr)
 
-    - name: Rename and move the LaTeX document
-      shell: bash
-      run: |
-        ls -la ./doc/
-        mv ./doc/mf6examples.pdf mf6examples.pdf
-        ls -la ./
+      - name: Rename and move the LaTeX document
+        shell: bash
+        run: |
+          ls -la ./doc/
+          mv ./doc/mf6examples.pdf mf6examples.pdf
+          ls -la ./
 
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: nightly
-        path: |
-          ./mf6examples.pdf
-          ./modflow6-examples.zip
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: nightly
+          path: |
+            ./mf6examples.pdf
+            ./modflow6-examples.zip
 
   # make the release if previous job was successful
   release:
