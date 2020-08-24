@@ -1,0 +1,17 @@
+appdirs
+requests
+numpy
+matplotlib
+bmipy
+affine
+scipy
+pandas
+netcdf4
+pyshp
+rasterio
+fiona
+descartes
+pyproj
+shapely
+p2j
+IPython
