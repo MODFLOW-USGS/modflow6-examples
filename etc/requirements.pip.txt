@@ -13,3 +13,6 @@ fiona
 descartes
 pyproj
 shapely
+git+https://github.com/modflowpy/pymake.git@master
+git+https://github.com/modflowpy/flopy.git@develop
+git+https://github.com/Deltares/xmipy.git@develop
