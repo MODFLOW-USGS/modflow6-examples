@@ -1,3 +1,5 @@
+nose
+nose-timer
 appdirs
 requests
 numpy
@@ -14,4 +16,4 @@ descartes
 pyproj
 shapely
 p2j
-IPython
+ipython

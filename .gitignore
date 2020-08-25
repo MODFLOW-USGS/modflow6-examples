@@ -173,3 +173,4 @@ tables/
 examples/
 doc/mf6examples.pdf
 temp
+.doc/_build/html
