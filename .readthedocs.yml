@@ -22,5 +22,5 @@ python:
   install:
     - requirements: etc/requirements.pip.txt
     - requirements: .doc/requirements.rtd.txt
-    - method: pip
+#    - method: pip
 #      path: .
