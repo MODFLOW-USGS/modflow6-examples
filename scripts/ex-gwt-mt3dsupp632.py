@@ -1,6 +1,8 @@
 #
 #
-# # Zero-Order Production in a Dual-Domain System (MT3DMS Supplemental Guide Problem 6.3.2)
+# # Zero-Order Production in a Dual-Domain System
+#
+# MT3DMS Supplemental Guide Problem 6.3.2
 #
 #
 #

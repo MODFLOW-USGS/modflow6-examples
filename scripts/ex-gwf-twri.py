@@ -1,7 +1,10 @@
 #
 #
-# Describe the model...
+# # Original TWRI MODFLOW example
 #
+# This problem is described in McDonald and Harbaugh (1988) and duplicated in
+# Harbaugh and McDonald (1996). This problem is also is distributed with
+# MODFLOW-2005 (Harbaugh, 2005) and MODFLOW 6 (Langevin and others, 2017).
 #
 #
 
