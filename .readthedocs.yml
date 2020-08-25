@@ -7,7 +7,7 @@ version: 2
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
-  configuration: .docs/conf.py
+  configuration: .doc/conf.py
 
 # Build documentation with MkDocs
 #mkdocs:
@@ -22,5 +22,3 @@ python:
   install:
     - requirements: etc/requirements.pip.txt
     - requirements: .doc/requirements.rtd.txt
-#    - method: pip
-#      path: .
