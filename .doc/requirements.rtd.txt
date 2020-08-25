@@ -6,3 +6,4 @@ jupyter
 nbconvert
 git+https://github.com/pandas-dev/pydata-sphinx-theme.git@master
 git+https://github.com/modflowpy/pymake.git@master
+git+https://github.com/modflowpy/flopy.git@develop
