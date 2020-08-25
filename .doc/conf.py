@@ -93,7 +93,7 @@ for idx, fpth in enumerate(nb_files):
     for ex_list in intro_text[idx]:
         lines += "{}\n".format(ex_list.strip())
     lines += "\n.. toctree::\n"
-    lines += "   :maxdepth: 2\n\n"
+    lines += "   :maxdepth: 1\n\n"
     lines += "   {}\n\n\n".format(rst_pth)
     f.write(lines)
 f.close()
