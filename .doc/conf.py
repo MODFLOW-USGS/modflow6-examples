@@ -12,6 +12,10 @@
 #
 import os
 import shutil
+import flopy
+
+# -- update flopy classes ----------------------------------------------------
+flopy.mf6.utils.generate_classes(branch="develop", backup=False)
 
 # -- get list of python files ------------------------------------------------
 pth = os.path.join("..", "scripts")
