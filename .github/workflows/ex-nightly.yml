@@ -122,31 +122,19 @@ jobs:
 
 
       - name: Run scripts scripts plus processing script
-        shell: python
-        run: |
-          import os
-          import shutil
-          from subprocess import Popen, PIPE
-          pth = os.path.join("scripts")
-          scripts = [file_name for file_name in os.listdir(pth) if
-                     file_name.endswith(".py") and file_name.startswith("ex-")]
-          scripts.append("process-scripts.py")
-          for s in scripts:
-              args = ("python", s)
-              proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=pth)
-              stdout, stderr = proc.communicate()
-              if stdout:
-                  print(stdout.decode("utf-8"))
-              if stderr:
-                  print("Errors:\n{}".format(stderr.decode("utf-8")))
-
-      - name: Install TeX Live
         shell: bash
         run: |
-          sudo apt install texlive-latex-extra texlive-science
+          cd ./scripts/
+          nosetests -v --with-id --with-timer ex-*
+          python process-scripts.py
+          cd ..
+
+      - name: Install TeX Live and pandoc
+        shell: bash
+        run: |
+          sudo apt install texlive-latex-extra texlive-science pandoc
 
       - name: Build mf6examples latex document
-        if: runner.os == 'Linux'
         shell: python
         run: |
           import sys
@@ -184,6 +172,7 @@ jobs:
           ls -la ./
 
       - name: Upload Build Artifacts
+        if: github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
           name: nightly
@@ -197,6 +186,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
+    if: github.ref == 'refs/heads/master'
     steps:
     - name: Download a Build Artifact
       uses: actions/download-artifact@v2
