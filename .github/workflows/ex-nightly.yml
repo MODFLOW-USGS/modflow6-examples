@@ -278,3 +278,17 @@ jobs:
         with:
           name: nightly
 
+  # trigger rtd if previous job was successful
+  rtd:
+    name: ReadtheDocs
+    needs: release
+    runs-on: ubuntu-latest
+
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Trigger RTDs build
+        uses: dfm/rtds-action@v1
+        with:
+          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+          commit_ref: ${{ github.ref }}
