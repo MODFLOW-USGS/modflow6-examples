@@ -1,7 +1,9 @@
 #
 #
-# # Zero-Order Growth in a Uniform Flow Field (MT3DMS Supplemental Guide Problem 6.3.1)
 #
+# # Zero-Order Growth in a Uniform Flow Field
+#
+# MT3DMS Supplemental Guide Problem 6.3.1
 #
 #
 

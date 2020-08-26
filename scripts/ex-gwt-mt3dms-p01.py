@@ -1,17 +1,20 @@
+#
 # # Comparison of MF6 transport with MT3DMS Example Problems
 # The purpose of this script is to (1) recreate the example problems that were first described in the 1999 MT3DMS report, and (2) compare MF6-GWT solutions to the established MT3DMS solutions.
 #
 # Ten example problems appear in the 1999 MT3DMS manual, starting on page 130.  This notebook demonstrates example 10 from the list below:
-# 1. **One-Dimensional Transport in a Uniform Flow Field**
-# 2. One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption
-# 3. Two-Dimensional Transport in a Uniform Flow Field
-# 4. Two-Dimensional Transport in a Diagonal Flow Field
-# 5. Two-Dimensional Transport in a Radial Flow Field
-# 6. Concentration at an Injection/Extraction Well
-# 7. Three-Dimensional Transport in a Uniform Flow Field
-# 8. Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer
-# 9. Two-Dimensional Application Example
-# 10. Three-Dimensional Field Case Study
+#
+#   1.  One-Dimensional Transport in a Uniform Flow Field
+#   2.  One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption
+#   3.  Two-Dimensional Transport in a Uniform Flow Field
+#   4.  Two-Dimensional Transport in a Diagonal Flow Field
+#   5.  Two-Dimensional Transport in a Radial Flow Field
+#   6.  Concentration at an Injection/Extraction Well
+#   7.  Three-Dimensional Transport in a Uniform Flow Field
+#   8.  Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer
+#   9.  Two-Dimensional Application Example
+#  10. Three-Dimensional Field Case Study
+#
 
 # ### Imports
 import os
@@ -114,7 +117,7 @@ npsink = nph    # HMOC
 
 # ## Static temporal data used by TDIS file
 tdis_rc = []
-tdis_rc.append((perlen, nstp, 1.0))            
+tdis_rc.append((perlen, nstp, 1.0))
 
 # ### Boundary Condition - CHD
 # Constant head cells are specified on both ends of the model
@@ -127,10 +130,10 @@ cncspd = [[(0, 0, 0), c0]]
 def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
                 silent=False):
     if config.buildModel:
-        
+
         mt3d_ws = os.path.join(ws, sim_name, 'mt3d')
         modelname_mf = 'p01_mf'
-        
+
         # Instantiate the MODFLOW model
         mf = flopy.modflow.Modflow(modelname=modelname_mf,
                                    model_ws=mt3d_ws,
@@ -167,10 +170,10 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
 
         # Instantiate solver package
         flopy.modflow.ModflowPcg(mf)
-        
+
         # Instantiate link mass transport package (for writing linker file)
         flopy.modflow.ModflowLmt(mf)
-        
+
         # Transport
         modelname_mt = 'p01_mt'
         mt = flopy.mt3d.Mt3dms(modelname=modelname_mt,
@@ -192,7 +195,7 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
                            dt0=dt0,
                            ifmtcn=1
         )
-        
+
         # Instatiate the advection package
         flopy.mt3d.Mt3dAdv(mt,
                            mixelm=mixelm,
@@ -225,19 +228,19 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
             ireact=0.
             rc1 = 0.
         kd = (retardation - 1.) * prsity / rhob
-        flopy.mt3d.Mt3dRct(mt, 
-                           isothm=isothm, 
-                           ireact=ireact, 
-                           igetsc=0, 
-                           rhob=rhob, 
-                           sp1=kd, 
-                           rc1=rc1, 
+        flopy.mt3d.Mt3dRct(mt,
+                           isothm=isothm,
+                           ireact=ireact,
+                           igetsc=0,
+                           rhob=rhob,
+                           sp1=kd,
+                           rc1=rc1,
                            rc2=rc1
         )
 
         # Instantiate the source/sink mixing package
         flopy.mt3d.Mt3dSsm(mt)
-        
+
         # Instantiate the GCG solver in MT3DMS
         flopy.mt3d.Mt3dGcg(mt,
                            mxiter=10
@@ -247,15 +250,15 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
         name = 'p01_mf6'
         gwfname = 'gwf_' + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, 
-                                     sim_ws=sim_ws, 
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name,
+                                     sim_ws=sim_ws,
                                      exe_name=mf6exe
         )
 
         # Instantiating MODFLOW 6 time discretization
-        flopy.mf6.ModflowTdis(sim, 
-                              nper=nper, 
-                              perioddata=tdis_rc, 
+        flopy.mf6.ModflowTdis(sim,
+                              nper=nper,
+                              perioddata=tdis_rc,
                               time_units=time_units
         )
 
@@ -300,22 +303,22 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
         # Instantiating MODFLOW 6 node-property flow package
         flopy.mf6.ModflowGwfnpf(gwf,
                                 save_flows=False,
-                                icelltype=icelltype, 
-                                k=k11, 
+                                icelltype=icelltype,
+                                k=k11,
                                 k33=k33,
                                 save_specific_discharge = True,
                                 filename='{}.npf'.format(gwfname)
         )
 
         # Instantiating MODFLOW 6 initial conditions package for flow model
-        flopy.mf6.ModflowGwfic(gwf, 
+        flopy.mf6.ModflowGwfic(gwf,
                                strt=strt,
                                filename='{}.ic'.format(gwfname)
         )
 
         # Instantiating MODFLOW 6 constant head package
         flopy.mf6.ModflowGwfchd(gwf,
-                                maxbound=len(chdspd), 
+                                maxbound=len(chdspd),
                                 stress_period_data=chdspd,
                                 save_flows=False,
                                 pname='CHD-1',
@@ -357,11 +360,11 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
         sim.register_ims_package(imsgwt, [gwt.name])
 
         # Instantiating MODFLOW 6 transport discretization package
-        flopy.mf6.ModflowGwtdis(gwt, 
+        flopy.mf6.ModflowGwtdis(gwt,
                                 nlay=nlay,
                                 nrow=nrow,
                                 ncol=ncol,
-                                delr=delr, 
+                                delr=delr,
                                 delc=delc,
                                 top=top,
                                 botm=botm,
@@ -370,7 +373,7 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
         )
 
         # Instantiating MODFLOW 6 transport initial concentrations
-        flopy.mf6.ModflowGwtic(gwt, 
+        flopy.mf6.ModflowGwtic(gwt,
                                strt=sconc,
                                filename='{}.ic'.format(gwtname)
         )
@@ -382,14 +385,14 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
             scheme = 'TVD'
         else:
             raise Exception()
-        flopy.mf6.ModflowGwtadv(gwt, 
+        flopy.mf6.ModflowGwtadv(gwt,
                                 scheme=scheme,
                                 filename='{}.adv'.format(gwtname)
         )
 
         # Instantiating MODFLOW 6 transport dispersion package
         if dispersivity != 0:
-            flopy.mf6.ModflowGwtdsp(gwt, 
+            flopy.mf6.ModflowGwtdsp(gwt,
                                     alh=dispersivity,
                                     ath1=dispersivity,
                                     filename='{}.dsp'.format(gwtname)
@@ -406,7 +409,7 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
             first_order_decay = True
         else:
             first_order_decay = False
-        flopy.mf6.ModflowGwtmst(gwt, 
+        flopy.mf6.ModflowGwtmst(gwt,
                                 porosity=prsity,
                                 sorbtion=sorbtion,
                                 bulk_density=rhob,
@@ -417,7 +420,7 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
         )
 
         # Instantiating MODFLOW 6 transport constant concentration package
-        flopy.mf6.ModflowGwtcnc(gwt, 
+        flopy.mf6.ModflowGwtcnc(gwt,
                                 maxbound=len(cncspd),
                                 stress_period_data=cncspd,
                                 save_flows=False,
@@ -426,7 +429,7 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
         )
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
-        flopy.mf6.ModflowGwtssm(gwt, 
+        flopy.mf6.ModflowGwtssm(gwt,
                                 sources=[[]],
                                 filename='{}.ssm'.format(gwtname)
         )
@@ -446,9 +449,9 @@ def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,
         )
 
         # Instantiating MODFLOW 6 flow-transport exchange mechanism
-        flopy.mf6.ModflowGwfgwt(sim, 
+        flopy.mf6.ModflowGwfgwt(sim,
                                 exgtype='GWF6-GWT6',
-                                exgmnamea=gwfname, 
+                                exgmnamea=gwfname,
                                 exgmnameb=gwtname,
                                 filename='{}.gwfgwt'.format(name)
         )
@@ -491,16 +494,16 @@ def plot_results(mt3d, mf6, idx, ax=None):
         fname_mf6 = os.path.join(mf6_out_path, list(mf6.model_names)[1] + '.ucn')
         ucnobj_mf6 = flopy.utils.HeadFile(fname_mf6, precision='double',
                                           text='CONCENTRATION')
-        
-        times_mf6 = ucnobj_mf6.get_times() 
+
+        times_mf6 = ucnobj_mf6.get_times()
         conc_mf6 = ucnobj_mf6.get_alldata()
-        
-        # Create figure for scenario 
+
+        # Create figure for scenario
         fs = USGSFigure(figure_type="graph", verbose=False)
         sim_name = mf6.name
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
-        
+
         ax.plot(np.linspace(0, l, ncol), conc_mt3d[0,0,0,:], color='k', label='MT3DMS', linewidth=0.5)
         ax.plot(np.linspace(0, l, ncol), conc_mf6[0,0,0,:], '^', markeredgewidth=0.5, color='blue', fillstyle='none', label='MF6', markersize=3)
         ax.set_ylim(0, 1.2)
@@ -512,7 +515,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         ax.legend()
         letter = chr(ord("@") + idx + 1)
         fs.heading(letter=letter, heading=title)
-        
+
         # save figure
         if config.plotSave:
             fpth = os.path.join(
