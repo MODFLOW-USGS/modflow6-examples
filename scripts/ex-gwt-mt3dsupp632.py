@@ -1,12 +1,12 @@
-#
-#
-# # Zero-Order Production in a Dual-Domain System
+# ## Zero-Order Production in a Dual-Domain System
 #
 # MT3DMS Supplemental Guide Problem 6.3.2
 #
 #
 #
 
+# ### Zero-Order Production in a Dual-Domain System Problem Setup
+#
 # Imports
 import os
 import sys
@@ -17,7 +17,7 @@ import flopy
 # Append to system path to include the common subdirectory
 sys.path.append(os.path.join("..", "common"))
 
-# import common functionality
+# Import common functionality
 import config
 from figspecs import USGSFigure
 
@@ -46,7 +46,7 @@ parameter_units = {"distribution_coefficient": "$mL g^{-1}$",
                    "decay": "$g/mL d^{-1}$",
                    "decay_sorbed": "$g/mL d^{-1}$"}
 
-# ## Model units
+# Model units
 length_units = "m"
 time_units = "days"
 
@@ -74,7 +74,7 @@ obs_xloc = 200. # Observation x location ($m$)
 zero_order_decay = True # Flag indicating whether decay is zero or first order
 dual_domain = True # Flag indicating that dual domain is active
 
-# ## Functions to build models
+# ### Functions to build, write, run and plot models
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 #
@@ -291,40 +291,41 @@ def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
     return sims
 
 
-# ## Function to write model files
-def write_model(sims):
+# Function to write model files
+def write_model(sims, silent=True):
     if config.writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        sim_mf6gwf.write_simulation(silent=True)
-        sim_mf6gwt.write_simulation(silent=True)
+        sim_mf6gwf.write_simulation(silent=silent)
+        sim_mf6gwt.write_simulation(silent=silent)
         sim_mf2005.write_input()
         sim_mt3dms.write_input()
     return
 
 
-# ## Function to run the model
+# Function to run the model
 # True is returned if the model runs successfully
-def run_model(sims):
+def run_model(sims, silent=True):
     success = True
     if config.runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=True)
+        success, buff = sim_mf6gwf.run_simulation(silent=silent)
         if not success:
             print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=True)
+        success, buff = sim_mf6gwt.run_simulation(silent=silent)
         if not success:
             print(buff)
-        success, buff = sim_mf2005.run_model(silent=True)
+        success, buff = sim_mf2005.run_model(silent=silent)
         if not success:
             print(buff)
-        success, buff = sim_mt3dms.run_model(silent=True, normal_msg='Program completed')
+        success, buff = sim_mt3dms.run_model(silent=silent,
+                                             normal_msg='Program completed')
         if not success:
             print(buff)
     return success
 
 
-# ## Functions to plot the model results
+# Functions to plot the model results
 def plot_results():
     if config.plotModel:
         print('Plotting model results...')
@@ -398,19 +399,19 @@ def plot_scenario_results(sims, idx):
             fig.savefig(fpth)
 
 
-# ## Function that wraps all of the steps for each scenario
+# Function that wraps all of the steps for each scenario
 #
-# 1. build_model
-# 2. write_model
-# 3. run_model
-# 4. plot_results
+# 1. build_model,
+# 2. write_model,
+# 3. run_model, and
+# 4. plot_results.
 #
-def scenario(idx):
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     sims = build_model(key, **parameter_dict)
-    write_model(sims)
-    success = run_model(sims)
+    write_model(sims, silent=silent)
+    success = run_model(sims, silent=silent)
     if success:
         plot_scenario_results(sims, idx)
     return
@@ -418,15 +419,15 @@ def scenario(idx):
 
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
-    scenario(0)
+    scenario(0, silent=False)
 
 
 def test_02():
-    scenario(1)
+    scenario(1, silent=False)
 
 
 def test_03():
-    scenario(2)
+    scenario(2, silent=False)
 
 
 def test_plot_results():
@@ -435,17 +436,22 @@ def test_plot_results():
 # nosetest end
 
 if __name__ == "__main__":
-    # ## Scenario 1
-    # This scenario uses
+    # ### Case 1
+    #
+    # Describe this case.
     scenario(0)
 
-    # ## Scenario 2
-    # This scenario uses
+    # ### Case 2
+    #
+    # Describe this case.
     scenario(1)
 
-    # ## Scenario 3
-    # This scenario uses
+    # ### Case 3
+    #
+    # Describe this case.
     scenario(2)
 
-    # ## Plot the results
+    # ### Plot the Zero-Order Production in a Dual-Domain System Problem results
+    #
+    # Describe the plot
     plot_results()

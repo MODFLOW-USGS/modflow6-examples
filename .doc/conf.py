@@ -75,23 +75,21 @@ for idx, fpth in enumerate(py_files):
 # -- Build examples.rst for notebooks to .doc --------------------------------
 f = open("examples.rst", "w")
 for idx, fpth in enumerate(nb_files):
-    file_name = os.path.basename(fpth)
-    rst_pth = os.path.join("_notebooks", file_name)
     lines = ""
     for ex_list in intro_text[idx]:
         lines += "{}\n".format(ex_list.strip())
-    lines += "Contents:\n\n"
+    lines += "\nContents:\n\n"
     lines += "\n.. toctree::\n"
     lines += "   :maxdepth: 2\n\n"
-    lines += "   {}\n\n\n".format(rst_pth)
+    lines += "   {}\n\n\n".format(fpth)
     f.write(lines)
 f.close()
 
 # -- Project information -----------------------------------------------------
 
 project = 'MODFLOW 6 Example Problems'
-copyright = '2020, Langevin, C.D., Morway, E.D., and Hughes, J.D.'
-author = 'Langevin, C.D., Morway, E.D., and Hughes, J.D.'
+copyright = '2020, MODFLOW 6 Development Team'
+author = 'MODFLOW 6 Development Team'
 
 # -- General configuration ---------------------------------------------------
 
