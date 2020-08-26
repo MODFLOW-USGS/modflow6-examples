@@ -48,10 +48,10 @@ ws = config.base_ws
 # Set scenario parameters (make sure there is at least one blank line before next item)
 # This entire dictionary is passed to _build_model()_ using the kwargs argument
 parameters = {
-    "ex-gwf-mt3d-p01a": {"dispersivity": 0.0, "retardation": 1.0, "decay": 0.0},
-    "ex-gwf-mt3d-p01b": {"dispersivity": 10.0, "retardation": 1.0, "decay": 0.0},
-    "ex-gwf-mt3d-p01c": {"dispersivity": 10.0, "retardation": 5.0, "decay": 0.0},
-    "ex-gwf-mt3d-p01d": {"dispersivity": 10.0, "retardation": 5.0, "decay": 0.002},
+    "ex-gwt-mt3d-p01a": {"dispersivity": 0.0, "retardation": 1.0, "decay": 0.0},
+    "ex-gwt-mt3d-p01b": {"dispersivity": 10.0, "retardation": 1.0, "decay": 0.0},
+    "ex-gwt-mt3d-p01c": {"dispersivity": 10.0, "retardation": 5.0, "decay": 0.0},
+    "ex-gwt-mt3d-p01d": {"dispersivity": 10.0, "retardation": 5.0, "decay": 0.002},
 }
 
 # Scenario parameter units
