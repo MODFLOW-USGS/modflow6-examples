@@ -20,7 +20,7 @@ nb_pth = os.path.join("_notebooks")
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
     key = "modflow6-notebooks.zip"
-    url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")[key]
+    url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-examples")[key]
     pymake.download_and_unzip(url, nb_pth, verbose=True)
 
 # -- get list of notebooks ---------------------------------------------------
