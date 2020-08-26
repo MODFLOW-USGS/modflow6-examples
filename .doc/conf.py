@@ -22,9 +22,8 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
     if sys.platform.lower() == "linux":
         cmds = (
-                "sudo apt install gcc-9 gfortran-9",
-                "sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran",
-                "sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc",
+                "gcc --dumpversion",
+                "gfortran --dumpversion",
                 )
         for cmd in cmds:
             print(cmd)
