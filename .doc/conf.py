@@ -11,36 +11,21 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
-import shutil
-from subprocess import Popen, PIPE
-import flopy
 import pymake
 
-# -- install gcc-9 -----------------------------------------------------------
+# -- processed notebook path -------------------------------------------------
+nb_pth = os.path.join("_notebooks")
+
+# -- download the completed notebooks -------------------------------------------------------
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
-    if sys.platform.lower() == "linux":
-        cmds = (
-                "gcc --dumpversion",
-                "gfortran --dumpversion",
-                )
-        for cmd in cmds:
-            print(cmd)
-            os.system(cmd)
+    key = "modflow6-notebooks.zip"
+    url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")[key]
+    pymake.download_and_unzip(url, nb_pth, verbose=True)
 
-# -- download executables ----------------------------------------------------
-pth = os.path.join("..", "bin")
-if not os.path.isdir(pth):
-    os.makedirs(pth)
-pymake.getmfexes(pth, verbose=True)
-
-# -- update mf6 executables with latest nightly build ------------------------
-url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")["linux.zip"]
-pymake.download_and_unzip(url, pth, verbose=True)
-
-# -- update flopy classes ----------------------------------------------------
-flopy.mf6.utils.generate_classes(branch="develop", backup=False)
+# -- get list of notebooks ---------------------------------------------------
+nb_files = [os.path.join(nb_pth, file_name) for file_name in sorted(os.listdir(nb_pth))
+            if file_name.endswith(".ipynb")]
 
 # -- get list of python files ------------------------------------------------
 pth = os.path.join("..", "scripts")
@@ -59,7 +44,7 @@ for idx, fpth in enumerate(py_files):
             break
     intro = []
     heading = 0
-    for line in lines[:jdx+1]:
+    for line in lines[:jdx + 1]:
         line = line[1:].strip()
         if len(line) < 1:
             continue
@@ -87,43 +72,6 @@ for idx, fpth in enumerate(py_files):
             intro.append(line)
     intro_text.append(intro)
 
-# -- update notebooks --------------------------------------------------------
-pth = os.path.join("..", "scripts", "process-scripts.py")
-args = ("python", pth)
-print(" ".join(args))
-proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=os.path.dirname(pth))
-stdout, stderr = proc.communicate()
-if stdout:
-    print(stdout.decode("utf-8"))
-if stderr:
-    print("Errors:\n{}".format(stderr.decode("utf-8")))
-
-# -- get list of notebooks ---------------------------------------------------
-pth = os.path.join("..", "notebooks")
-nb_files = [os.path.join(pth, file_name) for file_name in sorted(os.listdir(pth)) if
-            file_name.endswith(".ipynb")]
-
-# -- run notebooks with nbconvert --------------------------------------------
-output_pth = os.path.join("_notebooks")
-if os.path.isdir(output_pth):
-    shutil.rmtree(output_pth)
-os.makedirs(output_pth)
-for fpth in nb_files:
-    args = ("jupyter",
-            "nbconvert",
-            "--ExecutePreprocessor.timeout=600",
-            "--to",
-            "notebook",
-            "--execute",
-            fpth,
-            "--output-dir",
-            output_pth,
-            "--output",
-            os.path.basename(fpth)
-            )
-    print(" ".join(args))
-    os.system(" ".join(args))
-
 # -- Build examples.rst for notebooks to .doc --------------------------------
 f = open("examples.rst", "w")
 for idx, fpth in enumerate(nb_files):
@@ -138,7 +86,6 @@ for idx, fpth in enumerate(nb_files):
     lines += "   {}\n\n\n".format(rst_pth)
     f.write(lines)
 f.close()
-
 
 # -- Project information -----------------------------------------------------
 
@@ -237,7 +184,7 @@ html_context = {
 # ]
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = "flopy"
+html_short_title = "modflow6-examples"
 # html_favicon = ".._images/flopylogo.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
