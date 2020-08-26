@@ -18,7 +18,8 @@ import flopy
 import pymake
 
 # -- install gcc-9 -----------------------------------------------------------
-if "CI" in os.environ:
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
     if sys.platform.lower() == "linux":
         cmds = (
                 "sudo apt install gcc-9 gfortran-9",
