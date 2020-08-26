@@ -1,12 +1,11 @@
-#
-#
-#
-# # Zero-Order Growth in a Uniform Flow Field
+# ## Zero-Order Growth in a Uniform Flow Field
 #
 # MT3DMS Supplemental Guide Problem 6.3.1
 #
 #
 
+# ### Zero-Order Growth in a Uniform Flow Field Problem Setup
+#
 # Imports
 import os
 import sys
@@ -17,7 +16,7 @@ import flopy
 # Append to system path to include the common subdirectory
 sys.path.append(os.path.join("..", "common"))
 
-# import common functionality
+# Import common functionality
 import config
 from figspecs import USGSFigure
 
@@ -28,7 +27,7 @@ figure_size = (3, 3)
 ws = config.base_ws
 example_name = "ex-gwt-mt3dsupp631"
 
-# ## Model units
+# Model units
 length_units = "m"
 time_units = "days"
 
@@ -49,7 +48,7 @@ source_duration = 160. # Source duration ($d$)
 total_time = 840. # Simulation time ($t$)
 obs_xloc = 8. # Observation x location ($m$)
 
-# ## Functions to build models
+# ### Functions to build, write, run, and plot models
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 # recharge is the only variable
@@ -210,41 +209,41 @@ def build_model(sim_name):
     return sims
 
 
-# ## Function to write model files
-def write_model(sims):
+# Function to write model files
+def write_model(sims, silent=True):
     if config.writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        sim_mf6gwf.write_simulation(silent=True)
-        sim_mf6gwt.write_simulation(silent=True)
+        sim_mf6gwf.write_simulation(silent=silent)
+        sim_mf6gwt.write_simulation(silent=silent)
         sim_mf2005.write_input()
         sim_mt3dms.write_input()
     return
 
 
-# ## Function to run the model
+# Function to run the model
 # True is returned if the model runs successfully
-def run_model(sims):
+def run_model(sims, silent=True):
     success = True
     if config.runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=True)
+        success, buff = sim_mf6gwf.run_simulation(silent=silent)
         if not success:
             print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=True)
+        success, buff = sim_mf6gwt.run_simulation(silent=silent)
         if not success:
             print(buff)
-        success, buff = sim_mf2005.run_model(silent=True)
+        success, buff = sim_mf2005.run_model(silent=silent)
         if not success:
             print(buff)
-        success, buff = sim_mt3dms.run_model(silent=True,
+        success, buff = sim_mt3dms.run_model(silent=silent,
                                              normal_msg='Program completed')
         if not success:
             print(buff)
     return success
 
 
-# ## Function to plot the model results
+# Function to plot the model results
 def plot_results(sims, idx):
     if config.plotModel:
         print('Plotting model results...')
@@ -276,28 +275,29 @@ def plot_results(sims, idx):
             fig.savefig(fpth)
 
 
-# ## Function that wraps all of the steps for each scenario
+# Function that wraps all of the steps for each scenario
 #
-# 1. build_model
-# 2. write_model
-# 3. run_model
-# 4. plot_results
+# 1. build_model,
+# 2. write_model,
+# 3. run_model, and
+# 4. plot_results.
 #
-def scenario(idx):
+def scenario(idx, silent=True):
     sim = build_model(example_name)
-    write_model(sim)
-    success = run_model(sim)
+    write_model(sim, silent=silent)
+    success = run_model(sim, silent=silent)
     if success:
         plot_results(sim, idx)
 
 
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
-    scenario(0)
+    scenario(0, silent=False)
 
 # nosetest end
 
 if __name__ == "__main__":
-    # ## Scenario 1
-    # This scenario uses
+    # ### Simulated Zero-Order Growth in a Uniform Flow Field
+    #
+    # Add a description of the plot(s)
     scenario(0)

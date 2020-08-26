@@ -162,10 +162,10 @@ jobs:
           # zip the input files
           shutil.make_archive("modflow6-notebooks", "zip", output_pth)
 
-      - name: Install TeX Live and pandoc
+      - name: Install TeX Live
         shell: bash
         run: |
-          sudo apt install texlive-latex-extra texlive-science pandoc
+          sudo apt install texlive-latex-extra texlive-science
 
       - name: Build mf6examples latex document
         shell: python
