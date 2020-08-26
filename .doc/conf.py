@@ -12,7 +12,19 @@
 #
 import os
 import shutil
+from subprocess import Popen, PIPE
 import flopy
+import pymake
+
+# -- download executables ----------------------------------------------------
+pth = os.path.join("..", "bin")
+if not os.path.isdir(pth):
+    os.makedirs(pth)
+pymake.getmfexes(pth, verbose=True)
+
+# -- update mf6 executables with latest nightly build ------------------------
+url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")["linux.zip"]
+pymake.download_and_unzip(url, pth, verbose=True)
 
 # -- update flopy classes ----------------------------------------------------
 flopy.mf6.utils.generate_classes(branch="develop", backup=False)
@@ -62,6 +74,17 @@ for idx, fpth in enumerate(py_files):
             intro.append(line)
     intro_text.append(intro)
 
+# -- update notebooks --------------------------------------------------------
+pth = os.path.join("..", "scripts", "process-scripts.py")
+args = ("python", pth)
+print(" ".join(args))
+proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=os.path.dirname(pth))
+stdout, stderr = proc.communicate()
+if stdout:
+    print(stdout.decode("utf-8"))
+if stderr:
+    print("Errors:\n{}".format(stderr.decode("utf-8")))
+
 # -- get list of notebooks ---------------------------------------------------
 pth = os.path.join("..", "notebooks")
 nb_files = [os.path.join(pth, file_name) for file_name in sorted(os.listdir(pth)) if
@@ -96,6 +119,7 @@ for idx, fpth in enumerate(nb_files):
     lines = ""
     for ex_list in intro_text[idx]:
         lines += "{}\n".format(ex_list.strip())
+    lines += "Contents:\n\n"
     lines += "\n.. toctree::\n"
     lines += "   :maxdepth: 2\n\n"
     lines += "   {}\n\n\n".format(rst_pth)

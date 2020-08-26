@@ -84,28 +84,11 @@ args = (
 for arg in args:
     print("running command...'{}'".format(" ".join(arg)))
     with Popen(arg, stdout=PIPE, stderr=PIPE, cwd=ws) as proc:
-        stdout, stderr = proc.communicate(timeout=10)
+        stdout, stderr = proc.communicate(timeout=5)
         if stdout:
             print(stdout.decode("utf-8"))
         if stderr:
             print("Errors:\n{}".format(stderr.decode("utf-8")))
-
-# run pandoc to create html output
-html_pth = os.path.join("doc", "_build", "html")
-if os.path.isdir(html_pth):
-    shutil.rmtree(html_pth)
-os.makedirs(html_pth)
-out_pth = os.path.join(os.path.join("_build", "html"), "index.rst")
-# myTexFile.tex -f latex -t html -s -o myHtmlFile.html --bibliography myTexBiblio.bib
-args = ("pandoc", "mf6examples.tex", "-f", "latex", "-t", "rst", "-s", "-o", out_pth,
-        "--bibliography", "mf6examples.bib")
-print("running command...'{}'".format(" ".join(args)))
-proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd="doc")
-stdout, stderr = proc.communicate(timeout=10)
-if stdout:
-    print(stdout.decode("utf-8"))
-if stderr:
-    print("Errors:\n{}".format(stderr.decode("utf-8")))
 
 # remove zip file - local run only
 os.remove("modflow6-examples.zip")

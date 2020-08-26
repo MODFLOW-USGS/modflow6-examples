@@ -4,16 +4,16 @@
 #
 # Ten example problems appear in the 1999 MT3DMS manual, starting on page 130.  This notebook demonstrates example 10 from the list below:
 #
-# 1.  One-Dimensional Transport in a Uniform Flow Field
-# 2.  One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption
-# 3.  Two-Dimensional Transport in a Uniform Flow Field
-# 4.  Two-Dimensional Transport in a Diagonal Flow Field
-# 5.  Two-Dimensional Transport in a Radial Flow Field
-# 6.  Concentration at an Injection/Extraction Well
-# 7.  Three-Dimensional Transport in a Uniform Flow Field
-# 8.  Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer
-# 9.  Two-Dimensional Application Example
-# 10. Three-Dimensional Field Case Study
+#   1.  One-Dimensional Transport in a Uniform Flow Field
+#   2.  One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption
+#   3.  Two-Dimensional Transport in a Uniform Flow Field
+#   4.  Two-Dimensional Transport in a Diagonal Flow Field
+#   5.  Two-Dimensional Transport in a Radial Flow Field
+#   6.  Concentration at an Injection/Extraction Well
+#   7.  Three-Dimensional Transport in a Uniform Flow Field
+#   8.  Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer
+#   9.  Two-Dimensional Application Example
+#  10. Three-Dimensional Field Case Study
 #
 
 # ### Imports
