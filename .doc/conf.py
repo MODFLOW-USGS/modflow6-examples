@@ -13,8 +13,8 @@
 import os
 import shutil
 from subprocess import Popen, PIPE
-import flopy
 import pymake
+import flopy
 
 # -- download executables ----------------------------------------------------
 pth = os.path.join("..", "bin")
