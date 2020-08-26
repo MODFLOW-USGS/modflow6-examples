@@ -11,10 +11,23 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import sys
 import shutil
 from subprocess import Popen, PIPE
 import flopy
 import pymake
+
+# -- install gcc-9 -----------------------------------------------------------
+if "CI" in os.environ:
+    if sys.platform.lower() == "linux":
+        cmds = (
+                "sudo apt install gcc-9 gfortran-9",
+                "sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran",
+                "sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc",
+                )
+        for cmd in cmds:
+            print(cmd)
+            os.system(cmd)
 
 # -- download executables ----------------------------------------------------
 pth = os.path.join("..", "bin")
