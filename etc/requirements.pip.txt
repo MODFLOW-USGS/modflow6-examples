@@ -17,3 +17,5 @@ pyproj
 shapely
 p2j
 ipython
+jupyter
+nbconvert
