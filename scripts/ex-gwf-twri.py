@@ -209,7 +209,7 @@ def plot_results(sim):
         for idx, ax in enumerate(axes.flatten()[:nlay]):
             fmp = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=idx, extent=extents)
             fmp.plot_grid(lw=0.5)
-            plot_obj = fmp.plot_array(head, vmin=vmin, vmax=vmax, cmap="jet_r")
+            plot_obj = fmp.plot_array(head, vmin=vmin, vmax=vmax)
             fmp.plot_bc("DRN", color="green")
             fmp.plot_bc("WEL", color="0.5")
             cv = fmp.contour_array(head, levels=[-25, 0, 25, 75, 100], linewidths=0.5,
