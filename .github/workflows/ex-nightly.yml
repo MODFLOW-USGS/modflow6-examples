@@ -220,7 +220,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.ref == 'refs/heads/master'
+    if: github.repository == 'MODFLOW-USGS/modflow6-examples'
     steps:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
@@ -284,7 +284,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
 
-    if: github.ref == 'refs/heads/master'
+    if: github.repository == 'MODFLOW-USGS/modflow6-examples'
     steps:
       - name: Trigger RTDs build
         uses: dfm/rtds-action@v1.0.0
