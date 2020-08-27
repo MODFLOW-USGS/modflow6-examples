@@ -21,14 +21,11 @@ jobs:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2
 
-      - name: Set repo information as environmental variables
+      - name: Output repo information
         run: |
-          echo "::set-env name=GH_OWNER::${{ github.repository_owner }}"
-          echo "::set-env name=GH_REPO::${{ github.repository }}"
-          echo "::set-env name=GH_REF::${{ github.ref }}"
-          echo $GH_OWNER
-          echo $GH_REPO
-          echo $GH_REF
+          echo ${{ github.repository_owner }}
+          echo ${{ github.repository }}
+          echo ${{ github.ref }}
 
       - name: Setup symbolic link to gfortran on Linux
         run: |
@@ -214,7 +211,7 @@ jobs:
           ls -la ./
 
       - name: Upload Build Artifacts
-        if: github.ref == 'refs/heads/master'
+        if: github.repository_owner == 'MODFLOW-USGS'
         uses: actions/upload-artifact@v2
         with:
           name: nightly
