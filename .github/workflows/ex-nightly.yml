@@ -27,11 +27,16 @@ jobs:
           echo ${{ github.repository }}
           echo ${{ github.ref }}
 
-      - name: Setup symbolic link to gfortran on Linux
+      - name: Setup symbolic link to gfortran
         run: |
           sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran
           sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc
           sudo ln -fs /usr/bin/g++-9 /usr/local/bin/g++
+
+      - name: Install TeX Live and Additional TrueType Fonts
+        shell: bash
+        run: |
+          sudo apt install texlive-latex-extra texlive-science msttcorefonts
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
@@ -166,12 +171,7 @@ jobs:
               print(" ".join(args))
               os.system(" ".join(args))
 
-      - name: Install TeX Live
-        shell: bash
-        run: |
-          sudo apt install texlive-latex-extra texlive-science
-
-      - name: Build mf6examples latex document
+      - name: Build mf6examples LaTeX document
         shell: python
         run: |
           import sys
@@ -208,7 +208,7 @@ jobs:
           mv ./doc/mf6examples.pdf mf6examples.pdf
           ls -la ./
 
-      - name: Upload Build Artifacts
+      - name: Upload build artifacts for nightly release
         if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
@@ -217,7 +217,7 @@ jobs:
             ./mf6examples.pdf
             ./modflow6-examples.zip
 
-      - name: Upload Completed jupyter notebooks as an artifact
+      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
         if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
