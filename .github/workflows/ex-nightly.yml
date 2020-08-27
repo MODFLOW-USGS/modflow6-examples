@@ -21,6 +21,12 @@ jobs:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2
 
+      - name: Output repo information
+        run: |
+          echo ${{ github.repository_owner }}
+          echo ${{ github.repository }}
+          echo ${{ github.ref }}
+
       - name: Setup symbolic link to gfortran on Linux
         run: |
           sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran
@@ -205,7 +211,7 @@ jobs:
           ls -la ./
 
       - name: Upload Build Artifacts
-        if: github.ref == 'refs/heads/master'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
           name: nightly
@@ -220,7 +226,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.ref == 'refs/heads/master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
@@ -284,7 +290,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
 
-    if: github.ref == 'refs/heads/master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
       - name: Trigger RTDs build
         uses: dfm/rtds-action@v1.0.0
