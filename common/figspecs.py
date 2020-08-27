@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 class USGSFigure:
     def __init__(
-        self, figure_type="map", family="Arial Narrow", font_path=None, verbose=False
+            self, figure_type="map", family="Arial Narrow", font_path=None,
+            verbose=False
     ):
         """Create a USGSFigure object
 
@@ -58,7 +59,7 @@ class USGSFigure:
         if font_path is not None:
             errmsg = "specification of font_path is not implemented"
             raise NotImplemented(errmsg)
-        self.family = family
+        self.family = self._set_fontfamily(family)
 
     def graph_legend(self, ax=None, handles=None, labels=None, **kwargs):
         """Add a USGS-style legend to a matplotlib axis object
@@ -185,18 +186,18 @@ class USGSFigure:
         return text
 
     def add_text(
-        self,
-        ax=None,
-        text="",
-        x=0.0,
-        y=0.0,
-        transform=True,
-        bold=True,
-        italic=True,
-        fontsize=9,
-        ha="left",
-        va="bottom",
-        **kwargs
+            self,
+            ax=None,
+            text="",
+            x=0.0,
+            y=0.0,
+            transform=True,
+            bold=True,
+            italic=True,
+            fontsize=9,
+            ha="left",
+            va="bottom",
+            **kwargs
     ):
         """Add USGS-style text to a axis object
 
@@ -249,17 +250,17 @@ class USGSFigure:
         return text_obj
 
     def add_annotation(
-        self,
-        ax=None,
-        text="",
-        xy=None,
-        xytext=None,
-        bold=True,
-        italic=True,
-        fontsize=9,
-        ha="left",
-        va="bottom",
-        **kwargs
+            self,
+            ax=None,
+            text="",
+            xy=None,
+            xytext=None,
+            bold=True,
+            italic=True,
+            fontsize=9,
+            ha="left",
+            va="bottom",
+            **kwargs
     ):
         """Add an annotation to a axis object
 
@@ -552,3 +553,23 @@ class USGSFigure:
             sys.stdout.write("\n")
 
         return fontspec
+
+    def _set_fontfamily(self, family):
+        """Set font family to Liberation Sans Narrow on linux if default Arial Narrow
+        is being used
+
+        Parameters
+        ----------
+        family : str
+            font family name (default is Arial Narrow)
+
+        Returns
+        -------
+        family : str
+            font family name
+
+        """
+        if sys.platform.lower() in ("linux",):
+            if family == "Arial Narrow":
+                family = "Liberation Sans Narrow"
+        return family

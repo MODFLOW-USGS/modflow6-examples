@@ -33,10 +33,10 @@ jobs:
           sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc
           sudo ln -fs /usr/bin/g++-9 /usr/local/bin/g++
 
-      - name: Install TeX Live and Additional TrueType Fonts
+      - name: Install TeX Live and additional TrueType fonts
         shell: bash
         run: |
-          sudo apt install texlive-latex-extra texlive-science msttcorefonts
+          sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
