@@ -5,57 +5,57 @@ Section 7 of \cite{zheng1999mt3dms} details a number of test problems that verif
 
 % add scenario table
 \begin{ScenarioTable}{
-                                    Variation in transport parameter values for the four simulated scenarios that incrementally increase model complexity (MT3DMS Example Problem 1)}
-                                     {tab:ex-gwt-mt3dms-p01-scenario}
-                                     {../tables/ex-gwt-mt3dms-p01-scenario}
+       Variation in transport parameter values for the four simulated scenarios that incrementally increase model complexity (MT3DMS Example Problem 1)}
+       {tab:ex-gwt-mt3dms-p01-scenario}
+       {../tables/ex-gwt-mt3dms-p01-scenario}
 \end{ScenarioTable}
 
 \subsection{Example description}
 
-All four model scenarios have 101 columns, 1 row, and 1 layer. The first and last columns use constant-head boundaries to simulate steady flow in confined conditions. Because the analytical solution assumes an infinite 1-dimentional flow field, the last column is set far enough from the source to avoid interfering with the final solution after 2,000 days. Initially, the model domain is devoid of solute; however, the first column uses a constant concentration boundary condition to ensure that water entering the simulation has a unit concentration of 1. Additional model parameters are shown in table~\ref{tab:ex-gwf-mt3dms-p0101}.
+All four model scenarios have 101 columns, 1 row, and 1 layer. The first and last columns use constant-head boundaries to simulate steady flow in confined conditions. Because the analytical solution assumes an infinite 1-dimentional flow field, the last column is set far enough from the source to avoid interfering with the final solution after 2,000 days. Initially, the model domain is devoid of solute; however, the first column uses a constant concentration boundary condition to ensure that water entering the simulation has a unit concentration of 1. Additional model parameters are shown in table~\ref{tab:ex-gwt-mt3dms-p0101}.
 
 % add 2nd static parameter value table
 \begin{StandardTable}
 	{Hydraulic and transport model parameter values used in the one-dimensional transport in a uniform flow field problem.}
-	{tab:ex-gwf-mt3dms-p0101}
+	{tab:ex-gwt-mt3dms-p0101}
 	{../tables/ex-gwt-mt3dms-p0101}
 \end{StandardTable}
 
 % for examples without scenarios
 \subsection{Example Results}
 
-Currently no options are available with \mf for simulating solute transport using particle tracking methods [referred to as Method of Characteristics (MOC) in the MT3DMS manual \cite{zheng1999mt3dms}.  Thus, the \mf solution is compared to an MT3DMS solution that uses the third-order total variation diminishing (TVD) option for solving the advection-only problem rather than invoking one of the MOC options available within MT3DMS.  Owing to different approaches between the two codes, namely TVD scheme of  MT3DMS and the second-order approach of \mf, differences between the two solutions and reflected in figure~\ref{fig:ex-gwf-mt3d-p01a} are expected.  However, the differences are within acceptable tolerances.
+Currently no options are available with \mf for simulating solute transport using particle tracking methods [referred to as Method of Characteristics (MOC) in the MT3DMS manual \cite{zheng1999mt3dms}.  Thus, the \mf solution is compared to an MT3DMS solution that uses the third-order total variation diminishing (TVD) option for solving the advection-only problem rather than invoking one of the MOC options available within MT3DMS.  Owing to different approaches between the two codes, namely TVD scheme of  MT3DMS and the second-order approach of \mf, differences between the two solutions and reflected in figure~\ref{fig:ex-gwt-mt3d-p01a} are expected.  However, the differences are within acceptable tolerances.
 
 The comparison of the MT3DMS and\mf solutions for problem 1a, an advection dominated problem, represents an end-member test as the migrating concentration front is sharp (i.e., discontinuous). In technical terms, the grid Peclet number is infinity for this problem ($P_e$ = $v\Delta x/D_{xx}$ = $\Delta x$/$\alpha_L$ = $\infty$).
 
 % a figure
 \begin{StandardFigure}
 	{Comparison of the MT3DMS and \mf numerical solutions for a one-dimensional advection dominated test problem.  The analytical solution for this problem was originally given in \cite{vanGenuchtenAlves1982} and is not shown here}
-	{fig:ex-gwf-mt3d-p01a}{../figures/ex-gwf-mt3d-p01a}
+	{fig:ex-gwf-mt3d-p01a}{../figures/ex-gwt-mt3d-p01a}
 \end{StandardFigure}
 
-A comparison of MT3DMS and \mf for scenario 2 in the MT3DMS manual represents a more common situation whereby dispersion acts to spread or smooth the advancing concentration front.  For this problem, the dispersion term $\alpha_L$ is set equal to the length of the grid cell in the direction of flow, 10 cm, resulting in a Peclet number equal to one ($P_e$ = $v\Delta x/D_{xx} = 10/10 = 1$).  Owing to the presense of dispersion, the finite-difference solutions employed by both MT3DMS and \mf for this problem are more accurate, and as a result are in closer agreement (figure \ref{fig:ex-gwf-mt3d-p01b}).
+A comparison of MT3DMS and \mf for scenario 2 in the MT3DMS manual represents a more common situation whereby dispersion acts to spread or smooth the advancing concentration front.  For this problem, the dispersion term $\alpha_L$ is set equal to the length of the grid cell in the direction of flow, 10 cm, resulting in a Peclet number equal to one ($P_e$ = $v\Delta x/D_{xx} = 10/10 = 1$).  Owing to the presense of dispersion, the finite-difference solutions employed by both MT3DMS and \mf for this problem are more accurate, and as a result are in closer agreement (figure \ref{fig:ex-gwt-mt3d-p01b}).
 
 % a figure
 \begin{StandardFigure}
 	{Comparison of the MT3DMS and MODFLOW 6 numerical solutions for a one-dimensional test problem with dispersion ($\alpha_L$ = 10 $cm$).  The analytical solution for this problem was originally given in \cite{vanGenuchtenAlves1982} and is not shown here}
-	{fig:ex-gwf-mt3d-p01b}{../figures/ex-gwf-mt3d-p01b}
+	{fig:ex-gwt-mt3d-p01b}{../figures/ex-gwt-mt3d-p01b}
 \end{StandardFigure}
 
-The third comparison for the one-dimensional transport in a steady flow field includes uses the same dispersion specified for the second scenario, but adds retardation.  For this problem, retardation slows the advance of the migrating concentration front by simulating sorption of the dissolved solute onto the matrix material through which the fluid is moving. In this way, dissolved mass is transferred from the aqueous phase to the solid phase. Appropriate reaction package parameter values are determined for obtaining the specified retardation (5.0) within the code. Figure \ref{fig:ex-gwf-mt3d-p01c} shows a close match between MT3DMS and \mf. In addition, figure~\ref{fig:ex-gwf-mt3d-p01c} also shows that after 2,000 days, the concentration front did not advance as far as shown in figure~\ref{fig:ex-gwf-mt3d-p01b}.
+The third comparison for the one-dimensional transport in a steady flow field includes uses the same dispersion specified for the second scenario, but adds retardation.  For this problem, retardation slows the advance of the migrating concentration front by simulating sorption of the dissolved solute onto the matrix material through which the fluid is moving. In this way, dissolved mass is transferred from the aqueous phase to the solid phase. Appropriate reaction package parameter values are determined for obtaining the specified retardation (5.0) within the code. Figure \ref{fig:ex-gwt-mt3d-p01c} shows a close match between MT3DMS and \mf. In addition, figure~\ref{fig:ex-gwt-mt3d-p01c} also shows that after 2,000 days, the concentration front did not advance as far as shown in figure~\ref{fig:ex-gwt-mt3d-p01b}.
 
 % a figure
 \begin{StandardFigure}
 	{Comparison of the MT3DMS and \mf numerical solutions for a one-dimensional test problem with dispersion ($\alpha_L$ = 10 $cm$) and retardation ($R$ = $5.0$). The analytical solution for this problem was originally given in \cite{vanGenuchtenAlves1982} and is not shown here}
-	{fig:ex-gwf-mt3d-p01c}{../figures/ex-gwf-mt3d-p01c}
+	{fig:ex-gwt-mt3d-p01c}{../figures/ex-gwt-mt3d-p01c}
 \end{StandardFigure}
 
-The final comparison for the fourth scenario of problem 1 adds decay to the dispersion and retardation simulated in the third scenario. For this case, decay represents the irreversible loss of mass from both the aqueous and sorbed phases, further stunting the advance of the migrating concentration front \ref{fig:ex-gwf-mt3d-p01d}.  
+The final comparison for the fourth scenario of problem 1 adds decay to the dispersion and retardation simulated in the third scenario. For this case, decay represents the irreversible loss of mass from both the aqueous and sorbed phases, further stunting the advance of the migrating concentration front \ref{fig:ex-gwt-mt3d-p01d}.  
 
 % a figure
 \begin{StandardFigure}
 	{Comparison of the MT3DMS and MODFLOW 6 numerical solutions for a one-dimensional test problem with dispersion ($\alpha_L$ = 10 $cm$), retardation ($R$ = $5.0$) and decay ($\lambda$ = 0.002 $d^{-1}$).  The analytical solution for this problem was originally given in \cite{vanGenuchtenAlves1982} and is not shown here}
-	{fig:ex-gwf-mt3d-p01d}{../figures/ex-gwf-mt3d-p01d}
+	{fig:ex-gwt-mt3d-p01d}{../figures/ex-gwt-mt3d-p01d}
 \end{StandardFigure}
 
 

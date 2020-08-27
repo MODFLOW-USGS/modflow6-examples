@@ -1,0 +1,29 @@
+\section{Two-Dimensional Transport in a Uniform Flow Field (MT3DMS Example Problem 3)}
+
+The second example problem in \cite{zheng1999mt3dms} verifies accurate simulation of nonlinear and nonequilibrium sorption by comparing results to corresponding analytical solutions. As neither capability is included in the initial release of the transport process written for\mf, the next MT3DMS-\mf transport comparison is the third problem appearing in \cite{zheng1999mt3dms}, titled, "two-dimensional transport in a uniform flow field." In contrast to the first demonstrated test problem, transport is simulated in two dimensions with dispersion but no reactions. An analytical solution for this problem was originally published in \cite{wilson1978}. Two assumptions that make the analytical solution possible are that (1) the aquifer is areally infinite and relatively thin to support the assumption that instantaneous mixing occurs in the vertical direction, and (2) that compared to the ambient flow field, the injection rate is insignificant.  
+
+\subsection{Example description}
+
+Steady uniform flow enters the left edge of a numerical grid with 31 rows, 46 columns, and 1 layer through a constant head boundary and exits along the right edge. Constant heads are selected to ensure the hydraulic gradient matches with the analytical solution. The other boundaries are all no flow. Boundaries are sufficiently far away from the injection well where the contaminant is released so as not to interfere with the final solution after 365 days. Table~\ref{tab:ex-gwt-mt3dms-p0301} summarizes model setup:
+
+% add static parameter value table
+\begin{StandardTable}
+	{Hydraulic and transport model parameter values used in the two-dimensional transport in a uniform flow field problem.}
+	{tab:ex-gwt-mt3dms-p0301}
+	{../tables/ex-gwt-mt3dms-p0301}
+\end{StandardTable}
+
+After 365 days, the\mf solution aligns well with the MT3DMS solution \ref{fig:mt3dms_p03}. In addition to the good agreement that was seen in the first  MT3DMS test problem, the current comparison confirms that the lateral dispersion is accurately simulated within \mf.
+
+% MT3DMS manual figure 35
+%\begin{figure}
+%	\centering
+%	\includegraphics[width=0.8\textwidth]{../figures/p03mt3d-f1}
+%	\caption{Comparison of the MT3DMS and MODFLOW 6 numerical solutions for a two-dimensional transport in a uniform flow field problem. The analytical solution for this problem was originally given in \cite{wilson1978} and is not shown here} 
+%	\label{fig:mt3dms_p03}
+%\end{figure}
+
+\begin{StandardFigure}
+	{Comparison of the MT3DMS and \mf numerical solutions for a two-dimensional advection-dispersion test problem.  The analytical solution for this problem was originally given in \cite{wilson1978} and is not shown here}
+	{fig:ex-gwf-mt3d-p03}{../figures/ex-gwt-mt3dms-p03}
+\end{StandardFigure}
