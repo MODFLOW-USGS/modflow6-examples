@@ -1,13 +1,13 @@
-# ## Comparison of MF6 transport with MT3DMS Example Problem 10
+# ## One-Dimensional Transport in a Uniform Flow Field Comparison of MODFLOW 6 transport with MT3DMS
 #
 # The purpose of this script is to (1) recreate the example problems that were first
 # described in the 1999 MT3DMS report, and (2) compare MODFLOW 6-GWT solutions to the
 # established MT3DMS solutions.
 #
 # Ten example problems appear in the 1999 MT3DMS manual, starting on page 130.
-# This notebook demonstrates example 10 from the list below:
+# This notebook demonstrates example 1 from the list below:
 #
-#   1.  One-Dimensional Transport in a Uniform Flow Field,
+#   1.  *One-Dimensional Transport in a Uniform Flow Field*,
 #   2.  One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption,
 #   3.  Two-Dimensional Transport in a Uniform Flow Field,
 #   4.  Two-Dimensional Transport in a Diagonal Flow Field,
@@ -19,7 +19,7 @@
 #  10. Three-Dimensional Field Case Study.
 #
 
-# ### MODFLOW 6 GWT MT3DMS Example 10 Problem Setup
+# ### MODFLOW 6 GWT MT3DMS Example 1 Problem Setup
 
 # Imports
 import os
@@ -65,7 +65,7 @@ parameter_units = {"dispersivity": "$m$", "retardation": "unitless",
 length_units = "meters"
 time_units = "days"
 
-# Table MODFLOW 6 GWT MT3DMS Example 10
+# Table MODFLOW 6 GWT MT3DMS Example 1
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 ncol = 101  # Number of columns
@@ -119,7 +119,7 @@ npsink = nph  # HMOC
 tdis_rc = []
 tdis_rc.append((perlen, nstp, 1.0))
 
-# ### Create MODFLOW 6 GWT MT3DMS Example 10 Boundary Conditions
+# ### Create MODFLOW 6 GWT MT3DMS Example 1 Boundary Conditions
 #
 # Constant head cells are specified on both ends of the model
 chdspd = [[(0, 0, 0), h1], [(0, 0, ncol - 1), 0.0]]
@@ -127,7 +127,7 @@ c0 = 1.
 cncspd = [[(0, 0, 0), c0]]
 
 
-# ### Functions to build, write, run, and plot MODFLOW 6 GWT MT3DMS Example 10 model results
+# ### Functions to build, write, run, and plot MODFLOW 6 GWT MT3DMS Example 1 model results
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 def build_model(sim_name, dispersivity=0.0, retardation=0.0, decay=0., mixelm=0,

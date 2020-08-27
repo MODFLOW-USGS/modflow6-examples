@@ -21,11 +21,22 @@ jobs:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2
 
-      - name: Setup symbolic link to gfortran on Linux
+      - name: Output repo information
+        run: |
+          echo ${{ github.repository_owner }}
+          echo ${{ github.repository }}
+          echo ${{ github.ref }}
+
+      - name: Setup symbolic link to gfortran
         run: |
           sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran
           sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc
           sudo ln -fs /usr/bin/g++-9 /usr/local/bin/g++
+
+      - name: Install TeX Live and Additional TrueType Fonts
+        shell: bash
+        run: |
+          sudo apt install texlive-latex-extra texlive-science msttcorefonts
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
@@ -159,15 +170,8 @@ jobs:
                       )
               print(" ".join(args))
               os.system(" ".join(args))
-          # zip the input files
-          shutil.make_archive("modflow6-notebooks", "zip", output_pth)
 
-      - name: Install TeX Live
-        shell: bash
-        run: |
-          sudo apt install texlive-latex-extra texlive-science
-
-      - name: Build mf6examples latex document
+      - name: Build mf6examples LaTeX document
         shell: python
         run: |
           import sys
@@ -204,15 +208,22 @@ jobs:
           mv ./doc/mf6examples.pdf mf6examples.pdf
           ls -la ./
 
-      - name: Upload Build Artifacts
-        if: github.ref == 'refs/heads/master'
+      - name: Upload build artifacts for nightly release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
           name: nightly
           path: |
             ./mf6examples.pdf
             ./modflow6-examples.zip
-            ./modflow6-notebooks.zip
+
+      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
+        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v2
+        with:
+          name: notebooks-for-${{ github.sha }}
+          path: |
+            .docs/_notebooks
 
   # make the release if previous job was successful
   release:
@@ -220,7 +231,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.ref == 'refs/heads/master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
@@ -284,7 +295,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
 
-    if: github.ref == 'refs/heads/master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
       - name: Trigger RTDs build
         uses: dfm/rtds-action@v1.0.0
