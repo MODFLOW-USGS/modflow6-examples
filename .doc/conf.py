@@ -14,7 +14,7 @@ import os
 import pymake
 
 # -- processed notebook path -------------------------------------------------
-nb_pth = os.path.join("_notebooks")
+nb_pth = os.path.join("..", "notebooks")
 
 # -- download the completed notebooks -------------------------------------------------------
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
@@ -81,7 +81,7 @@ for idx, fpth in enumerate(nb_files):
     lines += "\nContents:\n\n"
     lines += "\n.. toctree::\n"
     lines += "   :maxdepth: 2\n\n"
-    lines += "   {}\n\n\n".format(fpth)
+    lines += "   {}\n\n\n".format(os.path.join("_notebooks", os.path.basename(fpth)))
     f.write(lines)
 f.close()
 
@@ -113,6 +113,14 @@ extensions = [
     "nbsphinx_link",
     "recommonmark",
 ]
+
+# Settings for GitHub actions integration
+if on_rtd:
+    extensions.append("rtds_action")
+    rtds_action_github_repo = "MODFLOW-USGS/modflow6-examples"
+    rtds_action_path = "_notebooks"
+    rtds_action_artifact_prefix = "notebooks-for-"
+    rtds_action_github_token = os.environ.get("GITHUB_TOKEN", None)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
