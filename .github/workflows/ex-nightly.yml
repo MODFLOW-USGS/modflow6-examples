@@ -211,7 +211,7 @@ jobs:
           ls -la ./
 
       - name: Upload Build Artifacts
-        if: github.repository_owner == 'MODFLOW-USGS'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
           name: nightly
@@ -226,7 +226,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
@@ -290,7 +290,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
       - name: Trigger RTDs build
         uses: dfm/rtds-action@v1.0.0
