@@ -21,6 +21,15 @@ jobs:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2
 
+      - name: Set repo information as environmental variables
+        run: |
+          echo "::set-env name=GH_OWNER::${{ github.repository_owner }}"
+          echo "::set-env name=GH_REPO::${{ github.repository }}"
+          echo "::set-env name=GH_REF::${{ github.ref }}"
+          echo $GH_OWNER
+          echo $GH_REPO
+          echo $GH_REF
+
       - name: Setup symbolic link to gfortran on Linux
         run: |
           sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran
@@ -220,7 +229,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.repository == 'MODFLOW-USGS/modflow6-examples'
+    if: github.repository_owner == 'MODFLOW-USGS'
     steps:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
@@ -284,7 +293,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
 
-    if: github.repository == 'MODFLOW-USGS/modflow6-examples'
+    if: github.repository_owner == 'MODFLOW-USGS'
     steps:
       - name: Trigger RTDs build
         uses: dfm/rtds-action@v1.0.0
