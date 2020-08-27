@@ -165,8 +165,6 @@ jobs:
                       )
               print(" ".join(args))
               os.system(" ".join(args))
-          # zip the input files
-          shutil.make_archive("modflow6-notebooks", "zip", output_pth)
 
       - name: Install TeX Live
         shell: bash
@@ -218,7 +216,14 @@ jobs:
           path: |
             ./mf6examples.pdf
             ./modflow6-examples.zip
-            ./modflow6-notebooks.zip
+
+      - name: Upload Completed jupyter notebooks as an artifact
+        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v2
+        with:
+          name: notebooks-for-${{ github.sha }}
+          path: |
+            .docs/_notebooks
 
   # make the release if previous job was successful
   release:
