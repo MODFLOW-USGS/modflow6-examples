@@ -50,7 +50,7 @@ strt = 0.0  # Starting head ($ft$)
 icelltype_str = "1, 0, 0"  # Cell conversion type
 k11_str = "1.0e-3, 1e-4, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
 k33 = 2.0e-8  # Vertical hydraulic conductivity ($ft/s$)
-recharge = 3e-8 # Recharge rate ($ft/s$)
+recharge = 3e-8  # Recharge rate ($ft/s$)
 
 # Static temporal data used by TDIS file
 tdis_ds = ((8.640e04, 1, 1.000e00),)
@@ -120,7 +120,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(sim)
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
@@ -134,9 +136,15 @@ def build_model():
             top=top,
             botm=botm,
         )
-        flopy.mf6.ModflowGwfnpf(gwf, cvoptions="perched", perched=True,
-                                icelltype=icelltype, k=k11, k33=k33,
-                                save_specific_discharge=True, )
+        flopy.mf6.ModflowGwfnpf(
+            gwf,
+            cvoptions="perched",
+            perched=True,
+            icelltype=icelltype,
+            k=k11,
+            k33=k33,
+            save_specific_discharge=True,
+        )
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
         flopy.mf6.ModflowGwfdrn(gwf, stress_period_data=drn_spd)
@@ -199,21 +207,28 @@ def plot_results(sim):
 
         # Create figure for simulation
         extents = (0, ncol * delc, 0, nrow * delr)
-        fig, axes = plt.subplots(2, 2, figsize=figure_size, dpi=300,
-                                 constrained_layout=True)
+        fig, axes = plt.subplots(
+            2, 2, figsize=figure_size, dpi=300, constrained_layout=True
+        )
         for ax in axes.flatten():
             ax.set_aspect("equal")
             ax.set_xlim(extents[:2])
             ax.set_ylim(extents[:2])
 
         for idx, ax in enumerate(axes.flatten()[:nlay]):
-            fmp = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=idx, extent=extents)
+            fmp = flopy.plot.PlotMapView(
+                model=gwf, ax=ax, layer=idx, extent=extents
+            )
             fmp.plot_grid(lw=0.5)
             plot_obj = fmp.plot_array(head, vmin=vmin, vmax=vmax)
             fmp.plot_bc("DRN", color="green")
             fmp.plot_bc("WEL", color="0.5")
-            cv = fmp.contour_array(head, levels=[-25, 0, 25, 75, 100], linewidths=0.5,
-                                   colors="black")
+            cv = fmp.contour_array(
+                head,
+                levels=[-25, 0, 25, 75, 100],
+                linewidths=0.5,
+                colors="black",
+            )
             plt.clabel(cv, fmt="%1.0f", fontsize=9)
             fmp.plot_specific_discharge(spdis, normalize=True, color="0.75")
             title = "Model Layer {}".format(idx + 1)
@@ -222,19 +237,47 @@ def plot_results(sim):
 
         # create legend
         ax = axes.flatten()[-1]
-        ax.axis('off')
-        ax.plot(-10000, -10000, lw=0, marker="s", ms=10, mfc="green", mec="green",
-                label="Drain")
-        ax.plot(-10000, -10000, lw=0, marker="s", ms=10, mfc="0.5", mec="0.5",
-                label="Well")
-        ax.plot(-10000, -10000, lw=0, marker=u"$\u2192$", ms=10, mfc="0.75", mec="0.75",
-                label="Normalized specific discharge")
-        ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
+        ax.axis("off")
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="green",
+            mec="green",
+            label="Drain",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="0.5",
+            mec="0.5",
+            label="Well",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker=u"$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        ax.plot(
+            -10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$"
+        )
         fs.graph_legend(ax, loc="center")
 
         # plot colorbar
         cax = plt.axes([0.6, 0.15, 0.35, 0.025])
-        cbar = plt.colorbar(plot_obj, shrink=0.8, orientation="horizontal", cax=cax)
+        cbar = plt.colorbar(
+            plot_obj, shrink=0.8, orientation="horizontal", cax=cax
+        )
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
 

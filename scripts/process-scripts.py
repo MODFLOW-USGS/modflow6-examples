@@ -2,7 +2,9 @@ import os
 
 # only process python files starting with ex_
 files = [
-    file for file in os.listdir() if file.endswith(".py") and file.startswith("ex-")
+    file
+    for file in os.listdir()
+    if file.endswith(".py") and file.startswith("ex-")
 ]
 
 
@@ -25,7 +27,9 @@ def make_notebooks():
         for idx, line in enumerate(lines):
             # exclude if __name__ == "main"
             if "if __name__" in line:
-                modifyIndent = len(lines[idx + 1]) - len(lines[idx + 1].lstrip(" "))
+                modifyIndent = len(lines[idx + 1]) - len(
+                    lines[idx + 1].lstrip(" ")
+                )
                 continue
 
             # exclude nosetest functions
@@ -52,7 +56,9 @@ def make_notebooks():
 
 def make_tables():
     for file in files:
-        basename = os.path.splitext(os.path.basename(file))[0].replace("_", "-")
+        basename = os.path.splitext(os.path.basename(file))[0].replace(
+            "_", "-"
+        )
         # do a little processing
         with open(file) as f:
             lines = f.read().splitlines()
@@ -62,7 +68,7 @@ def make_tables():
         tag = "parameters ="
         for idx, line in enumerate(lines):
             if line.lower().startswith(tag):
-                dict_str = line[len(tag) + 1:].strip()
+                dict_str = line[len(tag) + 1 :].strip()
                 for jdx in range(idx + 1, len(lines)):
                     if len(lines[jdx].strip()) < 1:
                         break
@@ -79,7 +85,7 @@ def make_tables():
             tag = "parameter_units ="
             for idx, line in enumerate(lines):
                 if line.lower().startswith(tag):
-                    dict_str = line[len(tag) + 1:].strip()
+                    dict_str = line[len(tag) + 1 :].strip()
                     for jdx in range(idx + 1, len(lines)):
                         if len(lines[jdx].strip()) < 1:
                             break
@@ -104,7 +110,7 @@ def make_tables():
                 scenario_count += 1
                 table_line = "{} & {} & ".format(scenario_count, scenario_name)
                 for text, value in value_dict.items():
-                    text_to_write = text.replace('_', '~')
+                    text_to_write = text.replace("_", "~")
                     units = ""
                     if parameter_units is not None:
                         try:
@@ -112,9 +118,13 @@ def make_tables():
                         except:
                             units = " (unknown)"
                     if len(table_line) > 0:
-                        table_line += "{}{} & {}".format(text_to_write, units, value)
+                        table_line += "{}{} & {}".format(
+                            text_to_write, units, value
+                        )
                     else:
-                        table_line = "& & {}{} & {}".format(text_to_write, units, value)
+                        table_line = "& & {}{} & {}".format(
+                            text_to_write, units, value
+                        )
                     table_line += " \\\\\n"
                     if len(row_color) > 0:
                         f.write(row_color)
@@ -130,7 +140,7 @@ def make_tables():
             table_text = []
             table_value = []
             if line.lower().startswith("# table"):
-                for table_line in lines[idx + 1:]:
+                for table_line in lines[idx + 1 :]:
                     # skip empty lines
                     if len(table_line.strip()) < 1:
                         continue
@@ -138,9 +148,11 @@ def make_tables():
                         break
                     ipos = table_line.find("# ")
                     if ipos > 0:
-                        table_text.append(table_line[ipos + 1:].strip())
+                        table_text.append(table_line[ipos + 1 :].strip())
                         table_value.append(
-                            _replace_quotes(table_line[0:ipos].split("=")[1].strip())
+                            _replace_quotes(
+                                table_line[0:ipos].split("=")[1].strip()
+                            )
                         )
             if len(table_text) > 0:
                 table_number += 1
