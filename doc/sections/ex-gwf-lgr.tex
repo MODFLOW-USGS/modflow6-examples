@@ -1,0 +1,27 @@
+\section{Multi-model Simulation with Local Grid Refinement (Example 3 in \cite{mehl2013}}
+
+
+In this example, two models are arranged in a nested parent-child grid setup, where the parent model uses a coarse grid that surrounds the finely-gridded child model (Figure~\ref{fig:mvr_lgr_planview}).  Parent-child model setups limit grid refinement to localized regions of interest within large model domains to keep model runtimes to a minimum.  Owing to the relative ease of setup for this type of model arrangement in \mf, particularly when developing a model (i.e., simulation) with a support utility like flopy \citep{bakker2016}, the use of multi-model arrangements necessitates a generalized supporting package like MVR to transfer water among features within a simulation.  To demonstrate, this example uses MVR to cascade streamflow from an upstream SFR reach in the parent model to a downstream SFR reach in the child model.  Further downstream MVR again cascades streamflow from the last child model SFR reach to the appropriate SFR reach in the parent model.  
+
+\begin{StandardFigure}
+	{Plan view of a three-dimensional aquifer system used to test the local grid refinement method in \mf. A 15$\times$15 horizontal grid discretization is shown for the parent grid and the locally refined grid (15$\times$18) spacing is equivalent to a 45$\times$45 discretization over the whole domain.  Two between-model MVR connections are invoked for the SFR packages (parent and child) where the river crosses between domains}
+	{fig:mvr_lgr_planview}{../images/mvr_lgr_planview}
+\end{StandardFigure}
+
+\subsection{Example description}
+
+The parent model is 15 rows by 15 columns by 3 layers with the child model occupying a 5 row by 6 column by 2 layer portion of the parent grid as shown in figure~\ref{fig:mvr_lgr_planview}.  The child model applies a 3:1 refinement to each parent grid cell, including in the vertical direction, resulting in a 15 row by 18 column by 6 layer child model.  In this way, each parent grid cell is replaced by 27 ($3^3$) child model grid cells.  Aquifer properties are uniform and equal throughout both model domains.  Interested readers are referred to \cite{mehl2013} for additional model details.  
+
+% add static parameter value table
+\begin{StandardTable}
+	{Hydraulic model parameter values used in the local-grid refinement example problem.}
+	{tab:ex-gwf-lgr01.tex}
+	{../tables/ex-gwf-lgr01.tex}
+\end{StandardTable}
+
+Figure~\ref{fig:ex-gwf-lgr} demonstrates that both MVR connections transfer streamflow to the appropriate stream reach in the receiving downstream model.  This is evidenced by the continuous and smooth downward trend in streamflow at the first MVR connection as well as by the uninterrupted upward trend in streamflow at the second MVR connection.  
+
+\begin{StandardFigure}
+	{Simulated streamflow and groundwater surface-water exchange for each stream reach in figure~\ref{fig:mvr_lgr_planview}.  The transfer of water between adjacent stream reaches in the parent versus child models occurs at locations identified by the vertical black lines on the plot. Bar widths are indicative of the relative stream reach lengths within the host grid cell (figure \ref{fig:mvr_lgr_planview}).}
+	{fig:ex-gwf-lgr}{../figures/ex-gwf-lgr}
+\end{StandardFigure}
