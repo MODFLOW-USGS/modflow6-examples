@@ -1,3 +1,18 @@
+LGR example with MVR for SFR between two models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+This script reproduces the model in Mehl and Hill (2013).
+
+Contents:
+
+
+.. toctree::
+   :maxdepth: 2
+
+   _notebooks/ex-gwf-lgr.ipynb
+
+
 Original TWRI MODFLOW example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

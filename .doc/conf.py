@@ -11,21 +11,15 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import pymake
 
-# -- processed notebook path -------------------------------------------------
-nb_pth = os.path.join("..", "notebooks")
-
-# -- download the completed notebooks -------------------------------------------------------
+# -- set boolean indicating if running on readthedocs server -----------------
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-if on_rtd:
-    key = "modflow6-notebooks.zip"
-    url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-examples")[key]
-    pymake.download_and_unzip(url, nb_pth, verbose=True)
 
-# -- get list of notebooks ---------------------------------------------------
-nb_files = [os.path.join(nb_pth, file_name) for file_name in sorted(os.listdir(nb_pth))
-            if file_name.endswith(".ipynb")]
+# -- convert the tutorial scripts -------------------------------------------
+if not on_rtd:
+    cmd = ("python", "test_build.py")
+    print(" ".join(cmd))
+    os.system(" ".join(cmd))
 
 # -- get list of python files ------------------------------------------------
 pth = os.path.join("..", "scripts")
@@ -71,6 +65,13 @@ for idx, fpth in enumerate(py_files):
         if len(line) > 0:
             intro.append(line)
     intro_text.append(intro)
+
+# -- path to original notebooks ----------------------------------------------
+nb_pth = os.path.join("..", "notebooks")
+
+# -- get list of notebooks ---------------------------------------------------
+nb_files = [os.path.join(nb_pth, file_name) for file_name in sorted(os.listdir(nb_pth))
+            if file_name.endswith(".ipynb")]
 
 # -- Build examples.rst for notebooks to .doc --------------------------------
 f = open("examples.rst", "w")
