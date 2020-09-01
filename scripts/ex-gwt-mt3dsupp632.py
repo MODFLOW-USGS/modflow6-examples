@@ -123,8 +123,8 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwfic(gwf, strt=1.0)
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=[[(0, 0, ncol - 1), 1.0]])
     wel_spd = {
-        0: [[(0, 0, 0), specific_discharge * delc * delr * top]],
-        1: [[(0, 0, 0), specific_discharge * delc * delr * top]],
+        0: [[(0, 0, 0), specific_discharge * delc * top]],
+        1: [[(0, 0, 0), specific_discharge * delc * top]],
     }
     flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, pname="WEL-1")
     head_filerecord = "{}.hds".format(name)
@@ -255,8 +255,8 @@ def build_mf2005(sim_folder):
         mf, stress_period_data=[[0, 0, ncol - 1, 1.0, 1.0]]
     )
     wel_spd = {
-        0: [[0, 0, 0, specific_discharge * delc * delr * top]],
-        1: [[0, 0, 0, specific_discharge * delc * delr * top]],
+        0: [[0, 0, 0, specific_discharge * delc * top]],
+        1: [[0, 0, 0, specific_discharge * delc * top]],
     }
     wel = flopy.modflow.ModflowWel(mf, stress_period_data=wel_spd)
     return mf
@@ -411,7 +411,7 @@ def plot_results():
                 label="Scenario {}".format(icase + 1),
             )
 
-        axs.set_ylim(0, 8)
+        axs.set_ylim(0, 16)
         axs.set_xlabel("Time (days)")
         axs.set_ylabel("Normalized Concentration (unitless)")
         axs.legend()
