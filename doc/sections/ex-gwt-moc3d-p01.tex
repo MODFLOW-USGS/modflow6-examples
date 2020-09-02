@@ -1,0 +1,56 @@
+\section{One-Dimensional Steady Flow with Transport (MOC3D Problem 1)}
+
+% Describe source of problem
+This problem corresponds to the first problem presented in the MOC3D report \cite{konikow1996three}, which involves the transport of a dissolved constituent in a steady, one-dimensional flow field.  An analytical solution for this problem is given by \cite{wexler1992}.  This example is simulated with the GWT Model in \mf, which receives flow information from a separate simulation with the GWF Model in \mf.  Results from the GWT Model are compared with the results from the \cite{wexler1992} analytical solution.  
+
+\subsection{Example description}
+
+The parameters used for this problem are listed in table~\ref{tab:ex-gwt-moc3d-p0101}.  The model grid for this problem consists of one layer, 120 rows, and 1 columns.  The top for each cell is assigned a value of 1.0 $cm$ and the bottom is assigned a value of zero.  DELR is set to 1.0 $cm$ and DELC is specified with a constant value of 0.1 $cm$.  The simulation consists of one stress period that is 120 $s$ in length, and the stress period is divided into 240 equally sized time steps.  By using a uniform porosity value of 0.1, a velocity value of 0.1 $cm/s$ results from the injection of water at a rate of 0.001 $cm^3/s$ into the first cell.  The last cell is assigned a constant head with a value of zero, though this value is not important as the cells are marked as being confined.  The concentration of the injected water is assigned a value of 1.0, and any water that leaves through the constant-head cell leaves with the simulated concentration of the water in that last cell.   Advection is solved using the TVD scheme to reduce numerical dispersion.
+
+% add static parameter table(s)
+\begin{StandardTable}{Parameters used for the example of one-dimensional flow with transport (MOC3D Problem 1 model parameters).}{tab:ex-gwt-moc3d-p0101}{../tables/ex-gwt-moc3d-p0101}
+\end{StandardTable}
+
+% for examples with scenarios
+\subsection{Example Scenarios}
+
+This example problem consists of several different scenarios, as listed in table~\ref{tab:ex-gwt-moc3d-p01-scenario}.  The first two scenarios represent different dispersion coefficients.
+
+% add scenario table
+\begin{ScenarioTable}{
+                                   Parameters used for the scenarios of one-dimensional flow with transport (MOC3D Problem 1 model parameters).
+                                   }{tab:ex-gwt-moc3d-p01-scenario}{../tables/ex-gwt-moc3d-p01-scenario}
+\end{ScenarioTable}
+
+\subsubsection{Scenario Results}
+
+%Scenario 1
+For the first scenario with a relatively small dispersivity value (0.1 $cm$), plots of concentration versus time and concentration versus distance are shown in figures~\ref{fig:ex-gwt-moc3dp1a-ct} and ~\ref{fig:ex-gwt-moc3dp1a-cd}, respectively.
+
+% a figure
+\begin{StandardFigure}{
+                                     Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport.  Circles are for the GWT Model results; the lines represent the analytical solution.
+                                     }{fig:ex-gwt-moc3dp1a-ct}{ex-gwt-moc3dp1a-ct}
+\end{StandardFigure}            
+
+% a figure
+\begin{StandardFigure}{
+                                     Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport.  Circles are for the GWT Model results; the lines represent the analytical solution.
+                                     }{fig:ex-gwt-moc3dp1a-cd}{ex-gwt-moc3dp1a-cd}
+\end{StandardFigure}            
+
+%Scenario 2
+For the first scenario with a relatively large dispersivity value (1.0 $cm$), plots of concentration versus time and concentration versus distance are shown in figures~\ref{fig:ex-gwt-moc3dp1b-ct} and ~\ref{fig:ex-gwt-moc3dp1b-cd}, respectively.
+
+% a figure
+\begin{StandardFigure}{
+                                     Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport.  Circles are for the GWT Model results; the lines represent the analytical solution.
+                                     }{fig:ex-gwt-moc3dp1b-ct}{ex-gwt-moc3dp1b-ct}
+\end{StandardFigure}            
+
+% a figure
+\begin{StandardFigure}{
+                                     Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport.  Circles are for the GWT Model results; the lines represent the analytical solution.
+                                     }{fig:ex-gwt-moc3dp1b-cd}{ex-gwt-moc3dp1b-cd}
+\end{StandardFigure}            
+

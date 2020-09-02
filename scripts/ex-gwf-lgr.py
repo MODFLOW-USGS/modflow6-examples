@@ -522,6 +522,7 @@ sfrspdc = {0: [[0, "INFLOW", 0.0]]}
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
+
 def build_model(sim_name, silent=False):
     if config.buildModel:
 
@@ -846,12 +847,14 @@ def build_model(sim_name, silent=False):
 
 # Function to write model files
 
+
 def write_model(sim, silent=True):
     if config.writeModel:
         sim.write_simulation(silent=silent)
 
 
 # Function to run the model. True is returned if the model runs successfully
+
 
 def run_model(sim, silent=True):
     success = True
@@ -864,6 +867,7 @@ def run_model(sim, silent=True):
 
 
 # Function to plot the model results
+
 
 def plot_results(mf6, idx):
     if config.plotModel:
@@ -1116,6 +1120,7 @@ def plot_results(mf6, idx):
 # 3. run_model, and
 # 4. plot_results.
 #
+
 
 def scenario(idx):
     sim = build_model(example_name)

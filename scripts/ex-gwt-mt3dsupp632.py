@@ -215,9 +215,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obsj = int(obs_xloc / delr) + 1
     obs_data = {
-        "{}.obs.csv".format(name): [
-            ("myobs", "CONCENTRATION", (0, 0, obsj)),
-        ],
+        "{}.obs.csv".format(name): [("myobs", "CONCENTRATION", (0, 0, obsj)),],
     }
     obs_package = flopy.mf6.ModflowUtlobs(
         gwt, digits=10, print_input=True, continuous=obs_data
@@ -380,7 +378,7 @@ def plot_results():
 
         fs = USGSFigure(figure_type="graph", verbose=False)
         fig, axs = plt.subplots(
-            1, 1, figsize=(4, 3), dpi=300, tight_layout=True
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
 
         case_colors = ["blue", "green", "red"]
@@ -438,14 +436,21 @@ def plot_scenario_results(sims, idx):
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
-        axs.plot(mf6gwt_ra["time"], mf6gwt_ra["MYOBS"], label="MODFLOW 6 GWT")
+        axs.plot(mf6gwt_ra["time"], mf6gwt_ra["MYOBS"],
+                 markerfacecolor="None",
+                 markeredgecolor="b",
+                 marker="o",
+                 markersize="4",
+                 linestyle="None",
+                 label="MODFLOW 6 GWT")
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.OBS")
         mt3dms_ra = sim_mt3dms.load_obs(fname)
         axs.plot(
             mt3dms_ra["time"],
             mt3dms_ra["(1, 1, 82)"],
-            linestyle="--",
+            linestyle="-",
+            color='k',
             label="MT3DMS",
         )
         axs.legend()
@@ -502,20 +507,29 @@ def test_plot_results():
 if __name__ == "__main__":
     # ### Case 1
     #
-    # Describe this case.
+    # ex-gwt-mt3dsupp632a
+    # * distribution_coefficient = 0.25
+    # * decay = 0.0
+    # * decay_sorbed = -1.0e-3
     scenario(0)
 
     # ### Case 2
     #
-    # Describe this case.
+    # ex-gwt-mt3dsupp632a
+    # * distribution_coefficient = 0.25
+    # * decay = -5.e-4
+    # * decay_sorbed = -5.e-4
     scenario(1)
 
     # ### Case 3
     #
-    # Describe this case.
+    # ex-gwt-mt3dsupp632a
+    # * distribution_coefficient = 0.
+    # * decay = -1.0e-3
+    # * decay_sorbed = 0.
     scenario(2)
 
     # ### Plot the Zero-Order Production in a Dual-Domain System Problem results
     #
-    # Describe the plot
+    # Plot the results for all 3 scenarios in one plot
     plot_results()

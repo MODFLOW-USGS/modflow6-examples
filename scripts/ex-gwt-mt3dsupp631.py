@@ -21,7 +21,7 @@ import config
 from figspecs import USGSFigure
 
 # Set figure properties specific to the
-figure_size = (3, 3)
+figure_size = (5, 3)
 
 # Base simulation and model name and workspace
 ws = config.base_ws
@@ -153,9 +153,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obsj = int(obs_xloc / delr) + 1
     obs_data = {
-        "{}.obs.csv".format(name): [
-            ("myobs", "CONCENTRATION", (0, 0, obsj)),
-        ],
+        "{}.obs.csv".format(name): [("myobs", "CONCENTRATION", (0, 0, obsj)),],
     }
     obs_package = flopy.mf6.ModflowUtlobs(
         gwt, digits=10, print_input=True, continuous=obs_data
@@ -288,7 +286,14 @@ def plot_results(sims, idx):
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
-        axs.plot(mf6gwt_ra["time"], mf6gwt_ra["MYOBS"], label="MODFLOW 6 GWT")
+        axs.plot(mf6gwt_ra["time"], mf6gwt_ra["MYOBS"],
+                 marker="o",
+                 ls="none",
+                 mec="blue",
+                 mfc="none",
+                 markersize="4",
+                 label="MODFLOW 6 GWT")
+
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.OBS")
         mt3dms_ra = sim_mt3dms.load_obs(fname)
@@ -296,7 +301,8 @@ def plot_results(sims, idx):
         axs.plot(
             mt3dms_ra["time"],
             mt3dms_ra[colname],
-            linestyle="--",
+            linestyle="-",
+            color='k',
             label="MT3DMS",
         )
         axs.set_xlabel("Time (days)")
