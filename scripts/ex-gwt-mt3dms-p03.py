@@ -220,7 +220,7 @@ def build_model(sim_name, mixelm=0, silent=False):
         flopy.mt3d.Mt3dGcg(mt, mxiter=10)
 
         # MODFLOW 6
-        name = "p01_mf6"
+        name = "p03_mf6"
         gwfname = "gwf_" + name
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
