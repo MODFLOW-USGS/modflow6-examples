@@ -534,7 +534,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         # save figure
         if config.plotSave:
             fpth = os.path.join(
-                "..", "figures", "{}{}".format(sim_name + "_xsec", config.figure_ext)
+                "..", "figures", "{}{}".format(sim_name + "-xsec", config.figure_ext)
             )
             fig.savefig(fpth)
         
@@ -574,7 +574,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         # save figure
         if config.plotSave:
             fpth = os.path.join(
-                "..", "figures", "{}{}".format(sim_name + "_planView", config.figure_ext)
+                "..", "figures", "{}{}".format(sim_name + "-planView", config.figure_ext)
             )
             fig.savefig(fpth)
 
