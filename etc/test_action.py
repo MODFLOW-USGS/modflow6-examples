@@ -120,6 +120,7 @@ if os.path.isdir(copy_pth):
 # -- copy executed notebooks to ./_notebooks ---------------------------------
 print("copy files in {} -> {}".format(dst_pth, copy_pth))
 shutil.copytree(dst_pth, copy_pth)
+
 # -- clean up (remove) dst_pth directory -------------------------------------
 print("clean up {}".format(dst_pth))
 shutil.rmtree(dst_pth)
