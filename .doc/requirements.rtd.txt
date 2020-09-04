@@ -3,4 +3,3 @@ nbsphinx_link
 ipython
 ipykernel
 rtds_action
-git+https://github.com/pandas-dev/pydata-sphinx-theme.git@master
