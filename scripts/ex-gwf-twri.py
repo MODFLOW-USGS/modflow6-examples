@@ -8,36 +8,45 @@
 # ### TWRI Problem Setup
 #
 # Imports
+
 import os
 import sys
 import matplotlib.pyplot as plt
 import flopy
 
 # Append to system path to include the common subdirectory
+
 sys.path.append(os.path.join("..", "common"))
 
 # import common functionality
+
 import config
 from figspecs import USGSFigure
 
 # Set figure properties specific to the
+
 figure_size = (6, 6)
 
 # Base simulation and model name and workspace
+
 ws = config.base_ws
 
 # Simulation name
+
 sim_name = "ex-gwf-twri01"
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
+
 parameter_units = {"recharge": "$ft/s$"}
 
 # Model units
+
 length_units = "feet"
 time_units = "seconds"
 
 # Table TWRI Model Parameters
+
 nper = 1  # Number of periods
 nlay = 3  # Number of layers
 ncol = 15  # Number of columns
@@ -53,9 +62,11 @@ k33 = 2.0e-8  # Vertical hydraulic conductivity ($ft/s$)
 recharge = 3e-8  # Recharge rate ($ft/s$)
 
 # Static temporal data used by TDIS file
+
 tdis_ds = ((8.640e04, 1, 1.000e00),)
 
 # parse parameter strings into tuples
+
 botm = tuple([float(value) for value in botm_str.split(",")])
 k11 = tuple([float(value) for value in k11_str.split(",")])
 icelltype = tuple([int(value) for value in icelltype_str.split(",")])
@@ -65,6 +76,7 @@ icelltype = tuple([int(value) for value in icelltype_str.split(",")])
 # Constant head cells are specified on the west edge of the model
 # in model layers 1 and 2 `(k, i, j)` = $(1 \rightarrow 2, 1 \rightarrow 15, 1)$
 #
+
 chd_spd = []
 for k in range(2):
     chd_spd += [[(k, i, 0), 0.0] for i in range(nrow)]
@@ -72,6 +84,7 @@ chd_spd = {0: chd_spd}
 
 # Well boundary conditions
 #
+
 wel_spd = {
     0: [
         [(2, 4, 10), -5.0],
@@ -94,6 +107,7 @@ wel_spd = {
 
 # Drain boundary conditions
 #
+
 drn_spd = {
     0: [
         [(0, 7, 1), 0.0, 1.0e0],
@@ -114,6 +128,7 @@ drn_spd = {
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 # recharge is the only variable
 #
+
 def build_model():
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
@@ -163,6 +178,7 @@ def build_model():
 
 
 # Function to write MODFLOW 6 TWRI model files
+
 def write_model(sim, silent=True):
     if config.writeModel:
         sim.write_simulation(silent=silent)
@@ -171,6 +187,7 @@ def write_model(sim, silent=True):
 # Function to run the TWRI model.
 # True is returned if the model runs successfully
 #
+
 def run_model(sim, silent=True):
     success = True
     if config.runModel:
@@ -182,6 +199,7 @@ def run_model(sim, silent=True):
 
 # Function to plot the TWRI model results.
 #
+
 def plot_results(sim):
     if config.plotModel:
         fs = USGSFigure(figure_type="map", verbose=False)
@@ -296,6 +314,7 @@ def plot_results(sim):
 # 3. run_model, and
 # 4. plot_results.
 #
+
 def simulation(silent=True):
     sim = build_model()
 
@@ -306,12 +325,9 @@ def simulation(silent=True):
     if success:
         plot_results(sim)
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     simulation(silent=False)
-
-
 # nosetest end
 
 if __name__ == "__main__":
@@ -322,4 +338,5 @@ if __name__ == "__main__":
     # The location of drain (green) and (gray) well boundary conditions, normalized
     # specific discharge, and head contours (25 ft contour intervals) are also shown.
     #
+
     simulation()

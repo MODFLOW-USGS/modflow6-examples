@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: nightly-build
+    name: latest-build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -139,37 +139,45 @@ jobs:
           python process-scripts.py
           cd ..
 
-      - name: Run notebooks with nbconvert
+      - name: Run notebooks with jupytext
         shell: python
         run: |
           import os
           import shutil
           # get list of notebooks
-          pth = os.path.join("notebooks")
-          nb_files = [os.path.join(pth, file_name)
-                      for file_name in sorted(os.listdir(pth))
+          src_pth = os.path.join("notebooks")
+          nb_files = [file_name
+                      for file_name in sorted(os.listdir(src_pth))
                       if file_name.endswith(".ipynb")]
           # create temporary directory
-          output_pth = os.path.join(".docs", "_notebooks")
-          if os.path.isdir(output_pth):
-              shutil.rmtree(output_pth)
+          dst_pth = os.path.join(".nb")
+          if os.path.isdir(dst_pth):
+              shutil.rmtree(dst_pth)
           os.makedirs(output_pth)
           # run the notebooks
-          for fpth in nb_files:
-              args = ("jupyter",
-                      "nbconvert",
-                      "--ExecutePreprocessor.timeout=600",
-                      "--to",
-                      "notebook",
-                      "--execute",
-                      fpth,
-                      "--output-dir",
-                      output_pth,
-                      "--output",
-                      os.path.basename(fpth)
-                      )
-              print(" ".join(args))
-              os.system(" ".join(args))
+          for file_name in nb_files:
+              src = os.path.join(src_pth, file_name)
+              dst = os.path.join(dst_pth, file_name)
+              arg = ("jupytext",
+                     "--to ipynb",
+                     "--from ipynb",
+                     "--execute",
+                     "-o",
+                     dst,
+                     src)
+              print(" ".join(arg))
+              os.system(" ".join(arg))
+          # -- remove ./_notebooks if it exists ----------------------------------------
+          copy_pth = os.path.join(".doc", "_notebooks")
+          print("clean up {}".format(copy_pth))
+          if os.path.isdir(copy_pth):
+              shutil.rmtree(copy_pth)
+          # -- copy executed notebooks to ./_notebooks ---------------------------------
+          print("copy files in {} -> {}".format(dst_pth, copy_pth))
+          shutil.copytree(dst_pth, copy_pth)
+          # -- clean up (remove) dst_pth directory -------------------------------------
+          print("clean up {}".format(dst_pth))
+          shutil.rmtree(dst_pth)
 
       - name: Build mf6examples LaTeX document
         shell: python
@@ -180,15 +188,15 @@ jobs:
           ws = "./doc/"
           bibnam = "mf6examples"
           texnam = bibnam + ".tex"
-          cmds = [
-                  ["pdflatex", texnam],
-                  ["bibtex", bibnam],
-                  ["pdflatex", texnam],
-                  ["pdflatex", texnam],
-                 ]
-          for cmd in cmds:
-              print("running command...'{}'".format(" ".join(cmd)))
-              with subprocess.Popen(cmd,
+          args = (
+                  ("pdflatex", texnam),
+                  ("bibtex", bibnam),
+                  ("pdflatex", texnam),
+                  ("pdflatex", texnam),
+                 )
+          for arg in args:
+              print("running command...'{}'".format(" ".join(arg)))
+              with subprocess.Popen(arg,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT,
                                     cwd=ws) as process:
@@ -208,17 +216,17 @@ jobs:
           mv ./doc/mf6examples.pdf mf6examples.pdf
           ls -la ./
 
-      - name: Upload build artifacts for nightly release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+      - name: Upload build artifacts for latest release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
-          name: nightly
+          name: latest
           path: |
             ./mf6examples.pdf
             ./modflow6-examples.zip
 
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
-        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: notebooks-for-${{ github.sha }}
@@ -227,49 +235,29 @@ jobs:
 
   # make the release if previous job was successful
   release:
-    name: Make a nightly release
+    name: Make the release
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
         with:
-          name: nightly
-          path: ./nightly/
+          name: latest
+          path: ./latest/
 
       - name: List files in the artifact directory
         shell: bash
         run: |
           pwd
-          ls -l ./nightly/
-
-      - name: Get Current Time
-        uses: 1466587594/get-current-time@v1.0.0
-        id: current-time
-        with:
-          format: YYYYMMDD
-
-      - name: Use current time
-        env:
-          TIME: "${{ steps.current-time.outputs.time }}"
-          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
-        run: echo $TIME $F_TIME
-
-      - name: Delete Older Releases
-        uses: dev-drprasad/delete-older-releases@v0.1.0
-        with:
-          keep_latest: 30
-          delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ls -l ./latest/
 
       - name: Create a Release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ steps.current-time.outputs.formattedTime }}
-          name: ${{ steps.current-time.outputs.formattedTime }} nightly build
+          tag: latest
+          name: latest build
           body: "MODFLOW 6 examples"
           allowUpdates: true
           draft: false
@@ -279,15 +267,15 @@ jobs:
         uses: svenstaro/upload-release-action@2.0.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./nightly/*
-          tag: ${{ steps.current-time.outputs.formattedTime }}
+          file: ./latest/*
+          tag: latest
           overwrite: true
           file_glob: true
 
       - name: Delete Artifact
         uses: GeekyEggo/delete-artifact@v1.0.0
         with:
-          name: nightly
+          name: latest
 
   # trigger rtd if previous job was successful
   rtd:
@@ -295,7 +283,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Trigger RTDs build
         uses: dfm/rtds-action@v1.0.0

@@ -8,6 +8,7 @@
 # ### One-Dimensional Steady Flow with Transport Problem Setup
 
 # Imports
+
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -15,9 +16,11 @@ import flopy
 import numpy as np
 
 # Append to system path to include the common subdirectory
+
 sys.path.append(os.path.join("..", "common"))
 
 # Import common functionality
+
 import analytical
 import config
 from figspecs import USGSFigure
@@ -27,13 +30,16 @@ exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 
 # Set figure properties specific to this problem
+
 figure_size = (5, 3)
 
 # Base simulation and model name and workspace
+
 ws = config.base_ws
 example_name = "ex-gwt-moc3dp1"
 
 # Scenario parameters - make sure there is at least one blank line before next item
+
 parameters = {
     "ex-gwt-moc3dp1a": {"longitudinal_dispersivity": 0.1,},
     "ex-gwt-moc3dp1b": {"longitudinal_dispersivity": 1.0,},
@@ -41,15 +47,18 @@ parameters = {
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
+
 parameter_units = {
     "longitudinal_dispersivity": "$cm$",
 }
 
 # Model units
+
 length_units = "cm"
 time_units = "seconds"
 
 # Table of model parameters
+
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -70,6 +79,7 @@ initial_concentration = 0.0  # Initial concentration (unitless)
 #
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 #
+
 def build_mf6gwf(sim_folder):
     print("Building mf6gwf model...{}".format(sim_folder))
     name = "flow"
@@ -129,6 +139,7 @@ def build_mf6gwf(sim_folder):
     return sim
 
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
+
 def build_mf6gwt(sim_folder, longitudinal_dispersivity):
     print("Building mf6gwt model...{}".format(sim_folder))
     name = "trans"
@@ -196,6 +207,7 @@ def build_model(sim_name, longitudinal_dispersivity):
 
 
 # Function to write model files
+
 def write_model(sims, silent=True):
     if config.writeModel:
         sim_mf6gwf, sim_mf6gwt = sims
@@ -206,6 +218,7 @@ def write_model(sims, silent=True):
 
 # Function to run the model
 # True is returned if the model runs successfully
+
 def run_model(sims, silent=True):
     success = True
     if config.runModel:
@@ -221,6 +234,7 @@ def run_model(sims, silent=True):
 
 
 # Function to plot the model results
+
 def plot_results_ct(sims, idx, longitudinal_dispersivity):
     if config.plotModel:
         print("Plotting C versus t model results...")
@@ -363,6 +377,7 @@ def plot_results_cd(sims, idx, longitudinal_dispersivity):
 # 3. run_model, and
 # 4. plot_results.
 #
+
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
@@ -373,21 +388,21 @@ def scenario(idx, silent=True):
         plot_results_ct(sims, idx, **parameter_dict)
         plot_results_cd(sims, idx, **parameter_dict)
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
 
-
 def test_02():
     scenario(1, silent=False)
-
-
 # nosetest end
 
 if __name__ == "__main__":
     # ### Simulated Zero-Order Growth in a Uniform Flow Field
-    #
-    # Scenarios
+
+    # Scenario 1 - description
+
     scenario(0)
+
+    # Scenario 2 - description
+
     scenario(1)

@@ -7,27 +7,29 @@
 # Ten example problems appear in the 1999 MT3DMS manual, starting on page 130.  This
 # notebook demonstrates example 10 from the list below:
 #
-#   1. One-Dimensional Transport in a Uniform Flow Field
-#   2. One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption
-#   3. **Two-Dimensional Transport in a Uniform Flow Field**
-#   4. Two-Dimensional Transport in a Diagonal Flow Field
-#   5. Two-Dimensional Transport in a Radial Flow Field
-#   6. Concentration at an Injection/Extraction Well
-#   7. Three-Dimensional Transport in a Uniform Flow Field
-#   8. Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer
-#   9. Two-Dimensional Application Example
+#   1.  One-Dimensional Transport in a Uniform Flow Field
+#   2.  One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption
+#   3.  **Two-Dimensional Transport in a Uniform Flow Field**
+#   4.  Two-Dimensional Transport in a Diagonal Flow Field
+#   5.  Two-Dimensional Transport in a Radial Flow Field
+#   6.  Concentration at an Injection/Extraction Well
+#   7.  Three-Dimensional Transport in a Uniform Flow Field
+#   8.  Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer
+#   9.  Two-Dimensional Application Example
 #   10. Three-Dimensional Field Case Study
 
 
 # ### MODFLOW 6 GWT MT3DMS Example 3 Problem Setup
 
 # Append to system path to include the common subdirectory
+
 import os
 import sys
 
 sys.path.append(os.path.join("..", "common"))
 
 # Imports
+
 import matplotlib.pyplot as plt
 import flopy
 import numpy as np
@@ -41,17 +43,21 @@ exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 
 # Set figure properties specific to this problem
+
 figure_size = (6, 4.5)
 
 # Base simulation and model name and workspace
+
 ws = config.base_ws
 example_name = "ex-gwt-mt3dms-p03"
 
 # Model units
+
 length_units = "meters"
 time_units = "days"
 
 # Table
+
 nlay = 1  # Number of layers
 nrow = 31  # Number of rows
 ncol = 46  # Number of columns
@@ -68,6 +74,7 @@ al = 10.0  # Longitudinal dispersivity ($m$)
 trpt = 0.3  # Ratio of transverse to longitudinal dispersivity
 
 # Additional model input
+
 perlen = [1, 365.0]
 nper = len(perlen)
 nstp = [2, 730]
@@ -84,6 +91,7 @@ k33 = k11  # Vertical hydraulic conductivity ($m/d$)
 icelltype = 0
 
 # Initial conditions
+
 Lx = (ncol - 1) * delr
 v = 1.0 / 3.0
 prsity = 0.3
@@ -106,6 +114,7 @@ spd_mf6 = {0: [[(0, 15, 15), qwell, cwell]]}  # MF6 pumping information
 
 
 # Set solver parameter values (and related)
+
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-6, 1e-6, 1.0
 ttsmult = 1.0
@@ -123,6 +132,7 @@ nlsink = nplane  # HMOC
 npsink = nph  # HMOC
 
 # Static temporal data used by TDIS file
+
 tdis_rc = []
 tdis_rc.append((perlen, nstp, 1.0))
 
@@ -130,6 +140,7 @@ tdis_rc.append((perlen, nstp, 1.0))
 # ### Functions to build, write, and run models and plot MT3DMS Example 10 Problem results
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
+
 def build_model(sim_name, mixelm=0, silent=False):
     if config.buildModel:
 
@@ -463,6 +474,7 @@ def build_model(sim_name, mixelm=0, silent=False):
 
 
 # Function to write model files
+
 def write_model(mf2k5, mt3d, sim, silent=True):
     if config.writeModel:
         mf2k5.write_input()
@@ -471,6 +483,7 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 
 
 # Function to run the model. True is returned if the model runs successfully.
+
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
     if config.runModel:
@@ -483,6 +496,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 # Function to plot the model results
+
 def plot_results(mt3d, mf6, idx, ax=None):
     if config.plotModel:
         mt3d_out_path = mt3d.model_ws
@@ -562,7 +576,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
 # 2. write_model,
 # 3. run_model, and
 # 4. plot_results.
-#
+
 def scenario(idx, silent=True):
     mf2k5, mt3d, sim = build_model(example_name)
     write_model(mf2k5, mt3d, sim, silent=silent)
@@ -571,16 +585,14 @@ def scenario(idx, silent=True):
     if success:
         plot_results(mt3d, sim, idx)
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
-
-
 # nosetest end
 
 if __name__ == "__main__":
     # ### Two-Dimensional Transport in a Uniform Flow Field
     #
     # Describe what is plotted here...
+
     scenario(0)

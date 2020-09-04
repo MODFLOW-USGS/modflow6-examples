@@ -47,7 +47,17 @@ def make_notebooks():
         # convert temporary python file to a notebook
         basename = os.path.splitext(file)[0] + ".ipynb"
         opth = os.path.join("..", "notebooks", basename)
-        os.system("p2j {} -o -t {}".format(tpth, opth))
+        # os.system("p2j {} -o -t {}".format(tpth, opth))
+        cmd = (
+            "jupytext",
+            "--from py",
+            "--to ipynb",
+            "-o",
+            opth,
+            tpth,
+        )
+        print(" ".join(cmd))
+        os.system(" ".join(cmd))
 
         # remove temporary file
         if os.path.isfile(tpth):

@@ -5,12 +5,14 @@
 # ### MODFLOW 6 LGR Problem Setup
 
 # Append to system path to include the common subdirectory
+
 import os
 import sys
 
 sys.path.append(os.path.join("..", "common"))
 
 # Imports
+
 import flopy
 import numpy as np
 import config
@@ -40,6 +42,7 @@ length_units = "meters"
 time_units = "days"
 
 # Table
+
 nlayp = 3  # Number of layers in parent model
 nrowp = 15  # Number of rows in parent model
 ncolp = 15  # Number of columns in parent model
@@ -63,9 +66,9 @@ nper = len(perlen)
 nstp = [1] * numdays
 tsmult = [1.0] * numdays
 
-x = [
-    round(x, 3) for x in np.linspace(50.0, 45.0, ncolp)
-]  # Further parent model grid discretization
+# Further parent model grid discretization
+
+x = [ round(x, 3) for x in np.linspace(50.0, 45.0, ncolp) ]
 topp = np.repeat(x, nrowp).reshape((15, 15)).T
 z = [round(z, 3) for z in np.linspace(50.0, 0.0, nlayp + 1)]
 botmp = [topp - z[len(z) - 2], topp - z[len(z) - 3], topp - z[0]]
@@ -103,6 +106,7 @@ connsp = [
 ]
 
 # Package_data information
+
 sfrcells = [
     (0, 0, 1),
     (0, 1, 1),
@@ -1122,20 +1126,17 @@ def plot_results(mf6, idx):
 #
 
 
-def scenario(idx):
+def scenario(idx, silent=True):
     sim = build_model(example_name)
-    write_model(sim, silent=False)
-    success = run_model(sim, silent=False)
+    write_model(sim, silent=silent)
+    success = run_model(sim, silent=silent)
 
     if success:
         plot_results(sim, idx)
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
-    scenario(0)
-
-
+    scenario(0, silent=False)
 # nosetest end
 
 if __name__ == "__main__":
