@@ -153,7 +153,7 @@ jobs:
           dst_pth = os.path.join(".nb")
           if os.path.isdir(dst_pth):
               shutil.rmtree(dst_pth)
-          os.makedirs(output_pth)
+          os.makedirs(dst_pth)
           # run the notebooks
           for file_name in nb_files:
               src = os.path.join(src_pth, file_name)
