@@ -6,8 +6,9 @@
 #
 
 # ### Zero-Order Production in a Dual-Domain System Problem Setup
-#
+
 # Imports
+
 import os
 import sys
 import numpy as np
@@ -15,19 +16,24 @@ import matplotlib.pyplot as plt
 import flopy
 
 # Append to system path to include the common subdirectory
+
 sys.path.append(os.path.join("..", "common"))
 
 # Import common functionality
+
 import config
 from figspecs import USGSFigure
 
 # Set figure properties specific to the
+
 figure_size = (3, 3)
 
 # Base simulation and model name and workspace
+
 ws = config.base_ws
 
 # Scenario parameters - make sure there is at least one blank line before next item
+
 parameters = {
     "ex-gwt-mt3dsupp632a": {
         "distribution_coefficient": 0.25,
@@ -48,6 +54,7 @@ parameters = {
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
+
 parameter_units = {
     "distribution_coefficient": "$mL g^{-1}$",
     "decay": "$g/mL d^{-1}$",
@@ -55,10 +62,12 @@ parameter_units = {
 }
 
 # Model units
+
 length_units = "m"
 time_units = "days"
 
 # Table of model parameters
+
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -79,6 +88,7 @@ total_time = 10000  # Simulation time ($t$)
 obs_xloc = 200.0  # Observation x location ($m$)
 
 # Flags that can be adjusted to change example configuration
+
 zero_order_decay = True  # Flag indicating whether decay is zero or first order
 dual_domain = True  # Flag indicating that dual domain is active
 
@@ -86,6 +96,7 @@ dual_domain = True  # Flag indicating that dual domain is active
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 #
+
 def build_mf6gwf(sim_folder):
     print("Building mf6gwf model...{}".format(sim_folder))
     name = "flow"
@@ -337,6 +348,7 @@ def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
 
 
 # Function to write model files
+
 def write_model(sims, silent=True):
     if config.writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -349,6 +361,7 @@ def write_model(sims, silent=True):
 
 # Function to run the model
 # True is returned if the model runs successfully
+
 def run_model(sims, silent=True):
     success = True
     if config.runModel:
@@ -372,6 +385,7 @@ def run_model(sims, silent=True):
 
 
 # Functions to plot the model results
+
 def plot_results():
     if config.plotModel:
         print("Plotting model results...")
@@ -473,7 +487,7 @@ def plot_scenario_results(sims, idx):
 # 2. write_model,
 # 3. run_model, and
 # 4. plot_results.
-#
+
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
@@ -484,24 +498,18 @@ def scenario(idx, silent=True):
         plot_scenario_results(sims, idx)
     return
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
 
-
 def test_02():
     scenario(1, silent=False)
-
 
 def test_03():
     scenario(2, silent=False)
 
-
 def test_plot_results():
     plot_results()
-
-
 # nosetest end
 
 if __name__ == "__main__":
@@ -511,6 +519,7 @@ if __name__ == "__main__":
     # * distribution_coefficient = 0.25
     # * decay = 0.0
     # * decay_sorbed = -1.0e-3
+
     scenario(0)
 
     # ### Case 2
@@ -519,6 +528,7 @@ if __name__ == "__main__":
     # * distribution_coefficient = 0.25
     # * decay = -5.e-4
     # * decay_sorbed = -5.e-4
+
     scenario(1)
 
     # ### Case 3
@@ -527,9 +537,11 @@ if __name__ == "__main__":
     # * distribution_coefficient = 0.
     # * decay = -1.0e-3
     # * decay_sorbed = 0.
+
     scenario(2)
 
     # ### Plot the Zero-Order Production in a Dual-Domain System Problem results
     #
     # Plot the results for all 3 scenarios in one plot
+
     plot_results()

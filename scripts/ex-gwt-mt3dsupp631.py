@@ -7,6 +7,7 @@
 # ### Zero-Order Growth in a Uniform Flow Field Problem Setup
 #
 # Imports
+
 import os
 import sys
 import numpy as np
@@ -14,24 +15,30 @@ import matplotlib.pyplot as plt
 import flopy
 
 # Append to system path to include the common subdirectory
+
 sys.path.append(os.path.join("..", "common"))
 
 # Import common functionality
+
 import config
 from figspecs import USGSFigure
 
 # Set figure properties specific to the
+
 figure_size = (5, 3)
 
 # Base simulation and model name and workspace
+
 ws = config.base_ws
 example_name = "ex-gwt-mt3dsupp631"
 
 # Model units
+
 length_units = "m"
 time_units = "days"
 
 # Table of model parameters
+
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -53,6 +60,7 @@ obs_xloc = 8.0  # Observation x location ($m$)
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 # recharge is the only variable
 #
+
 def build_mf6gwf(sim_folder):
     print("Building mf6gwf model...{}".format(sim_folder))
     name = "flow"
@@ -237,6 +245,7 @@ def build_model(sim_name):
 
 
 # Function to write model files
+
 def write_model(sims, silent=True):
     if config.writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -249,6 +258,7 @@ def write_model(sims, silent=True):
 
 # Function to run the model
 # True is returned if the model runs successfully
+
 def run_model(sims, silent=True):
     success = True
     if config.runModel:
@@ -272,6 +282,7 @@ def run_model(sims, silent=True):
 
 
 # Function to plot the model results
+
 def plot_results(sims, idx):
     if config.plotModel:
         print("Plotting model results...")
@@ -324,7 +335,7 @@ def plot_results(sims, idx):
 # 2. write_model,
 # 3. run_model, and
 # 4. plot_results.
-#
+
 def scenario(idx, silent=True):
     sim = build_model(example_name)
     write_model(sim, silent=silent)
@@ -332,16 +343,14 @@ def scenario(idx, silent=True):
     if success:
         plot_results(sim, idx)
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
-
-
 # nosetest end
 
 if __name__ == "__main__":
     # ### Simulated Zero-Order Growth in a Uniform Flow Field
-    #
+
     # Add a description of the plot(s)
+
     scenario(0)

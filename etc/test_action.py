@@ -76,19 +76,54 @@ ws = "doc"
 bibnam = "mf6examples"
 texnam = bibnam + ".tex"
 args = (
+        ("latexmk", "-c", texnam),
         ("pdflatex", texnam),
         ("bibtex", bibnam),
         ("pdflatex", texnam),
         ("pdflatex", texnam),
        )
+os.chdir(ws)
 for arg in args:
     print("running command...'{}'".format(" ".join(arg)))
-    with Popen(arg, stdout=PIPE, stderr=PIPE, cwd=ws) as proc:
-        stdout, stderr = proc.communicate(timeout=5)
-        if stdout:
-            print(stdout.decode("utf-8"))
-        if stderr:
-            print("Errors:\n{}".format(stderr.decode("utf-8")))
+    os.system(" ".join(arg))
+os.chdir("..")
+
+# run the notebooks
+src_pth = os.path.join("notebooks")
+dst_pth = os.path.join(".notebooks")
+if os.path.isdir(dst_pth):
+    shutil.rmtree(dst_pth)
+os.makedirs(dst_pth)
+nb_files = [file_name for file_name in os.listdir(src_pth) if
+            file_name.endswith(".ipynb") and file_name.startswith("ex-")]
+for file_name in nb_files:
+    src = os.path.join(src_pth, file_name)
+    dst = os.path.join(dst_pth, file_name)
+    arg = (
+        "jupytext",
+        "--from ipynb",
+        "--to ipynb",
+        "--execute",
+        "--output",
+        dst,
+        src,
+    )
+    print(" ".join(arg))
+    os.system(" ".join(arg))
+
+# -- remove ./_notebooks if it exists ----------------------------------------
+copy_pth = os.path.join(".doc", "_notebooks")
+print("clean up {}".format(copy_pth))
+if os.path.isdir(copy_pth):
+    shutil.rmtree(copy_pth)
+
+# -- copy executed notebooks to ./_notebooks ---------------------------------
+print("copy files in {} -> {}".format(dst_pth, copy_pth))
+shutil.copytree(dst_pth, copy_pth)
+
+# -- clean up (remove) dst_pth directory -------------------------------------
+print("clean up {}".format(dst_pth))
+shutil.rmtree(dst_pth)
 
 # remove zip file - local run only
 os.remove("modflow6-examples.zip")

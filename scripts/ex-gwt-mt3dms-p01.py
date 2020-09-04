@@ -16,12 +16,13 @@
 #   7.  Three-Dimensional Transport in a Uniform Flow Field,
 #   8.  Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer,
 #   9.  Two-Dimensional Application Example, and
-#  10. Three-Dimensional Field Case Study.
+#   10. Three-Dimensional Field Case Study.
 #
 
 # ### MODFLOW 6 GWT MT3DMS Example 1 Problem Setup
 
 # Imports
+
 import os
 import sys
 import matplotlib.pyplot as plt
@@ -29,9 +30,11 @@ import flopy
 import numpy as np
 
 # Append to system path to include the common subdirectory
+
 sys.path.append(os.path.join("..", "common"))
 
 # Import common functionality
+
 import config
 from figspecs import USGSFigure
 
@@ -40,13 +43,16 @@ exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 
 # Set figure properties specific to this problem
+
 figure_size = (5, 3.5)
 
 # Base simulation and model name and workspace
+
 ws = config.base_ws
 
 # Set scenario parameters (make sure there is at least one blank line before next item)
 # This entire dictionary is passed to _build_model()_ using the kwargs argument
+
 parameters = {
     "ex-gwt-mt3d-p01a": {
         "dispersivity": 0.0,
@@ -74,6 +80,7 @@ parameters = {
 #
 # add parameter_units to add units to the scenario parameter table that is automatically
 # built and used by the .tex input
+
 parameter_units = {
     "dispersivity": "$m$",
     "retardation": "unitless",
@@ -81,10 +88,12 @@ parameter_units = {
 }
 
 # Model units
+
 length_units = "meters"
 time_units = "days"
 
 # Table MODFLOW 6 GWT MT3DMS Example 1
+
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 ncol = 101  # Number of columns
@@ -98,6 +107,7 @@ perlen = 2000  # Simulation time ($days$)
 k11 = 1.0  # Horizontal hydraulic conductivity ($m/d$)
 
 # Set some static model parameter values
+
 k33 = k11  # Vertical hydraulic conductivity ($m/d$)
 laytyp = 1
 nstp = 100.0
@@ -115,6 +125,7 @@ ibound[0, 0, 0] = -1
 ibound[0, 0, -1] = -1
 
 # Set some static transport related model parameter values
+
 mixelm = 0  # TVD
 rhob = 0.25
 sp2 = 0.0  # red, but not used in this problem
@@ -135,12 +146,14 @@ nlsink = nplane  # HMOC
 npsink = nph  # HMOC
 
 # Static temporal data used by TDIS file
+
 tdis_rc = []
 tdis_rc.append((perlen, nstp, 1.0))
 
 # ### Create MODFLOW 6 GWT MT3DMS Example 1 Boundary Conditions
 #
 # Constant head cells are specified on both ends of the model
+
 chdspd = [[(0, 0, 0), h1], [(0, 0, ncol - 1), 0.0]]
 c0 = 1.0
 cncspd = [[(0, 0, 0), c0]]
@@ -149,6 +162,7 @@ cncspd = [[(0, 0, 0), c0]]
 # ### Functions to build, write, run, and plot MODFLOW 6 GWT MT3DMS Example 1 model results
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
+
 def build_model(
     sim_name,
     dispersivity=0.0,
@@ -489,6 +503,7 @@ def build_model(
 
 
 # Function to write model files
+
 def write_model(mf2k5, mt3d, sim, silent=True):
     if config.writeModel:
         mf2k5.write_input()
@@ -498,6 +513,7 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 
 # Function to run the models.
 # _True_ is returned if the model runs successfully
+
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
     if config.runModel:
@@ -510,6 +526,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 # Function to plot the model results
+
 def plot_results(mt3d, mf6, idx, ax=None):
     if config.plotModel:
         mt3d_out_path = mt3d.model_ws
@@ -583,7 +600,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
 # 2. write_model,
 # 3. run_model, and
 # 4. plot_results.
-#
+
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
@@ -596,35 +613,33 @@ def scenario(idx, silent=True):
     if success:
         plot_results(mt3d, sim, idx)
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
 
-
 def test_02():
     scenario(1, silent=False)
-
 
 def test_03():
     scenario(2, silent=False)
 
-
 def test_04():
     scenario(3, silent=False)
-
-
 # nosetest end
 
 if __name__ == "__main__":
     # ### Advection only
+
     scenario(0)
 
     # ### Advection and dispersion
+
     scenario(1)
 
     # ### Advection, dispersion, and retardation
+
     scenario(2)
 
     # ### Advection, dispersion, retardation, and decay
+
     scenario(3)

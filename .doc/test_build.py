@@ -35,38 +35,67 @@ if is_CI:
 flopy.mf6.utils.generate_classes(branch="develop", backup=False)
 
 # -- update notebooks --------------------------------------------------------
-pth = os.path.join("..", "scripts", "process-scripts.py")
-args = ("python", pth)
+pth = os.path.join("..", "scripts")
+args = ("python", "process-scripts.py")
 print(" ".join(args))
-proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=os.path.dirname(pth))
+proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=pth)
 stdout, stderr = proc.communicate()
 if stdout:
     print(stdout.decode("utf-8"))
 if stderr:
     print("Errors:\n{}".format(stderr.decode("utf-8")))
 
+# -- run the scripts ---------------------------------------------------------
+if not is_CI:
+    pth = os.path.join("..", "scripts")
+    py_files = [file_name for file_name in sorted(os.listdir(pth)) if
+                file_name.endswith(".py") and file_name.startswith("ex-")]
+    for file_name in py_files:
+        args = ("python", file_name)
+        print(" ".join(args))
+        proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=pth)
+        stdout, stderr = proc.communicate()
+        if stdout:
+            print(stdout.decode("utf-8"))
+        if stderr:
+            print("Errors:\n{}".format(stderr.decode("utf-8")))
+
 # -- get list of notebooks ---------------------------------------------------
 pth = os.path.join("..", "notebooks")
-nb_files = [os.path.join(pth, file_name) for file_name in sorted(os.listdir(pth)) if
-            file_name.endswith(".ipynb")]
+nb_files = [file_name for file_name in sorted(os.listdir(pth)) if
+            file_name.endswith(".ipynb") and file_name.startswith("ex-")]
 
-# -- run notebooks with nbconvert --------------------------------------------
-output_pth = os.path.join("_notebooks")
-if os.path.isdir(output_pth):
-    shutil.rmtree(output_pth)
-os.makedirs(output_pth)
-for fpth in nb_files:
-    args = ("jupyter",
-            "nbconvert",
-            "--ExecutePreprocessor.timeout=600",
-            "--to",
-            "notebook",
-            "--execute",
-            fpth,
-            "--output-dir",
-            output_pth,
-            "--output",
-            os.path.basename(fpth)
-            )
-    print(" ".join(args))
-    os.system(" ".join(args))
+# -- run notebooks with jupytext ---------------------------------------------
+src_pth = os.path.join("..", "notebooks")
+dst_pth = os.path.join("..", ".nbrun")
+if os.path.isdir(dst_pth):
+    shutil.rmtree(dst_pth)
+os.makedirs(dst_pth)
+for file_name in nb_files:
+    src = os.path.join(src_pth, file_name)
+    dst = os.path.join(dst_pth, file_name)
+    arg = (
+        "jupytext",
+        "--to ipynb",
+        "--from ipynb",
+        "--execute",
+        "-o",
+        dst,
+        src,
+    )
+    print("running command...'{}'".format(" ".join(arg)))
+    os.system(" ".join(arg))
+
+# -- remove ./_notebooks if it exists ----------------------------------------
+copy_pth = os.path.join("_notebooks")
+print("clean up {}".format(copy_pth))
+if os.path.isdir(copy_pth):
+    shutil.rmtree(copy_pth)
+
+# -- copy executed notebooks to ./_notebooks ---------------------------------
+print("copy files in {} -> {}".format(dst_pth, copy_pth))
+shutil.copytree(dst_pth, copy_pth)
+
+# -- clean up (remove) dst_pth directory -------------------------------------
+print("clean up {}".format(dst_pth))
+shutil.rmtree(dst_pth)
