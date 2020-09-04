@@ -167,17 +167,21 @@ jobs:
                      src)
               print(" ".join(arg))
               os.system(" ".join(arg))
-          # -- remove ./_notebooks if it exists ----------------------------------------
-          copy_pth = os.path.join(".doc", "_notebooks")
-          print("clean up {}".format(copy_pth))
-          if os.path.isdir(copy_pth):
-              shutil.rmtree(copy_pth)
-          # -- copy executed notebooks to ./_notebooks ---------------------------------
-          print("copy files in {} -> {}".format(dst_pth, copy_pth))
-          shutil.copytree(dst_pth, copy_pth)
-          # -- clean up (remove) dst_pth directory -------------------------------------
-          print("clean up {}".format(dst_pth))
-          shutil.rmtree(dst_pth)
+
+      - name: Copy the completed notebook files to .doc/_notebooks
+        shell: bash
+        run: |
+          echo .nb/ contents
+          ls -la .nb/
+
+          echo create .doc/_notebooks/
+          mkdir -v .doc/_notebooks
+
+          echo copy the notebook files
+          cp -v .nb/* .doc/_notebooks/
+
+          echo .doc/_notebooks/ contents
+          ls -la .doc/_notebooks/
 
       - name: Build mf6examples LaTeX document
         shell: python
@@ -231,7 +235,7 @@ jobs:
         with:
           name: notebooks-for-${{ github.sha }}
           path: |
-            .docs/_notebooks
+            .doc/_notebooks
 
   # make the release if previous job was successful
   release:

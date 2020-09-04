@@ -166,6 +166,8 @@ cython_debug/
 *.out
 *.synctex.gz
 
+.vscode/
+
 # repo specific
 bin/
 figures/
