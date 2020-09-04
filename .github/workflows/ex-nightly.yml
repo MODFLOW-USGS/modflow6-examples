@@ -168,13 +168,19 @@ jobs:
               print(" ".join(arg))
               os.system(" ".join(arg))
 
-      - name: Clean .doc/_notebook and move new files
+      - name: Clean .doc/_notebooks and move the completed notebook files
         shell: bash
         run: |
-          ls -la ./
+          echo .nb/
           ls -la .nb/
-          rm -rf .doc/_notebooks/
+
+          echo clean .doc/_notebooks/
+          rm -rf .doc/_notebooks/*
+
+          echo move the notebook files
           mv .nb/* .doc/_notebooks/
+
+          echo .doc/_notebooks/
           ls -la .doc/_notebooks/
 
       - name: Build mf6examples LaTeX document
