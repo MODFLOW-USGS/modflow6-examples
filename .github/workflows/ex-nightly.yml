@@ -177,8 +177,8 @@ jobs:
           echo clean .doc/_notebooks/
           rm -rf .doc/_notebooks/*
 
-          echo move the notebook files
-          mv .nb/* .doc/_notebooks/
+          echo copy the notebook files
+          cp .nb/* .doc/_notebooks/
 
           echo .doc/_notebooks/ contents
           ls -la .doc/_notebooks/
