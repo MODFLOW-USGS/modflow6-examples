@@ -1,4 +1,4 @@
-# ## Two-Dimensional Transport in a Uniform Flow Field Comparison of MODFLOW 6 transport with MT3DMS
+# ## Two-Dimensional Transport in a Radial Flow Field Comparison of MODFLOW 6 transport with MT3DMS
 #
 # The purpose of this script is to (1) recreate the example problems that were first
 # described in the 1999 MT3DMS report, and (2) compare MF6-GWT solutions to the
@@ -22,11 +22,13 @@
 # ### MODFLOW 6 GWT MT3DMS Example 5 Problem Setup
 
 # Append to system path to include the common subdirectory
+
 import os
 import sys
 sys.path.append(os.path.join("..", "common"))
 
 # Imports
+
 import matplotlib.pyplot as plt
 import flopy
 import numpy as np
@@ -40,17 +42,21 @@ exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 
 # Set figure properties specific to this problem
+
 figure_size = (6, 4.5)
 
 # Base simulation and model name and workspace
+
 ws = config.base_ws
 example_name = "ex-gwt-mt3d-p05"
 
 # Model units
+
 length_units = "meters"
 time_units = "days"
 
 # Table
+
 nlay = 1       # Number of layers
 nrow = 31      # Number of rows
 ncol = 31      # Number of columns
@@ -68,6 +74,7 @@ trpt = 1.0     # Ratio of transverse to longitudinal dispersitivity
 dmcoef = 1.e-9 # Molecular diffusion coefficient ($m^2/d$)
 
 # Additional model input
+
 perlen = [27]
 nper = len(perlen)
 nstp = [27]
@@ -84,6 +91,7 @@ mixelm = -1
 strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
 
 # Active model domain
+
 ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=np.int) * -1
 ibound_mf2k5[:, 1:nrow - 1, 1:ncol-1] = 1
 idomain = np.ones((nlay, nrow, ncol), dtype=np.int)
@@ -91,14 +99,17 @@ icbund = 1
 
 # Boundary conditions
 # MF2K5 pumping info:
+
 welspd = {0: [[0, 15, 15, qwell]]}        # Well pumping info for MF2K5
 spd    = {0: [0, 15, 15, cwell, -1]}       # Well pupming info for MT3DMS
 
 # MF6 pumping information
+
 #              (k,  i,  j),  flow,   conc
 spd_mf6 = {0:[[(0, 15, 15), qwell,  c0]]}
 
 # MF6 constant head boundaries: 
+
 chdspd = []
 # Loop through the left & right sides.
 for i in np.arange(nrow):
@@ -112,9 +123,9 @@ for j in np.arange(1, ncol-1):
 chdspd = {0: chdspd}
 
 # Solver settings
+
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-6, 1e-6, 1.
-
 percel = 1.0 # HMOC parameters 
 itrack = 3
 wd = 0.5
@@ -129,12 +140,14 @@ nlsink = nplane
 npsink = nph
 
 # Static temporal data used by TDIS file
+
 tdis_rc = []
 tdis_rc.append((perlen, nstp, 1.0))
 
 # ### Functions to build, write, and run models and plot MT3DMS Example 10 Problem results
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
+
 def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
     if config.buildModel:
         
@@ -466,6 +479,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
     return None
 
 # Function to write model files
+
 def write_model(mf2k5, mt3d, sim, silent=True):
     if config.writeModel:
         mf2k5.write_input()
@@ -473,6 +487,7 @@ def write_model(mf2k5, mt3d, sim, silent=True):
         sim.write_simulation(silent=silent)
 
 # Function to run the model. True is returned if the model runs successfully.
+
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
     if config.runModel:
@@ -484,6 +499,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
     return success
 
 # Function to plot the model results
+
 def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
     if config.plotModel:
         mt3d_out_path = mt3d.model_ws
@@ -585,7 +601,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
 # 2. write_model,
 # 3. run_model, and
 # 4. plot_results.
-#
+
 def scenario(idx, silent=True):
 
     mf2k5, mt3d, sim = build_model(example_name)
@@ -599,6 +615,7 @@ def scenario(idx, silent=True):
 
 
 # nosetest - exclude block from this nosetest to the next nosetest
+
 def test_01():
     scenario(0, silent=False)
 
