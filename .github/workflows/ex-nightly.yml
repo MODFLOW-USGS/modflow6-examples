@@ -171,7 +171,7 @@ jobs:
       - name: Clean .doc/_notebooks and move the completed notebook files
         shell: bash
         run: |
-          echo .nb/
+          echo .nb/ contents
           ls -la .nb/
 
           echo clean .doc/_notebooks/
@@ -180,7 +180,7 @@ jobs:
           echo move the notebook files
           mv .nb/* .doc/_notebooks/
 
-          echo .doc/_notebooks/
+          echo .doc/_notebooks/ contents
           ls -la .doc/_notebooks/
 
       - name: Build mf6examples LaTeX document
