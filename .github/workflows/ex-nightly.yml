@@ -168,7 +168,7 @@ jobs:
               print(" ".join(arg))
               os.system(" ".join(arg))
 
-      - name: Clean .doc/_notebooks and move the completed notebook files
+      - name: Copy the completed notebook files to .doc/_notebooks
         shell: bash
         run: |
           echo .nb/ contents
