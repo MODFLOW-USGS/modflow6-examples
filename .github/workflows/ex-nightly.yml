@@ -175,10 +175,10 @@ jobs:
           ls -la .nb/
 
           echo clean .doc/_notebooks/
-          rm -rf .doc/_notebooks/*
+          rm -f -v .doc/_notebooks/*
 
           echo copy the notebook files
-          cp .nb/* .doc/_notebooks/
+          cp -v .nb/* .doc/_notebooks/
 
           echo .doc/_notebooks/ contents
           ls -la .doc/_notebooks/
@@ -235,7 +235,7 @@ jobs:
         with:
           name: notebooks-for-${{ github.sha }}
           path: |
-            .docs/_notebooks
+            .doc/_notebooks
 
   # make the release if previous job was successful
   release:
