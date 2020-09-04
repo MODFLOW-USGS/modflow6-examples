@@ -174,8 +174,7 @@ jobs:
           echo .nb/ contents
           ls -la .nb/
 
-          echo clean .doc/_notebooks/
-          rm -f -v .doc/_notebooks/*
+          echo create .doc/_notebooks/
           mkdir -v .doc/_notebooks
 
           echo copy the notebook files
