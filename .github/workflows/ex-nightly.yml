@@ -63,48 +63,12 @@ jobs:
           pip install -r etc/requirements.pip.txt
           pip install -r etc/requirements.usgs.txt
 
-      - name: Update flopy from GitHub repo
-        shell: python
+      - name: Run get_exes script
+        shell: bash
         run: |
-          import flopy
-          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
-
-      - name: Print python package versions
-        shell: python
-        run: |
-          import sys
-          import numpy as np
-          import matplotlib as mpl
-          import flopy
-          import pymake
-          flopypth = flopy.__path__[0]
-          pymakepth = pymake.__path__[0]
-          print("python version:     {}".format(sys.version))
-          print("numpy version:      {}".format(np.__version__))
-          print("matplotlib version: {}".format(mpl.__version__))
-          print("flopy version:      {}".format(flopy.__version__))
-          print("pymake version:     {}".format(pymake.__version__))
-          print("")
-          print("flopy is installed in:  {}".format(flopypth))
-          print("pymake is installed in: {}".format(pymakepth))
-
-      - name: Get executables
-        shell: python
-        run: |
-          import os
-          import pymake
-          pth = os.path.join("bin")
-          if not os.path.isdir(pth):
-              os.makedirs(pth)
-          pymake.getmfexes(pth, verbose=True)
-
-      - name: Replace MODFLOW 6 executables with the latest versions
-        shell: python
-        run: |
-          import os
-          import pymake
-          url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")["linux.zip"]
-          pymake.download_and_unzip(url, "bin", verbose=True)
+          cd ./etc/
+          python get_exes.py
+          cd ..
 
       - name: List executables
         shell: bash
@@ -138,50 +102,6 @@ jobs:
           nosetests -v --with-id --with-timer ex-*
           python process-scripts.py
           cd ..
-
-      - name: Run notebooks with jupytext
-        shell: python
-        run: |
-          import os
-          import shutil
-          # get list of notebooks
-          src_pth = os.path.join("notebooks")
-          nb_files = [file_name
-                      for file_name in sorted(os.listdir(src_pth))
-                      if file_name.endswith(".ipynb")]
-          # create temporary directory
-          dst_pth = os.path.join(".nb")
-          if os.path.isdir(dst_pth):
-              shutil.rmtree(dst_pth)
-          os.makedirs(dst_pth)
-          # run the notebooks
-          for file_name in nb_files:
-              src = os.path.join(src_pth, file_name)
-              dst = os.path.join(dst_pth, file_name)
-              arg = ("jupytext",
-                     "--to ipynb",
-                     "--from ipynb",
-                     "--execute",
-                     "-o",
-                     dst,
-                     src)
-              print(" ".join(arg))
-              os.system(" ".join(arg))
-
-      - name: Copy the completed notebook files to .doc/_notebooks
-        shell: bash
-        run: |
-          echo .nb/ contents
-          ls -la .nb/
-
-          echo create .doc/_notebooks/
-          mkdir -v .doc/_notebooks
-
-          echo copy the notebook files
-          cp -v .nb/* .doc/_notebooks/
-
-          echo .doc/_notebooks/ contents
-          ls -la .doc/_notebooks/
 
       - name: Build mf6examples LaTeX document
         shell: python
@@ -221,7 +141,7 @@ jobs:
           ls -la ./
 
       - name: Upload build artifacts for latest release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
           name: latest
@@ -229,21 +149,13 @@ jobs:
             ./mf6examples.pdf
             ./modflow6-examples.zip
 
-      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
-        uses: actions/upload-artifact@v2
-        with:
-          name: notebooks-for-${{ github.sha }}
-          path: |
-            .doc/_notebooks
-
   # make the release if previous job was successful
   release:
     name: Make the release
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
@@ -280,18 +192,3 @@ jobs:
         uses: GeekyEggo/delete-artifact@v1.0.0
         with:
           name: latest
-
-  # trigger rtd if previous job was successful
-  rtd:
-    name: ReadtheDocs
-    needs: release
-    runs-on: ubuntu-latest
-
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
-    steps:
-      - name: Trigger RTDs build
-        uses: dfm/rtds-action@v1.0.0
-        with:
-          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
-          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.ref }}

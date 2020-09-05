@@ -15,6 +15,10 @@ def _replace_quotes(proc_str):
 
 
 def make_notebooks():
+    nb_pth = os.path.join("..", "notebooks")
+    if not os.path.isdir(nb_pth):
+        os.makedirs(nb_pth)
+
     tpth = "raw.py"
     # converts python scripts to jupyter notebooks
     for file in files:
@@ -46,7 +50,7 @@ def make_notebooks():
 
         # convert temporary python file to a notebook
         basename = os.path.splitext(file)[0] + ".ipynb"
-        opth = os.path.join("..", "notebooks", basename)
+        opth = os.path.join(nb_pth, basename)
         # os.system("p2j {} -o -t {}".format(tpth, opth))
         cmd = (
             "jupytext",
@@ -65,6 +69,10 @@ def make_notebooks():
 
 
 def make_tables():
+    tab_pth = os.path.join("..", "tables")
+    if not os.path.isdir(tab_pth):
+        os.makedirs(tab_pth)
+
     for file in files:
         basename = os.path.splitext(os.path.basename(file))[0].replace(
             "_", "-"
@@ -108,7 +116,7 @@ def make_tables():
         # create scenario table if parameters are specified in the script
         if parameters is not None:
             tab_name = "{}-scenario".format(basename)
-            fpth = os.path.join("..", "tables", tab_name + ".tex")
+            fpth = os.path.join(tab_pth, tab_name + ".tex")
             f = open(fpth, "w")
 
             scenario_count = 0
@@ -167,7 +175,7 @@ def make_tables():
             if len(table_text) > 0:
                 table_number += 1
                 tab_name = "{}{:02d}".format(basename, table_number)
-                fpth = os.path.join("..", "tables", tab_name + ".tex")
+                fpth = os.path.join(tab_pth, tab_name + ".tex")
                 f = open(fpth, "w")
 
                 # write table
