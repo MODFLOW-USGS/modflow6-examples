@@ -141,6 +141,7 @@ tdis_rc.append((perlen, nstp, 1.0))
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
+
 def build_model(sim_name, mixelm=0, silent=False):
     if config.buildModel:
 
@@ -475,6 +476,7 @@ def build_model(sim_name, mixelm=0, silent=False):
 
 # Function to write model files
 
+
 def write_model(mf2k5, mt3d, sim, silent=True):
     if config.writeModel:
         mf2k5.write_input()
@@ -483,6 +485,7 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 
 
 # Function to run the model. True is returned if the model runs successfully.
+
 
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
@@ -496,6 +499,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 # Function to plot the model results
+
 
 def plot_results(mt3d, mf6, idx, ax=None):
     if config.plotModel:
@@ -577,6 +581,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
 # 3. run_model, and
 # 4. plot_results.
 
+
 def scenario(idx, silent=True):
     mf2k5, mt3d, sim = build_model(example_name)
     write_model(mf2k5, mt3d, sim, silent=silent)
@@ -585,9 +590,12 @@ def scenario(idx, silent=True):
     if success:
         plot_results(mt3d, sim, idx)
 
+
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
+
+
 # nosetest end
 
 if __name__ == "__main__":

@@ -97,6 +97,7 @@ dual_domain = True  # Flag indicating that dual domain is active
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 #
 
+
 def build_mf6gwf(sim_folder):
     print("Building mf6gwf model...{}".format(sim_folder))
     name = "flow"
@@ -349,6 +350,7 @@ def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
 
 # Function to write model files
 
+
 def write_model(sims, silent=True):
     if config.writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -361,6 +363,7 @@ def write_model(sims, silent=True):
 
 # Function to run the model
 # True is returned if the model runs successfully
+
 
 def run_model(sims, silent=True):
     success = True
@@ -385,6 +388,7 @@ def run_model(sims, silent=True):
 
 
 # Functions to plot the model results
+
 
 def plot_results():
     if config.plotModel:
@@ -450,13 +454,16 @@ def plot_scenario_results(sims, idx):
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
-        axs.plot(mf6gwt_ra["time"], mf6gwt_ra["MYOBS"],
-                 markerfacecolor="None",
-                 markeredgecolor="b",
-                 marker="o",
-                 markersize="4",
-                 linestyle="None",
-                 label="MODFLOW 6 GWT")
+        axs.plot(
+            mf6gwt_ra["time"],
+            mf6gwt_ra["MYOBS"],
+            markerfacecolor="None",
+            markeredgecolor="b",
+            marker="o",
+            markersize="4",
+            linestyle="None",
+            label="MODFLOW 6 GWT",
+        )
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.OBS")
         mt3dms_ra = sim_mt3dms.load_obs(fname)
@@ -464,7 +471,7 @@ def plot_scenario_results(sims, idx):
             mt3dms_ra["time"],
             mt3dms_ra["(1, 1, 82)"],
             linestyle="-",
-            color='k',
+            color="k",
             label="MT3DMS",
         )
         axs.legend()
@@ -488,6 +495,7 @@ def plot_scenario_results(sims, idx):
 # 3. run_model, and
 # 4. plot_results.
 
+
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
@@ -498,18 +506,24 @@ def scenario(idx, silent=True):
         plot_scenario_results(sims, idx)
     return
 
+
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
 
+
 def test_02():
     scenario(1, silent=False)
+
 
 def test_03():
     scenario(2, silent=False)
 
+
 def test_plot_results():
     plot_results()
+
+
 # nosetest end
 
 if __name__ == "__main__":

@@ -129,6 +129,7 @@ drn_spd = {
 # recharge is the only variable
 #
 
+
 def build_model():
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
@@ -179,6 +180,7 @@ def build_model():
 
 # Function to write MODFLOW 6 TWRI model files
 
+
 def write_model(sim, silent=True):
     if config.writeModel:
         sim.write_simulation(silent=silent)
@@ -187,6 +189,7 @@ def write_model(sim, silent=True):
 # Function to run the TWRI model.
 # True is returned if the model runs successfully
 #
+
 
 def run_model(sim, silent=True):
     success = True
@@ -199,6 +202,7 @@ def run_model(sim, silent=True):
 
 # Function to plot the TWRI model results.
 #
+
 
 def plot_results(sim):
     if config.plotModel:
@@ -315,6 +319,7 @@ def plot_results(sim):
 # 4. plot_results.
 #
 
+
 def simulation(silent=True):
     sim = build_model()
 
@@ -325,9 +330,12 @@ def simulation(silent=True):
     if success:
         plot_results(sim)
 
+
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     simulation(silent=False)
+
+
 # nosetest end
 
 if __name__ == "__main__":

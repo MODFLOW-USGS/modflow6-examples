@@ -41,8 +41,26 @@ example_name = "ex-gwt-moc3dp1"
 # Scenario parameters - make sure there is at least one blank line before next item
 
 parameters = {
-    "ex-gwt-moc3dp1a": {"longitudinal_dispersivity": 0.1,},
-    "ex-gwt-moc3dp1b": {"longitudinal_dispersivity": 1.0,},
+    "ex-gwt-moc3dp1a": {
+        "longitudinal_dispersivity": 0.1,
+        "retardation_factor": 1.0,
+        "decay_rate": 0.0,
+    },
+    "ex-gwt-moc3dp1b": {
+        "longitudinal_dispersivity": 1.0,
+        "retardation_factor": 1.0,
+        "decay_rate": 0.0,
+    },
+    "ex-gwt-moc3dp1c": {
+        "longitudinal_dispersivity": 1.0,
+        "retardation_factor": 2.0,
+        "decay_rate": 0.0,
+    },
+    "ex-gwt-moc3dp1d": {
+        "longitudinal_dispersivity": 1.0,
+        "retardation_factor": 1.0,
+        "decay_rate": 0.01,
+    },
 }
 
 # Scenario parameter units - make sure there is at least one blank line before next item
@@ -50,6 +68,8 @@ parameters = {
 
 parameter_units = {
     "longitudinal_dispersivity": "$cm$",
+    "retardation_factor": "unitless",
+    "decay_rate": "$s^{-1}$",
 }
 
 # Model units
@@ -79,6 +99,40 @@ initial_concentration = 0.0  # Initial concentration (unitless)
 #
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 #
+
+
+def get_sorbtion_dict(retardation_factor):
+    sorbtion = False
+    bulk_density = None
+    distcoef = None
+    if retardation_factor > 1.0:
+        sorbtion = True
+        bulk_density = 1.0
+        distcoef = (retardation_factor - 1.0) * porosity / bulk_density
+    sorbtion_dict = {
+        "sorbtion": sorbtion,
+        "bulk_density": bulk_density,
+        "distcoef": distcoef,
+    }
+    return sorbtion_dict
+
+
+def get_decay_dict(decay_rate, sorbtion=False):
+    first_order_decay = None
+    decay = None
+    decay_sorbed = None
+    if decay_rate != 0.0:
+        first_order_decay = True
+        decay = decay_rate
+        if sorbtion:
+            decay_sorbed = decay_rate
+    decay_dict = {
+        "first_order_decay": first_order_decay,
+        "decay": decay,
+        "decay_sorbed": decay_sorbed,
+    }
+    return decay_dict
+
 
 def build_mf6gwf(sim_folder):
     print("Building mf6gwf model...{}".format(sim_folder))
@@ -138,9 +192,13 @@ def build_mf6gwf(sim_folder):
     )
     return sim
 
+
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 
-def build_mf6gwt(sim_folder, longitudinal_dispersivity):
+
+def build_mf6gwt(
+    sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate
+):
     print("Building mf6gwt model...{}".format(sim_folder))
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
@@ -165,7 +223,12 @@ def build_mf6gwt(sim_folder, longitudinal_dispersivity):
         botm=botm,
     )
     flopy.mf6.ModflowGwtic(gwt, strt=0)
-    flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
+    flopy.mf6.ModflowGwtmst(
+        gwt,
+        porosity=porosity,
+        **get_sorbtion_dict(retardation_factor),
+        **get_decay_dict(decay_rate, retardation_factor > 1.0),
+    )
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
         gwt, alh=longitudinal_dispersivity, ath1=longitudinal_dispersivity
@@ -177,6 +240,7 @@ def build_mf6gwt(sim_folder, longitudinal_dispersivity):
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
     sourcerecarray = [["WEL-1", "AUX", "CONCENTRATION"]]
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
+    # flopy.mf6.ModflowGwtcnc(gwt, stress_period_data=[((0, 0, 0), source_concentration),])
     obs_data = {
         "{}.obs.csv".format(name): [
             ("X005", "CONCENTRATION", (0, 0, 0)),
@@ -197,16 +261,21 @@ def build_mf6gwt(sim_folder, longitudinal_dispersivity):
     return sim
 
 
-def build_model(sim_name, longitudinal_dispersivity):
+def build_model(
+    sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
+):
     sims = None
     if config.buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name, longitudinal_dispersivity)
+        sim_mf6gwt = build_mf6gwt(
+            sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
+        )
         sims = (sim_mf6gwf, sim_mf6gwt)
     return sims
 
 
 # Function to write model files
+
 
 def write_model(sims, silent=True):
     if config.writeModel:
@@ -218,6 +287,7 @@ def write_model(sims, silent=True):
 
 # Function to run the model
 # True is returned if the model runs successfully
+
 
 def run_model(sims, silent=True):
     success = True
@@ -235,7 +305,10 @@ def run_model(sims, silent=True):
 
 # Function to plot the model results
 
-def plot_results_ct(sims, idx, longitudinal_dispersivity):
+
+def plot_results_ct(
+    sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
+):
     if config.plotModel:
         print("Plotting C versus t model results...")
         sim_mf6gwf, sim_mf6gwt = sims
@@ -255,14 +328,17 @@ def plot_results_ct(sims, idx, longitudinal_dispersivity):
         atimes = np.arange(0, total_time, 0.1)
         obsnames = ["X005", "X405", "X1105"]
         simtimes = mf6gwt_ra["time"]
-        dispersion_coefficient = longitudinal_dispersivity * specific_discharge
+        dispersion_coefficient = (
+            longitudinal_dispersivity * specific_discharge / retardation_factor
+        )
         for i, x in enumerate([0.05, 4.05, 11.05]):
-            a1 = analytical.Wexler1d().analytical(
+            a1 = analytical.Wexler1d().analytical2(
                 x,
                 atimes,
-                specific_discharge,
+                specific_discharge / retardation_factor,
                 system_length,
                 dispersion_coefficient,
+                decay_rate,
             )
             if idx == 0:
                 idx_filter = a1 < 0
@@ -272,9 +348,11 @@ def plot_results_ct(sims, idx, longitudinal_dispersivity):
                 idx_filter = atimes > 0
                 if i == 2:
                     idx_filter = atimes > 79
-            elif idx == 1:
+            elif idx > 0:
                 idx_filter = atimes > 0
-            axs.plot(atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i])
+            axs.plot(
+                atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i]
+            )
             axs.plot(
                 simtimes[::iskip],
                 mf6gwt_ra[obsnames[i]][::iskip],
@@ -303,7 +381,9 @@ def plot_results_ct(sims, idx, longitudinal_dispersivity):
             fig.savefig(fpth)
 
 
-def plot_results_cd(sims, idx, longitudinal_dispersivity):
+def plot_results_cd(
+    sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
+):
     if config.plotModel:
         print("Plotting C versus x model results...")
         sim_mf6gwf, sim_mf6gwt = sims
@@ -323,15 +403,18 @@ def plot_results_cd(sims, idx, longitudinal_dispersivity):
         iskip = 5
         ctimes = [6.0, 60.0, 120.0]
         x = np.linspace(0.5 * delr, system_length - 0.5 * delr, ncol - 1)
-        dispersion_coefficient = longitudinal_dispersivity * specific_discharge
+        dispersion_coefficient = (
+            longitudinal_dispersivity * specific_discharge / retardation_factor
+        )
 
         for i, t in enumerate(ctimes):
-            a1 = analytical.Wexler1d().analytical(
+            a1 = analytical.Wexler1d().analytical2(
                 x,
                 t,
-                specific_discharge,
+                specific_discharge / retardation_factor,
                 system_length,
                 dispersion_coefficient,
+                decay_rate,
             )
             if idx == 0:
                 idx_filter = x > system_length
@@ -378,6 +461,7 @@ def plot_results_cd(sims, idx, longitudinal_dispersivity):
 # 4. plot_results.
 #
 
+
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
@@ -388,12 +472,24 @@ def scenario(idx, silent=True):
         plot_results_ct(sims, idx, **parameter_dict)
         plot_results_cd(sims, idx, **parameter_dict)
 
+
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
 
+
 def test_02():
     scenario(1, silent=False)
+
+
+def test_03():
+    scenario(2, silent=False)
+
+
+def test_04():
+    scenario(3, silent=False)
+
+
 # nosetest end
 
 if __name__ == "__main__":
@@ -406,3 +502,11 @@ if __name__ == "__main__":
     # Scenario 2 - description
 
     scenario(1)
+
+    # Scenario 3 - description
+
+    scenario(2)
+
+    # Scenario 4 - description
+
+    scenario(3)

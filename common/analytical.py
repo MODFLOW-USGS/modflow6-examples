@@ -124,6 +124,8 @@ class Wexler1d(object):
             velocity
         l : float
             length domain
+        d : float
+            dispersion coefficient
         e : float
             decay rate
     

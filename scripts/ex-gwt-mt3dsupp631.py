@@ -61,6 +61,7 @@ obs_xloc = 8.0  # Observation x location ($m$)
 # recharge is the only variable
 #
 
+
 def build_mf6gwf(sim_folder):
     print("Building mf6gwf model...{}".format(sim_folder))
     name = "flow"
@@ -246,6 +247,7 @@ def build_model(sim_name):
 
 # Function to write model files
 
+
 def write_model(sims, silent=True):
     if config.writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -258,6 +260,7 @@ def write_model(sims, silent=True):
 
 # Function to run the model
 # True is returned if the model runs successfully
+
 
 def run_model(sims, silent=True):
     success = True
@@ -283,6 +286,7 @@ def run_model(sims, silent=True):
 
 # Function to plot the model results
 
+
 def plot_results(sims, idx):
     if config.plotModel:
         print("Plotting model results...")
@@ -297,13 +301,16 @@ def plot_results(sims, idx):
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
-        axs.plot(mf6gwt_ra["time"], mf6gwt_ra["MYOBS"],
-                 marker="o",
-                 ls="none",
-                 mec="blue",
-                 mfc="none",
-                 markersize="4",
-                 label="MODFLOW 6 GWT")
+        axs.plot(
+            mf6gwt_ra["time"],
+            mf6gwt_ra["MYOBS"],
+            marker="o",
+            ls="none",
+            mec="blue",
+            mfc="none",
+            markersize="4",
+            label="MODFLOW 6 GWT",
+        )
 
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.OBS")
@@ -313,7 +320,7 @@ def plot_results(sims, idx):
             mt3dms_ra["time"],
             mt3dms_ra[colname],
             linestyle="-",
-            color='k',
+            color="k",
             label="MT3DMS",
         )
         axs.set_xlabel("Time (days)")
@@ -336,6 +343,7 @@ def plot_results(sims, idx):
 # 3. run_model, and
 # 4. plot_results.
 
+
 def scenario(idx, silent=True):
     sim = build_model(example_name)
     write_model(sim, silent=silent)
@@ -343,9 +351,12 @@ def scenario(idx, silent=True):
     if success:
         plot_results(sim, idx)
 
+
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
+
+
 # nosetest end
 
 if __name__ == "__main__":
