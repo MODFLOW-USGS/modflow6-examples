@@ -145,11 +145,19 @@ jobs:
           echo $GITHUB_REPOSITORY
           echo $GITHUB_REF
           echo $GITHUB_EVENT_NAME
-                  
-      - name: Trigger RTD build 
-        uses: dfm/rtds-action@v1.0.0
+          
+      - name: Get branch name
+        uses: nelonoel/branch-name@v1
+
+      - name: Trigger RTD build using curl
+        uses: wei/curl@v1.1.1
         with:
-          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
-          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.ref }}
+          args: -X POST -d "branches=${BRANCH_NAME}" -d "token=${{ secrets.RTDS_WEBHOOK_TOKEN }}" ${{ secrets.RTDS_WEBHOOK_URL }}
+                  
+      #- name: Trigger RTD build 
+      #  uses: dfm/rtds-action@v1.0.0
+      #  with:
+      #    webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+      #    webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+      #    commit_ref: ${{ github.ref }}
 
