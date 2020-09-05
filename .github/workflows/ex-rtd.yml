@@ -132,12 +132,20 @@ jobs:
           path: |
             .doc/_notebooks
 
-      - name: Trigger RTD build
-        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+
+# trigger rtd if previous job was successful
+  rtd:
+    name: Read the Docs trigger
+    needs: build_nb
+    runs-on: ubuntu-latest
+
+    if:
+      github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Trigger RTDs build 
         uses: dfm/rtds-action@v1.0.0
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
           webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
           commit_ref: ${{ github.ref }}
-          build_triggered: true
-          versions: latest
+
