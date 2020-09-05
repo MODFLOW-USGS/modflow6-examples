@@ -2,11 +2,9 @@ name: RTD
 
 on:
   push:
-    branches:
-      - master
+    branches: [ master ]
   pull_request:
-    branches:
-      - master
+    branches: [ master ]
 
 jobs:
   build_nb:
@@ -133,7 +131,6 @@ jobs:
             .doc/_notebooks
 
 
-# trigger rtd if previous job was successful
   rtd:
     name: Read the Docs trigger
     needs: build_nb
@@ -142,7 +139,14 @@ jobs:
     if:
       github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
     steps:
-      - name: Trigger RTDs build 
+      - name: Output repo information
+        run: |
+          echo $GITHUB_REPOSITORY_OWNER
+          echo $GITHUB_REPOSITORY
+          echo $GITHUB_REF
+          echo $GITHUB_EVENT_NAME
+                  
+      - name: Trigger RTD build 
         uses: dfm/rtds-action@v1.0.0
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
