@@ -163,6 +163,7 @@ cncspd = [[(0, 0, 0), c0]]
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
+
 def build_model(
     sim_name,
     dispersivity=0.0,
@@ -504,6 +505,7 @@ def build_model(
 
 # Function to write model files
 
+
 def write_model(mf2k5, mt3d, sim, silent=True):
     if config.writeModel:
         mf2k5.write_input()
@@ -513,6 +515,7 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 
 # Function to run the models.
 # _True_ is returned if the model runs successfully
+
 
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
@@ -526,6 +529,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 # Function to plot the model results
+
 
 def plot_results(mt3d, mf6, idx, ax=None):
     if config.plotModel:
@@ -601,6 +605,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
 # 3. run_model, and
 # 4. plot_results.
 
+
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
@@ -613,18 +618,24 @@ def scenario(idx, silent=True):
     if success:
         plot_results(mt3d, sim, idx)
 
+
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
 
+
 def test_02():
     scenario(1, silent=False)
+
 
 def test_03():
     scenario(2, silent=False)
 
+
 def test_04():
     scenario(3, silent=False)
+
+
 # nosetest end
 
 if __name__ == "__main__":

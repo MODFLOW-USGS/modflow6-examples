@@ -68,7 +68,7 @@ tsmult = [1.0] * numdays
 
 # Further parent model grid discretization
 
-x = [ round(x, 3) for x in np.linspace(50.0, 45.0, ncolp) ]
+x = [round(x, 3) for x in np.linspace(50.0, 45.0, ncolp)]
 topp = np.repeat(x, nrowp).reshape((15, 15)).T
 z = [round(z, 3) for z in np.linspace(50.0, 0.0, nlayp + 1)]
 botmp = [topp - z[len(z) - 2], topp - z[len(z) - 3], topp - z[0]]
@@ -1134,9 +1134,12 @@ def scenario(idx, silent=True):
     if success:
         plot_results(sim, idx)
 
+
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     scenario(0, silent=False)
+
+
 # nosetest end
 
 if __name__ == "__main__":
