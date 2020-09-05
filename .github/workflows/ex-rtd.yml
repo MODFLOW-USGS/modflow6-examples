@@ -77,7 +77,6 @@ jobs:
         shell: bash
         run: |
           cd ./scripts/
-          ls -la ../
           python process-scripts.py
           cd ..
 
