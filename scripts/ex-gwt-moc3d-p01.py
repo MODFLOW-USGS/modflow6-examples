@@ -367,9 +367,10 @@ def plot_results_ct(
         axs.set_xlim(0, 120)
         axs.set_xlabel("Time (seconds)")
         axs.set_ylabel("Normalized Concentration (unitless)")
-        axs.text(1, 0.5, "x=0.05")
-        axs.text(45, 0.5, "x=4.05")
-        axs.text(100, 0.5, "x=11.05")
+        if idx in [0, 1]:
+            axs.text(1, 0.5, "x=0.05")
+            axs.text(45, 0.5, "x=4.05")
+            axs.text(100, 0.5, "x=11.05")
         axs.legend()
 
         # save figure
@@ -437,9 +438,10 @@ def plot_results_cd(
             )
         axs.set_ylim(0, 1.1)
         axs.set_xlim(0, 12)
-        axs.text(0.5, 0.7, "t=6 s")
-        axs.text(5.5, 0.7, "t=60 s")
-        axs.text(11, 0.7, "t=120 s")
+        if idx in [0, 1]:
+            axs.text(0.5, 0.7, "t=6 s")
+            axs.text(5.5, 0.7, "t=60 s")
+            axs.text(11, 0.7, "t=120 s")
         axs.set_xlabel("Distance (cm)")
         axs.set_ylabel("Normalized Concentration (unitless)")
         plt.legend()
