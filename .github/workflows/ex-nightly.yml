@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: latest-build
+    name: current-build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -157,12 +157,12 @@ jobs:
           mv ./doc/mf6examples.pdf mf6examples.pdf
           ls -la ./
 
-      - name: Upload build artifacts for latest release
+      - name: Upload build artifacts for current release
         if:
           github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
-          name: latest
+          name: current
           path: |
             ./mf6examples.pdf
             ./modflow6-examples.zip
@@ -178,35 +178,35 @@ jobs:
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
         with:
-          name: latest
-          path: ./latest/
+          name: current
+          path: ./current/
 
       - name: List files in the artifact directory
         shell: bash
         run: |
           pwd
-          ls -l ./latest/
+          ls -l ./current/
 
       - name: Create a Release
         uses: ncipollo/release-action@v1
         with:
-          tag: latest
-          name: latest build
-          body: "MODFLOW 6 examples: built at ${F_TIME}"
+          tag: current
+          name: current build
+          body: MODFLOW 6 examples -- built ${F_TIME}
           allowUpdates: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload compiled executables to the latest GitHub release
+      - name: Upload compiled executables to the current GitHub release
         uses: svenstaro/upload-release-action@2.0.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./latest/*
-          tag: latest
+          file: ./current/*
+          tag: current
           overwrite: true
           file_glob: true
 
       - name: Delete Artifact
         uses: GeekyEggo/delete-artifact@v1.0.0
         with:
-          name: latest
+          name: current
