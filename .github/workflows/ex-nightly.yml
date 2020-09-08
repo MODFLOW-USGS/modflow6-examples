@@ -187,12 +187,17 @@ jobs:
           pwd
           ls -l ./current/
 
-      - name: Create a Release
+      - name: create bodyFile
+        shell: bash
+        run: |
+          echo "MODFLOW 6 examples -- built "${F_TIME} > bodyFile
+
+      - name: Update the current release
         uses: ncipollo/release-action@v1
         with:
           tag: current
           name: current build
-          body: MODFLOW 6 examples -- built ${F_TIME}
+          bodyFile: ./bodyFile
           allowUpdates: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
