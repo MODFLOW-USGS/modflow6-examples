@@ -27,6 +27,23 @@ jobs:
           echo ${{ github.repository }}
           echo ${{ github.ref }}
 
+      - name: Get Current Time
+        uses: 1466587594/get-current-time@v2.0.0
+        id: current-time
+        with:
+          format: MM/DD/YYYY HH:mm
+
+      - name: Set current time as environmental variable
+        env:
+          TIME: "${{ steps.current-time.outputs.time }}"
+          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
+        run: |
+          echo "::set-env name=F_TIME::${{ steps.current-time.outputs.formattedTime }}"
+          echo "::set-env name=TIME::${{ steps.current-time.outputs.time }}"
+          echo $TIME
+          echo $F_TIME
+          echo "MODFLOW 6 examples: built at ${F_TIME}"
+
       - name: Setup symbolic link to gfortran
         run: |
           sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran
@@ -141,7 +158,8 @@ jobs:
           ls -la ./
 
       - name: Upload build artifacts for latest release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+        if:
+          github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@v2
         with:
           name: latest
@@ -169,27 +187,12 @@ jobs:
           pwd
           ls -l ./latest/
 
-      - name: Get Current Time
-        uses: 1466587594/get-current-time@v2.0.0
-        id: current-time
-        with:
-          format: MM/DD/YYYY HH
-
-      - name: Set current time as environmental variable
-        env:
-          TIME: "${{ steps.current-time.outputs.time }}"
-          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
-        run: |
-          echo "::set-env name=F_TIME::${{ steps.current-time.outputs.formattedTime }}"
-          echo "::set-env name=TIME::${{ steps.current-time.outputs.time }}"
-          echo $TIME $F_TIME
-
       - name: Create a Release
         uses: ncipollo/release-action@v1
         with:
           tag: latest
           name: latest build
-          body: "MODFLOW 6 examples: built at $F_TIME"
+          body: "MODFLOW 6 examples: built at ${F_TIME}"
           allowUpdates: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
