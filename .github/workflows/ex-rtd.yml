@@ -22,6 +22,7 @@ jobs:
           echo ${{ github.repository_owner }}
           echo ${{ github.repository }}
           echo ${{ github.ref }}
+          echo ${{ github.event_name }}
 
       - name: Setup symbolic link to gfortran
         run: |
