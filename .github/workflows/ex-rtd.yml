@@ -110,9 +110,6 @@ jobs:
       - name: Copy the completed notebook files to .doc/_notebooks
         shell: bash
         run: |
-          echo .nb/ contents
-          ls -la .nb/
-
           echo create .doc/_notebooks/
           mkdir -v .doc/_notebooks
 
@@ -129,35 +126,12 @@ jobs:
           name: notebooks-for-${{ github.sha }}
           path: |
             .doc/_notebooks
-
-
-  rtd:
-    name: Read the Docs trigger
-    needs: build_nb
-    runs-on: ubuntu-latest
-
-    if:
-      github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
-    steps:
-      - name: Output repo information
-        run: |
-          echo $GITHUB_REPOSITORY_OWNER
-          echo $GITHUB_REPOSITORY
-          echo $GITHUB_REF
-          echo $GITHUB_EVENT_NAME
-          
-      - name: Get branch name
-        uses: nelonoel/branch-name@v1
-
-      - name: Trigger RTD build using curl
-        uses: wei/curl@v1.1.1
-        with:
-          args: -X POST -d "branches=${BRANCH_NAME}" -d "token=${{ secrets.RTDS_WEBHOOK_TOKEN }}" ${{ secrets.RTDS_WEBHOOK_URL }}
                   
-      #- name: Trigger RTD build 
-      #  uses: dfm/rtds-action@v1.0.0
-      #  with:
-      #    webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
-      #    webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-      #    commit_ref: ${{ github.ref }}
+      - name: Trigger RTD build 
+        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+        uses: dfm/rtds-action@v1.0.0
+        with:
+          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+          commit_ref: ${{ github.ref }}
 
