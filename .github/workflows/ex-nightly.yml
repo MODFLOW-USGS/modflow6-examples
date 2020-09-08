@@ -193,7 +193,7 @@ jobs:
         with:
           tag: latest
           name: latest build
-          body: "MODFLOW 6 examples: built at" $F_TIME
+          body: "MODFLOW 6 examples: built at ${F_TIME}"
           allowUpdates: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
