@@ -4,11 +4,9 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches:
-      - master
+    branches: [ master ]
   pull_request:
-    branches:
-      - master
+    branches: [ master ]
 
 jobs:
   build:
@@ -26,23 +24,8 @@ jobs:
           echo ${{ github.repository_owner }}
           echo ${{ github.repository }}
           echo ${{ github.ref }}
-
-      - name: Get Current Time
-        uses: 1466587594/get-current-time@v2.0.0
-        id: current-time
-        with:
-          format: MM/DD/YYYY HH:mm
-
-      - name: Set current time as environmental variable
-        env:
-          TIME: "${{ steps.current-time.outputs.time }}"
-          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
-        run: |
-          echo "::set-env name=F_TIME::${{ steps.current-time.outputs.formattedTime }}"
-          echo "::set-env name=TIME::${{ steps.current-time.outputs.time }}"
-          echo $TIME
-          echo $F_TIME
-          echo "MODFLOW 6 examples: built at ${F_TIME}"
+          echo ${{ github.event_name }}
+          echo ${{ github.sha }}
 
       - name: Setup symbolic link to gfortran
         run: |
@@ -84,13 +67,13 @@ jobs:
         shell: bash
         run: |
           cd ./etc/
-          python get_exes.py
+          python ci_get_exes.py
           cd ..
 
       - name: List executables
         shell: bash
         run: |
-          ls -la ./bin/
+          ls -l ./bin/
 
       - name: Run scripts without model runs and zip input files
         shell: python
@@ -153,13 +136,13 @@ jobs:
       - name: Rename and move the LaTeX document
         shell: bash
         run: |
-          ls -la ./doc/
+          ls -l ./doc/
           mv ./doc/mf6examples.pdf mf6examples.pdf
-          ls -la ./
+          ls -l ./
 
       - name: Upload build artifacts for current release
         if:
-          github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+          github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: current
@@ -167,14 +150,52 @@ jobs:
             ./mf6examples.pdf
             ./modflow6-examples.zip
 
-  # make the release if previous job was successful
+      - name: Run notebooks with jupytext for ReadtheDocs
+        if:
+          github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        shell: bash
+        run: |
+          cd ./etc/
+          python ci_run_notebooks.py
+          cd ..
+
+      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        uses: actions/upload-artifact@v2
+        with:
+          name: notebooks-for-${{ github.sha }}
+          path: |
+            .doc/_notebooks
+
+
+  # make the release if the "build" job was successful
   release:
     name: Make the release
     needs: build
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
+      - name: Checkout MODFLOW6 examples repo
+        uses: actions/checkout@v2
+
+      - name: Get Current Time
+        uses: 1466587594/get-current-time@v2.0.0
+        id: current-time
+        with:
+          format: MM/DD/YYYY HH:mm
+
+      - name: Set current time as environmental variable
+        env:
+          TIME: "${{ steps.current-time.outputs.time }}"
+          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
+        run: |
+          echo "::set-env name=F_TIME::${{ steps.current-time.outputs.formattedTime }}"
+          echo "::set-env name=TIME::${{ steps.current-time.outputs.time }}"
+          echo $TIME
+          echo $F_TIME
+          echo "MODFLOW 6 examples: built at ${F_TIME}"
+
       - name: Download a Build Artifact
         uses: actions/download-artifact@v2
         with:
@@ -190,9 +211,16 @@ jobs:
       - name: create bodyFile
         shell: bash
         run: |
-          echo "MODFLOW 6 examples -- built "${F_TIME} > bodyFile
+          echo "MODFLOW 6 examples: built "${F_TIME} > bodyFile
+          cat bodyFile
+          ls -l .
 
-      - name: Update the current release
+      - name: Delete the latest release
+        uses: ame-yu/action-delete-latest-release@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create/Update the current release
         uses: ncipollo/release-action@v1
         with:
           tag: current
@@ -215,3 +243,22 @@ jobs:
         uses: GeekyEggo/delete-artifact@v1.0.0
         with:
           name: current
+
+
+  # trigger rtd if "build" job was successful
+  rtd:
+    name: rtd-trigger
+    needs: build
+    runs-on: ubuntu-latest
+
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+    steps:
+      - name: Checkout MODFLOW6 examples repo
+        uses: actions/checkout@v2
+
+      - name: Trigger RTDs build on push to repo branches
+        uses: dfm/rtds-action@v1.0.0
+        with:
+          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+          commit_ref: ${{ github.ref }}
