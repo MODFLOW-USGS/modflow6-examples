@@ -248,7 +248,7 @@ jobs:
   # trigger rtd if "build" job was successful
   rtd:
     name: rtd-trigger
-    needs: build
+    needs: release
     runs-on: ubuntu-latest
 
     if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
