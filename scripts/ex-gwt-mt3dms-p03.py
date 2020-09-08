@@ -545,7 +545,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
             linestyles="--",
         )
         plt.clabel(cs2, inline=1, fontsize=10)
-        labels = ["MT3DMS", "MODFLOW6"]
+        labels = ["MT3DMS", "MODFLOW 6"]
         lines = [cs1.collections[0], cs2.collections[0]]
 
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")

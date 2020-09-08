@@ -1,0 +1,34 @@
+\section{Three-Dimensional Steady Flow with Transport (MOC3D Problem 2 with a Triangular Grid)}
+
+% Describe source of problem
+This problem corresponds to the second problem presented in the MOC3D report \cite{konikow1996three}, which involves the transport of a dissolved constituent in a steady, three-dimensional flow field.  An analytical solution for this problem is given by \cite{wexler1992}.  As for the previous example, this example is simulated with the GWT Model in \mf, which receives flow information from a separate simulation with the GWF Model in \mf.  In this example, however, a triangular grid is used for the flow and transport simulation.  Results from the GWT Model are compared with the results from the \cite{wexler1992} analytical solution.
+
+% a figure
+\begin{StandardFigure}{
+                                     Triangular model grid used for the \mf simulation.  Model grid is shown using an aspect ratio of 4.
+                                     }{fig:ex-gwt-moc3dp2tg-grid}{ex-gwt-moc3dp2tg-grid}
+\end{StandardFigure}            
+
+
+\subsection{Example description}
+
+\cite{wexler1992} presents an analytical solution for three dimensional solute transport from a point source in a one-dimensional flow field.  As described by \cite{konikow1996three}, only one quadrant of the three-dimensional domain is represented by the numerical model.  Thus, the solute mass flux specified for the model is one quarter of the solute mass flux used in the analytical solution.  
+
+The parameters used for this problem are listed in table~\ref{tab:ex-gwt-moc3d-p02tg01}.  The model grid for this problem consists of 40 layers, 695 cells per layer, and 403 vertices in a layer.  The top for layer 1 is set to zero, and flat bottoms are assigned to all layers based on a uniform layer thickness of 0.05 $m$.  The remaining parameters are set similarly to the previous simulation with a regular grid, except for in this simulation, the XT3D method is used for flow and dispersive transport.
+
+% add static parameter table(s)
+\begin{StandardTable}{Parameters used for the example of three-dimensional flow with transport (MOC3D Problem 2 model parameters).}{tab:ex-gwt-moc3d-p02tg01}{../tables/ex-gwt-moc3d-p02tg01}
+\end{StandardTable}
+
+% for examples without scenarios
+\subsection{Example Results}
+
+A comparison of the MODFLOW 6 results with the analytical solution of \cite{wexler1992} is shown for layer 1 in figure~\ref{fig:ex-gwt-moc3dp2tg-map}.
+
+% a figure
+\begin{StandardFigure}{
+                                     Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for three-dimensional flow with transport.  Results are for the end of the simulation (time=400 $d$) and for layer 1.  Black lines represent solute concentration contours from the analytical solution \citep{wexler1992}; blue lines represent solute concentration contours simulated by \mf.  An aspect ratio of 4.0 is specified to enhance the comparison.
+                                     }{fig:ex-gwt-moc3dp2tg-map}{ex-gwt-moc3dp2tg-map}
+\end{StandardFigure}            
+
+                

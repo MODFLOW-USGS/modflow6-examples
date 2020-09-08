@@ -1,6 +1,6 @@
 # ## Three-Dimensional Steady Flow with Transport
 #
-# MOC3D Problem 2
+# MOC3D Problem 2 simulated with a triangular grid
 #
 #
 
@@ -13,6 +13,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import flopy
+import flopy.utils.cvfdutil
 import numpy as np
 
 # Append to system path to include the common subdirectory
@@ -36,7 +37,7 @@ figure_size = (6, 4)
 # Base simulation and model name and workspace
 
 ws = config.base_ws
-example_name = "ex-gwt-moc3dp2"
+example_name = "ex-gwt-moc3dp2tg"
 
 # Model units
 
@@ -74,6 +75,73 @@ source_location0 = tuple([idx - 1 for idx in source_location])
 #
 
 
+def grid_triangulator(itri, delr, delc):
+    regular_grid = flopy.discretization.StructuredGrid(delc, delr)
+    vertdict = {}
+    icell = 0
+    for i in range(nrow):
+        for j in range(ncol):
+            vs = regular_grid.get_cell_vertices(i, j)
+            vs.reverse()
+            if itri[i, j] == 0:
+                vertdict[icell] = [vs[0], vs[3], vs[2], vs[1], vs[0]]
+                icell += 1
+            elif itri[i, j] == 1:
+                vertdict[icell] = [vs[0], vs[3], vs[1], vs[0]]
+                icell += 1
+                vertdict[icell] = [vs[1], vs[3], vs[2], vs[1]]
+                icell += 1
+            elif itri[i, j] == 2:
+                vertdict[icell] = [vs[0], vs[2], vs[1], vs[0]]
+                icell += 1
+                vertdict[icell] = [vs[0], vs[3], vs[2], vs[0]]
+                icell += 1
+            else:
+                raise Exception("Unknown itri value: {}".format(itri[i, j]))
+    verts, iverts = flopy.utils.cvfdutil.to_cvfd(vertdict)
+    return verts, iverts
+
+
+def cvfd_to_cell2d(verts, iverts):
+    vertices = []
+    for i in range(verts.shape[0]):
+        x = verts[i, 0]
+        y = verts[i, 1]
+        vertices.append([i, x, y])
+    cell2d = []
+    for icell2d, vs in enumerate(iverts):
+        points = [tuple(verts[ip]) for ip in vs]
+        xc, yc = flopy.utils.cvfdutil.centroid_of_polygon(points)
+        cell2d.append([icell2d, xc, yc, len(vs), *vs])
+    return vertices, cell2d
+
+
+def make_grid():
+    # itri 0 means do not split the cell
+    # itri 1 means split from upper right to lower left
+    # itri 2 means split from upper left to lower right
+    itri = np.zeros((nrow, ncol), dtype=np.int)
+    itri[:, 1 : ncol - 1] = 2
+    itri[source_location0[1], source_location0[2]] = 0
+    delra = delr * np.ones(ncol, dtype=np.float)
+    delca = delc * np.ones(nrow, dtype=np.float)
+    verts, iverts = grid_triangulator(itri, delra, delca)
+    vertices, cell2d = cvfd_to_cell2d(verts, iverts)
+
+    # A grid array that has the cellnumber of the first triangular cell in
+    # the original grid
+    itricellnum = np.empty((nrow, ncol), dtype=np.int)
+    icell = 0
+    for i in range(nrow):
+        for j in range(ncol):
+            itricellnum[i, j] = icell
+            if itri[i, j] != 0:
+                icell += 2
+            else:
+                icell += 1
+    return vertices, cell2d, itricellnum
+
+
 def build_mf6gwf(sim_folder):
     print("Building mf6gwf model...{}".format(sim_folder))
     name = "flow"
@@ -85,21 +153,28 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowTdis(
         sim, nper=nper, perioddata=tdis_ds, time_units=time_units
     )
-    flopy.mf6.ModflowIms(sim, print_option="summary", inner_maximum=300)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        inner_maximum=300,
+        linear_acceleration="bicgstab",
+    )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
-    flopy.mf6.ModflowGwfdis(
+    vertices, cell2d, itricellnum = make_grid()
+    flopy.mf6.ModflowGwfdisv(
         gwf,
         length_units=length_units,
         nlay=nlay,
-        nrow=nrow,
-        ncol=ncol,
-        delr=delr,
-        delc=delc,
+        nvert=len(vertices),
+        ncpl=len(cell2d),
+        vertices=vertices,
+        cell2d=cell2d,
         top=top,
         botm=botm,
     )
     flopy.mf6.ModflowGwfnpf(
         gwf,
+        xt3doptions=True,
         save_specific_discharge=True,
         save_saturation=True,
         icelltype=0,
@@ -110,9 +185,11 @@ def build_mf6gwf(sim_folder):
     welspd = []
     for k in range(nlay):
         for i in range(nrow):
-            rec = [(k, i, ncol - 1), 0.0]
+            icpl = itricellnum[i, ncol - 1]
+            rec = [(k, icpl), 0.0]
             chdspd.append(rec)
-            rec = [(k, i, 0), specific_discharge * delc * delv]
+            icpl = itricellnum[i, 0]
+            rec = [(k, icpl), specific_discharge * delc * delv]
             welspd.append(rec)
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chdspd)
     flopy.mf6.ModflowGwfwel(gwf, stress_period_data=welspd)
@@ -143,14 +220,15 @@ def build_mf6gwt(sim_folder):
     )
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
-    flopy.mf6.ModflowGwtdis(
+    vertices, cell2d, itricellnum = make_grid()
+    flopy.mf6.ModflowGwfdisv(
         gwt,
         length_units=length_units,
         nlay=nlay,
-        nrow=nrow,
-        ncol=ncol,
-        delr=delr,
-        delc=delc,
+        nvert=len(vertices),
+        ncpl=len(cell2d),
+        vertices=vertices,
+        cell2d=cell2d,
         top=top,
         botm=botm,
     )
@@ -158,7 +236,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d=False, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
+        gwt, xt3d=True, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
     )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
@@ -166,7 +244,8 @@ def build_mf6gwt(sim_folder):
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
     sourcerecarray = [[]]
-    srcspd = [[source_location0, solute_mass_flux]]
+    icpl = itricellnum[source_location0[1], source_location0[2]]
+    srcspd = [[(0, icpl), solute_mass_flux]]
     flopy.mf6.ModflowGwtsrc(gwt, stress_period_data=srcspd)
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obs_data = {
@@ -255,6 +334,32 @@ def plot_analytical(ax, levels):
     return cs
 
 
+def plot_grid(sims):
+    if config.plotModel:
+        print("Plotting model results...")
+        sim_mf6gwf, sim_mf6gwt = sims
+        fs = USGSFigure(figure_type="map", verbose=False)
+
+        sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
+        fig, axs = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
+        gwt = sim_mf6gwt.trans
+        pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
+        pmv.plot_grid()
+        axs.set_xlabel("x position (m)")
+        axs.set_ylabel("y position (m)")
+        axs.set_aspect(4.0)
+
+        # save figure
+        if config.plotSave:
+            sim_folder = os.path.split(sim_ws)[0]
+            sim_folder = os.path.basename(sim_folder)
+            fname = "{}-grid{}".format(sim_folder, config.figure_ext)
+            fpth = os.path.join(ws, "..", "figures", fname)
+            fig.savefig(fpth)
+
+
 def plot_results(sims):
     if config.plotModel:
         print("Plotting model results...")
@@ -312,6 +417,7 @@ def scenario(idx, silent=True):
     write_model(sims, silent=silent)
     success = run_model(sims, silent=silent)
     if success:
+        plot_grid(sims)
         plot_results(sims)
 
 
