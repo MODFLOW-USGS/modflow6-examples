@@ -8,7 +8,7 @@ on:
 
 jobs:
   rtd_build:
-    name: latest-build
+    name: rtd-build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -122,7 +122,7 @@ jobs:
           ls -la .doc/_notebooks/
 
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
-        if: github.repository_owner == 'MODFLOW-USGS'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: notebooks-for-${{ github.sha }}
@@ -131,11 +131,11 @@ jobs:
 
   # trigger rtd if previous job was successful
   rtd:
-    name: Read the Docs trigger
+    name: rtd-trigger
     needs: rtd_build
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Trigger RTDs build on master and develop branches
         uses: dfm/rtds-action@v1.0.0
