@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build_nb:
+  rtd_build:
     name: latest-build
     runs-on: ubuntu-latest
     strategy:
@@ -23,6 +23,7 @@ jobs:
           echo ${{ github.repository }}
           echo ${{ github.ref }}
           echo ${{ github.event_name }}
+          echo ${{ github.sha }}
 
       - name: Setup symbolic link to gfortran
         run: |
@@ -121,18 +122,26 @@ jobs:
           ls -la .doc/_notebooks/
 
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
-        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: notebooks-for-${{ github.sha }}
           path: |
             .doc/_notebooks
-                  
-      - name: Trigger RTD build 
-        if: github.repository_owner == 'MODFLOW-USGS' && github.ref == 'refs/heads/master'
-        uses: dfm/rtds-action@v1.0.0
-        with:
-          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
-          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.ref }}
+
+    # trigger rtd if previous job was successful
+    rtd:
+      name: Read the Docs trigger
+      needs: rtd_build
+      runs-on: ubuntu-latest
+
+      if:
+        github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+      steps:
+        - name: Trigger RTDs build on master and develop branches
+          uses: dfm/rtds-action@v1.0.0
+          with:
+            webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+            webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+            commit_ref: ${{ github.ref }}
 
