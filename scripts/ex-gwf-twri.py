@@ -48,28 +48,32 @@ time_units = "seconds"
 # Table TWRI Model Parameters
 
 nper = 1  # Number of periods
-nlay = 3  # Number of layers
+nlay = 5  # Number of layers
 ncol = 15  # Number of columns
 nrow = 15  # Number of rows
 delr = 5000.0  # Column width ($ft$)
 delc = 5000.0  # Row width ($ft$)
 top = 200.0  # Top of the model ($ft$)
-botm_str = "-200.0, -300.0, -450.0"  # Layer bottom elevations ($ft$)
+botm_str = "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations ($ft$)
 strt = 0.0  # Starting head ($ft$)
-icelltype_str = "1, 0, 0"  # Cell conversion type
-k11_str = "1.0e-3, 1e-4, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
-k33 = 2.0e-8  # Vertical hydraulic conductivity ($ft/s$)
+icelltype_str = "1, 0, 0, 0, 0"  # Cell conversion type
+k11_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
+k33_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Vertical hydraulic conductivity ($ft/s$)
 recharge = 3e-8  # Recharge rate ($ft/s$)
 
 # Static temporal data used by TDIS file
 
-tdis_ds = ((8.640e04, 1, 1.000e00),)
+perlen = 8.640e04
+nstp = 1
+tsmult = 1.
+tdis_ds = ((perlen, nstp, tsmult),)
 
 # parse parameter strings into tuples
 
-botm = tuple([float(value) for value in botm_str.split(",")])
-k11 = tuple([float(value) for value in k11_str.split(",")])
-icelltype = tuple([int(value) for value in icelltype_str.split(",")])
+botm = [float(value) for value in botm_str.split(",")]
+k11 = [float(value) for value in k11_str.split(",")]
+k33 = [float(value) for value in k33_str.split(",")]
+icelltype = [int(value) for value in icelltype_str.split(",")]
 
 # ### Create TWRI Model Boundary Conditions
 #
@@ -78,47 +82,62 @@ icelltype = tuple([int(value) for value in icelltype_str.split(",")])
 #
 
 chd_spd = []
-for k in range(2):
-    chd_spd += [[(k, i, 0), 0.0] for i in range(nrow)]
+for k in (0, 1, 2, 3):
+    chd_spd += [[k, i, 0, 0.0] for i in range(nrow)]
 chd_spd = {0: chd_spd}
 
+# Constant head cells for MODFLOW-2005 model
+
+chd_spd0 = []
+for k in (0, 1):
+    chd_spd0 += [[k, i, 0, 0.0, 0.0] for i in range(nrow)]
+chd_spd0 = {0: chd_spd0}
+
 # Well boundary conditions
-#
 
 wel_spd = {
     0: [
-        [(2, 4, 10), -5.0],
-        [(1, 3, 5), -5.0],
-        [(1, 5, 11), -5.0],
-        [(0, 8, 7), -5.0],
-        [(0, 8, 9), -5.0],
-        [(0, 8, 11), -5.0],
-        [(0, 8, 13), -5.0],
-        [(0, 10, 7), -5.0],
-        [(0, 10, 9), -5.0],
-        [(0, 10, 11), -5.0],
-        [(0, 10, 13), -5.0],
-        [(0, 12, 7), -5.0],
-        [(0, 12, 9), -5.0],
-        [(0, 12, 11), -5.0],
-        [(0, 12, 13), -5.0],
+        [4, 4, 10, -5.0],
+        [2, 3, 5, -5.0],
+        [2, 5, 11, -5.0],
+        [0, 8, 7, -5.0],
+        [0, 8, 9, -5.0],
+        [0, 8, 11, -5.0],
+        [0, 8, 13, -5.0],
+        [0, 10, 7, -5.0],
+        [0, 10, 9, -5.0],
+        [0, 10, 11, -5.0],
+        [0, 10, 13, -5.0],
+        [0, 12, 7, -5.0],
+        [0, 12, 9, -5.0],
+        [0, 12, 11, -5.0],
+        [0, 12, 13, -5.0],
     ]
 }
 
+# Well boundary conditions for MODFLOW-2005 model
+
+wel_spd0 = []
+layer_map = {0: 0, 2: 1, 4: 2}
+for (k, i, j, q) in wel_spd[0]:
+    kk = layer_map[k]
+    wel_spd0.append([kk, i, j, q])
+wel_spd0 = {0: wel_spd0}
+
+
 # Drain boundary conditions
-#
 
 drn_spd = {
     0: [
-        [(0, 7, 1), 0.0, 1.0e0],
-        [(0, 7, 2), 0.0, 1.0e0],
-        [(0, 7, 3), 10.0, 1.0e0],
-        [(0, 7, 4), 20.0, 1.0e0],
-        [(0, 7, 5), 30.0, 1.0e0],
-        [(0, 7, 6), 50.0, 1.0e0],
-        [(0, 7, 7), 70.0, 1.0e0],
-        [(0, 7, 8), 90.0, 1.0e0],
-        [(0, 7, 9), 100.0, 1.0e0],
+        [0, 7, 1, 0.0, 1.0e0],
+        [0, 7, 2, 0.0, 1.0e0],
+        [0, 7, 3, 10.0, 1.0e0],
+        [0, 7, 4, 20.0, 1.0e0],
+        [0, 7, 5, 30.0, 1.0e0],
+        [0, 7, 6, 50.0, 1.0e0],
+        [0, 7, 7, 70.0, 1.0e0],
+        [0, 7, 8, 90.0, 1.0e0],
+        [0, 7, 9, 100.0, 1.0e0],
     ]
 }
 
@@ -126,9 +145,6 @@ drn_spd = {
 # ### Functions to build, write, run, and plot the MODFLOW 6 TWRI model
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
-# recharge is the only variable
-#
-
 
 def build_model():
     if config.buildModel:
@@ -177,13 +193,46 @@ def build_model():
         return sim
     return None
 
+# MODFLOW-2005 model object (mf) is returned if building the model
+
+def build_mf5model():
+    if config.buildModel:
+        sim_ws = os.path.join(ws, sim_name, "mf2005")
+        mf = flopy.modflow.Modflow(modelname=sim_name, model_ws=sim_ws,
+                                   exe_name=config.mf2005_exe)
+        flopy.modflow.ModflowDis(mf, nlay=3, nrow=nrow, ncol=ncol,
+                                 delr=delr, delc=delc, laycbd=[1, 1, 0],
+                                 top=top, botm=botm,
+                                 nper=1, perlen=perlen, nstp=nstp, tsmult=tsmult)
+        flopy.modflow.ModflowBas(mf, strt=strt)
+        flopy.modflow.ModflowLpf(mf,
+                                 laytyp=[1, 0, 0],
+                                 hk=[k11[0], k11[2], k11[4]],
+                                 vka=[k11[0], k11[2], k11[4]],
+                                 vkcb=[k11[1], k11[3], 0],
+                                 ss=0, sy=0.,
+                                 )
+        flopy.modflow.ModflowChd(mf, stress_period_data=chd_spd0)
+        flopy.modflow.ModflowDrn(mf, stress_period_data=drn_spd)
+        flopy.modflow.ModflowWel(mf, stress_period_data=wel_spd0)
+        flopy.modflow.ModflowRch(mf, rech=recharge)
+        flopy.modflow.ModflowPcg(mf)
+        oc = flopy.modflow.ModflowOc(mf,
+                                     stress_period_data={(0,0):
+                                                             ['save head',
+                                                              'save budget']})
+        oc.reset_budgetunit()
+        return mf
+    return None
+
 
 # Function to write MODFLOW 6 TWRI model files
 
 
-def write_model(sim, silent=True):
+def write_model(sim, mf, silent=True):
     if config.writeModel:
         sim.write_simulation(silent=silent)
+        mf.write_input()
 
 
 # Function to run the TWRI model.
@@ -191,12 +240,17 @@ def write_model(sim, silent=True):
 #
 
 
-def run_model(sim, silent=True):
+def run_model(sim, mf, silent=True):
     success = True
     if config.runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
+        else:
+            success, buff = mf.run_model(silent=silent)
+            if not success:
+                print(buff)
+
     return success
 
 
@@ -204,43 +258,63 @@ def run_model(sim, silent=True):
 #
 
 
-def plot_results(sim):
+def plot_results(sim, mf):
     if config.plotModel:
         fs = USGSFigure(figure_type="map", verbose=False)
         sim_ws = os.path.join(ws, sim_name)
         gwf = sim.get_model(sim_name)
 
-        # create head object
-        fpth = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, fpth)
+        # create MODFLOW 6 head object
+        file_name = gwf.oc.head_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
         hobj = flopy.utils.HeadFile(fpth)
 
-        # create cell-by-cell budget object
-        fpth = gwf.oc.budget_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, fpth)
+        # create MODFLOW-2005 head object
+        fpth = os.path.join(sim_ws, "mf2005", file_name)
+        hobj0 = flopy.utils.HeadFile(fpth)
+
+        # create MODFLOW 6 cell-by-cell budget object
+        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
         cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+
+        # create MODFLOW-2005 cell-by-cell budget object
+        fpth = os.path.join(sim_ws, "mf2005", file_name)
+        cobj0 = flopy.utils.CellBudgetFile(fpth, precision="single")
 
         # extract heads
         head = hobj.get_data()
+        head0 = hobj0.get_data()
         vmin, vmax = -25, 100
 
         # extract specific discharge
         spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=(0, 0))
+        frf = cobj0.get_data(text="FLOW RIGHT FACE", kstpkper=(0, 0))[0]
+        fff = cobj0.get_data(text="FLOW FRONT FACE", kstpkper=(0, 0))[0]
+        flf = cobj0.get_data(text="FLOW LOWER FACE", kstpkper=(0, 0))[0]
+
+        # modflow 6 layers to extract
+        layers_mf6 = [0, 2, 4]
+        titles = ["Unconfined aquifer",
+                  "Middle aquifer",
+                  "Lower aquifer"]
 
         # Create figure for simulation
         extents = (0, ncol * delc, 0, nrow * delr)
         fig, axes = plt.subplots(
-            2, 2, figsize=figure_size, dpi=300, constrained_layout=True
+            3, 3, figsize=figure_size, dpi=300, constrained_layout=True, sharey=True,
         )
         for ax in axes.flatten():
             ax.set_aspect("equal")
             ax.set_xlim(extents[:2])
-            ax.set_ylim(extents[:2])
+            ax.set_ylim(extents[2:])
 
-        for idx, ax in enumerate(axes.flatten()[:nlay]):
+        for idx, ax in enumerate(axes.flatten()[:3]):
+            k = layers_mf6[idx]
             fmp = flopy.plot.PlotMapView(
-                model=gwf, ax=ax, layer=idx, extent=extents
+                model=gwf, ax=ax, layer=k, extent=extents
             )
+            ax.get_xaxis().set_ticks([])
             fmp.plot_grid(lw=0.5)
             plot_obj = fmp.plot_array(head, vmin=vmin, vmax=vmax)
             fmp.plot_bc("DRN", color="green")
@@ -253,12 +327,36 @@ def plot_results(sim):
             )
             plt.clabel(cv, fmt="%1.0f", fontsize=9)
             fmp.plot_specific_discharge(spdis, normalize=True, color="0.75")
-            title = "Model Layer {}".format(idx + 1)
+            title = titles[idx]
             letter = chr(ord("@") + idx + 1)
             fs.heading(letter=letter, heading=title, ax=ax)
 
+        for idx, ax in enumerate(axes.flatten()[3:6]):
+            fmp = flopy.plot.PlotMapView(
+                model=mf, ax=ax, layer=idx, extent=extents
+            )
+            fmp.plot_grid(lw=0.5)
+            plot_obj = fmp.plot_array(head0, vmin=vmin, vmax=vmax)
+            fmp.plot_bc("DRN", color="green")
+            fmp.plot_bc("WEL", color="0.5")
+            cv = fmp.contour_array(
+                head0,
+                levels=[-25, 0, 25, 75, 100],
+                linewidths=0.5,
+                colors="black",
+            )
+            plt.clabel(cv, fmt="%1.0f", fontsize=9)
+            fmp.plot_discharge(frf, fff, flf, head=head0, normalize=True, color="0.75")
+            title = titles[idx]
+            letter = chr(ord("@") + idx + 4)
+            fs.heading(letter=letter, heading=title, ax=ax)
+
         # create legend
-        ax = axes.flatten()[-1]
+        ax = plt.subplot(313)
+        ax.set_xlim(extents[:2])
+        ax.set_ylim(extents[2:])
+
+        # ax = axes.flatten()[-2]
         ax.axis("off")
         ax.plot(
             -10000,
@@ -293,10 +391,10 @@ def plot_results(sim):
         ax.plot(
             -10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$"
         )
-        fs.graph_legend(ax, loc="center")
+        fs.graph_legend(ax, loc="upper center")
 
         # plot colorbar
-        cax = plt.axes([0.6, 0.15, 0.35, 0.025])
+        cax = plt.axes([0.325, 0.125, 0.35, 0.025])
         cbar = plt.colorbar(
             plot_obj, shrink=0.8, orientation="horizontal", cax=cax
         )
@@ -322,13 +420,14 @@ def plot_results(sim):
 
 def simulation(silent=True):
     sim = build_model()
+    mf = build_mf5model()
 
-    write_model(sim, silent=silent)
+    write_model(sim, mf, silent=silent)
 
-    success = run_model(sim, silent=silent)
+    success = run_model(sim, mf, silent=silent)
 
     if success:
-        plot_results(sim)
+        plot_results(sim, mf)
 
 
 # nosetest - exclude block from this nosetest to the next nosetest
