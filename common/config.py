@@ -62,6 +62,9 @@ else:
 # base example workspace
 base_ws = os.path.join("..", "examples")
 
+# data files required for examples
+data_ws = os.path.join("..", "data")
+
 # set executable extension
 eext = ""
 if sys.platform.lower() == "win32":
