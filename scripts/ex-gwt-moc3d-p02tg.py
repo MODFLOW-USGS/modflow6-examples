@@ -214,11 +214,18 @@ def build_mf6gwt(sim_folder):
     sim = flopy.mf6.MFSimulation(
         sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
     )
-    tdis_ds = ((total_time, 400, 1.0),)
+    tdis_ds = ((total_time, 100, 1.0),)
     flopy.mf6.ModflowTdis(
         sim, nper=nper, perioddata=tdis_ds, time_units=time_units
     )
-    flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
+    flopy.mf6.ModflowIms(sim,
+                         print_option='SUMMARY',
+                         outer_dvclose=0.01,
+                         inner_dvclose=0.01,
+                         under_relaxation='simple',
+                         under_relaxation_gamma=0.9,
+                         relaxation_factor=0.99,
+                         linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     vertices, cell2d, itricellnum = make_grid()
     flopy.mf6.ModflowGwfdisv(

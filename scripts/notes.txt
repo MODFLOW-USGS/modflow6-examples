@@ -1,4 +1,9 @@
-Depends on python package p2j which is available from PyPi
+Some common commands include:
 
-    pip install p2j
+python process-scripts.py
+
+black --line-length 79 *.py
+
+When model has been created and run, use no write and no run to just make figs
+python ex-gwt-prudic2004t2.py -nw -nr
 
