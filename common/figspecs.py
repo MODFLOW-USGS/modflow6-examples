@@ -155,7 +155,7 @@ class USGSFigure:
                 letter = letter.replace(".", "")
             else:
                 letter = letter.rstrip()
-                if letter[-1] is not ".":
+                if letter[-1] != ".":
                     letter += "."
                 letter += " "
             ax.text(
