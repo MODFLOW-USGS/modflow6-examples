@@ -74,3 +74,4 @@ if sys.platform.lower() == "win32":
 mf6_exe = os.path.abspath(os.path.join("..", "bin", "mf6" + eext))
 mf2005_exe = os.path.abspath(os.path.join("..", "bin", "mf2005" + eext))
 mt3dms_exe = os.path.abspath(os.path.join("..", "bin", "mt3dms" + eext))
+mt3dusgs_exe = os.path.abspath(os.path.join("..", "bin", "mt3dusgs" + eext))
