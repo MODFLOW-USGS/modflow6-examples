@@ -1,4 +1,4 @@
-name: MODFLOW 6 examples
+name: CI
 
 on:
   schedule:
@@ -76,26 +76,13 @@ jobs:
           ls -l ./bin/
 
       - name: Run scripts without model runs and zip input files
-        shell: python
+        shell: bash
         run: |
-          import os
-          import shutil
-          from subprocess import Popen, PIPE
-          pth = os.path.join("scripts")
-          scripts = [file_name for file_name in os.listdir(pth) if
-                     file_name.endswith(".py") and file_name.startswith("ex-")]
-          for s in scripts:
-              args = ("python", s, "--no_run", "--no_plot")
-              proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=pth)
-              stdout, stderr = proc.communicate()
-              if stdout:
-                  print(stdout.decode("utf-8"))
-              if stderr:
-                  print("Errors:\n{}".format(stderr.decode("utf-8")))
-          # zip the input files
-          shutil.make_archive("modflow6-examples", "zip", "examples")
+          cd ./etc/
+          python ci_build_files.py --zip
+          cd ..
 
-      - name: Run scripts scripts plus processing script
+      - name: Run scripts plus processing script
         shell: bash
         run: |
           cd ./scripts/
@@ -149,23 +136,6 @@ jobs:
           path: |
             ./mf6examples.pdf
             ./modflow6-examples.zip
-
-      - name: Run notebooks with jupytext for ReadtheDocs
-        if:
-          github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
-        shell: bash
-        run: |
-          cd ./etc/
-          python ci_run_notebooks.py
-          cd ..
-
-      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
-        uses: actions/upload-artifact@v2
-        with:
-          name: notebooks-for-${{ github.sha }}
-          path: |
-            .doc/_notebooks
 
 
   # make the release if the "build" job was successful
@@ -243,22 +213,3 @@ jobs:
         uses: GeekyEggo/delete-artifact@v1.0.0
         with:
           name: current
-
-
-  # trigger rtd if "build" job was successful
-  rtd:
-    name: rtd-trigger
-    needs: release
-    runs-on: ubuntu-latest
-
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
-    steps:
-      - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v2
-
-      - name: Trigger RTDs build on push to repo branches
-        uses: dfm/rtds-action@v1.0.0
-        with:
-          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
-          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.ref }}

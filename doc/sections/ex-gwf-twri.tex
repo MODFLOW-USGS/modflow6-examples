@@ -1,45 +1,45 @@
 \section{\mf TWRI Example}
 
 % Describe source of problem
-This example is the original MODFLOW example (TWRI) described in \cite{modflow88} and duplicated in \cite{harbaugh1996user}. This problem is also is distributed with \mff \citep{modflow2005} and \mf \citep{modflow6software}.
+This example is a modified version of the original MODFLOW example (TWRI) described in \cite{modflow88} and duplicated in \cite{harbaugh1996user}. This problem is also is distributed with \mff \citep{modflow2005} and \mf \citep{modflow6software}. The problem has been modified from a quasi-3D problem, where confining beds are not explicitly simulated, to an equivalent three-dimensional problem.
 
 \subsection{Example description}
+% spatial discretization  and temporal discretization
+There are three simulated aquifers, which are separated from each other by confining layers (fig.~\ref{fig:ex-gwf-twri-01}). The confining beds are 50 \si{\feet} thick and are explicitly simulated as model layers 2 and 4, respectively. Each layer is a square 75,000 \si{\feet} on a side and is divided into a grid with 15 rows and 15 column, which forms squares 5,000 \si{\feet} on a side. A single steady-stress period with a total length of 86,400 \si{\second} (1 \si{\day}) is simulated.
 
-% spatial discretization 
-Model discretization and parameters...
-
-% temporal discretization
+\begin{StandardFigure}{
+                                     Illustration of the system simulated in the TWRI example problem (from \cite{modflow88}).
+                                     }{fig:ex-gwf-twri-01}{../images/twri-system}
+\end{StandardFigure}                                 
 
 % material properties
-
-% initial conditions
-
-% boundary conditions
+The transmissivity of the middle and lower aquifers (fig.~\ref{fig:ex-gwf-twri-01}) was converted to a horizontal hydraulic conductivity using the layer thickness (table~\ref{tab:ex-twri01}). The vertical hydraulic conductivity in the aquifers was set equal to the horizontal hydraulic conductivity. The vertical hydraulic conductivity of the confining units was calculated from the vertical conductance of the confining beds defined in the original problem and the confining unit thickness (table~\ref{tab:ex-twri01}); the horizontal hydraulic conductivity of the confining bed was set to the vertical hydraulic conductivity and results in vertical flow in the confining unit.
 
 % add static parameter table(s)
 \begin{StandardTable}{TWRI model parameters}{tab:ex-twri01}{../tables/ex-gwf-twri01}
 \end{StandardTable}
 
+% initial conditions
+An initial head of zero \si{\feet} was specified in all model layers. Any initial head exceeding the bottom of model layer 1 (-150 \si{\feet}) could be specified since the model is steady-state.
+
+% boundary conditions
+Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of \num{3.d-7} \si{\feet\per\second} was specified for every cell in model layer 1. Flow out of the model is from buried drain tubes represented by drain (DRN) package cells in model layer 1, discharging wells represented by well (WEL) package cells in all three aquifers, and a lake represented by constant head (CHD) packages cells in the unconfined and middle aquifers (fig.~\ref{fig:ex-gwf-twri-01}).
+
 % for examples without scenarios
 \subsection{Example Results}
 
-Describe the scenarios
-
-% for examples with scenarios
-\subsection{Example Scenarios}
-
-Describe the scenarios
-
-
-\subsubsection{Scenario 1 Results}
-
-Some results...
+Simulated results in the unconfined, middle, and lower aquifers are shown in figure~\ref{fig:ex-gwf-twri-02}. Simulated results for a quasi-3D \mff simulation are also shown in figure~\ref{fig:ex-gwf-twri-02}. \mf and \mff results differ by less that 0.05 \si{\feet} in any aquifer unit.
 
 % a figure
 \begin{StandardFigure}{
-                                     A figure caption that describes the figure. 
-                                     \textit{A}. Plot shows some good stuff.
-                                     \textit{B}. Plot shows more good stuff.
-                                     }{fig:ex-gwf-01}{ex-gwf-twri01}
+                                     Simulated water levels and normalized specific discharge vectors in 
+                                     the unconfined, upper, and lower aquifers. 
+                                     \textit{A}. \mf unconfined aquifer results.
+                                     \textit{B}. \mf middle aquifer results.
+                                     \textit{C}. \mf lower aquifer results.
+                                     \textit{D}. \mff unconfined aquifer results.
+                                     \textit{E}. \mff middle aquifer results.
+                                     \textit{F}. \mff lower aquifer results.
+                                     }{fig:ex-gwf-twri-02}{ex-gwf-twri01}
 \end{StandardFigure}                                 
 

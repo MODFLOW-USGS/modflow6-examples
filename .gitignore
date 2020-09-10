@@ -177,5 +177,4 @@ doc/mf6examples.pdf
 temp
 .doc/_build/
 .doc/_notebooks/
-.doc/_static/
 .doc/_templates/

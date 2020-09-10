@@ -25,60 +25,60 @@ This example problem consists of several different scenarios, as listed in table
 \subsubsection{Scenario Results}
 
 %Scenario 1
-For the first scenario with a relatively small dispersivity value (0.1 $cm$), plots of concentration versus time and concentration versus distance are shown in figures~\ref{fig:ex-gwt-moc3dp1a-ct} and ~\ref{fig:ex-gwt-moc3dp1a-cd}, respectively.  Figure~\ref{fig:ex-gwt-moc3dp1a-ct} can be compared to figure 18 in \cite{konikow1996three}. The three separate concentration versus time curves represent the three different distances (0.05, 4.05, and 11.05 cm).  For this low-dispersion case, the MODFLOW 6 solution is in relatively good agreement with the analytical solution, but some slight differences are observed.  These differences are due primarily to limitations with the second-order TVD scheme implemented in MODFLOW 6, which can suffer from numerical dispersion.
+For the first scenario with a relatively small dispersivity value (0.1 $cm$), plots of concentration versus time and concentration versus distance are shown in figures~\ref{fig:ex-gwt-moc3d-p01a-ct} and ~\ref{fig:ex-gwt-moc3d-p01a-cd}, respectively.  Figure~\ref{fig:ex-gwt-moc3d-p01a-ct} can be compared to figure 18 in \cite{konikow1996three}. The three separate concentration versus time curves represent the three different distances (0.05, 4.05, and 11.05 cm).  For this low-dispersion case, the MODFLOW 6 solution is in relatively good agreement with the analytical solution, but some slight differences are observed.  These differences are due primarily to limitations with the second-order TVD scheme implemented in MODFLOW 6, which can suffer from numerical dispersion.
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the low dispersion case.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different distances (0.05, 4.05, and 11.05 $cm$ from the end of the first cell).  Every fifth time step is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1a-ct}{ex-gwt-moc3dp1a-ct}
+                                     }{fig:ex-gwt-moc3d-p01a-ct}{ex-gwt-moc3d-p01a-ct}
 \end{StandardFigure}            
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the low dispersion case.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different times (6, 60, and 120 $s$).  Every fifth cell is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1a-cd}{ex-gwt-moc3dp1a-cd}
+                                     }{fig:ex-gwt-moc3d-p01a-cd}{ex-gwt-moc3d-p01a-cd}
 \end{StandardFigure}            
 
 %Scenario 2
-For the second scenario, which has a relatively large dispersivity value (1.0 $cm$), plots of concentration versus time and concentration versus distance are shown in figures~\ref{fig:ex-gwt-moc3dp1b-ct} and ~\ref{fig:ex-gwt-moc3dp1b-cd}, respectively.  For the high-dispersion case, the results from the MODFLOW 6 simulation are in better agreement with the analytical solution than for the low dispersion case.
+For the second scenario, which has a relatively large dispersivity value (1.0 $cm$), plots of concentration versus time and concentration versus distance are shown in figures~\ref{fig:ex-gwt-moc3d-p01b-ct} and ~\ref{fig:ex-gwt-moc3d-p01b-cd}, respectively.  For the high-dispersion case, the results from the MODFLOW 6 simulation are in better agreement with the analytical solution than for the low dispersion case.
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the high dispersion case.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different distances (0.05, 4.05, and 11.05 $cm$ from the end of the first cell).  Every fifth time step is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1b-ct}{ex-gwt-moc3dp1b-ct}
+                                     }{fig:ex-gwt-moc3d-p01b-ct}{ex-gwt-moc3d-p01b-ct}
 \end{StandardFigure}            
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the high dispersion case.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different times (6, 60, and 120 $s$).  Every fifth cell is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1b-cd}{ex-gwt-moc3dp1b-cd}
+                                     }{fig:ex-gwt-moc3d-p01b-cd}{ex-gwt-moc3d-p01b-cd}
 \end{StandardFigure}            
 
 
 %Scenarios  3 and 4
-For the remaining scenarios, the results from MODFLOW 6 are compared with the \cite{wexler1992} analytical solution for two variations of the high-dispersion case.  The effects sorption are included in scenario 3 and the effects of decay are included in scenario 4.  Plots of concentration versus time and concentration versus distance for a simulation with a retardation factor of 2.0 are shown in figures~\ref{fig:ex-gwt-moc3dp1c-ct} and ~\ref{fig:ex-gwt-moc3dp1c-cd}, respectively.  Plots of concentration versus time and concentration versus distance for a simulation with a decay rate of 0.01 $s^{-1}$ are shown in figures~\ref{fig:ex-gwt-moc3dp1d-ct} and ~\ref{fig:ex-gwt-moc3dp1d-cd}, respectively.
+For the remaining scenarios, the results from MODFLOW 6 are compared with the \cite{wexler1992} analytical solution for two variations of the high-dispersion case.  The effects sorption are included in scenario 3 and the effects of decay are included in scenario 4.  Plots of concentration versus time and concentration versus distance for a simulation with a retardation factor of 2.0 are shown in figures~\ref{fig:ex-gwt-moc3d-p01c-ct} and ~\ref{fig:ex-gwt-moc3d-p01c-cd}, respectively.  Plots of concentration versus time and concentration versus distance for a simulation with a decay rate of 0.01 $s^{-1}$ are shown in figures~\ref{fig:ex-gwt-moc3d-p01d-ct} and ~\ref{fig:ex-gwt-moc3d-p01d-cd}, respectively.
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the high dispersion case and a retardation factor of 2.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different distances (0.05, 4.05, and 11.05 $cm$ from the end of the first cell).  Every fifth time step is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1c-ct}{ex-gwt-moc3dp1c-ct}
+                                     }{fig:ex-gwt-moc3d-p01c-ct}{ex-gwt-moc3d-p01c-ct}
 \end{StandardFigure}            
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the high dispersion case and a retardation factor of 2.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different times (6, 60, and 120 $s$).  Every fifth cell is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1c-cd}{ex-gwt-moc3dp1c-cd}
+                                     }{fig:ex-gwt-moc3d-p01c-cd}{ex-gwt-moc3d-p01c-cd}
 \end{StandardFigure}            
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the high dispersion case and a decay rate of 0.01 $s^{-1}$.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different distances (0.05, 4.05, and 11.05 $cm$ from the end of the first cell).  Every fifth time step is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1d-ct}{ex-gwt-moc3dp1d-ct}
+                                     }{fig:ex-gwt-moc3d-p01d-ct}{ex-gwt-moc3d-p01d-ct}
 \end{StandardFigure}            
 
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and calculated by the analytical solution for one-dimensional flow with transport for the high dispersion case and a decay rate of 0.01 $s^{-1}$.  Circles are for the GWT Model results; the lines represent the analytical solution by \cite{wexler1992}.  Results are shown for three different times (6, 60, and 120 $s$).  Every fifth cell is shown for the MODFLOW 6 results.
-                                     }{fig:ex-gwt-moc3dp1d-cd}{ex-gwt-moc3dp1d-cd}
+                                     }{fig:ex-gwt-moc3d-p01d-cd}{ex-gwt-moc3d-p01d-cd}
 \end{StandardFigure}            
 

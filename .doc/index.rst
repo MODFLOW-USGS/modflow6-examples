@@ -6,5 +6,9 @@
 MODFLOW 6 Example Problems
 ======================================================
 
-.. include:: examples.rst
+.. toctree::
+   :maxdepth: 1
+
+   introduction
+   notebook_examples
 

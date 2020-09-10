@@ -74,9 +74,8 @@ def make_tables():
         os.makedirs(tab_pth)
 
     for file in files:
-        basename = os.path.splitext(os.path.basename(file))[0].replace(
-            "_", "-"
-        )
+        print("processing...'{}'".format(file))
+        basename = os.path.splitext(os.path.basename(file))[0].replace("_", "-")
         # do a little processing
         with open(file) as f:
             lines = f.read().splitlines()

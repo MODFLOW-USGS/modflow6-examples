@@ -36,7 +36,7 @@ figure_size = (6, 4)
 # Base simulation and model name and workspace
 
 ws = config.base_ws
-example_name = "ex-gwt-moc3dp2"
+example_name = "ex-gwt-moc3d-p02"
 
 # Model units
 
@@ -158,7 +158,11 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d=False, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
+        gwt,
+        xt3d=False,
+        alh=alpha_l,
+        ath1=alpha_th,
+        ath2=alpha_tv,
     )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),

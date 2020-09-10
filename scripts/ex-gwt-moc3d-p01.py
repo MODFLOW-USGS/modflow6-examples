@@ -41,22 +41,22 @@ example_name = "ex-gwt-moc3dp1"
 # Scenario parameters - make sure there is at least one blank line before next item
 
 parameters = {
-    "ex-gwt-moc3dp1a": {
+    "ex-gwt-moc3d-p01a": {
         "longitudinal_dispersivity": 0.1,
         "retardation_factor": 1.0,
         "decay_rate": 0.0,
     },
-    "ex-gwt-moc3dp1b": {
+    "ex-gwt-moc3d-p01b": {
         "longitudinal_dispersivity": 1.0,
         "retardation_factor": 1.0,
         "decay_rate": 0.0,
     },
-    "ex-gwt-moc3dp1c": {
+    "ex-gwt-moc3d-p01c": {
         "longitudinal_dispersivity": 1.0,
         "retardation_factor": 2.0,
         "decay_rate": 0.0,
     },
-    "ex-gwt-moc3dp1d": {
+    "ex-gwt-moc3d-p01d": {
         "longitudinal_dispersivity": 1.0,
         "retardation_factor": 1.0,
         "decay_rate": 0.01,
