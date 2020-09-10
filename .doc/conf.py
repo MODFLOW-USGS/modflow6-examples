@@ -117,7 +117,7 @@ source_suffix = {
 if on_rtd:
     extensions.append("rtds_action")
     rtds_action_github_repo = "MODFLOW-USGS/modflow6-examples"
-    rtds_action_path = "_notebooks"
+    rtds_action_path = "."
     rtds_action_artifact_prefix = "notebooks-for-"
     rtds_action_github_token = os.environ.get("GITHUB_TOKEN", None)
 
