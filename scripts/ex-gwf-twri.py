@@ -11,6 +11,7 @@
 
 import os
 import sys
+import numpy as np
 import matplotlib.pyplot as plt
 import flopy
 
@@ -65,7 +66,7 @@ recharge = 3e-8  # Recharge rate ($ft/s$)
 
 perlen = 8.640e04
 nstp = 1
-tsmult = 1.
+tsmult = 1.0
 tdis_ds = ((perlen, nstp, tsmult),)
 
 # parse parameter strings into tuples
@@ -82,7 +83,7 @@ icelltype = [int(value) for value in icelltype_str.split(",")]
 #
 
 chd_spd = []
-for k in (0, 1, 2, 3):
+for k in (0, 2):
     chd_spd += [[k, i, 0, 0.0] for i in range(nrow)]
 chd_spd = {0: chd_spd}
 
@@ -141,10 +142,17 @@ drn_spd = {
     ]
 }
 
+# Solver parameters
+
+nouter = 50
+ninner = 100
+hclose = 1e-9
+rclose = 1e-6
 
 # ### Functions to build, write, run, and plot the MODFLOW 6 TWRI model
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
+
 
 def build_model():
     if config.buildModel:
@@ -155,7 +163,14 @@ def build_model():
         flopy.mf6.ModflowTdis(
             sim, nper=nper, perioddata=tdis_ds, time_units=time_units
         )
-        flopy.mf6.ModflowIms(sim)
+        flopy.mf6.ModflowIms(
+            sim,
+            outer_maximum=nouter,
+            outer_dvclose=hclose,
+            inner_maximum=ninner,
+            inner_dvclose=hclose,
+            rcloserecord=[rclose, "strict"],
+        )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
             gwf,
@@ -193,34 +208,51 @@ def build_model():
         return sim
     return None
 
+
 # MODFLOW-2005 model object (mf) is returned if building the model
+
 
 def build_mf5model():
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name, "mf2005")
-        mf = flopy.modflow.Modflow(modelname=sim_name, model_ws=sim_ws,
-                                   exe_name=config.mf2005_exe)
-        flopy.modflow.ModflowDis(mf, nlay=3, nrow=nrow, ncol=ncol,
-                                 delr=delr, delc=delc, laycbd=[1, 1, 0],
-                                 top=top, botm=botm,
-                                 nper=1, perlen=perlen, nstp=nstp, tsmult=tsmult)
+        mf = flopy.modflow.Modflow(
+            modelname=sim_name, model_ws=sim_ws, exe_name=config.mf2005dbl_exe
+        )
+        flopy.modflow.ModflowDis(
+            mf,
+            nlay=3,
+            nrow=nrow,
+            ncol=ncol,
+            delr=delr,
+            delc=delc,
+            laycbd=[1, 1, 0],
+            top=top,
+            botm=botm,
+            nper=1,
+            perlen=perlen,
+            nstp=nstp,
+            tsmult=tsmult,
+        )
         flopy.modflow.ModflowBas(mf, strt=strt)
-        flopy.modflow.ModflowLpf(mf,
-                                 laytyp=[1, 0, 0],
-                                 hk=[k11[0], k11[2], k11[4]],
-                                 vka=[k11[0], k11[2], k11[4]],
-                                 vkcb=[k11[1], k11[3], 0],
-                                 ss=0, sy=0.,
-                                 )
+        flopy.modflow.ModflowLpf(
+            mf,
+            laytyp=[1, 0, 0],
+            hk=[k11[0], k11[2], k11[4]],
+            vka=[k11[0], k11[2], k11[4]],
+            vkcb=[k11[1], k11[3], 0],
+            ss=0,
+            sy=0.0,
+        )
         flopy.modflow.ModflowChd(mf, stress_period_data=chd_spd0)
         flopy.modflow.ModflowDrn(mf, stress_period_data=drn_spd)
         flopy.modflow.ModflowWel(mf, stress_period_data=wel_spd0)
         flopy.modflow.ModflowRch(mf, rech=recharge)
-        flopy.modflow.ModflowPcg(mf)
-        oc = flopy.modflow.ModflowOc(mf,
-                                     stress_period_data={(0,0):
-                                                             ['save head',
-                                                              'save budget']})
+        flopy.modflow.ModflowPcg(
+            mf, mxiter=nouter, iter1=ninner, hclose=hclose, rclose=rclose
+        )
+        oc = flopy.modflow.ModflowOc(
+            mf, stress_period_data={(0, 0): ["save head", "save budget"]}
+        )
         oc.reset_budgetunit()
         return mf
     return None
@@ -258,7 +290,7 @@ def run_model(sim, mf, silent=True):
 #
 
 
-def plot_results(sim, mf):
+def plot_results(sim, mf, silent=True):
     if config.plotModel:
         fs = USGSFigure(figure_type="map", verbose=False)
         sim_ws = os.path.join(ws, sim_name)
@@ -280,12 +312,28 @@ def plot_results(sim, mf):
 
         # create MODFLOW-2005 cell-by-cell budget object
         fpth = os.path.join(sim_ws, "mf2005", file_name)
-        cobj0 = flopy.utils.CellBudgetFile(fpth, precision="single")
+        cobj0 = flopy.utils.CellBudgetFile(fpth, precision="double")
 
         # extract heads
         head = hobj.get_data()
         head0 = hobj0.get_data()
         vmin, vmax = -25, 100
+
+        # check that the results are comparable
+        for idx, k in enumerate(
+            (
+                0,
+                2,
+                4,
+            )
+        ):
+            diff = np.abs(head[k] - head0[idx])
+            msg = "aquifer {}: ".format(
+                idx + 1
+            ) + "maximum absolute head difference is {}".format(diff.max())
+            assert diff.max() < 0.05, msg
+            if not silent:
+                print(msg)
 
         # extract specific discharge
         spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=(0, 0))
@@ -295,14 +343,17 @@ def plot_results(sim, mf):
 
         # modflow 6 layers to extract
         layers_mf6 = [0, 2, 4]
-        titles = ["Unconfined aquifer",
-                  "Middle aquifer",
-                  "Lower aquifer"]
+        titles = ["Unconfined aquifer", "Middle aquifer", "Lower aquifer"]
 
         # Create figure for simulation
         extents = (0, ncol * delc, 0, nrow * delr)
         fig, axes = plt.subplots(
-            3, 3, figsize=figure_size, dpi=300, constrained_layout=True, sharey=True,
+            3,
+            3,
+            figsize=figure_size,
+            dpi=300,
+            constrained_layout=True,
+            sharey=True,
         )
         for ax in axes.flatten():
             ax.set_aspect("equal")
@@ -325,7 +376,7 @@ def plot_results(sim, mf):
                 linewidths=0.5,
                 colors="black",
             )
-            plt.clabel(cv, fmt="%1.0f", fontsize=9)
+            plt.clabel(cv, fmt="%1.0f")
             fmp.plot_specific_discharge(spdis, normalize=True, color="0.75")
             title = titles[idx]
             letter = chr(ord("@") + idx + 1)
@@ -345,8 +396,10 @@ def plot_results(sim, mf):
                 linewidths=0.5,
                 colors="black",
             )
-            plt.clabel(cv, fmt="%1.0f", fontsize=9)
-            fmp.plot_discharge(frf, fff, flf, head=head0, normalize=True, color="0.75")
+            plt.clabel(cv, fmt="%1.0f")
+            fmp.plot_discharge(
+                frf, fff, flf, head=head0, normalize=True, color="0.75"
+            )
             title = titles[idx]
             letter = chr(ord("@") + idx + 4)
             fs.heading(letter=letter, heading=title, ax=ax)
@@ -427,7 +480,7 @@ def simulation(silent=True):
     success = run_model(sim, mf, silent=silent)
 
     if success:
-        plot_results(sim, mf)
+        plot_results(sim, mf, silent=silent)
 
 
 # nosetest - exclude block from this nosetest to the next nosetest
@@ -440,10 +493,10 @@ def test_01():
 if __name__ == "__main__":
     # ### TWRI Simulation
     #
-    # This simulation uses the recharge rate defined in the original problem.
-    # Simulated heads in model layers 1, 2, and 3 are shown in the figure below.
-    # The location of drain (green) and (gray) well boundary conditions, normalized
-    # specific discharge, and head contours (25 ft contour intervals) are also shown.
-    #
+    # Simulated heads in model the unconfined, middle, and lower aquifers (model layers
+    # 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
+    # model are also shown. The location of drain (green) and well (gray) boundary
+    # conditions, normalized specific discharge, and head contours (25 ft contour
+    # intervals) are also shown.
 
     simulation()

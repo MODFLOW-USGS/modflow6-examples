@@ -37,7 +37,7 @@ figure_size = (6, 4)
 # Base simulation and model name and workspace
 
 ws = config.base_ws
-example_name = "ex-gwt-moc3dp2tg"
+example_name = "ex-gwt-moc3d-p02tg"
 
 # Model units
 
@@ -218,14 +218,16 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowTdis(
         sim, nper=nper, perioddata=tdis_ds, time_units=time_units
     )
-    flopy.mf6.ModflowIms(sim,
-                         print_option='SUMMARY',
-                         outer_dvclose=0.01,
-                         inner_dvclose=0.01,
-                         under_relaxation='simple',
-                         under_relaxation_gamma=0.9,
-                         relaxation_factor=0.99,
-                         linear_acceleration="bicgstab")
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="SUMMARY",
+        outer_dvclose=0.01,
+        inner_dvclose=0.01,
+        under_relaxation="simple",
+        under_relaxation_gamma=0.9,
+        relaxation_factor=0.99,
+        linear_acceleration="bicgstab",
+    )
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     vertices, cell2d, itricellnum = make_grid()
     flopy.mf6.ModflowGwfdisv(
@@ -243,7 +245,11 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d=True, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
+        gwt,
+        xt3d=True,
+        alh=alpha_l,
+        ath1=alpha_th,
+        ath2=alpha_tv,
     )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),

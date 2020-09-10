@@ -1,0 +1,130 @@
+name: rtd
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  rtd_build:
+    name: rtd-build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout MODFLOW6 examples repo
+        uses: actions/checkout@v2
+
+      - name: Output repo information
+        run: |
+          echo ${{ github.repository_owner }}
+          echo ${{ github.repository }}
+          echo ${{ github.ref }}
+          echo ${{ github.event_name }}
+          echo ${{ github.sha }}
+
+      - name: Setup symbolic link to gfortran
+        run: |
+          sudo ln -fs /usr/bin/gfortran-9 /usr/local/bin/gfortran
+          sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc
+          sudo ln -fs /usr/bin/g++-9 /usr/local/bin/g++
+
+      - name: Install TeX Live and additional TrueType fonts
+        shell: bash
+        run: |
+          sudo apt install fonts-liberation
+
+      - name: Cache pip
+        uses: actions/cache@v2.1.0
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('etc/requirements.pip.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Setup Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Print python version
+        shell: bash
+        run: |
+          python --version
+
+      - name: Install Python 3.8 packages
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r etc/requirements.pip.txt
+          pip install -r etc/requirements.usgs.txt
+
+      - name: Run get_exes script
+        shell: bash
+        run: |
+          cd ./etc/
+          python ci_get_exes.py
+          cd ..
+
+      - name: Run scripts without model runs
+        shell: bash
+        run: |
+          cd ./etc/
+          python ci_build_files.py
+          cd ..
+
+      - name: Create package tables for ReadtheDocs
+        if:
+          github.repository_owner == 'MODFLOW-USGS'
+        shell: bash
+        run: |
+          cd ./etc/
+          python ci_package_tables.py
+          cd ..
+
+      - name: Run processing script
+        shell: bash
+        run: |
+          cd ./scripts/
+          python process-scripts.py
+          cd ..
+
+      - name: Run notebooks with jupytext for ReadtheDocs
+        if:
+          github.repository_owner == 'MODFLOW-USGS'
+        shell: bash
+        run: |
+          cd ./etc/
+          python ci_run_notebooks.py
+          cd ..
+
+      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        uses: actions/upload-artifact@v2
+        with:
+          name: notebooks-for-${{ github.sha }}
+          path: |
+            .doc/_notebooks
+            .doc/introduction.md
+
+  # trigger rtd if "rtd_build" job was successful
+  rtd_trigger:
+    name: rtd-trigger
+    needs: rtd_build
+    runs-on: ubuntu-latest
+
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+    steps:
+      - name: Checkout MODFLOW6 examples repo
+        uses: actions/checkout@v2
+
+      - name: Trigger RTDs build on push to repo branches
+        uses: dfm/rtds-action@v1.0.0
+        with:
+          webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
+          webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
+          commit_ref: ${{ github.ref }}

@@ -11,80 +11,72 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 
 # -- set boolean indicating if running on readthedocs server -----------------
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
+# -- setup regular expression for body.tex -----------------------------------
+ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
+
+# -- parse body.tex for example order ----------------------------------------
+pth = os.path.join("..", "doc", "body.tex")
+with open(pth) as f:
+    lines = f.read()
+gwf_list = []
+gwt_list = []
+for v in ex_regex.findall(lines):
+    if "ex-gwf-" in v:
+        gwf_list.append(v.replace(".tex", ""))
+    elif "ex-gwt-" in v:
+        gwt_list.append(v.replace(".tex", ""))
+
+# -- Build examples.rst for notebooks to .doc --------------------------------
+f = open("notebook_examples.rst", "w")
+
+lines = "MODFLOW 6 Examples - Jupyter Notebooks\n"
+lines += (len(lines) - 1) * "-" + "\n\n"
+lines += "The Jupyter Notebooks used to create the input files and figures for \n" + \
+         "each of the MODFLOW 6 examples included in the \n" + \
+         "`pdf <https://github.com/MODFLOW-USGS/modflow6-examples/" + \
+         "releases/download/current/mf6examples.pdf/>`_ \navailable on the " + \
+         "`GitHub site <https://github.com/MODFLOW-USGS/modflow6-examples/>`_ " + \
+         "are included below. The examples have been organized into Jupyter " + \
+         "Notebooks that only included groundwater flow (GWF) models and " + \
+         "Jupyter Notebooks that include both GWF and groundwater transport " + \
+         "(GWT) models.\n\n"
+f.write(lines)
+
+# gwf model examples
+lines = "MODFLOW 6 Groundwater Flow Model\n"
+lines += (len(lines) - 1) * "^" + "\n"
+lines += "\n.. toctree::\n"
+lines += "   :maxdepth: 1\n\n"
+for base_name in gwf_list:
+    lines += "   {} ".format(base_name)
+    lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
+lines += "\n\n"
+f.write(lines)
+
+# gwt model examples
+lines = "MODFLOW 6 Groundwater Transport Model\n"
+lines += (len(lines) - 1) * "^" + "\n"
+lines += "\n.. toctree::\n"
+lines += "   :maxdepth: 1\n\n"
+for base_name in gwt_list:
+    lines += "   {} ".format(base_name)
+    lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
+lines += "\n\n"
+f.write(lines)
+
+# close the restructured text file
+f.close()
 
 # -- convert the tutorial scripts -------------------------------------------
 if not on_rtd:
     cmd = ("python", "test_build.py")
     print(" ".join(cmd))
     os.system(" ".join(cmd))
-
-# -- get list of python files ------------------------------------------------
-pth = os.path.join("..", "scripts")
-py_files = [os.path.join(pth, file_name) for file_name in sorted(os.listdir(pth)) if
-            file_name.startswith("ex-") and file_name.endswith(".py")]
-
-# -- process intro text out of python scripts --------------------------------
-intro_text = []
-for idx, fpth in enumerate(py_files):
-    with open(fpth) as f:
-        lines = f.read().splitlines()
-    iend = 0
-    for jdx, line in enumerate(lines):
-        if not line.startswith("#"):
-            iend = jdx
-            break
-    intro = []
-    heading = 0
-    for line in lines[:jdx + 1]:
-        line = line[1:].strip()
-        if len(line) < 1:
-            continue
-        elif line.startswith("##"):
-            heading = 3
-            line = line[2:]
-        elif line.startswith("#"):
-            heading = 2
-            line = line[1:]
-        else:
-            if heading > 0:
-                if heading == 1:
-                    s = "="
-                elif heading == 2:
-                    s = "-"
-                elif heading == 3:
-                    s = "^"
-                else:
-                    s = " "
-                intro.append(79 * "{}".format(s))
-                intro.append("")
-                intro.append("")
-            heading = 0
-        if len(line) > 0:
-            intro.append(line)
-    intro_text.append(intro)
-
-# -- path to original notebooks ----------------------------------------------
-nb_pth = os.path.join("..", "notebooks")
-
-# -- get list of notebooks ---------------------------------------------------
-nb_files = [os.path.join(nb_pth, file_name) for file_name in sorted(os.listdir(nb_pth))
-            if file_name.endswith(".ipynb")]
-
-# -- Build examples.rst for notebooks to .doc --------------------------------
-f = open("examples.rst", "w")
-for idx, fpth in enumerate(nb_files):
-    lines = ""
-    for ex_list in intro_text[idx]:
-        lines += "{}\n".format(ex_list.strip())
-    lines += "\nContents:\n\n"
-    lines += "\n.. toctree::\n"
-    lines += "   :maxdepth: 2\n\n"
-    lines += "   {}\n\n\n".format(os.path.join("_notebooks", os.path.basename(fpth)))
-    f.write(lines)
-f.close()
 
 # -- Project information -----------------------------------------------------
 
@@ -113,7 +105,13 @@ extensions = [
     "nbsphinx",
     "nbsphinx_link",
     "recommonmark",
+    "sphinx_markdown_tables",
 ]
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # Settings for GitHub actions integration
 if on_rtd:
@@ -171,6 +169,12 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+html_context = {
+    'css_files': [
+        "_static/theme_overrides.css",  # override wide tables in RTD theme
+    ],
+}
+
 html_theme_options = {
     "github_url": "https://github.com/MODFLOW-USGS/modflow6-examples",
     "use_edit_page_button": False,
@@ -185,10 +189,6 @@ html_context = {
     "github_version": "master",
     "doc_path": ".doc",
 }
-
-# html_css_files = [
-#     "css/custom.css",
-# ]
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "modflow6-examples"

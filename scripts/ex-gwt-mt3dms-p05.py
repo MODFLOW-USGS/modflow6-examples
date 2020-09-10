@@ -49,7 +49,7 @@ figure_size = (6, 4.5)
 # Base simulation and model name and workspace
 
 ws = config.base_ws
-example_name = "ex-gwt-mt3d-p05"
+example_name = "ex-gwt-mt3dms-p05"
 
 # Model units
 

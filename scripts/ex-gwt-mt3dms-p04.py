@@ -55,9 +55,9 @@ example_name = "ex-gwt-mt3dms-p04"
 # This entire dictionary is passed to _build_model()_ using the kwargs argument
 
 parameters = {
-    "ex-gwt-mt3d-p04a": {"xt3d": True, "mixelm": 0},
-    "ex-gwt-mt3d-p04b": {"xt3d": True, "mixelm": -1},
-    "ex-gwt-mt3d-p04c": {"xt3d": True, "mixelm": 1},
+    "ex-gwt-mt3dms-p04a": {"xt3d": True, "mixelm": 0},
+    "ex-gwt-mt3dms-p04b": {"xt3d": True, "mixelm": -1},
+    "ex-gwt-mt3dms-p04c": {"xt3d": True, "mixelm": 1},
 }
 # Scenario parameter units
 #

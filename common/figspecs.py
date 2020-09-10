@@ -428,6 +428,7 @@ class USGSFigure:
         """
         rc_dict = {
             "font.family": self.family,
+            "font.size": 7,
             "axes.labelsize": 9,
             "axes.titlesize": 9,
             "axes.linewidth": 0.5,
