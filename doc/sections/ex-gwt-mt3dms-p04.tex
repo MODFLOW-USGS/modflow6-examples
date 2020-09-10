@@ -20,31 +20,31 @@ Model parameter values for this problem are provided in table~\ref{tab:ex-gwt-mt
 
 The same analytical solution used in the previous problem can be used for this problem after applying the necessary updates to select parameters - most noteably the dispersion and porosity terms and that an inter-model comparison is drawn after 1,000 days instead of 365 days. Figure 36 in \cite{zheng1999mt3dms} shows four different solutions for this problem: (1) analytical, (2) Method of Characteristics (MOC), (3) upstream finite difference (FD), and (4) Total Variation Dimishing (TVD) or ``ULTIMATE'' scheme.  Both the MOC and TVD solutions demonstrate a reasonable agreement with the analytical solution. However, the upstream finite difference solution reflects considerably more spread from simulation of too much dispersion - in this case numerical dispersion instead of hydrodynamic dispersion. 
 
-The \mf transport solution is compared to all three numerical solutions (FD, TVD, and MOC) presented in \cite{zheng1999mt3dms}. The first comparison shows complete agreement between MT3DMS and the \mf transport solution when the finite difference approach is applied (figure~\ref{fig:ex-gwt-mt3d-p04a}). 
+The \mf transport solution is compared to all three numerical solutions (FD, TVD, and MOC) presented in \cite{zheng1999mt3dms}. The first comparison shows complete agreement between MT3DMS and the \mf transport solution when the finite difference approach is applied (figure~\ref{fig:ex-gwt-mt3dms-p04a}). 
 
 % MT3DMS manual figure 36a
 \begin{StandardFigure}
 	{Comparison of the MT3DMS and \mf numerical solutions for two-dimensional transport in a diagonal flow field. Both models are using their respective finite difference solutions without the TVD option} 
-	{fig:ex-gwt-mt3d-p04a}
-	{../figures/ex-gwt-mt3d-p04a}
+	{fig:ex-gwt-mt3dms-p04a}
+	{../figures/ex-gwt-mt3dms-p04a}
 \end{StandardFigure}
 
-Figure~\ref{fig:ex-gwt-mt3d-p04b} shows a comparison between the MT3DMS and \mf solution with the respective TVD options for each model activated.  Owing to the fact that MT3DMS uses a third-order TVD scheme while \mf uses a second-order scheme, differences between the two solutions are expected. 
+Figure~\ref{fig:ex-gwt-mt3dms-p04b} shows a comparison between the MT3DMS and \mf solution with the respective TVD options for each model activated.  Owing to the fact that MT3DMS uses a third-order TVD scheme while \mf uses a second-order scheme, differences between the two solutions are expected. 
 
 % MT3DMS manual figure 36b
 \begin{StandardFigure}
-	{Comparison of the MT3DMS and \mf numerical solutions for two-dimensional transport in a diagonal flow field. Both models are using their respective finite difference solutions with the use of the TVD option, which serves as the main difference with results displayed in figure~\ref{fig:ex-gwt-mt3d-p04b}} 
-	{fig:ex-gwt-mt3d-p04b}
-	{../figures/ex-gwt-mt3d-p04b}
+	{Comparison of the MT3DMS and \mf numerical solutions for two-dimensional transport in a diagonal flow field. Both models are using their respective finite difference solutions with the use of the TVD option, which serves as the main difference with results displayed in figure~\ref{fig:ex-gwt-mt3dms-p04b}} 
+	{fig:ex-gwt-mt3dms-p04b}
+	{../figures/ex-gwt-mt3dms-p04b}
 \end{StandardFigure}
 
-The third model comparison shows the largest difference between the two solutions (figure~\ref{fig:ex-gwt-mt3d-p04c}). Because the MOC solution is the closest facsimile of the analytical solution, comparison of \mf with the MT3DMS MOC solution is as close to a comparison with the analytical solution as will be shown for the current set of model runs. 
+The third model comparison shows the largest difference between the two solutions (figure~\ref{fig:ex-gwt-mt3dms-p04c}). Because the MOC solution is the closest facsimile of the analytical solution, comparison of \mf with the MT3DMS MOC solution is as close to a comparison with the analytical solution as will be shown for the current set of model runs. 
 
 % MT3DMS manual figure 36c
 \begin{StandardFigure}
 	{Comparison of the MT3DMS and \mf numerical solutions for two-dimensional transport in a diagonal flow field. Here, MT3DMS is using a MOC technique to find a solution while \mf uses finite difference without TVD activated.} 
-	{fig:ex-gwt-mt3d-p04c}
-	{../figures/ex-gwt-mt3d-p04c}
+	{fig:ex-gwt-mt3dms-p04c}
+	{../figures/ex-gwt-mt3dms-p04c}
 \end{StandardFigure}
 
 

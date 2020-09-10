@@ -33,7 +33,7 @@ jobs:
           sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc
           sudo ln -fs /usr/bin/g++-9 /usr/local/bin/g++
 
-      - name: Install TeX Live and additional TrueType fonts
+      - name: Install additional TrueType fonts
         shell: bash
         run: |
           sudo apt install fonts-liberation
