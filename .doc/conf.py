@@ -170,7 +170,11 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 html_context = {
-    'css_files': [
+    "github_user": "modflow6-examples",
+    "github_repo": "modflow6-examples",
+    "github_version": "master",
+    "doc_path": ".doc",
+    "css_files": [
         "_static/theme_overrides.css",  # override wide tables in RTD theme
     ],
 }
@@ -183,21 +187,9 @@ html_theme_options = {
 autosummary_generate = True
 numpydoc_show_class_members = False
 
-html_context = {
-    "github_user": "modflow6-examples",
-    "github_repo": "modflow6-examples",
-    "github_version": "master",
-    "doc_path": ".doc",
-}
-
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "modflow6-examples"
 # html_favicon = ".._images/flopylogo.png"
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
