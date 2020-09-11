@@ -71,7 +71,7 @@ qwell = 0.5  # Volumetric injection rate ($m^3/d$)
 al = 10.0  # Longitudinal dispersivity ($m$)
 trpt = 0.3  # Ratio of transverse to longitudinal dispersitivity
 trpv = 0.3  # Ratio of vertical to longitudinal dispersitivity
-perlen = 100.0 # Simulation time ($days$)
+perlen = 100.0  # Simulation time ($days$)
 
 # Additional model input
 
@@ -81,8 +81,8 @@ nstp = [10]
 tsmult = [1.0]
 sconc = 0.0
 c0 = 0.0
-dt0 = 10.
-dmcoef = 0.
+dt0 = 10.0
+dmcoef = 0.0
 ath1 = al * trpt
 atv = al * trpv
 xt3d = [True]
@@ -93,7 +93,7 @@ mixelm = -1
 # Initial conditions
 strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
 Lx = (ncol - 1) * delr
-v = 1. / 3.
+v = 1.0 / 3.0
 prsity = 0.2
 q = v * prsity
 h1 = q * Lx
@@ -131,9 +131,9 @@ chdspd = []
 for k in np.arange(nlay):
     for i in np.arange(nrow):
         #              (l, r, c),          head, conc
-        chdspd.append([(k, i, 0), strt[k, i, 0], 0.])
-        chdspd.append([(k, i, ncol-1), strt[k, i, ncol-1], 0.])
-chdspd = {0: chdspd} 
+        chdspd.append([(k, i, 0), strt[k, i, 0], 0.0])
+        chdspd.append([(k, i, ncol - 1), strt[k, i, ncol - 1], 0.0])
+chdspd = {0: chdspd}
 
 # Solver settings
 
@@ -192,24 +192,13 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         )
 
         # Instantiate basic package
-        flopy.modflow.ModflowBas(
-            mf, 
-            ibound=ibound_mf2k5, 
-            strt=strt
-        )
+        flopy.modflow.ModflowBas(mf, ibound=ibound_mf2k5, strt=strt)
 
         # Instantiate layer property flow package
-        flopy.modflow.ModflowLpf(
-            mf, 
-            hk=k11, 
-            laytyp=icelltype
-        )
+        flopy.modflow.ModflowLpf(mf, hk=k11, laytyp=icelltype)
 
         # Instantiate well package
-        flopy.modflow.ModflowWel(
-            mf, 
-            stress_period_data=welspd
-        )
+        flopy.modflow.ModflowWel(mf, stress_period_data=welspd)
 
         # Instantiate solver package
         flopy.modflow.ModflowPcg(mf)
@@ -234,7 +223,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
             sconc=sconc,
             nper=nper,
             perlen=perlen,
-            dt0=dt0
+            dt0=dt0,
         )
 
         # Instatiate the advection package
@@ -255,13 +244,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         )
 
         # Instantiate the dispersion package
-        flopy.mt3d.Mt3dDsp(
-            mt, 
-            al=al, 
-            trpt=trpt,
-            trpv=trpv,
-            dmcoef=dmcoef
-        )
+        flopy.mt3d.Mt3dDsp(mt, al=al, trpt=trpt, trpv=trpv, dmcoef=dmcoef)
 
         # Instantiate the source/sink mixing package
         flopy.mt3d.Mt3dSsm(mt, stress_period_data=spd)
@@ -282,10 +265,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
         flopy.mf6.ModflowTdis(
-            sim, 
-            nper=nper, 
-            perioddata=tdis_rc, 
-            time_units=time_units
+            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
         )
 
         # Instantiating MODFLOW 6 groundwater flow model
@@ -339,12 +319,10 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
             save_specific_discharge=True,
             filename="{}.npf".format(gwfname),
         )
-        
+
         # Instantiating MODFLOW 6 initial conditions package for flow model
         flopy.mf6.ModflowGwfic(
-            gwf, 
-            strt=strt, 
-            filename="{}.ic".format(gwfname)
+            gwf, strt=strt, filename="{}.ic".format(gwfname)
         )
 
         # Instantiating MODFLOW 6 constant head package
@@ -353,7 +331,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
             maxbound=len(chdspd),
             stress_period_data=chdspd,
             save_flows=False,
-            auxiliary='CONCENTRATION',
+            auxiliary="CONCENTRATION",
             pname="CHD-1",
             filename="{}.chd".format(gwfname),
         )
@@ -426,9 +404,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
 
         # Instantiating MODFLOW 6 transport initial concentrations
         flopy.mf6.ModflowGwtic(
-            gwt, 
-            strt=sconc, 
-            filename="{}.ic".format(gwtname)
+            gwt, strt=sconc, filename="{}.ic".format(gwtname)
         )
 
         # Instantiating MODFLOW 6 transport advection package
@@ -439,9 +415,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         else:
             raise Exception()
         flopy.mf6.ModflowGwtadv(
-            gwt, 
-            scheme=scheme, 
-            filename="{}.adv".format(gwtname)
+            gwt, scheme=scheme, filename="{}.adv".format(gwtname)
         )
 
         # Instantiating MODFLOW 6 transport dispersion package
@@ -469,8 +443,10 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         )
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
-        sourcerecarray = [("WEL-1", "AUX", "CONCENTRATION"),
-                          ("CHD-1", "AUX", "CONCENTRATION")]
+        sourcerecarray = [
+            ("WEL-1", "AUX", "CONCENTRATION"),
+            ("CHD-1", "AUX", "CONCENTRATION"),
+        ]
         flopy.mf6.ModflowGwtssm(
             gwt, sources=sourcerecarray, filename="{}.ssm".format(gwtname)
         )
@@ -556,65 +532,88 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         axWasNone = False
         if ax is None:
             fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
-            ax = fig.add_subplot(3, 1, 1, aspect='equal')
+            ax = fig.add_subplot(3, 1, 1, aspect="equal")
             axWasNone = True
-            
+
         ilay = 4
         mm = flopy.plot.PlotMapView(ax=ax, model=mf2k5, layer=ilay)
-        mm.plot_grid(color='.5', alpha=0.2)
+        mm.plot_grid(color=".5", alpha=0.2)
         mm.plot_ibound()
-        cs1 = mm.contour_array(conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors='k')
-        cs2 = mm.contour_array(conc_mf6[0], levels=[0.01, 0.05, 0.15, 0.50], colors='r', linestyles=':')
+        cs1 = mm.contour_array(
+            conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k"
+        )
+        cs2 = mm.contour_array(
+            conc_mf6[0],
+            levels=[0.01, 0.05, 0.15, 0.50],
+            colors="r",
+            linestyles=":",
+        )
         plt.clabel(cs1)
-        plt.xlabel('DISTANCE ALONG X-AXIS, IN METERS')
-        plt.ylabel('DISTANCE ALONG Y-AXIS, IN METERS')
-        title = 'Layer {}'.format(ilay + 1)
+        plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
+        plt.ylabel("DISTANCE ALONG Y-AXIS, IN METERS")
+        title = "Layer {}".format(ilay + 1)
         letter = chr(ord("@") + idx + 1)
         fs.heading(letter=letter, heading=title)
-        
+
         labels = ["MT3DMS", "MODFLOW 6"]
         lines = [cs1.collections[0], cs2.collections[0]]
         ax.legend(lines, labels, loc="upper center")
-        
+
         if axWasNone:
-            ax = fig.add_subplot(3, 1, 2, aspect='equal')
-        
+            ax = fig.add_subplot(3, 1, 2, aspect="equal")
+
         ilay = 5
         mm = flopy.plot.PlotMapView(ax=ax, model=mf2k5, layer=ilay)
-        mm.plot_grid(color='.5', alpha=0.2)
+        mm.plot_grid(color=".5", alpha=0.2)
         mm.plot_ibound()
-        cs = mm.contour_array(conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors='k')
-        cs = mm.contour_array(conc_mf6[0], levels=[0.01, 0.05, 0.15, 0.50], colors='r', linestyles=':')
+        cs = mm.contour_array(
+            conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k"
+        )
+        cs = mm.contour_array(
+            conc_mf6[0],
+            levels=[0.01, 0.05, 0.15, 0.50],
+            colors="r",
+            linestyles=":",
+        )
         plt.clabel(cs)
-        plt.xlabel('DISTANCE ALONG X-AXIS, IN METERS')
-        plt.ylabel('DISTANCE ALONG Y-AXIS, IN METERS')
-        title = 'Layer {}'.format(ilay + 1)
+        plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
+        plt.ylabel("DISTANCE ALONG Y-AXIS, IN METERS")
+        title = "Layer {}".format(ilay + 1)
         letter = chr(ord("@") + idx + 2)
         fs.heading(letter=letter, heading=title)
-        
-        if axWasNone:    
-            ax = fig.add_subplot(3, 1, 3, aspect='equal')
-        
+
+        if axWasNone:
+            ax = fig.add_subplot(3, 1, 3, aspect="equal")
+
         ilay = 6
         mm = flopy.plot.PlotMapView(ax=ax, model=mf2k5, layer=ilay)
-        mm.plot_grid(color='.5', alpha=0.2)
+        mm.plot_grid(color=".5", alpha=0.2)
         mm.plot_ibound()
-        cs = mm.contour_array(conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors='k')
-        cs = mm.contour_array(conc_mf6[0], levels=[0.01, 0.05, 0.15, 0.50], colors='r', linestyles=':')
+        cs = mm.contour_array(
+            conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k"
+        )
+        cs = mm.contour_array(
+            conc_mf6[0],
+            levels=[0.01, 0.05, 0.15, 0.50],
+            colors="r",
+            linestyles=":",
+        )
         plt.clabel(cs)
-        plt.xlabel('DISTANCE ALONG X-AXIS, IN METERS')
-        plt.ylabel('DISTANCE ALONG Y-AXIS, IN METERS')
-        title = 'Layer {}'.format(ilay + 1)
+        plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
+        plt.ylabel("DISTANCE ALONG Y-AXIS, IN METERS")
+        title = "Layer {}".format(ilay + 1)
         letter = chr(ord("@") + idx + 3)
         fs.heading(letter=letter, heading=title)
-        plt.plot(mf2k5.modelgrid.xcellcenters[7, 2], mf2k5.modelgrid.ycellcenters[7, 2], 'ko')
+        plt.plot(
+            mf2k5.modelgrid.xcellcenters[7, 2],
+            mf2k5.modelgrid.ycellcenters[7, 2],
+            "ko",
+        )
 
         # save figure
         if config.plotSave:
             fpth = os.path.join(
-                "..",
-                "figures",
-                "{}{}".format(sim_name, config.figure_ext),
+                "..", "figures", "{}{}".format(sim_name, config.figure_ext),
             )
             fig.savefig(fpth)
 
@@ -628,21 +627,17 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
 
 
 def scenario(idx, silent=True):
-
     mf2k5, mt3d, sim = build_model(example_name, xt3d=xt3d, mixelm=mixelm)
-
     write_model(mf2k5, mt3d, sim, silent=silent)
-
     success = run_model(mf2k5, mt3d, sim, silent=silent)
-
     if success:
         plot_results(mf2k5, mt3d, sim, idx)
 
 
 # nosetest - exclude block from this nosetest to the next nosetest
-
 def test_01():
     scenario(0, silent=False)
+
 
 # nosetest end
 

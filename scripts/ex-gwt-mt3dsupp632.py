@@ -227,9 +227,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obsj = int(obs_xloc / delr) + 1
     obs_data = {
-        "{}.obs.csv".format(name): [
-            ("myobs", "CONCENTRATION", (0, 0, obsj)),
-        ],
+        "{}.obs.csv".format(name): [("myobs", "CONCENTRATION", (0, 0, obsj)),],
     }
     obs_package = flopy.mf6.ModflowUtlobs(
         gwt, digits=10, print_input=True, continuous=obs_data

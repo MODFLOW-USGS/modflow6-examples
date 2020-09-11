@@ -586,9 +586,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         # save figure
         if config.plotSave:
             fpth = os.path.join(
-                "..",
-                "figures",
-                "{}{}".format(sim_name, config.figure_ext),
+                "..", "figures", "{}{}".format(sim_name, config.figure_ext),
             )
             fig.savefig(fpth)
 

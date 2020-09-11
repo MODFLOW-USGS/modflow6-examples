@@ -313,14 +313,7 @@ def build_mf6gwf(sim_folder):
         if len(ll) == 4:
             k, i, j, hd = ll
             chdlist.append(
-                [
-                    (
-                        int(k) - 1,
-                        int(i) - 1,
-                        int(j) - 1,
-                    ),
-                    float(hd),
-                ]
+                [(int(k) - 1, int(i) - 1, int(j) - 1,), float(hd),]
             )
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chdlist, pname="CHD-1")
 
@@ -440,11 +433,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt,
-        xt3d=True,
-        alh=alpha_l,
-        ath1=alpha_th,
-        ath2=alpha_tv,
+        gwt, xt3d=True, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
     )
     sourcerecarray = [[]]
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
@@ -776,15 +765,15 @@ def plot_gwt_results(sims):
 
         fname = os.path.join(data_ws, "teststrm.sg2")
         sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365., sg[:, 6], 'b--')
+        ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
 
         fname = os.path.join(data_ws, "teststrm.sg3")
         sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365., sg[:, 6], 'r--')
+        ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
 
         fname = os.path.join(data_ws, "teststrm.sg4")
         sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365., sg[:, 3], 'g--')
+        ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")
 
         fs.graph_legend()
         ax.set_ylim(0, 50)
@@ -793,7 +782,6 @@ def plot_gwt_results(sims):
         ax.set_ylabel(
             "SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER"
         )
-
 
         # save figure
         if config.plotSave:

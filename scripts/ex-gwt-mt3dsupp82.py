@@ -43,15 +43,15 @@ nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 31  # Number of rows
 ncol = 46  # Number of columns
-delr = 10.  # Column width ($m$)
-delc = 10.  # Row width ($m$)
-top = 10.  # Top of the model ($m$)
-botm = 0.  # Layer bottom elevation ($m$)
-hydraulic_conductivity = 10. # Hydraulic conductivity ($md^{-1}$)
-alpha_l = 10.  # Longitudinal dispersivity ($m$)
-alpha_th = 3.  # Transverse horizontal dispersivity ($m$)
+delr = 10.0  # Column width ($m$)
+delc = 10.0  # Row width ($m$)
+top = 10.0  # Top of the model ($m$)
+botm = 0.0  # Layer bottom elevation ($m$)
+hydraulic_conductivity = 10.0  # Hydraulic conductivity ($md^{-1}$)
+alpha_l = 10.0  # Longitudinal dispersivity ($m$)
+alpha_th = 3.0  # Transverse horizontal dispersivity ($m$)
 alpha_tv = 0.3  # Transverse vertical dispersivity ($m$)
-total_time = 365.  # Simulation time ($d$)
+total_time = 365.0  # Simulation time ($d$)
 porosity = 0.3  # Porosity of mobile domain (unitless)
 
 
@@ -69,9 +69,7 @@ def build_mf6gwf(sim_folder):
     sim = flopy.mf6.MFSimulation(
         sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
     )
-    tdis_ds = (
-        (total_time, 1, 1.0),
-    )
+    tdis_ds = ((total_time, 1, 1.0),)
     flopy.mf6.ModflowTdis(
         sim, nper=nper, perioddata=tdis_ds, time_units=time_units
     )
@@ -96,53 +94,68 @@ def build_mf6gwf(sim_folder):
         k=hydraulic_conductivity,
     )
     flopy.mf6.ModflowGwfic(gwf, strt=0.0)
-    cinflow = 0.
-    chdlist1 = [[(0, i, 0), 1000. + 7.29e-4, cinflow] for i in range(nrow)]
-    chdlist1 += [[(0, i, ncol - 1), 1000. + -4.5, 0.] for i in range(nrow)]
-    flopy.mf6.ModflowGwfchd(gwf,
-                            stress_period_data=chdlist1,
-                            print_input=True,
-                            print_flows=True,
-                            save_flows=False,
-                            pname='CHD-1',
-                            auxiliary=[('CONCENTRATION'), ])
-    wellbottom = 0.
+    cinflow = 0.0
+    chdlist1 = [[(0, i, 0), 1000.0 + 7.29e-4, cinflow] for i in range(nrow)]
+    chdlist1 += [[(0, i, ncol - 1), 1000.0 + -4.5, 0.0] for i in range(nrow)]
+    flopy.mf6.ModflowGwfchd(
+        gwf,
+        stress_period_data=chdlist1,
+        print_input=True,
+        print_flows=True,
+        save_flows=False,
+        pname="CHD-1",
+        auxiliary=[("CONCENTRATION"),],
+    )
+    wellbottom = 0.0
     wellradius = 0.01
     ngwfnodes = 1
-    concwell = 1000.
-    strt = 0.
-    mawpackagedata = [[iwell, wellradius, wellbottom, strt, 'THIEM', ngwfnodes, concwell] for iwell in range(4)]
-    mawconnectiondata = [[0, 0, (0, 15, 15),  10., 0., 10., 0.1],
-                         [1, 0, (0, 15, 20), 10., 0., 10., 0.1],
-                         [2, 0, (0, 4, 15), 10., 0., 10., 0.1],
-                         [3, 0, (0, 26, 15), 10., 0., 10., 0.1],]
-    mawspd = [[0, 'rate', 1.], [1, 'rate', -1.]]
+    concwell = 1000.0
+    strt = 0.0
+    mawpackagedata = [
+        [iwell, wellradius, wellbottom, strt, "THIEM", ngwfnodes, concwell]
+        for iwell in range(4)
+    ]
+    mawconnectiondata = [
+        [0, 0, (0, 15, 15), 10.0, 0.0, 10.0, 0.1],
+        [1, 0, (0, 15, 20), 10.0, 0.0, 10.0, 0.1],
+        [2, 0, (0, 4, 15), 10.0, 0.0, 10.0, 0.1],
+        [3, 0, (0, 26, 15), 10.0, 0.0, 10.0, 0.1],
+    ]
+    mawspd = [[0, "rate", 1.0], [1, "rate", -1.0]]
 
-    mawon = True
-    maw = flopy.mf6.ModflowGwfmaw(gwf,
-                                  print_input=True,
-                                  print_head=True,
-                                  print_flows=True,
-                                  save_flows=True,
-                                  mover=True,
-                                  no_well_storage=True,
-                                  head_filerecord="{}.maw.hds".format(name),
-                                  budget_filerecord = "{}.maw.bud".format(name),
-                                  packagedata=mawpackagedata,
-                                  connectiondata=mawconnectiondata,
-                                  perioddata=mawspd,
-                                  pname='MAW-1',
-                                  auxiliary=['CONCENTRATION'])
+    flopy.mf6.ModflowGwfmaw(
+        gwf,
+        print_input=True,
+        print_head=True,
+        print_flows=True,
+        save_flows=True,
+        mover=True,
+        no_well_storage=True,
+        head_filerecord="{}.maw.hds".format(name),
+        budget_filerecord="{}.maw.bud".format(name),
+        packagedata=mawpackagedata,
+        connectiondata=mawconnectiondata,
+        perioddata=mawspd,
+        pname="MAW-1",
+        auxiliary=["CONCENTRATION"],
+    )
 
-    packages = [('maw-1',), ]
-    perioddata = [('MAW-1', 1, 'MAW-1', 2, 'factor', 0.5),
-                  ('MAW-1', 1, 'MAW-1', 3, 'factor', 0.5),]
-    flopy.mf6.ModflowGwfmvr(gwf, maxmvr=len(perioddata),
-                            budget_filerecord='{}.mvr.bud'.format(name),
-                            maxpackages=len(packages),
-                            print_flows=True,
-                            packages=packages,
-                            perioddata=perioddata)
+    packages = [
+        ("maw-1",),
+    ]
+    perioddata = [
+        ("MAW-1", 1, "MAW-1", 2, "factor", 0.5),
+        ("MAW-1", 1, "MAW-1", 3, "factor", 0.5),
+    ]
+    flopy.mf6.ModflowGwfmvr(
+        gwf,
+        maxmvr=len(perioddata),
+        budget_filerecord="{}.mvr.bud".format(name),
+        maxpackages=len(packages),
+        print_flows=True,
+        packages=packages,
+        perioddata=perioddata,
+    )
 
     head_filerecord = "{}.hds".format(name)
     budget_filerecord = "{}.bud".format(name)
@@ -181,57 +194,63 @@ def build_mf6gwt(sim_folder):
     )
     flopy.mf6.ModflowGwtic(gwt, strt=0)
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
-    flopy.mf6.ModflowGwtadv(gwt, scheme='upstream')
-    flopy.mf6.ModflowGwtdsp(gwt, xt3d=True,
-                            alh=alpha_l,
-                            ath1=alpha_th,
-                            atv=alpha_tv)
+    flopy.mf6.ModflowGwtadv(gwt, scheme="upstream")
+    flopy.mf6.ModflowGwtdsp(
+        gwt, xt3d=True, alh=alpha_l, ath1=alpha_th, atv=alpha_tv
+    )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
-        ('GWFMOVER', '../mf6gwf/flow.mvr.bud', None),
+        ("GWFMOVER", "../mf6gwf/flow.mvr.bud", None),
         ("MAW-1", "../mf6gwf/flow.maw.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
 
-    mwtpackagedata = [(0, 0., 99., 999., 'inject'),
-                      (1, 0., 99., 999., 'extract'),
-                      (2, 0., 99., 999., 'reinject1'),
-                      (3, 0., 99., 999., 'reinject2'), ]
-    mwtperioddata = [(0, 'RATE', 1000.),
-                     (0, 'CONCENTRATION', 1000.),
-                     (0, 'STATUS', 'ACTIVE'),
-                     (1, 'STATUS', 'ACTIVE'),
-                     (2, 'STATUS', 'ACTIVE'),
-                     (3, 'STATUS', 'ACTIVE'),
-                     ]
-    flopy.mf6.modflow.ModflowGwtmwt(gwt,
-                                    boundnames=True,
-                                    save_flows=True,
-                                    print_input=True,
-                                    print_flows=True,
-                                    print_concentration=True,
-                                    concentration_filerecord=name + '.mwt.bin',
-                                    budget_filerecord=name + '.mwt.bud',
-                                    packagedata=mwtpackagedata,
-                                    mwtperioddata=mwtperioddata,
-                                    observations=None,
-                                    pname='MAW-1',
-                                    auxiliary=['aux1', 'aux2'])
+    mwtpackagedata = [
+        (0, 0.0, 99.0, 999.0, "inject"),
+        (1, 0.0, 99.0, 999.0, "extract"),
+        (2, 0.0, 99.0, 999.0, "reinject1"),
+        (3, 0.0, 99.0, 999.0, "reinject2"),
+    ]
+    mwtperioddata = [
+        (0, "RATE", 1000.0),
+        (0, "CONCENTRATION", 1000.0),
+        (0, "STATUS", "ACTIVE"),
+        (1, "STATUS", "ACTIVE"),
+        (2, "STATUS", "ACTIVE"),
+        (3, "STATUS", "ACTIVE"),
+    ]
+    flopy.mf6.modflow.ModflowGwtmwt(
+        gwt,
+        boundnames=True,
+        save_flows=True,
+        print_input=True,
+        print_flows=True,
+        print_concentration=True,
+        concentration_filerecord=name + ".mwt.bin",
+        budget_filerecord=name + ".mwt.bud",
+        packagedata=mwtpackagedata,
+        mwtperioddata=mwtperioddata,
+        observations=None,
+        pname="MAW-1",
+        auxiliary=["aux1", "aux2"],
+    )
 
     flopy.mf6.modflow.ModflowGwtmvt(gwt, print_flows=True)
-    sourcerecarray = [('CHD-1', 'AUX', 'CONCENTRATION'), ]
+    sourcerecarray = [
+        ("CHD-1", "AUX", "CONCENTRATION"),
+    ]
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
-    flopy.mf6.ModflowGwtoc(gwt,
-                           budget_filerecord='{}.cbc'.format(name),
-                           concentration_filerecord='{}.ucn'.format(
-                               name),
-                           concentrationprintrecord=[
-                               ('COLUMNS', ncol, 'WIDTH', 15,
-                                'DIGITS', 6, 'GENERAL')],
-                           saverecord=[('CONCENTRATION', 'ALL')],
-                           printrecord=[('CONCENTRATION', 'ALL'),
-                                        ('BUDGET', 'ALL',)])
+    flopy.mf6.ModflowGwtoc(
+        gwt,
+        budget_filerecord="{}.cbc".format(name),
+        concentration_filerecord="{}.ucn".format(name),
+        concentrationprintrecord=[
+            ("COLUMNS", ncol, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+        ],
+        saverecord=[("CONCENTRATION", "ALL")],
+        printrecord=[("CONCENTRATION", "ALL"), ("BUDGET", "ALL",)],
+    )
     return sim
 
 
@@ -260,17 +279,19 @@ def build_mf2005(sim_folder):
     pcg = flopy.modflow.ModflowPcg(mf)
     lmt = flopy.modflow.ModflowLmt(mf)
 
-    h = 1000. + 7.29e-4
+    h = 1000.0 + 7.29e-4
     chdspd = [[0, i, 0, h, h] for i in range(nrow)]
-    h = 1000. + -4.5
+    h = 1000.0 + -4.5
     chdspd += [[0, i, ncol - 1, h, h] for i in range(nrow)]
     chd = flopy.modflow.ModflowChd(mf, stress_period_data=chdspd)
 
-    q = 1.
-    welspd = [[0, 15, 15, q], # injection
-              [0, 15, 20, -q], # extraction
-              [0, 4, 15, .5 * q], # reinjection
-              [0, 26, 15, .5 * q],] # reinjection
+    q = 1.0
+    welspd = [
+        [0, 15, 15, q],  # injection
+        [0, 15, 20, -q],  # extraction
+        [0, 4, 15, 0.5 * q],  # reinjection
+        [0, 26, 15, 0.5 * q],
+    ]  # reinjection
     wel = flopy.modflow.ModflowWel(mf, stress_period_data=welspd)
     return mf
 
@@ -286,20 +307,18 @@ def build_mt3dms(sim_folder, modflowmodel):
         modflowmodel=modflowmodel,
         ftlfilename="../mf2005/mt3d_link.ftl",
     )
-    dt0 = total_time / 20.
-    btn = flopy.mt3d.Mt3dBtn(
-        mt, laycon=0, prsity=porosity, dt0=dt0, ifmtcn=1)
+    dt0 = total_time / 20.0
+    btn = flopy.mt3d.Mt3dBtn(mt, laycon=0, prsity=porosity, dt0=dt0, ifmtcn=1)
     adv = flopy.mt3d.Mt3dAdv(mt, mixelm=0)
-    dsp = flopy.mt3d.Mt3dDsp(mt,
-                             al=alpha_l,
-                             trpt=alpha_th / alpha_l,
-                             trpv=alpha_tv / alpha_l)
+    dsp = flopy.mt3d.Mt3dDsp(
+        mt, al=alpha_l, trpt=alpha_th / alpha_l, trpv=alpha_tv / alpha_l
+    )
 
     ssmspd = [
-        [0, 15, 15, 1000., 2],
+        [0, 15, 15, 1000.0, 2],
         [0, 4, 15, -711, 2],
         [0, 26, 15, -711, 2],
-              ]
+    ]
     ssm = flopy.mt3d.Mt3dSsm(mt, mxss=66, stress_period_data=ssmspd)
     gcg = flopy.mt3d.Mt3dGcg(mt)
     return mt
@@ -368,7 +387,7 @@ def plot_results(sims, idx):
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         fname = os.path.join(sim_ws, "trans.ucn")
-        cobj = flopy.utils.HeadFile(fname, text='CONCENTRATION')
+        cobj = flopy.utils.HeadFile(fname, text="CONCENTRATION")
         conc = cobj.get_data()
 
         sim_ws = sim_mt3dms.model_ws
@@ -380,18 +399,20 @@ def plot_results(sims, idx):
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
-        pmv.plot_bc(ftype='MAW', color='red')
-        pmv.plot_bc(ftype='CHD')
+        pmv.plot_bc(ftype="MAW", color="red")
+        pmv.plot_bc(ftype="CHD")
         pmv.plot_grid(linewidths=0.25)
 
         a = np.ma.masked_less(conc, 0.01)
-        pa = pmv.plot_array(a, cmap='jet', alpha=0.25)
+        pa = pmv.plot_array(a, cmap="jet", alpha=0.25)
         plt.colorbar(pa, shrink=0.5)
 
-        levels = [0.01, .1, 1, 10, 100]
-        cs1 = pmv.contour_array(concmt, levels=levels, colors='r')
+        levels = [0.01, 0.1, 1, 10, 100]
+        cs1 = pmv.contour_array(concmt, levels=levels, colors="r")
 
-        cs2 = pmv.contour_array(conc, levels=levels, colors='b', linestyles='--')
+        cs2 = pmv.contour_array(
+            conc, levels=levels, colors="b", linestyles="--"
+        )
         ax.clabel(cs2, cs2.levels[::1], fmt="%3.2f", colors="b")
 
         labels = ["MT3DMS", "MODFLOW 6"]
