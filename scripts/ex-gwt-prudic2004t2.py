@@ -773,13 +773,27 @@ def plot_gwt_results(sims):
         )
         ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
         ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
-        ax.legend()
+
+        fname = os.path.join(data_ws, "teststrm.sg2")
+        sg = np.genfromtxt(fname, comments='"')
+        ax.plot(sg[:, 0] / 365., sg[:, 6], 'b--')
+
+        fname = os.path.join(data_ws, "teststrm.sg3")
+        sg = np.genfromtxt(fname, comments='"')
+        ax.plot(sg[:, 0] / 365., sg[:, 6], 'r--')
+
+        fname = os.path.join(data_ws, "teststrm.sg4")
+        sg = np.genfromtxt(fname, comments='"')
+        ax.plot(sg[:, 0] / 365., sg[:, 3], 'g--')
+
+        fs.graph_legend()
         ax.set_ylim(0, 50)
         ax.set_xlim(0, 25)
         ax.set_xlabel("TIME, IN YEARS")
         ax.set_ylabel(
             "SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER"
         )
+
 
         # save figure
         if config.plotSave:
