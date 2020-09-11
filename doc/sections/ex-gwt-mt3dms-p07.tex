@@ -1,0 +1,22 @@
+\section{Three-Dimensional Transport in a Uniform Flow Field (MT3DMS Example Problem 7)}
+
+In a previous problem titled ``two-dimensional transport in a uniform flow field'' concentrations were compared between \mf and MT3D-USGS for a relatively thin aquifer (10 $m$) wherein instantaneous vertical mixing was assumed.  In order to test transport simulation in a thicker aquifer, where all three spatial dimensions are required to adequately simulate the movement of solute, the current problem was devised. \cite{hunt1978} provides an analytical solution, which is used to verify MT3DMS in \cite{zheng1999mt3dms}, but not shown here.  Instead, only the \mf and MT3DMS solutions are compared here. 
+
+Problem dimensions and aquifer properties are given in table~\ref{tab:ex-gwt-mt3dms-p0701}.  The point source is located in layer 7, row 8, and column 3
+
+% add 2nd static parameter value table
+\begin{StandardTable}
+	{Hydraulic and transport properties used in the three-dimensional transport in a uniform flow field test problem.  From \cite{zheng1999mt3dms}}
+	{tab:ex-gwt-mt3dms-p0701}
+	{../tables/ex-gwt-mt3dms-p0701}
+\end{StandardTable}
+
+An analytical solution for this problem was originally given in \cite{hunt1978}.  Both numerical solutions invoke their respective TVD schemes.  Moreover, \mf is using the XT3D package for simulating dispersion.  The \mf solution shows great agreement with the MT3DMS calculated concentrations for the three layers displayed in figure~\ref{fig:ex-gwt-mt3dms-p06}. 
+
+% MT3DMS manual figure 38
+\begin{StandardFigure}
+	{Comparison of the MT3D-USGS and \mf numerical solutions for three-dimensional transport in a uniform flow field. The analytical solution for this problem was originally given in \citep{hunt1978} and is not shown here} 
+	{fig:ex-gwt-mt3dms-p07}
+	{../figures/ex-gwt-mt3dms-p07}
+\end{StandardFigure}
+
