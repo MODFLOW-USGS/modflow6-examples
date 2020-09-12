@@ -33,11 +33,17 @@ jobs:
           sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc
           sudo ln -fs /usr/bin/g++-9 /usr/local/bin/g++
 
-      - name: Install TeX Live, pandoc, and additional TrueType fonts
+      - name: Install TeX Live and additional TrueType fonts
         shell: bash
         run: |
-          sudo apt install texlive-latex-extra texlive-science pandoc pandoc-citeproc fonts-liberation
-          pandoc --version
+          sudo apt install texlive-latex-extra texlive-science fonts-liberation
+
+      - name: Install pandoc
+        shell: bash
+        run: |
+          curl –O https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-linux-amd64.tar.gz
+          tar xvzf pandoc-2.10.1-linux-amd64.tar.gz --strip-components 1 -C $HOME/.local
+          pandoc --version          
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
