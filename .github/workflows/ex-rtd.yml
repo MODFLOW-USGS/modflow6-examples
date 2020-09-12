@@ -38,23 +38,11 @@ jobs:
         run: |
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
-      - name: Prepare to install pandoc
-        shell: bash
-        run: |
-          mkdir pd/
-          echo "::add-path::./pd"
-
       - name: Install pandoc
         shell: bash
         run: |
           wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-linux-amd64.tar.gz
-          tar xvzf pandoc-2.10.1-linux-amd64.tar.gz --strip-components=2 -C ./pd
-          ls -l ./pd
-
-      - name: pandoc version
-        shell: bash
-        run: |
-          $PATH
+          tar xvzf pandoc-2.10.1-linux-amd64.tar.gz --strip-components=1 -C /usr/local
           pandoc --version          
 
       - name: Cache pip
