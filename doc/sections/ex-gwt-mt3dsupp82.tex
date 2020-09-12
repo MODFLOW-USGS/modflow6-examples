@@ -5,15 +5,14 @@ This example is for a recirculating well.  It is based on example problem 8.2 de
 
 \subsection{Example description}
 
-The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsupp8201}.  The model grid consists of 31 rows, 46 columns, and 1 layer.  The flow problem is confined and steady state.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.
+The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsupp82-01}.  The model grid consists of 31 rows, 46 columns, and 1 layer.  The flow problem is confined and steady state.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.
 
 For the MT3DMS representation of this problem, the Well Package is used to inject water at a rate of 1 $m^3/d$ into model cell (1, 16, 16).  Water is extracted at a rate of -1 $m^3/d$ from model cell (1, 16, 21).  Two additional wells, located in cells (1, 5, 16) and (1, 27, 16), reinject water at the concentration of the extracted water from cell (1, 16, 21).  The injection rate for each of these reinjection wells is 0.5 $m^3/d$.
 
 For the \mf representation of this problem, the Multi-Aquifer Well (MAW) Package is used for these injection and extraction wells, although because the model is only a single layer, the MAW Package behaves just like the Well Package.  The Water Mover (MVR) Package is used to send half of the extracted water into each of the reinjection wells.  For the \mf transport simulation, the Multi-Aquifer Transport (MWT) Package is used to calculate the concentration in each of the well bores.  The Mover Transport (MVT) Package is used to move the solute from the extraction well to the two reinjection wells based on the simulated flows.  Note that this approach used in \mf is slightly different than the approach used in MT3DMS, because \mf is calculating the concentrations in the well boreholes rather than using concentrations directly from the model cells.  By specifying a small well radius for the MAW Package, the approaches are similar.
 
 % add static parameter table(s)
-\begin{StandardTable}{Parameters used for the example of a recirculating well (MT3DMS Supplemental Guide problem 8.2 model parameters).}{tab:ex-gwt-mt3dsupp8201}{../tables/ex-gwt-mt3dsupp8201}
-\end{StandardTable}
+\input{../tables/ex-gwt-mt3dsupp82-01}
 
 % for examples without scenarios
 \subsection{Example Results}
@@ -23,6 +22,6 @@ Simulated concentrations from \mf and MT3DMS are shown in figure~\ref{fig:ex-gwt
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by \mf and MT3DMS for a problem involving a recirculating well.  This figure can be compared to figure 8.2 in \cite{zheng2010mt3dmsv5.3}.
-                                     }{fig:ex-gwt-mt3dsupp82-map}{ex-gwt-mt3dsupp82-map}
+                                     }{fig:ex-gwt-mt3dsupp82-map}{../figures/ex-gwt-mt3dsupp82-map.png}
 \end{StandardFigure}                                 
 

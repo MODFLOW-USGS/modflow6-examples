@@ -5,12 +5,10 @@ This example is for zero-order production in a dual-domain system.  It is based 
 
 \subsection{Example description}
 
-The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsupp63201}.  The model grid consists of 401 columns, 1 row, and 1 layer.  The flow problem is confined and steady state with an initial head set to the model top.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.  A specified flow condition is assigned to the first model cell.  For the source pulse duration, a specified concentration with a value of one is assigned to the first model cell.  Following the source pulse duration the specified concentration in the first cell is zero.  A specified head condition is assigned to the last model cell.  Water exiting the model through the specified head cell leaves with the simulated concentration of that cell.
+The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsupp632-01}.  The model grid consists of 401 columns, 1 row, and 1 layer.  The flow problem is confined and steady state with an initial head set to the model top.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.  A specified flow condition is assigned to the first model cell.  For the source pulse duration, a specified concentration with a value of one is assigned to the first model cell.  Following the source pulse duration the specified concentration in the first cell is zero.  A specified head condition is assigned to the last model cell.  Water exiting the model through the specified head cell leaves with the simulated concentration of that cell.
 
 % add static parameter table(s)
-\begin{StandardTable}{Parameters used for the example of zero-order growth in a uniform flow field (MT3DMS Supplemental Guide problem 6.3.2 model parameters).
-}{tab:ex-gwt-mt3dsupp63201}{../tables/ex-gwt-mt3dsupp63201}
-\end{StandardTable}
+\input{../tables/ex-gwt-mt3dsupp632-01}
 
 % for examples with scenarios
 \subsection{Example Scenarios}
@@ -18,10 +16,7 @@ The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsup
 This example problem consists of several different scenarios, as listed in table~\ref{tab:ex-gwt-mt3dsupp632-scenario}.  The first two scenarios represent zero-order growth when sorbtion is active.  Sorbtion is not active in the last scenario.  For all three scenarios, there is mass transfer between the mobile domain and the immobile domain.
 
 % add scenario table
-\begin{ScenarioTable}{
-                                   Parameters used for the scenarios of zero-order growth in a uniform flow field (MT3DMS Supplemental Guide problem 6.3.2 model parameters).
-                                   }{tab:ex-gwt-mt3dsupp632-scenario}{../tables/ex-gwt-mt3dsupp632-scenario}
-\end{ScenarioTable}
+\input{../tables/ex-gwt-mt3dsupp632-scenario}
 
 
 \subsubsection{Scenario Results}
@@ -31,6 +26,6 @@ Results from the three scenarios are shown in figure~\ref{fig:ex-gwt-mt3dsupp632
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and MT3DMS for zero-order growth in a dual-domain system.  Circles are for the GWT Model results; the lines represent simulated concentrations for MT3DMS.
-                                     }{fig:ex-gwt-mt3dsupp632}{ex-gwt-mt3dsupp632}
+                                     }{fig:ex-gwt-mt3dsupp632}{../figures/ex-gwt-mt3dsupp632.png}
 \end{StandardFigure}                                 
 

@@ -31,6 +31,7 @@
 \usepackage[nottoc,notlot,notlof]{tocbibind}
 \usepackage{lipsum}
 \usepackage{siunitx}
+\usepackage{catchfile}
 
 \usepackage{wallpaper}
 
@@ -92,7 +93,6 @@
    \hypertarget{#1}{}
 }
 
-\graphicspath{{../figures/}}
 \input{./version.tex}
 
 \input{./mf6examples_func.tex}
@@ -106,21 +106,12 @@
 \urlstyle{rm}
 
 \makeatletter
-\renewcommand*\l@section{\@dottedtocline{1}{0em}{1.5em}}
-\renewcommand\section{\@startsection {section}{1}{-1em}%
-  {-3.5ex \@plus -1ex \@minus -.2ex}%
-  {2.3ex \@plus.2ex}%
-  {\normalfont\Large\bfseries}}
-\def\sectionmark#1{%
-      \markright {\MakeUppercase{#1}}}
-\makeatother
-
-\makeatletter
 \patchcmd{\@verbatim}
   {\verbatim@font}
   {\verbatim@font\footnotesize}
   {}{}
 \makeatother
+
 
 \renewcommand\bibname{References Cited}
 
@@ -142,8 +133,8 @@
 \newpage
 \listoffigures
 
-\newpage
-\listoftables
+%\newpage
+%\listoftables
 
 % -------------------------------------------------
 \input{./body.tex}

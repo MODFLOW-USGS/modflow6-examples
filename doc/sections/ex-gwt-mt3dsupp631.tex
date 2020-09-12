@@ -5,11 +5,10 @@ This example is for zero-order production in a uniform flow field.  It is based 
 
 \subsection{Example description}
 
-The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsupp63101}.  The model grid consists of 101 columns, 1 row, and 1 layer.  The flow problem is confined and steady state with an initial head set to the model top.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.  A specified flow condition is assigned to the first model cell.  For the source pulse duration, the inflow concentration is specified as one.  Following the source pulse duration the inflowing water is assigned a concentration of zero.  A specified head condition is assigned to the last model cell.  Water exiting the model through the specified head cell leaves with the simulated concentration of that cell.
+The parameters used for this problem are listed in table~\ref{tab:ex-gwt-mt3dsupp631-01}.  The model grid consists of 101 columns, 1 row, and 1 layer.  The flow problem is confined and steady state with an initial head set to the model top.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.  A specified flow condition is assigned to the first model cell.  For the source pulse duration, the inflow concentration is specified as one.  Following the source pulse duration the inflowing water is assigned a concentration of zero.  A specified head condition is assigned to the last model cell.  Water exiting the model through the specified head cell leaves with the simulated concentration of that cell.
 
 % add static parameter table(s)
-\begin{StandardTable}{Parameters used for the example of zero-order growth in a uniform flow field (MT3DMS Supplemental Guide problem 6.3.1 model parameters).}{tab:ex-gwt-mt3dsupp63101}{../tables/ex-gwt-mt3dsupp63101}
-\end{StandardTable}
+\input{../tables/ex-gwt-mt3dsupp631-01}
 
 % for examples without scenarios
 \subsection{Example Results}
@@ -19,6 +18,6 @@ Simulated concentrations from the \mf GWT Model and MT3DMS are shown in figure~\
 % a figure
 \begin{StandardFigure}{
                                      Concentrations simulated by the \mf GWT Model and MT3DMS for zero-order growth in a uniform flow field.
-                                     }{fig:ex-gwt-mt3dsupp631}{ex-gwt-mt3dsupp631}
+                                     }{fig:ex-gwt-mt3dsupp631}{../figures/ex-gwt-mt3dsupp631.png}
 \end{StandardFigure}                                 
 

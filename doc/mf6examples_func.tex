@@ -35,16 +35,12 @@
 \setcounter{page}{1}%
 }
 
-
-\def\tsc#1#2{\csdef{#1}{#2\xspace}}
-\tsc{MF}{MODFLOW}
-\tsc{mf}{MODFLOW~6}
-\tsc{mff}{MODFLOW-2005}
-\tsc{mfn}{MODFLOW-NWT}
-\tsc{mfu}{MODFLOW-USG}
-
-%siunitx english units
-\DeclareSIUnit\feet{ft}
+% commands
+\newcommand{\MF}{MODFLOW\xspace}
+\newcommand{\mf}{MODFLOW~6\xspace}
+\newcommand{\mff}{MODFLOW-2005\xspace}
+\newcommand{\mfn}{MODFLOW-NWT\xspace}
+\newcommand{\mfu}{MODFLOW-USG\xspace}
 
 %generic command for creating matrix and vector notation \matr{}
 % http://tex.stackexchange.com/questions/199789/which-bold-style-is-recommended-for-matrix-notation
@@ -53,64 +49,8 @@
 
 % table variables
 \definecolor{Gray}{gray}{0.9}
+% commands
 
-
-% table environments
-\newenvironment{ScenarioTable}[3]{% #1 = caption #2 = label #3 = external file
-    \small
-    \begin{longtable}[!htbp]{
-                                          p{.1\linewidth-2\arraycolsep}
-                                          p{.25\linewidth-2\arraycolsep}
-                                          p{.3\linewidth-2\arraycolsep}
-                                          p{.15\linewidth-2\arraycolsep}
-                                          }
-    \caption{#1} \label{#2} \\
-
-    \hline \hline
-    \rowcolor{Gray}
-    \textbf{Scenario} & \textbf{Scenario Name} & \textbf{Parameter} & \textbf{Value}  \\
-    \hline
-    \endfirsthead
-
-    \hline \hline 
-    \rowcolor{Gray}
-    \textbf{Scenario} & \textbf{Scenario Name} & \textbf{Parameter} & \textbf{Value}  \\
-    \hline
-    \endhead    
-
-    \input{#3}
-}{%
-    \hline \hline
-    \end{longtable}
-    \normalsize
-}
-
-\newenvironment{StandardTable}[3]{% #1 = caption #2 = label #3 = external file
-    \small
-    \begin{longtable}[!htbp]{
-                                          p{.5\linewidth-2\arraycolsep}
-                                          p{.3\linewidth-2\arraycolsep}
-                                          }
-    \caption{#1} \label{#2} \\
-
-    \hline \hline
-    \rowcolor{Gray}
-    \textbf{Parameter} & \textbf{Value}  \\
-    \hline
-    \endfirsthead
-
-    \hline \hline 
-    \rowcolor{Gray}
-    \textbf{Parameter} & \textbf{Value} \\
-    \hline
-    \endhead    
-
-    \input{#3}
-}{%
-    \hline \hline
-    \end{longtable}
-    \normalsize
-}
 
 \newenvironment{StandardFigure}[3]{% #1 = caption #2 = label #3 = figure file
 \begin{figure}[!htbp]
