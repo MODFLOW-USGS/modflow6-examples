@@ -10,5 +10,6 @@ MODFLOW 6 Example Problems
    :maxdepth: 1
 
    introduction
+   examples
    notebook_examples
 

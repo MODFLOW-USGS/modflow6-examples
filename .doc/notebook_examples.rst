@@ -27,11 +27,13 @@ MODFLOW 6 Groundwater Transport Model
    ex-gwt-moc3d-p02tg <_notebooks/ex-gwt-moc3d-p02tg.ipynb>
    ex-gwt-mt3dsupp631 <_notebooks/ex-gwt-mt3dsupp631.ipynb>
    ex-gwt-mt3dsupp632 <_notebooks/ex-gwt-mt3dsupp632.ipynb>
+   ex-gwt-mt3dsupp82 <_notebooks/ex-gwt-mt3dsupp82.ipynb>
    ex-gwt-mt3dms-p01 <_notebooks/ex-gwt-mt3dms-p01.ipynb>
    ex-gwt-mt3dms-p03 <_notebooks/ex-gwt-mt3dms-p03.ipynb>
    ex-gwt-mt3dms-p04 <_notebooks/ex-gwt-mt3dms-p04.ipynb>
    ex-gwt-mt3dms-p05 <_notebooks/ex-gwt-mt3dms-p05.ipynb>
    ex-gwt-mt3dms-p06 <_notebooks/ex-gwt-mt3dms-p06.ipynb>
+   ex-gwt-mt3dms-p07 <_notebooks/ex-gwt-mt3dms-p07.ipynb>
    ex-gwt-prudic2004t2 <_notebooks/ex-gwt-prudic2004t2.ipynb>
 
 

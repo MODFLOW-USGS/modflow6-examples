@@ -5,7 +5,7 @@ In this example, two models are arranged in a nested parent-child grid setup, wh
 
 \begin{StandardFigure}
 	{Plan view of a three-dimensional aquifer system used to test the local grid refinement method in \mf. A 15$\times$15 horizontal grid discretization is shown for the parent grid and the locally refined grid (15$\times$18) spacing is equivalent to a 45$\times$45 discretization over the whole domain.  Two between-model MVR connections are invoked for the SFR packages (parent and child) where the river crosses between domains}
-	{fig:mvr_lgr_planview}{../images/mvr_lgr_planview}
+	{fig:mvr_lgr_planview}{../images/mvr_lgr_planview.png}
 \end{StandardFigure}
 
 \subsection{Example description}
@@ -13,15 +13,12 @@ In this example, two models are arranged in a nested parent-child grid setup, wh
 The parent model is 15 rows by 15 columns by 3 layers with the child model occupying a 5 row by 6 column by 2 layer portion of the parent grid as shown in figure~\ref{fig:mvr_lgr_planview}.  The child model applies a 3:1 refinement to each parent grid cell, including in the vertical direction, resulting in a 15 row by 18 column by 6 layer child model.  In this way, each parent grid cell is replaced by 27 ($3^3$) child model grid cells.  Aquifer properties are uniform and equal throughout both model domains.  Interested readers are referred to \cite{mehl2013} for additional model details.  
 
 % add static parameter value table
-\begin{StandardTable}
-	{Hydraulic model parameter values used in the local-grid refinement example problem.}
-	{tab:ex-gwf-lgr01.tex}
-	{../tables/ex-gwf-lgr01.tex}
-\end{StandardTable}
+\input{../tables/ex-gwf-lgr-01.tex}
+
 
 Figure~\ref{fig:ex-gwf-lgr} demonstrates that both MVR connections transfer streamflow to the appropriate stream reach in the receiving downstream model.  This is evidenced by the continuous and smooth downward trend in streamflow at the first MVR connection as well as by the uninterrupted upward trend in streamflow at the second MVR connection.  
 
 \begin{StandardFigure}
 	{Simulated streamflow and groundwater surface-water exchange for each stream reach in figure~\ref{fig:mvr_lgr_planview}.  The transfer of water between adjacent stream reaches in the parent versus child models occurs at locations identified by the vertical black lines on the plot. Bar widths are indicative of the relative stream reach lengths within the host grid cell (figure \ref{fig:mvr_lgr_planview}).}
-	{fig:ex-gwf-lgr}{../figures/ex-gwf-lgr}
+	{fig:ex-gwf-lgr}{../figures/ex-gwf-lgr.png}
 \end{StandardFigure}

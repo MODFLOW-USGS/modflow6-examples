@@ -33,10 +33,10 @@ jobs:
           sudo ln -fs /usr/bin/gcc-9 /usr/local/bin/gcc
           sudo ln -fs /usr/bin/g++-9 /usr/local/bin/g++
 
-      - name: Install additional TrueType fonts
+      - name: Install TeX Live, pandoc, and additional TrueType fonts
         shell: bash
         run: |
-          sudo apt install fonts-liberation
+          sudo apt install texlive-latex-extra texlive-science pandoc fonts-liberation
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
@@ -70,20 +70,21 @@ jobs:
           python ci_get_exes.py
           cd ..
 
-      - name: Run scripts without model runs
+      - name: Run scripts with model runs
         shell: bash
         run: |
           cd ./etc/
-          python ci_build_files.py
+          python ci_build_files.py --run
           cd ..
 
-      - name: Create package tables for ReadtheDocs
+      - name: Create package tables and examples.rst for ReadtheDocs
         if:
           github.repository_owner == 'MODFLOW-USGS'
         shell: bash
         run: |
           cd ./etc/
           python ci_package_tables.py
+          python ci_create_examples_rst.py
           cd ..
 
       - name: Run processing script
@@ -108,8 +109,10 @@ jobs:
         with:
           name: notebooks-for-${{ github.sha }}
           path: |
-            .doc/_notebooks
             .doc/introduction.md
+            .doc/examples.rst
+            .doc/_notebooks
+            .doc/_images
 
   # trigger rtd if "rtd_build" job was successful
   rtd_trigger:

@@ -67,6 +67,43 @@ def make_notebooks():
         if os.path.isfile(tpth):
             os.remove(tpth)
 
+def table_standard_header(caption, label):
+    header = "\\small\n"
+    header += "\\begin{longtable}[!htbp]{\n"
+    header += 38 * " " + "p{.5\\linewidth-2\\arraycolsep}\n"
+    header += 38 * " " + "p{.3\\linewidth-2\\arraycolsep}\n"
+    header += 38 * " " + "}\n"
+    header += "\t\\caption{{{}}} \\label{{tab:{}}} \\\\\n\n".format(caption, label)
+
+    header += "\t\\hline \\hline\n"
+    header +=  "\t\\rowcolor{Gray}\n"
+    header +=  "\t\\textbf{Parameter} & \\textbf{Value}  \\\\\n"
+    header +=  "\t\\hline\n"
+    header +=  "\t\\endhead\n\n"
+
+    return header
+
+def table_scenario_header(caption, label):
+    header = "\\small\n"
+    header += "\\begin{longtable}[!htbp]{\n"
+    header += 38 * " " + "p{.1\\linewidth-2\\arraycolsep}\n"
+    header += 38 * " " + "p{.25\\linewidth-2\\arraycolsep}\n"
+    header += 38 * " " + "p{.3\\linewidth-2\\arraycolsep}\n"
+    header += 38 * " " + "p{.15\\linewidth-2\\arraycolsep}\n"
+    header += 38 * " " + "}\n"
+    header += "\t\\caption{{{}}} \\label{{tab:{}}} \\\\\n\n".format(caption, label)
+
+    header += "\t\\hline \\hline\n"
+    header +=  "\t\\rowcolor{Gray}\n"
+    header +=  "\t\\textbf{Scenario} & \\textbf{Scenario Name} & " + \
+               "\\textbf{Parameter} & \\textbf{Value}  \\\\\n"
+    header +=  "\t\\hline\n"
+    header +=  "\t\\endhead\n\n"
+
+    return header
+
+def table_footer():
+    return "\t\\hline \\hline\n\\end{longtable}\n\\normalsize\n\n"
 
 def make_tables():
     tab_pth = os.path.join("..", "tables")
@@ -118,10 +155,12 @@ def make_tables():
             fpth = os.path.join(tab_pth, tab_name + ".tex")
             f = open(fpth, "w")
 
+            f.write(table_scenario_header("Model Scenario Parameters", tab_name))
+
             scenario_count = 0
             for scenario_name, value_dict in parameters.items():
                 if scenario_count % 2 != 0:
-                    row_color = "\\rowcolor{Gray}\n"
+                    row_color = "\t\\rowcolor{Gray}\n"
                 else:
                     row_color = ""
                 scenario_count += 1
@@ -135,11 +174,11 @@ def make_tables():
                         except:
                             units = " (unknown)"
                     if len(table_line) > 0:
-                        table_line += "{}{} & {}".format(
+                        table_line += "\t{}{} & {}".format(
                             text_to_write, units, value
                         )
                     else:
-                        table_line = "& & {}{} & {}".format(
+                        table_line = "\t& & {}{} & {}".format(
                             text_to_write, units, value
                         )
                     table_line += " \\\\\n"
@@ -147,6 +186,9 @@ def make_tables():
                         f.write(row_color)
                     f.write(table_line)
                     table_line = ""
+
+            # write footer
+            f.write(table_footer())
 
             # finalize table
             f.close()
@@ -173,17 +215,22 @@ def make_tables():
                         )
             if len(table_text) > 0:
                 table_number += 1
-                tab_name = "{}{:02d}".format(basename, table_number)
+                tab_name = "{}-{:02d}".format(basename, table_number)
                 fpth = os.path.join(tab_pth, tab_name + ".tex")
                 f = open(fpth, "w")
+
+                f.write(table_standard_header("Model Parameters", tab_name))
 
                 # write table
                 line_count = 0
                 for text, value in zip(table_text, table_value):
                     if line_count % 2 != 0:
-                        f.write("\\rowcolor{Gray}\n")
-                    f.write("{} & {} \\\\\n".format(text, value))
+                        f.write("\t\\rowcolor{Gray}\n")
+                    f.write("\t{} & {} \\\\\n".format(text, value))
                     line_count += 1
+
+                # write footer
+                f.write(table_footer())
 
                 # finalize table
                 f.close()
