@@ -36,7 +36,7 @@ jobs:
       - name: Install TeX Live, pandoc, and additional TrueType fonts
         shell: bash
         run: |
-          sudo apt install texlive-latex-extra texlive-science pandoc fonts-liberation
+          sudo apt install texlive-latex-extra texlive-science pandoc pandoc-citeproc fonts-liberation
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
