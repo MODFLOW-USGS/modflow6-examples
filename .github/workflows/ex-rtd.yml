@@ -42,15 +42,19 @@ jobs:
         shell: bash
         run: |
           mkdir pd/
-          mkdir pd/bin
-          echo "::add-path::./pd/bin"
+          echo "::add-path::./pd"
 
       - name: Install pandoc
         shell: bash
         run: |
           wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-linux-amd64.tar.gz
           tar xvzf pandoc-2.10.1-linux-amd64.tar.gz --strip-components=2 -C ./pd
-          ls -l ./pd/bin
+          ls -l ./pd
+
+      - name: pandoc version
+        shell: bash
+        run: |
+          $PATH
           pandoc --version          
 
       - name: Cache pip
