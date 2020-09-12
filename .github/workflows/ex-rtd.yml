@@ -11,7 +11,7 @@ on:
 jobs:
   rtd_build:
     name: rtd-build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
 
@@ -37,6 +37,7 @@ jobs:
         shell: bash
         run: |
           sudo apt install texlive-latex-extra texlive-science pandoc pandoc-citeproc fonts-liberation
+          pandoc --version
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
@@ -118,7 +119,7 @@ jobs:
   rtd_trigger:
     name: rtd-trigger
     needs: rtd_build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
