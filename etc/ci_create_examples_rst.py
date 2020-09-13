@@ -1,79 +1,123 @@
 import os
+import re
 import shutil
 from subprocess import Popen, PIPE
 
-# create examples.rst using pandoc
-print("running pandoc to create examples.rst")
-doc_pth = os.path.join("..", "doc")
-args = (
-    "pandoc",
-    "-s",
-    "-f",
-    "latex",
-    "-t",
-    "rst",
-    "--bibliography=mf6examples.bib",
-    "mf6examples.tex",
-    "-o",
-    "../.doc/examples.rst"
-)
-print(" ".join(args))
-proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=doc_pth)
-stdout, stderr = proc.communicate()
-if stdout:
-    print(stdout.decode("utf-8"))
-if stderr:
-    print("Errors:\n{}".format(stderr.decode("utf-8")))
+# get list of examples from body.text
+ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
+ex_list = []
+pth = os.path.join("..", "doc", "body.tex")
+with open(pth) as f:
+    lines = f.read()
+for v in ex_regex.findall(lines):
+    ex_list.append(v.replace(".tex", ""))
 
-# read examples.rst
+# create examples rst
 pth = os.path.join("..", ".doc", "examples.rst")
+print("creating...'{}'".format(pth))
+f = open(pth, "w")
+line = "============================\n"
+line += "MODFLOW 6 – Example problems\n"
+line += "============================\n\n\n"
+line += ".. toctree::\n"
+line += "   :maxdepth: 1\n\n"
+for ex in ex_list:
+    line += "   _examples/{}\n".format(ex)
+f.write(line)
+f.close()
+
+# create rtd examples directory
+dst = os.path.join("..", ".doc", "_examples")
+print("cleaning and creating...'{}'".format(dst))
+if os.path.isdir(dst):
+    shutil.rmtree(dst)
+os.makedirs(dst)
+
+# read base latex file
+pth = os.path.join("..", "doc", "mf6examples.tex")
 print("reading...'{}'".format(pth))
 with open(pth) as f:
-    lines = f.readlines()
+    orig_latex = f.readlines()
 
-# editing examples.rst
-print("editing...'{}'".format(pth))
-f = open(pth, "w")
-
-# find section headings
-heading_pos = []
-line_len0 = len(lines[0].strip())
-for idx, line in enumerate(lines):
-    # write the title
-    if idx < 4:
+latex_tag = "\\input{./body.tex}"
+doc_pth = os.path.join("..", "doc")
+for ex in ex_list:
+    print("creating restructured text file for {} example".format(ex))
+    src = os.path.join("..", "doc", "ex.tex")
+    f = open(src, "w")
+    for line in orig_latex:
+        if latex_tag in line:
+            new_tag = "\\input{{sections/{}.tex}}".format(ex)
+            line = line.replace(latex_tag, new_tag)
         f.write(line)
-        continue
+    f.close()
 
-    # determine if this is a section heading
-    tag = line_len0 * "="
-    if line.strip() == tag:
-        heading_pos.append(idx - 1)
+    # create restructured text file for example using using pandoc
+    dst = os.path.join("..", ".doc", "_examples", "{}.rst".format(ex))
+    print("running pandoc to create {}".format(dst))
+    args = (
+        "pandoc",
+        "-s",
+        "-f",
+        "latex",
+        "-t",
+        "rst",
+        "--bibliography=mf6examples.bib",
+        "ex.tex",
+        "-o",
+        dst,
+    )
+    print(" ".join(args))
+    proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=doc_pth)
+    stdout, stderr = proc.communicate()
+    if stdout:
+        print(stdout.decode("utf-8"))
+    if stderr:
+        print("Errors:\n{}".format(stderr.decode("utf-8")))
 
-    line_len0 = len(line.strip())
+    # read restructured text file for example
+    print("reading...'{}'".format(dst))
+    with open(dst) as f:
+        lines = f.readlines()
 
-istart = heading_pos[1]
-write_line = True
-for line in lines[istart:]:
-    tag = ".. figure:: ../figures/"
-    if tag in line:
-        line = line.replace(tag, ".. figure:: _images/")
+    # editing restructured text file for example
+    print("editing...'{}'".format(dst))
+    f = open(dst, "w")
 
-    tag = ".. figure:: ../images/"
-    if tag in line:
-        line = line.replace(tag, ".. figure:: _images/")
+    write_line = True
+    for idx, line in enumerate(lines):
+        # skip the title
+        if idx < 6:
+            continue
 
-    tag = ":alt:"
-    if tag in line:
-        write_line = False
+        tag = ".. figure:: ../figures/"
+        if tag in line:
+            line = line.replace(tag, ".. figure:: ../_images/")
 
-    tag = ":name:"
-    if not write_line and tag in line:
-        write_line = True
+        tag = ".. figure:: ../images/"
+        if tag in line:
+            line = line.replace(tag, ".. figure:: ../_images/")
 
-    if write_line:
-        f.write(line)
+        tag = ":alt:"
+        if tag in line:
+            write_line = False
 
-f.close()
+        tag = ":name:"
+        if not write_line and tag in line:
+            write_line = True
+
+        tag = ".. container:: references hanging-indent"
+        if tag in line:
+            line = "References Cited\n----------------\n\n" + line
+
+        if write_line:
+            f.write(line)
+
+    f.close()
+
+    # clean up temporary latex file
+    if os.path.isfile(src):
+        os.remove(src)
 
 # create rtd figure directory
 dst = os.path.join("..", ".doc", "_images")
