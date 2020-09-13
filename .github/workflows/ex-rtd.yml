@@ -43,7 +43,7 @@ jobs:
         run: |
           wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-linux-amd64.tar.gz
           sudo tar xvzf pandoc-2.10.1-linux-amd64.tar.gz --strip-components=1 -C /usr/local
-          pandoc --version          
+          pandoc --version
 
       - name: Cache pip
         uses: actions/cache@v2.1.0
@@ -100,7 +100,7 @@ jobs:
           python ci_package_tables.py
           python ci_create_examples_rst.py
           cd ..
-          
+
       - name: Run notebooks with jupytext for ReadtheDocs
         if:
           github.repository_owner == 'MODFLOW-USGS'
@@ -118,8 +118,9 @@ jobs:
           path: |
             .doc/introduction.md
             .doc/examples.rst
-            .doc/_notebooks
+            .doc/_examples
             .doc/_images
+            .doc/_notebooks
 
   # trigger rtd if "rtd_build" job was successful
   rtd_trigger:
