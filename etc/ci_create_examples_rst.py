@@ -63,6 +63,7 @@ for ex in ex_list:
         "-t",
         "rst",
         "--bibliography=mf6examples.bib",
+        "--csl=wrr.csl",
         "ex.tex",
         "-o",
         dst,
@@ -85,6 +86,7 @@ for ex in ex_list:
     f = open(dst, "w")
 
     write_line = True
+    in_reference = False
     for idx, line in enumerate(lines):
         # skip the title
         if idx < 6:
@@ -108,7 +110,20 @@ for ex in ex_list:
 
         tag = ".. container:: references hanging-indent"
         if tag in line:
-            line = "References Cited\n----------------\n\n" + line
+            in_reference = True
+            line = "References Cited\n----------------\n\n"
+
+        if in_reference:
+            tag = ".. container::"
+            if tag in line:
+                continue
+
+            tag = ":name:"
+            if tag in line:
+                continue
+
+            if line.startswith("      "):
+                line = line.lstrip()
 
         if write_line:
             f.write(line)
