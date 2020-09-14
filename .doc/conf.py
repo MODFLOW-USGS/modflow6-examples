@@ -78,6 +78,16 @@ if not on_rtd:
     print(" ".join(cmd))
     os.system(" ".join(cmd))
 
+# -- Build the example restructured text files -------------------------------
+if not on_rtd:
+    start_dir = os.getcwd()
+    pth = os.path.join("..", "etc")
+    os.chdir(pth)
+    cmd = ("python", "ci_create_examples_rst.py")
+    print(" ".join(cmd))
+    os.system(" ".join(cmd))
+    os.chdir(start_dir)
+
 # -- Project information -----------------------------------------------------
 
 project = 'MODFLOW 6 Example Problems'
