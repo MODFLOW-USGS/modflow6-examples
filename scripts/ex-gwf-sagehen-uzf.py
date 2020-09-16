@@ -22,7 +22,7 @@ import flopy.utils.binaryfile as bf
 from figspecs import USGSFigure
 from datetime import datetime
 
-sys.path.append(os.path.join("..", "common", "sagehen-uzf_data"))
+sys.path.append(os.path.join("..", "data", "sagehen-uzf"))
 import build_sagehen_uzf_helper_funcs as sageBld
 
 mf6exe = os.path.abspath(config.mf6_exe)
@@ -78,11 +78,11 @@ tsmult = [1.0] * num_ts
 # Further parent model grid discretization
 
 # from mf-nwt .dis file
-top = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","dis_support","top1.txt"))
-bot1 = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","dis_support","bot1.txt"))
+top = np.loadtxt(os.path.join("..","data","sagehen-uzf","dis_support","top1.txt"))
+bot1 = np.loadtxt(os.path.join("..","data","sagehen-uzf","dis_support","bot1.txt"))
 # from mf-nwt .bas file
-idomain1 = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","bas_support","ibnd1.txt"))
-strt = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","bas_support","strt1.txt"))
+idomain1 = np.loadtxt(os.path.join("..","data","sagehen-uzf","bas_support","ibnd1.txt"))
+strt = np.loadtxt(os.path.join("..","data","sagehen-uzf","bas_support","strt1.txt"))
 # peel out locations of negative values for setting constant head data
 tmp1 = np.where(idomain1 < 0)
 listOfChdCoords = list(zip(np.zeros_like(tmp1[0]), tmp1[0], tmp1[1]))
@@ -96,9 +96,9 @@ for i in np.arange(len(listOfChdCoords)):
 idomain = np.abs(idomain1)
 
 # from mf-nwt .upw file
-k11 = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","upw_support","kh1.txt"))
-sy = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","upw_support","sy1.txt"))
-k33 = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","upw_support","kv1.txt"))
+k11 = np.loadtxt(os.path.join("..","data","sagehen-uzf","upw_support","kh1.txt"))
+sy = np.loadtxt(os.path.join("..","data","sagehen-uzf","upw_support","sy1.txt"))
+k33 = np.loadtxt(os.path.join("..","data","sagehen-uzf","upw_support","kv1.txt"))
 icelltype = 1  # Water table resides in layer 1
 iconvert = np.ones_like(strt)
 
@@ -1032,15 +1032,15 @@ for i in np.arange(0, top.shape[0]):
 # #### Prepping input for UZF package 
 # Package_data information
 
-iuzbnd = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","iuzbnd.txt"))
-thts = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","thts.txt"))
-uzk33 = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","vks.txt"))
-finf_grad = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","finf_gradient.txt"))
+iuzbnd = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","iuzbnd.txt"))
+thts = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","thts.txt"))
+uzk33 = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","vks.txt"))
+finf_grad = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","finf_gradient.txt"))
 # next, load time series of multipliers
-extwc_ts = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","extwc.txt"))
-finf_ts = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","finf_ts.txt"))
-pet_ts = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","pet_ts.txt"))
-rootdp_ts = np.loadtxt(os.path.join("..","common","sagehen-uzf_data","uzf_support","rooting_depth.txt"))
+extwc_ts = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","extwc.txt"))
+finf_ts = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","finf_ts.txt"))
+pet_ts = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","pet_ts.txt"))
+rootdp_ts = np.loadtxt(os.path.join("..","data","sagehen-uzf","uzf_support","rooting_depth.txt"))
 
 # Need to set iuzbnd inactive where there are constant head cells, or where the
 # model grid is inactive
@@ -1115,7 +1115,7 @@ for t in range(num_ts):
 
 # This function uses the top elevation array and SFR locations to calculate the irunbnd array from the UZF1 package.
 # Of course in MF6, MVR now handles these runoff connections  
-pth = os.path.join("..","common","sagehen-uzf_data")
+pth = os.path.join("..","data","sagehen-uzf")
 irunbnd = sageBld.determine_runoff_conns_4mvr(pth, nrow, ncol)  # at this point, irunbnd is 1-based, compensate below
 
 iuzno = 0
