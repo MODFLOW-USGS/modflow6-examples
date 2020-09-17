@@ -1,0 +1,63 @@
+\section{Elastic aquifer loading}
+This problem simulates elastic compaction of aquifer materials in response to the loading of an aquifer by a passing train. Water-level responses were simulated for an eastbound train leaving the Smithtown Station in Long Island, New York at 13:04 on April 23, 1937 \citep{jacob1939fluctuations}. 
+
+\subsection{Example Description}
+
+The problem is simulated as a two-dimensional half-cell cross-section model. The model grid for this problem consists of three layers, 1 row, and 35 columns (fig.~\ref{fig:ex-gwf-csub-p01-grid}). The model layers were defined based on hydrostratigraphic information in \cite{jacob1939fluctuations}. The upper and lower layer represent an unconfined upper aquifer and confined lower aquifer separated by a confining unit (fig.~\ref{fig:ex-gwf-csub-p01-grid}\textit{B}). The upper and lower aquifers are composed of sand and gravel, respectively, and the confining unit is composed of clay. 
+
+%jacob grid
+\begin{StandardFigure}{
+                                     Diagram showing the model domain for the elastic aquifer 
+                                     loading problem. \textit{A}, plan view, and \textit{B}, cross-section view
+                                     }{fig:ex-gwf-csub-p01-grid}{../figures/ex-gwf-csub-p01-grid.png}
+\end{StandardFigure}                                 
+
+
+The model has a top elevation of 0 meters and layer bottom elevations of -12.2, -21.3, and -30.5 meters, for layers 1, 2, and 3 respectively.  DELR increases from 0.5 to 98.9 meters  in columns 1 to 30, using a multiplier of 1.2; a DELR value of 100 meters is specified in columns 31 to 35. DELC is specified with a constant value of 100.6 meters and is based on the an estimate of the total length of the train (table~\ref{tab:ex-gwf-csub-p01-train}). The simulation consists of two stress periods. The first stress period is steady-state with a single time step and is 0.5 seconds in length. The second stress period is transient, 58.5 seconds in length, and is divided into 117 equally sized time steps. 
+
+\small
+\begin{longtable}[!htbp]{
+                                      p{.1\linewidth-2\arraycolsep}
+                                      p{.1\linewidth-2\arraycolsep}
+                                      p{.3\linewidth-2\arraycolsep}
+                                      p{.3\linewidth-2\arraycolsep}
+                                      }
+	\caption{Assumed train length and weight for the elastic aquifer loading problem} \label{tab:ex-gwf-csub-p01-train} \\
+
+	\hline \hline
+	\rowcolor{Gray}
+	\textbf{Type} & \textbf{Number} & \textbf{Length, in meters} & \textbf{Weight, in kilograms}  \\
+	\hline
+	\endhead
+	
+	Engine & 2 &  21.3 &   108,862.08 \\
+	Car      & 4 &    79.3 &   199,580.48 \\ 
+	\hline \hline
+	Total     & -- & 100.6 &   308,442.56 \\ 
+	\hline
+
+\end{longtable}
+\normalsize
+
+Initial hydraulic properties were based on aquifer material data in \cite{freeze1979groundwater} and are summarized in table~\ref{tab:ex-gwf-csub-p01-01}. Hydraulic conductivity was assumed to be isotropic in the horizontal and vertical directions in each layer. Hydraulic conductivity and specific storage values were modified from initial values during model calibration, which is described below. The specific storage was defined to be 0 for all layers in the storage (STO) package. All model layers were defined to be convertible for hydraulic conductivity and storage properties. Default flow property (NPF) and storage (STO) package settings were used. An initial head of -10.7 meters was defined for each layer.
+
+\input{../tables/ex-gwf-csub-p01-01.tex}
+
+The effective stress formulation of the CSUB package was used to simulate one-dimensional compaction of aquifer materials. A specific gravity of 1.7 and 2.0 was defined for moist and saturated sediments, respectively. Water compressibility was simulated using a specific gravity of water of 9,806.65 Newtons per cubic meters and water compressibility of $4.6512 \times 10^{-10}$ per Pascal. The thickness of compressible materials and total porosity were updated during the simulation in response compaction.
+
+\cite{jacob1939fluctuations} measured water-level fluctuations in well S-201 (fig.~\ref{fig:ex-gwf-csub-p01-grid}\textit{A}). S-201 is located 16.5 meters north of the tracks (column 12) and has a total depth of 27.1 meters (model layer 3). A limited amount of data on the position of the train relative to well S-201 was provided by \cite{jacob1939fluctuations}. As a result, it was assumed that the original water-level fluctuation data is a proxy for train loading. The maximum water-level fluctuation value was assumed to correspond to loading by the full weight of the train (table~\ref{tab:ex-gwf-csub-p01-train}) and a zero water-level fluctuation corresponded to complete unloading. The estimated loading of the aquifer (fig.~\ref{fig:ex-gwf-csub-p01-01}\textit{A}) was converted to an equivalent height of water over the first cell of the model using the cell area, one-half the total train weight (because the problem is simulated as a half-cell problem), and the density of water (1,000 kilograms per cubic meters). Because well S-201 is located 16.5 meters north of the tracks, the estimated loading was translated in time by -1.5 seconds to account for the time for loading to cause water-level fluctuations at the well; the -1.5 second adjustment was determined through trial and error. Train loading was applied in column 1 using a time series file. Flow was not allowed to leave the model domain and no sources/sinks were applied to the model. The left and right side of the model domain are represented as a free-slip (roller) boundaries.
+
+%jacob figure 4 results
+\begin{StandardFigure}{
+                                     Diagram showing the model domain for the elastic aquifer 
+                                     loading problem. \textit{A}, plan view, and \textit{B}, cross-section view
+                                     }{fig:ex-gwf-csub-p01-01}{../figures/ex-gwf-csub-p01-01.png}
+\end{StandardFigure}                                 
+
+The water-level fluctuation data used to calibrate the hydraulic parameters was offset so that the initial water-level fluctuation reported (after rewinding the pen-carriage cable) corresponded to a zero value. The adjusted water-level at the end of the simulation period is less than zero since loading of the aquifer by the train was already occurring at the beginning of the data presented in \cite{jacob1939fluctuations} (fig~\ref{fig:ex-gwf-csub-p01-01}\textit{B}). The water-level fluctuation data was offset rather than extended because of uncertainties about the train velocity and acceleration prior to the simulation period.
+
+PEST++ \citep{welter2015approaches} was used to calibrate the horizontal hydraulic conductivity in layers 1 and 3, the vertical hydraulic conductivity in layer 2, and specific storage values in all model layers. The water-level fluctuation observations were weighted by $\text{max} ( 0.01, h_i / \text{max(h)} )$ to force PEST++ to favor the peak water-level fluctuations. The water-level fluctuations were only sensitive to the hydraulic conductivity and specific storage of model layer 3; as a result, PEST++ only modified the hydraulic properties of layer 3. Final hydraulic properties used in the model are shown in table~\ref{tab:ex-gwf-csub-p01-01}. 
+
+\subsection{Example Results}
+
+A comparison of simulated and observed water-level fluctuations is shown in figure~\ref{fig:ex-gwf-csub-p01-01}\textit{B}. For this problem, the \mf solution does not show perfect agreement with the offset water-level fluctuations. The primary source of model error is likely due primarily to inaccuracies in the loading being applied in the model. Use of a two-dimensional cross-section model instead of a three-dimensional model may also be responsible for a portion of the model error shown in figure~\ref{fig:ex-gwf-csub-p01-01}\textit{B}. Horizontal strain has also been found to be significant in close proximity pumping wells (the source of strain) and may also contribute to the model error \citep{burbey2001storage}.

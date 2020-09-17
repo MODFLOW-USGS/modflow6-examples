@@ -14,6 +14,7 @@ MODFLOW 6 Groundwater Flow Model
 
    ex-gwf-twri <_notebooks/ex-gwf-twri.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
+   ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
 
 
 MODFLOW 6 Groundwater Transport Model

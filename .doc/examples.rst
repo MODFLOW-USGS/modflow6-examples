@@ -8,6 +8,7 @@ MODFLOW 6 – Example problems
 
    _examples/ex-gwf-twri
    _examples/ex-gwf-lgr
+   _examples/ex-gwf-csub-p01
    _examples/ex-gwt-moc3d-p01
    _examples/ex-gwt-moc3d-p02
    _examples/ex-gwt-moc3d-p02tg
