@@ -1,0 +1,41 @@
+\section{Keating Problem}
+
+% Describe source of problem
+This example is based on an unsaturated flow and transport problem described in \cite{keating2009stable} under the section ``Extension to Mixed Vadose/ Saturated Zone Simulations.''  The problem consists of a two-dimensional cross-section model with a perched aquifer overlying a water table aquifer.  This problem offers a difficult test for the Newton flow formulation in \mf as well as for the transport model, which must transmit solute through dry cells.  This problem was also used by \cite{mt3dusgs} as a test for their solute routing approach implemented in MT3D-USGS for flow models solved with MODFLOW-NWT \citep{modflownwt}.
+
+\subsection{Example description}
+
+The parameters used for this problem are listed in table~\ref{tab:ex-gwt-keating-01}.  The model grid consists of 1 row, 400 columns, and 80 layers.  The flow problem consists of a perched aquifer overlying an unconfined water table aquifer.  A perched aquifer forms due the presence of a thin, discontinuous low permeability lens located near the center of the model domain.  Flow conditions are simulated as steady state.  The solute transport simulation represents transient conditions, which begin with an initial concentration specified as zero everywhere within the model domain.  For the first 730 days, recharge enters at a concentration of one.  For the remainder of the simulation, recharge has a solute concentration of zero.
+
+Constant-head conditions are prescribed on the left and right sides of the model with head values of 800 $m$ and 100 $m$, respectively.  These constant-head conditions are only assigned if the cell bottom elevation is below the prescribed head value.  Water entering the model from the constant head cells is assigned a concentration of zero.  Water leaving the constant head cells on the right side of the model leaves at the simulated concentration in the cell.  
+
+The Newton formulation is used to simulate flow through the domain.  Recharge is assigned to the top of the model, and although upper model cells are dry, this recharge water is instantaneously transmitted down to the perched aquifer.  The perched aquifer flows to the left and right and spills over the edges of the confining unit.  Water flowing over the edges instantaneously recharges the underlying water table aquifer.  A negligible amount of water flows through the low permeability lens and then down into the water table aquifer.  The flow problem is challenging to solve and converges best with backtracking, under relaxation, and solver parameters designed for complex problems.
+
+For the transport model, the simulation period is divided into 3000, 10-day time steps.  Advection and dispersion are simulated.  Because the longitudinal and transverse dispersivities are equal, the computationally demanding XT3D approach is not needed to represent dispersion.  The simpler method for calculating dispersion is used instead, and gives comparable results to those obtained with XT3D.  
+
+% add static parameter table(s)
+\input{../tables/ex-gwt-keating-01}
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Simulated heads from \mf are shown in figure~\ref{fig:ex-gwt-keating-head}.  Cells with a calculated head beneath the cell bottom are considered ``dry'' and are not shown with a color.   The zone of recharge is shown in red on the top of the plot.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Color shaded plot of heads simulated by \mf for the \cite{keating2009stable} problem involving groundwater flow and transport through an unsaturated zone.  Recharge is applied to the narrow strip shown in red on the top of the model domain.
+                                     }{fig:ex-gwt-keating-head}{../figures/ex-gwt-keating-head.png}
+\end{StandardFigure}                                 
+
+Simulated concentrations from \mf are shown in figure~\ref{fig:ex-gwt-keating-conc} for three different times.  These plots show the development of the solute plume in the perched aquifer, and then shows flushing of the perched aquifer when the recharge concentration becomes zero.  In the underlying water table aquifer, two solute plumes are formed as groundwater flows over the edges of the low permeability lens.  These plumes then flow toward the right, and eventually exit through the constant head cells.  Plots of concentration versus time for the two yellow points shown in figure~\ref{fig:ex-gwt-keating-conc} are shown in figure~\ref{fig:ex-gwt-keating-cvt}.  Results from \mf are shown with the results presented by \cite{keating2009stable} and are in good agreement considering the complexity of the problem.  Similar plots for this problem are also presented by \cite{mt3dusgs}.
+
+% a figure
+\begin{StandardFigure}{
+                                     Color shaded plots of concentrations simulated by \mf for the \cite{keating2009stable} problem involving groundwater flow and transport through an unsaturated zone.  This plot can be compared to figure 11 in \cite{mt3dusgs}, which shows similar plots for MT3D-USGS results.  Plots of concentration versus time are shown in figure~\ref{fig:ex-gwt-keating-cvt} for the two points shown in yellow.
+                                     }{fig:ex-gwt-keating-conc}{../figures/ex-gwt-keating-conc.png}
+\end{StandardFigure}                                  
+
+\begin{StandardFigure}{
+                                     Concentrations versus time for two observation points as simulated by \mf and by \cite{keating2009stable} for a problem involving groundwater flow and transport through an unsaturated zone.  This plot can be compared to figure 12 in \cite{mt3dusgs}, which shows a similar plot for MT3D-USGS results.
+                                     }{fig:ex-gwt-keating-cvt}{../figures/ex-gwt-keating-cvt.png}
+\end{StandardFigure}                                  
