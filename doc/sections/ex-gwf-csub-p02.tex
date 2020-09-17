@@ -1,5 +1,10 @@
 \section{Delay interbed drainage}
-This problem simulates the drainage of a thick interbed caused by a step decrease in hydraulic head in the aquifer and is based on sample problem 1 in \cite{hoffmann2003modflow}. Because of the characteristically low vertical hydraulic conductivity of fine-grained silts and clays that constitute the interbeds, the equilibration of hydraulic heads in thick interbeds imbedded in an aquifer system typically lags head changes in the surrounding aquifer. Because the hydraulic gradient within the interbeds can be treated as vertical if the horizontal extents of the interbeds are much greater than their thicknesses, the delayed dissipation of unequilibrated heads within the interbeds can be described by the one-dimensional diffusion equation,
+This problem simulates the drainage of a thick interbed caused by a step decrease in hydraulic head in the aquifer and is based on sample problem 1 in \cite{hoffmann2003modflow}. 
+
+
+\subsection{Theory}
+
+The equilibration of hydraulic heads in thick interbeds imbedded in an aquifer system typically lags head changes in the surrounding aquifer as a result of the characteristically low vertical hydraulic conductivity of fine-grained silts and clays that constitute the interbeds. Similarly, the hydraulic gradient within the interbeds can be treated as vertical if the horizontal extents of the interbeds are much greater than their thicknesses, the delayed dissipation of unequilibrated heads within the interbeds can be described by the one-dimensional diffusion equation,
 
 \begin{equation}
 	\frac{\partial ^2 h}{\partial z^2} = \frac{S^{\prime}_{S}}{K^{\prime}_{v}} \frac{\partial h}{\partial t},
@@ -38,6 +43,8 @@ Under constant geostatic stress conditions, compaction in the interbed can be di
 
 \noindent where $\Delta b$ is the change in thickness of the interbed (L).
 
+\subsection{Example Description}
+
 Static model parameters are summarized in table~\ref{tab:ex-gwf-csub-p02-01}. The model grid for this problem consists of 1 layer, 1 row, and 3 columns (fig.~\ref{fig:ex-gwf-csub-p02-grid}). The model has a top elevation of 0 meters and bottom elevation of -1,000 meters.  DELR and DELC are equal to 1 meter. The simulation consists of one transient stress period 1,000 days in length, and is divided into 100 variable length time steps calculated using a time step multiplier equal to 1.05.
 
 \input{../tables/ex-gwf-csub-p02-01.tex}
@@ -49,6 +56,8 @@ Static model parameters are summarized in table~\ref{tab:ex-gwf-csub-p02-01}. Th
 \end{StandardFigure}                                 
 
 The hydraulic conductivity in the aquifer was set to a very large value (\num{1e6} meters per day), so that the head in the aquifer in the center cell remains constant. The specific yield and specific storage in the STO package were set to 0. Default flow property (NPF) and storage (STO) package settings were used. Initial heads were specified to be 0 meters.
+
+\subsubsection{Head-Based Formulation}
  
 Initially, the head-based formulation of the CSUB package was used to simulate compaction of the delay interbed and compare to analytical results calculated using equations~\ref{eq:headdist} and~\ref{eq:compaction} (table~\ref{tab:ex-gwf-csub-p02-scenario}). Ten finite-difference nodes represent the half-thickness of the interbed. The time constant, $\tau_0$ (eq.~\ref{eq:tau0}), was chosen to be 1,000 with vertical hydraulic conductivity set to \num{2.5e-6} meters per day, interbed thickness set to 1 meters, and elastic skeletal specific storage set to \num{1e-5} per meter and inelastic skeletal specific storage set to 0.01 per meter. Meters and days units have been used in this problem but any consistent set of length and time units results in the same solution. The specific storage of coarse-grained aquifer material were specified to be \num{0e-6} per meter. Water compressibility was not simulated in this problem and the thickness of compressible materials and total porosity were not updated during the simulation. 
 
@@ -68,6 +77,8 @@ The resulting compaction of the interbed is compared to the analytical solution 
                                      }{fig:ex-gwf-csub-p02a-01}{../figures/ex-gwf-csub-p02a-01.png}
 \end{StandardFigure}         
 
+\subsubsection{Effective Stress-Based Formulation}
+
 To evaluate differences between the head- and effective stress-based formulations, the problem shown in figure~\ref{fig:ex-gwf-csub-p02-grid} was modified to use the effective stress-formulation (table~\ref{tab:ex-gwf-csub-p02-scenario}). A total of 19 finite-difference nodes were used in the effective stress-based formulation so that results could be directly compared to the head-based formulation that used 10 finite-difference cells to represent the half-thickness of the interbed. A specific gravity of 1.7 and 2.0 was defined for moist and saturated sediments, respectively. The initial preconsolidation stress was set to be 1 meter less than the initial effective stress of 1,000 meters and is based on the initial preconsolidation head, which was defined to be 1 meter above the initial head in the head-based formulation.
 
 The resulting effective stress-based compaction of the interbed is compared to the head-based solution in figure~\ref{fig:ex-gwf-csub-p02b-01}. The effective stress-based values closely match the head-based values. The small differences ($<$~0.1\%) are partly due to the fact that calculated specific storage values are not constant in the effective stress-formulation. Furthermore, the inelastic and elastic compression indices (41.8 and \num{4.18e-2} (unitless)), respectively), which are internally calculated from the initial effective stress and the user-provided inelastic and elastic specific storage values, results in a slightly smaller initial inelastic storativity value (\num{9.5e-3} versus \num{1.0e-2}) that increase to values slightly larger than the user-provided inelastic storativity in subsequent time steps.
@@ -83,6 +94,8 @@ The resulting effective stress-based compaction of the interbed is compared to t
 \end{StandardFigure}         
 
 Another reason the difference between the head- and effective stress-based compaction shown in figure~\ref{fig:ex-gwf-csub-p02b-01} is small is the interbed thickness is small (1 meter) and as a result the difference between the effective stress at the top and bottom of the interbed is also small. 
+
+\subsubsection{Effect of Interbed Thickness on the Effective Stress-Based Formulation}
 
 To evaluate the effect of the interbed thickness affects compaction, head- and effective stress-based models were run with interbed thicknesses ranging from 1 to 100 m (table~\ref{tab:ex-gwf-csub-p02-scenario}).  A time constant ($\tau_0$) of 1,000 was used with elastic and inelastic skeletal specific storage values of \num{1e-5} and 0.01 per meter, respectively, were used for each interbed thickness evaluated. The vertical hydraulic conductivity for each interbed thickness evaluated was calculated using equation~\ref{eq:tauk} and the specified $\tau_0$ and specific storage values. The calculated vertical hydraulic conductivity ranged from \num{2.5e-6} to 0.025 meters per day for interbed thickness ranging from 1 to 100 meters, respectively. A total of 1,001 finite-difference nodes were used to simulate the interbed for the head- and effective stress-based formulation simulations to provide additional spatial resolution for simulated interbed heads; the head-based simulations were simulated using a full-cell formulation. All other model parameters for the simulations that evaluated different interbed thicknesses were unchanged from the original values.
 
