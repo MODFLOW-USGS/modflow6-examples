@@ -6,24 +6,17 @@ each of the MODFLOW 6 examples included in the
 `pdf <https://github.com/MODFLOW-USGS/modflow6-examples/releases/download/current/mf6examples.pdf/>`_ 
 available on the `GitHub site <https://github.com/MODFLOW-USGS/modflow6-examples/>`_ are included below. The examples have been organized into Jupyter Notebooks that only included groundwater flow (GWF) models and Jupyter Notebooks that include both GWF and groundwater transport (GWT) models.
 
-MODFLOW 6 Groundwater Flow Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+MODFLOW 6 Examples Jupyter Notebooks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. toctree::
+   :numbered:
    :maxdepth: 1
 
    ex-gwf-twri <_notebooks/ex-gwf-twri.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>
-
-
-MODFLOW 6 Groundwater Transport Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. toctree::
-   :maxdepth: 1
-
    ex-gwt-moc3d-p01 <_notebooks/ex-gwt-moc3d-p01.ipynb>
    ex-gwt-moc3d-p02 <_notebooks/ex-gwt-moc3d-p02.ipynb>
    ex-gwt-moc3d-p02tg <_notebooks/ex-gwt-moc3d-p02tg.ipynb>

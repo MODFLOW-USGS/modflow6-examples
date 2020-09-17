@@ -4,6 +4,7 @@ MODFLOW 6 – Example problems
 
 
 .. toctree::
+   :numbered:
    :maxdepth: 1
 
    _examples/ex-gwf-twri

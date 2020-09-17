@@ -47,22 +47,15 @@ lines += "The Jupyter Notebooks used to create the input files and figures for \
          "(GWT) models.\n\n"
 f.write(lines)
 
-# gwf model examples
-lines = "MODFLOW 6 Groundwater Flow Model\n"
+# gwf examples Jupyter Notebooks
+lines = "MODFLOW 6 Examples Jupyter Notebooks\n"
 lines += (len(lines) - 1) * "^" + "\n"
 lines += "\n.. toctree::\n"
+lines += "   :numbered:\n"
 lines += "   :maxdepth: 1\n\n"
 for base_name in gwf_list:
     lines += "   {} ".format(base_name)
     lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
-lines += "\n\n"
-f.write(lines)
-
-# gwt model examples
-lines = "MODFLOW 6 Groundwater Transport Model\n"
-lines += (len(lines) - 1) * "^" + "\n"
-lines += "\n.. toctree::\n"
-lines += "   :maxdepth: 1\n\n"
 for base_name in gwt_list:
     lines += "   {} ".format(base_name)
     lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
@@ -72,11 +65,11 @@ f.write(lines)
 # close the restructured text file
 f.close()
 
-# -- convert the tutorial scripts -------------------------------------------
-if not on_rtd:
-    cmd = ("python", "test_build.py")
-    print(" ".join(cmd))
-    os.system(" ".join(cmd))
+# # -- convert the tutorial scripts -------------------------------------------
+# if not on_rtd:
+#     cmd = ("python", "test_build.py")
+#     print(" ".join(cmd))
+#     os.system(" ".join(cmd))
 
 # -- Build the example restructured text files -------------------------------
 if not on_rtd:
@@ -186,6 +179,7 @@ html_context = {
     "doc_path": ".doc",
     "css_files": [
         "_static/theme_overrides.css",  # override wide tables in RTD theme
+        "_static/custom.css"
     ],
 }
 
@@ -193,6 +187,12 @@ html_theme_options = {
     "github_url": "https://github.com/MODFLOW-USGS/modflow6-examples",
     "use_edit_page_button": False,
 }
+
+numfig = True
+math_numfig = True
+numfig_secnum_depth = 1
+numfig_format = {"figure": "Figure %s", "table": "Table %s", "code-block": "Table %s"}
+math_eqref_format = "{number}"
 
 autosummary_generate = True
 numpydoc_show_class_members = False

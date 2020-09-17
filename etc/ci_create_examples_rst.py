@@ -20,6 +20,7 @@ line = "============================\n"
 line += "MODFLOW 6 – Example problems\n"
 line += "============================\n\n\n"
 line += ".. toctree::\n"
+line += "   :numbered:\n"
 line += "   :maxdepth: 1\n\n"
 for ex in ex_list:
     line += "   _examples/{}\n".format(ex)
@@ -76,6 +77,33 @@ for ex in ex_list:
     if stderr:
         print("Errors:\n{}".format(stderr.decode("utf-8")))
 
+    # read restructured text file as a string
+    print("reading...'{}'".format(dst))
+    with open(dst, 'r') as file:
+        lines = file.read()
+
+    # find equation labels in lines
+    ex_regex = re.compile("\\\\label{(.*?)\\}")
+    replace_eq_labels = {}
+    eq_labels = []
+    for v in ex_regex.findall(lines):
+        tag = "\\label{{{}}}".format(v)
+        label = "   :label: {}".format(v.replace(":", "-"))
+        eq_labels.append(label)
+        tag = "`[{0}] <#{0}>`__".format(v)
+        replace_eq_labels[tag] = ":eq:`{}`".format(v.replace(":", "-"))
+
+    # find figure references in lines
+    ex_regex = re.compile("\\`(.*?)\\`__")
+    ex_tag = re.compile("\\#(.*?)\\>")
+    fig_tab_refs = {}
+    for v in ex_regex.findall(lines):
+        tag0 = "`{}`__".format(v)
+        for tag in ex_tag.findall(tag0):
+            if tag0 not in list(fig_tab_refs.keys()):
+                fig_tab_refs[tag0] = ":numref:`{}`".format(tag)
+
+
     # read restructured text file for example
     print("reading...'{}'".format(dst))
     with open(dst) as f:
@@ -87,10 +115,43 @@ for ex in ex_list:
 
     write_line = True
     in_reference = False
+    eq_no = 0
+    table_name = None
     for idx, line in enumerate(lines):
         # skip the title
         if idx < 6:
             continue
+
+        # replace latex equation labels
+        for key, value in replace_eq_labels.items():
+            if key in line:
+                line = line.replace(key, value)
+
+        # replace figure and table references
+        for key, value in fig_tab_refs.items():
+            if key in line:
+                line = line.replace(key, value)
+
+        tag = " "
+        if tag in line:
+            line = line.replace(tag, " ")
+
+        tag = "tab:ex-"
+        if tag in line:
+            line = line.replace(tag, "tab-ex-")
+
+        tag = "fig:ex-"
+        if tag in line:
+            line = line.replace(tag, "fig-ex-")
+
+        tag = "\\label{"
+        if tag in line:
+            continue
+
+        tag = ".. math::"
+        if tag in line:
+            line = "{}\n{}\n".format(tag, eq_labels[eq_no])
+            eq_no += 1
 
         tag = ".. figure:: ../figures/"
         if tag in line:
@@ -107,6 +168,18 @@ for ex in ex_list:
         tag = ":name:"
         if not write_line and tag in line:
             write_line = True
+
+        tag = "table :numref:"
+        if tag in line:
+            line = line.replace(tag, ":numref:")
+
+        tag = "fig. :numref:"
+        if tag in line:
+            line = line.replace(tag, ":numref:")
+
+        tag = "figure :numref:"
+        if tag in line:
+            line = line.replace(tag, ":numref:")
 
         tag = ".. container:: references hanging-indent"
         if tag in line:
