@@ -1,6 +1,9 @@
 # ## Keating Problem
 #
-# The infamous keating problem
+# This problem uses a two-dimensional cross-section model to simulate a perched
+# aquifer overlying a water table aquifer.  The presence of a discontinuous
+# low permeability lens causes the perched aquifer to form in response to
+# recharge.  The problem also represents solute transport through the system.
 #
 #
 
@@ -267,76 +270,6 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_mf2005(sim_folder):
-    print("Building mf2005 model...{}".format(sim_folder))
-    name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf2005")
-    mf = flopy.modflow.Modflow(
-        modelname=name, model_ws=sim_ws, exe_name=config.mf2005_exe
-    )
-    perlen = [total_time]
-    dis = flopy.modflow.ModflowDis(
-        mf,
-        nlay=nlay,
-        nrow=nrow,
-        ncol=ncol,
-        delr=delr,
-        delc=delc,
-        top=top,
-        botm=botm,
-        nper=nper,
-        perlen=perlen,
-    )
-    bas = flopy.modflow.ModflowBas(mf)
-    lpf = flopy.modflow.ModflowLpf(mf, hk=hydraulic_conductivity)
-    pcg = flopy.modflow.ModflowPcg(mf)
-    lmt = flopy.modflow.ModflowLmt(mf)
-
-    h = 1000.0 + 7.29e-4
-    chdspd = [[0, i, 0, h, h] for i in range(nrow)]
-    h = 1000.0 + -4.5
-    chdspd += [[0, i, ncol - 1, h, h] for i in range(nrow)]
-    chd = flopy.modflow.ModflowChd(mf, stress_period_data=chdspd)
-
-    q = 1.0
-    welspd = [
-        [0, 15, 15, q],  # injection
-        [0, 15, 20, -q],  # extraction
-        [0, 4, 15, 0.5 * q],  # reinjection
-        [0, 26, 15, 0.5 * q],
-    ]  # reinjection
-    wel = flopy.modflow.ModflowWel(mf, stress_period_data=welspd)
-    return mf
-
-
-def build_mt3dms(sim_folder, modflowmodel):
-    print("Building mt3dms model...{}".format(sim_folder))
-    name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mt3d")
-    mt = flopy.mt3d.Mt3dms(
-        modelname=name,
-        model_ws=sim_ws,
-        exe_name=config.mt3dms_exe,
-        modflowmodel=modflowmodel,
-        ftlfilename="../mf2005/mt3d_link.ftl",
-    )
-    dt0 = total_time / 20.0
-    btn = flopy.mt3d.Mt3dBtn(mt, laycon=0, prsity=porosity, dt0=dt0, ifmtcn=1)
-    adv = flopy.mt3d.Mt3dAdv(mt, mixelm=0)
-    dsp = flopy.mt3d.Mt3dDsp(
-        mt, al=alpha_l, trpt=alpha_th / alpha_l, trpv=alpha_tv / alpha_l
-    )
-
-    ssmspd = [
-        [0, 15, 15, 1000.0, 2],
-        [0, 4, 15, -711, 2],
-        [0, 26, 15, -711, 2],
-    ]
-    ssm = flopy.mt3d.Mt3dSsm(mt, mxss=66, stress_period_data=ssmspd)
-    gcg = flopy.mt3d.Mt3dGcg(mt)
-    return mt
-
-
 def build_model(sim_name):
     sims = None
     if config.buildModel:
@@ -378,14 +311,6 @@ def run_model(sims, silent=True):
         success, buff = sim_mf6gwt.run_simulation(silent=silent)
         if not success:
             print(buff)
-        # success, buff = sim_mf2005.run_model(silent=silent)
-        # if not success:
-        #    print(buff)
-        # success, buff = sim_mt3dms.run_model(
-        #    silent=silent, normal_msg="Program completed"
-        # )
-        # if not success:
-        #    print(buff)
     return success
 
 
@@ -575,7 +500,7 @@ def plot_cvt_results(sims, idx):
 # 4. plot_results.
 
 
-def scenario(idx, silent=False):
+def scenario(idx, silent=True):
     sim = build_model(example_name)
     write_model(sim, silent=silent)
     success = run_model(sim, silent=silent)
@@ -593,6 +518,6 @@ def test_01():
 if __name__ == "__main__":
     # ### Simulate Keating Problem
 
-    # Add a description of the plot(s)
+    # Plot showing MODFLOW 6 results
 
     scenario(0)
