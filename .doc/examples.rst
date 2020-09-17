@@ -4,11 +4,14 @@ MODFLOW 6 – Example problems
 
 
 .. toctree::
+   :numbered:
    :maxdepth: 1
 
    _examples/ex-gwf-twri
    _examples/ex-gwf-lgr
    _examples/ex-gwf-csub-p01
+   _examples/ex-gwf-csub-p02
+   _examples/ex-gwt-keating
    _examples/ex-gwt-moc3d-p01
    _examples/ex-gwt-moc3d-p02
    _examples/ex-gwt-moc3d-p02tg
