@@ -37,14 +37,11 @@ f = open("notebook_examples.rst", "w")
 lines = "MODFLOW 6 Examples - Jupyter Notebooks\n"
 lines += (len(lines) - 1) * "-" + "\n\n"
 lines += "The Jupyter Notebooks used to create the input files and figures for \n" + \
-         "each of the MODFLOW 6 examples included in the \n" + \
-         "`pdf <https://github.com/MODFLOW-USGS/modflow6-examples/" + \
-         "releases/download/current/mf6examples.pdf/>`_ \navailable on the " + \
-         "`GitHub site <https://github.com/MODFLOW-USGS/modflow6-examples/>`_ " + \
-         "are included below. The examples have been organized into Jupyter " + \
-         "Notebooks that only included groundwater flow (GWF) models and " + \
-         "Jupyter Notebooks that include both GWF and groundwater transport " + \
-         "(GWT) models.\n\n"
+         "each of the MODFLOW 6 `examples <examples.html>`_. A pdf of the examples " + \
+         "can be downloaded from ReadtheDocs or from the `current release " + \
+         "<https://github.com/MODFLOW-USGS/modflow6-examples/releases/download/" + \
+         "current/mf6examples.pdf/>`_ on `GitHub <https://github.com/MODFLOW-" + \
+         "USGS/modflow6-examples/>`_.\n\n"
 f.write(lines)
 
 # gwf examples Jupyter Notebooks
@@ -65,11 +62,11 @@ f.write(lines)
 # close the restructured text file
 f.close()
 
-# -- convert the tutorial scripts -------------------------------------------
-if not on_rtd:
-    cmd = ("python", "test_build.py")
-    print(" ".join(cmd))
-    os.system(" ".join(cmd))
+# # -- convert the tutorial scripts -------------------------------------------
+# if not on_rtd:
+#     cmd = ("python", "test_build.py")
+#     print(" ".join(cmd))
+#     os.system(" ".join(cmd))
 
 # -- Build the example restructured text files -------------------------------
 if not on_rtd:
