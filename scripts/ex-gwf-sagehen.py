@@ -24,12 +24,11 @@ import flopy.utils.binaryfile as bf
 from figspecs import USGSFigure
 from datetime import datetime
 
-sys.path.append(os.path.join("..", "data", "ex-gwf-sagehen-uzf"))
+sys.path.append(os.path.join("..", "data", "ex-gwf-sagehen"))
 import sfr_static as sfrDat
 
 mf6exe = os.path.abspath(config.mf6_exe)
 assert os.path.isfile(mf6exe)
-print(mf6exe)
 exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 
@@ -78,7 +77,7 @@ nstp = [1] * num_ts
 tsmult = [1.0] * num_ts
 
 # from mf-nwt .dis file
-dat_pth = os.path.join("..", "data", "ex-gwf-sagehen-uzf")
+dat_pth = os.path.join(config.data_ws, example_name)
 top = np.loadtxt(os.path.join(dat_pth, "top1.txt"))
 bot1 = np.loadtxt(os.path.join(dat_pth, "bot1.txt"))
 # from mf-nwt .bas file
@@ -358,7 +357,6 @@ def build_model(sim_name, silent=False):
         imsgwf = flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
-            complexity="complex",
             outer_dvclose=hclose,
             outer_maximum=nouter,
             under_relaxation="dbd",
@@ -367,12 +365,8 @@ def build_model(sim_name, silent=False):
             under_relaxation_kappa=0.08,
             under_relaxation_gamma=0.05,
             under_relaxation_momentum=0.0,
-            backtracking_number=20,
-            backtracking_tolerance=2.0,
-            backtracking_reduction_factor=0.2,
-            backtracking_residual_limit=5.0e-4,
             inner_dvclose=hclose,
-            rcloserecord=[0.0001, "relative_rclose"],
+            rcloserecord=[1000., "strict"],
             inner_maximum=ninner,
             relaxation_factor=relax,
             number_orthogonalizations=2,
@@ -505,7 +499,7 @@ def build_model(sim_name, silent=False):
             gwf,
             pname="MVR-1",
             maxmvr=maxmvr,
-            print_flows=True,
+            print_flows=False,
             maxpackages=maxpackages,
             packages=mvrpack,
             perioddata=mvrspd,
@@ -559,9 +553,7 @@ def plot_results(mf6, idx):
         cbar.ax.set_title("Infiltration\nrate\nfactor", pad=20)
         plt.xlabel("Column Number")
         plt.ylabel("Row Number")
-
-        letter = chr(ord("@") + idx + 1)
-        fs.heading(letter=letter, heading=title)
+        fs.heading(heading=title)
 
         # save figure
         if config.plotSave:
@@ -598,7 +590,7 @@ def plot_results(mf6, idx):
         depths = np.array(depths)
         depths = depths[0, :, :]
 
-        # Generate a plot of the gw table depths for the steady state strss per
+        # Generate a plot of the gw table depths for the steady state stress per
         depths[idomain1 == 0] = np.nan
 
         fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
@@ -610,9 +602,7 @@ def plot_results(mf6, idx):
         plt.xlabel("Column Number")
         plt.ylabel("Row Number")
         title = "Depth To Groundwater"
-
-        letter = chr(ord("@") + idx + 2)
-        fs.heading(letter=letter, heading=title)
+        fs.heading(heading=title)
 
         # save figure
         if config.plotSave:
@@ -711,8 +701,6 @@ def plot_results(mf6, idx):
             )
             outflow.append(outletQ[0][-1][2])
 
-            print("Finished processing stress period " + str(kstpkper[1] + 1))
-
         drn_disQ = np.array(drn_disQ)
         sfr_gwsw = np.array(sfr_gwsw)
         finf_tot = np.array(finf_tot)
@@ -757,13 +745,11 @@ def plot_results(mf6, idx):
             top=False,  # ticks along the top edge are off
             labelbottom=True,
         )  # labels along the bottom edge are off
-        plt.xlabel("Month", fontsize=8)
-        plt.ylabel("Volumetric Rate, $m^3$ per day", fontsize=8)
-        plt.legend(prop={"size": 6})
-
+        ax.set_xlabel("Month")
+        ax.set_ylabel("Volumetric Rate, $m^3$ per day")
+        fs.graph_legend(ax)
         title = "Unsaturated Zone Flow Budget"
-        letter = chr(ord("@") + idx + 3)
-        fs.heading(letter=letter, heading=title)
+        fs.heading(heading=title)
 
         # save figure
         if config.plotSave:
@@ -813,13 +799,11 @@ def plot_results(mf6, idx):
             top=False,  # ticks along the top edge are off
             labelbottom=True,
         )  # labels along the bottom edge are off
-        plt.xlabel("Month", fontsize=8)
-        plt.ylabel("Volumetric Rate, $m^3$ per day", fontsize=8)
-        plt.legend(prop={"size": 6})
-
+        ax.set_xlabel("Month")
+        ax.set_ylabel("Volumetric Rate, $m^3$ per day")
+        fs.graph_legend(ax)
         title = "Surface Water Flow"
-        letter = chr(ord("@") + idx + 4)
-        fs.heading(letter=letter, heading=title)
+        fs.heading(heading=title)
 
         # save figure
         if config.plotSave:
@@ -857,7 +841,7 @@ def test_01():
 # nosetest end
 
 if __name__ == "__main__":
-    # ### Mehl and Hill (2013) results
+    # ### Sagehen Model Results
     #
     # Two-dimensional transport in a uniform flow field
 

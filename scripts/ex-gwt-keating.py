@@ -289,8 +289,6 @@ def write_model(sims, silent=True):
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
-        # sim_mf2005.write_input()
-        # sim_mt3dms.write_input()
     return
 
 
@@ -461,7 +459,9 @@ def plot_cvt_results(sims, idx):
     )
     ax.set_xlim(0, 8000)
     ax.set_ylim(0, 0.80)
-    ax.legend()
+    ax.set_xlabel('time, in days')
+    ax.set_ylabel('normalized concentration, unitless')
+    fs.graph_legend(ax)
     ax = axes[1]
     ax.plot(
         mf6gwt_ra["time"],
@@ -482,7 +482,9 @@ def plot_cvt_results(sims, idx):
     )
     ax.set_xlim(0, 30000)
     ax.set_ylim(0, 0.20)
-    ax.legend()
+    ax.set_xlabel('time, in days')
+    ax.set_ylabel('normalized concentration, unitless')
+    fs.graph_legend(ax)
     # save figure
     if config.plotSave:
         sim_folder = os.path.split(sim_ws)[0]
