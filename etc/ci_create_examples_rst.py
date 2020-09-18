@@ -116,6 +116,7 @@ for ex in ex_list:
     write_line = True
     in_reference = False
     eq_no = 0
+    in_table = False
     table_name = None
     for idx, line in enumerate(lines):
         # skip the title
@@ -180,6 +181,27 @@ for ex in ex_list:
         tag = "figure :numref:"
         if tag in line:
             line = line.replace(tag, ":numref:")
+
+        tag = ".. container::"
+        if tag == line.strip():
+            in_table = True
+            continue
+
+        if in_table:
+            if len(line.lstrip()) == len(line):
+                line = "\n" + line
+                in_table = False
+            # else:
+            #     line = line.lstrip()
+
+        tag = ":name: tab-ex-"
+        if tag in line:
+            table_name = line.split()[1]
+            continue
+
+        tag = ".. table::"
+        if tag in line:
+            line = ".. _{}:\n\n".format(table_name) + line.lstrip() + "\n"
 
         tag = ".. container:: references hanging-indent"
         if tag in line:

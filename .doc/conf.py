@@ -121,7 +121,7 @@ if on_rtd:
     extensions.append("rtds_action")
     rtds_action_github_repo = "MODFLOW-USGS/modflow6-examples"
     rtds_action_path = "."
-    rtds_action_artifact_prefix = "notebooks-for-"
+    rtds_action_artifact_prefix = "rtd-files-for-"
     rtds_action_github_token = os.environ.get("GITHUB_TOKEN", None)
 
 # Add any paths that contain templates here, relative to this directory.
@@ -183,10 +183,10 @@ html_context = {
     ],
 }
 
-html_theme_options = {
-    "github_url": "https://github.com/MODFLOW-USGS/modflow6-examples",
-    "use_edit_page_button": False,
-}
+# html_theme_options = {
+#     "github_url": "https://github.com/MODFLOW-USGS/modflow6-examples",
+#     "use_edit_page_button": False,
+# }
 
 numfig = True
 math_numfig = True

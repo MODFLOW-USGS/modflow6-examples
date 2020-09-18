@@ -81,7 +81,7 @@ jobs:
         shell: bash
         run: |
           cd ./etc/
-          python ci_build_files.py --run
+          python ci_build_files.py
           cd ..
 
       - name: Run processing script
@@ -89,6 +89,15 @@ jobs:
         run: |
           cd ./scripts/
           python process-scripts.py
+          cd ..
+
+      - name: Run notebooks with jupytext for ReadtheDocs
+        if:
+          github.repository_owner == 'MODFLOW-USGS'
+        shell: bash
+        run: |
+          cd ./etc/
+          python ci_run_notebooks.py
           cd ..
 
       - name: Create package tables and examples.rst for ReadtheDocs
@@ -101,20 +110,11 @@ jobs:
           python ci_create_examples_rst.py
           cd ..
 
-      - name: Run notebooks with jupytext for ReadtheDocs
-        if:
-          github.repository_owner == 'MODFLOW-USGS'
-        shell: bash
-        run: |
-          cd ./etc/
-          python ci_run_notebooks.py
-          cd ..
-
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
         if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
-          name: notebooks-for-${{ github.sha }}
+          name: rtd-files-for-${{ github.sha }}
           path: |
             .doc/introduction.md
             .doc/examples.rst
