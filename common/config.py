@@ -41,7 +41,10 @@ plt.rcParams['image.cmap'] = "jet_r"
 
 # parse command line arguments
 if is_notebook():
-    plotSave = False
+    if "CI" in os.environ:
+        plotSave = True
+    else:
+        plotSave = False
 else:
     for idx, arg in enumerate(sys.argv):
         if arg in ("-nr", "--no_run"):

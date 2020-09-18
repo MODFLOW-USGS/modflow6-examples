@@ -65,11 +65,11 @@ f.write(lines)
 # close the restructured text file
 f.close()
 
-# # -- convert the tutorial scripts -------------------------------------------
-# if not on_rtd:
-#     cmd = ("python", "test_build.py")
-#     print(" ".join(cmd))
-#     os.system(" ".join(cmd))
+# -- convert the tutorial scripts -------------------------------------------
+if not on_rtd:
+    cmd = ("python", "test_build.py")
+    print(" ".join(cmd))
+    os.system(" ".join(cmd))
 
 # -- Build the example restructured text files -------------------------------
 if not on_rtd:
@@ -121,7 +121,7 @@ if on_rtd:
     extensions.append("rtds_action")
     rtds_action_github_repo = "MODFLOW-USGS/modflow6-examples"
     rtds_action_path = "."
-    rtds_action_artifact_prefix = "notebooks-for-"
+    rtds_action_artifact_prefix = "rtd-files-for-"
     rtds_action_github_token = os.environ.get("GITHUB_TOKEN", None)
 
 # Add any paths that contain templates here, relative to this directory.
@@ -183,15 +183,15 @@ html_context = {
     ],
 }
 
-html_theme_options = {
-    "github_url": "https://github.com/MODFLOW-USGS/modflow6-examples",
-    "use_edit_page_button": False,
-}
+# html_theme_options = {
+#     "github_url": "https://github.com/MODFLOW-USGS/modflow6-examples",
+#     "use_edit_page_button": False,
+# }
 
 numfig = True
 math_numfig = True
 numfig_secnum_depth = 1
-numfig_format = {"figure": "Figure %s", "table": "Table %s", "code-block": "Table %s"}
+numfig_format = {"figure": "Figure %s", "table": "Table %s", "code-block": "Listing %s"}
 math_eqref_format = "{number}"
 
 autosummary_generate = True
