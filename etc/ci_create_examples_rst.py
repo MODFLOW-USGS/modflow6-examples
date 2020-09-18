@@ -178,9 +178,15 @@ for ex in ex_list:
         if not write_line and tag in line:
             write_line = True
 
-        tag = "table :numref:"
-        if tag in line:
-            line = line.replace(tag, ":numref:")
+        # table tabs
+        tags = (
+            "Table :numref:",
+            "table :numref:",
+            "Tables :numref:",
+        )
+        for tag in tags:
+            if tag in line:
+                line = line.replace(tag, ":numref:")
 
         # figure tags
         tags = (
