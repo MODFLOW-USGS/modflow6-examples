@@ -12,6 +12,14 @@ with open(pth) as f:
 for v in ex_regex.findall(lines):
     ex_list.append(v.replace(".tex", ""))
 
+# get list of example problems
+ex_dirs = []
+ex_pth = os.path.join("..", "examples")
+for name in sorted(os.listdir(ex_pth)):
+    pth = os.path.join(ex_pth, name)
+    if os.path.isdir(pth):
+        ex_dirs.append(name)
+
 # create examples rst
 pth = os.path.join("..", ".doc", "examples.rst")
 print("creating...'{}'".format(pth))
@@ -174,13 +182,16 @@ for ex in ex_list:
         if tag in line:
             line = line.replace(tag, ":numref:")
 
-        tag = "fig. :numref:"
-        if tag in line:
-            line = line.replace(tag, ":numref:")
-
-        tag = "figure :numref:"
-        if tag in line:
-            line = line.replace(tag, ":numref:")
+        # figure tags
+        tags = (
+            "fig. :numref:",
+            "Figure :numref:",
+            "figure :numref:",
+            "figures :numref:",
+        )
+        for tag in tags:
+            if tag in line:
+                line = line.replace(tag, ":numref:")
 
         tag = ".. container::"
         if tag == line.strip():
@@ -191,8 +202,6 @@ for ex in ex_list:
             if len(line.lstrip()) == len(line):
                 line = "\n" + line
                 in_table = False
-            # else:
-            #     line = line.lstrip()
 
         tag = ":name: tab-ex-"
         if tag in line:
@@ -222,6 +231,32 @@ for ex in ex_list:
 
         if write_line:
             f.write(line)
+
+    # Jupyter Notebook section
+    # Determine the number of notebooks for the example
+    ex_root = ex.replace(".tex", "")
+    no_nb = 0
+    nb_list = []
+    for ex_dir in ex_dirs:
+        if ex_root in ex_dir:
+            no_nb += 1
+            line  = "{0:d}. `{1} <../_notebooks/{1}.html>`_\n".format(no_nb, ex_dir)
+            nb_list.append(line)
+
+    # write Jupyter Notebook section
+    if no_nb > 0:
+        line = "\n\nJupyter Notebooks\n"
+        line += "-----------------\n\n"
+        if no_nb > 1:
+            line += "The Jupyter notebook(s) used to create the MODFLOW 6 input files\n" + \
+                    "for this example and post-process the results are:\n\n"
+        else:
+            line += "The Jupyter notebook used to create the MODFLOW 6 input files\n" + \
+                    "for this example and post-process the results is:\n\n"
+        for nb in nb_list:
+            line += nb
+        line += "\n"
+        f.write(line)
 
     f.close()
 

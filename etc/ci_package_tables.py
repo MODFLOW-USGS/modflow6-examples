@@ -4,7 +4,7 @@ import flopy
 
 ex_pth = os.path.join("..", "examples")
 
-def get_examples_list():
+def get_ordered_examples():
     # get order of examples from body.text
     ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
     ex_order = []
@@ -13,6 +13,11 @@ def get_examples_list():
         lines = f.read()
     for v in ex_regex.findall(lines):
         ex_order.append(v.replace(".tex", ""))
+    return ex_order
+
+def get_examples_list():
+    # get order of examples from body.text
+    ex_order = get_ordered_examples()
 
     # get list of all examples
     ex_list = []
@@ -65,6 +70,18 @@ def get_example_packages():
     return ex_paks
 
 def build_tables(ex_paks):
+    ex_order = get_ordered_examples()
+
+    # build dictionary with hyperlinks
+    pak_link = {}
+    for ex_name in ex_paks.keys():
+        for ex_root in ex_order:
+            if ex_root in ex_name:
+                pak_link[ex_name] = "[{}](_examples/{}.html)".format(ex_name, ex_root)
+                break
+        if ex_name not in list(pak_link.keys()):
+            pak_link[ex_name] = ex_name
+
     # build list of unique packages
     pak_unique = []
     for ex_name, paks in ex_paks.items():
@@ -77,7 +94,7 @@ def build_tables(ex_paks):
         ex_list = []
         for ex_name, paks in ex_paks.items():
             if pak in paks:
-                ex_list.append(ex_name)
+                ex_list.append(pak_link[ex_name])
         pak_dict[pak] = ex_list
 
     rtd_link = "https://modflow6.readthedocs.io/en/latest/_mf6io/"
