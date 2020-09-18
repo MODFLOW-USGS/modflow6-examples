@@ -65,11 +65,11 @@ f.write(lines)
 # close the restructured text file
 f.close()
 
-# # -- convert the tutorial scripts -------------------------------------------
-# if not on_rtd:
-#     cmd = ("python", "test_build.py")
-#     print(" ".join(cmd))
-#     os.system(" ".join(cmd))
+# -- convert the tutorial scripts -------------------------------------------
+if not on_rtd:
+    cmd = ("python", "test_build.py")
+    print(" ".join(cmd))
+    os.system(" ".join(cmd))
 
 # -- Build the example restructured text files -------------------------------
 if not on_rtd:
@@ -191,7 +191,7 @@ html_context = {
 numfig = True
 math_numfig = True
 numfig_secnum_depth = 1
-numfig_format = {"figure": "Figure %s", "table": "Table %s", "code-block": "Table %s"}
+numfig_format = {"figure": "Figure %s", "table": "Table %s", "code-block": "Listing %s"}
 math_eqref_format = "{number}"
 
 autosummary_generate = True
