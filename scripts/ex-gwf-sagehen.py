@@ -24,7 +24,7 @@ import flopy.utils.binaryfile as bf
 from figspecs import USGSFigure
 from datetime import datetime
 
-sys.path.append(os.path.join("..", "data", "ex-gwf-sagehen-uzf"))
+sys.path.append(os.path.join("..", "data", "ex-gwf-sagehen"))
 import sfr_static as sfrDat
 
 mf6exe = os.path.abspath(config.mf6_exe)
@@ -77,7 +77,7 @@ nstp = [1] * num_ts
 tsmult = [1.0] * num_ts
 
 # from mf-nwt .dis file
-dat_pth = os.path.join(config.data_ws, "ex-gwf-sagehen-uzf")
+dat_pth = os.path.join(config.data_ws, example_name)
 top = np.loadtxt(os.path.join(dat_pth, "top1.txt"))
 bot1 = np.loadtxt(os.path.join(dat_pth, "bot1.txt"))
 # from mf-nwt .bas file
