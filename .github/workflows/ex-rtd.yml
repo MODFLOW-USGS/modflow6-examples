@@ -15,6 +15,7 @@ jobs:
     strategy:
       fail-fast: false
 
+    if: github.repository_owner == 'MODFLOW-USGS'
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2
@@ -92,8 +93,6 @@ jobs:
           cd ..
 
       - name: Run notebooks with jupytext for ReadtheDocs
-        if:
-          github.repository_owner == 'MODFLOW-USGS'
         shell: bash
         run: |
           cd ./etc/
@@ -101,8 +100,6 @@ jobs:
           cd ..
 
       - name: Create package tables and examples.rst for ReadtheDocs
-        if:
-          github.repository_owner == 'MODFLOW-USGS'
         shell: bash
         run: |
           cd ./etc/
@@ -110,8 +107,23 @@ jobs:
           python ci_create_examples_rst.py
           cd ..
 
+      - name: List example rst files for ReadtheDocs
+        shell: bash
+        run: |
+          ls -l .doc/_examples/
+
+      - name: List example image files for ReadtheDocs
+        shell: bash
+        run: |
+          ls -l .doc/_images/
+
+      - name: List example notebook files for ReadtheDocs
+        shell: bash
+        run: |
+          ls -l .doc/_notebooks/
+
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: rtd-files-for-${{ github.sha }}
