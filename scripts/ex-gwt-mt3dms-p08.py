@@ -13,8 +13,8 @@
 #   4. Two-Dimensional Transport in a Diagonal Flow Field
 #   5. Two-Dimensional Transport in a Radial Flow Field
 #   6. Concentration at an Injection/Extraction Well
-#   7. _Three-Dimensional Transport in a Uniform Flow Field_
-#   8. Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer
+#   7. Three-Dimensional Transport in a Uniform Flow Field
+#   8. _Two-Dimensional, Vertical Transport in a Heterogeneous Aquifer_
 #   9. Two-Dimensional Application Example
 #   10. Three-Dimensional Field Case Study
 
