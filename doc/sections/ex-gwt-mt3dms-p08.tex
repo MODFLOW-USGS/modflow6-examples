@@ -1,0 +1,44 @@
+\section{Two-Dimensional Vertical Transport in a Heterogeneous Aquifer (MT3DMS Example Problem 8)}
+
+This example problem originally appeared \cite{sudicky1989} for finding the solution in a hypothetical field-scale example.  Among the MT3DMS suite of examples, this is the first one with a heterogeneous hydraulic conductivity field.  Defining characteristics that set this problem apart from earlier MT3DMS example problems include a highly irregular flow field and large contrast between longitudinal and transverse dispersivities.  \cite{vanderheijde1995} points out that this particular model test potentially troublesome parameter combinations while at the same time testing the ability of a flow and transport code to simulate real-world problems.
+
+\subsection{Example description}
+
+Using a ``deformed quadrilateral'' \citep{zheng1999mt3dms}, the model domain is 250 $m$ wide by 6.75 $m$ at at the left boundary and and 5.375 $m$ at the right boundary. The conceptual model is divided into 27 layers and 50 columns all contained within a single row.  For the duration of the simulation, steady flow is maintained by a constant recharge rate of 10 $cm/yr$, no-flow on the left and bottom boundaries and a constant head of 5.375 $m$ on the right boundary (figure~\ref{fig:mt3dms-p08}).  The simulation uses unconfined conditions to model the water table.  Heterogeneity within the aquifer is represented by a fine grained silty sand with a hydraulic conducivity of $5 \times 10^{-4} cm/sec$ that hosts two lenses of medium-grained sand with a hydraulic conductvity of $1 \times 10^{-2} cm/sec$ (table~\ref{tab:ex-gwt-mt3dms-p08-01}).  The vertical hydraulic conductivity is assumed to equal the horizontal conductivity in both materials.
+
+% MT3DMS manual figure 40
+\begin{StandardFigure}
+	{MT3DMS test problem 8 configuration showing flow (upper figure) and transport (lower figure) boundary conditions (from \cite{sudicky1989}).} 
+	{fig:mt3dms-p08}
+	{../images/mt3dms-p08.png}
+\end{StandardFigure}
+
+% add 2nd static parameter value table
+\input{../tables/ex-gwt-mt3dms-p08-01}
+
+Boundary conditions within the transport model also are shown in figure~\ref{fig:mt3dms-p08}.  A relative concentration of 1.0 is assigned to the recahrge entering the model domain between 40 and 80 $m$ from the left boundary and 0.0 elsewhere.  Mass continues to enter the simulation at the given location for the first five years of the simulation, after which time the source is removed and the model continues to run for an additional 15 years.  An initial concentration of 0.0 is specified throughout the model domain.  A uniform porosity of 0.35 is assigned to the entire model domain.  Additional transport-related parameters are listed in table~\ref{tab:ex-gwt-mt3dms-p08-01}.
+
+\subsection{Example results}
+
+In order to achieve a close match between \mf and MT3D-USGS, the XT3D solver was activated within \mf.  Moreover, both solutions use their respective TVD advection schemes.  Results are shown after 8, 12, and 20 years (figures \ref{fig:ex-gwt-mt3dms-p08-8yrs} - \ref{fig:ex-gwt-mt3dms-p08-20yrs}).  In each of the selected years for which results are plotted, model results are similar with a couple of small differences.  For example, all plots show the leading edge (as defined by the 0.05 isoconcentration contour) of the MT3DMS-calculated plume ahead of the leading the edge of the \mf plume.  Also, the \mf plume is less dispersed compared to the MT3DMS plumes as demonstrated by the presence of higher concentrations (i.e., isoconcentration contours) located at the center of the plume, particularly in years 12 and 20.
+
+% MT3DMS manual figure 41
+\begin{StandardFigure}
+	{Migrating contaminant plume as calculated by (A) MT3D-USGS and (B) \mf after 8 years.  The original problem was given in \citep{sudicky1989}} 
+	{fig:ex-gwt-mt3dms-p08-8yrs}
+	{../figures/ex-gwt-mt3dms-p08-8yrs.png}
+\end{StandardFigure}
+
+% MT3DMS manual figure 41
+\begin{StandardFigure}
+	{Migrating contaminant plume as calculated by (A) MT3D-USGS and (B) \mf after 12 years.  The original problem was given in \citep{sudicky1989}} 
+	{fig:ex-gwt-mt3dms-p08-12yrs}
+	{../figures/ex-gwt-mt3dms-p08-12yrs.png}
+\end{StandardFigure}
+
+% MT3DMS manual figure 41
+\begin{StandardFigure}
+	{Migrating contaminant plume as calculated by (A) MT3D-USGS and (B) \mf after 20 years.  The original problem was given in \citep{sudicky1989}} 
+	{fig:ex-gwt-mt3dms-p08-20yrs}
+	{../figures/ex-gwt-mt3dms-p08-20yrs.png}
+\end{StandardFigure}
