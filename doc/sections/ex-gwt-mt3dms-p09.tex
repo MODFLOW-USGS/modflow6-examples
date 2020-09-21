@@ -1,0 +1,32 @@
+\section{Two-Dimensional Application Example (MT3DMS Example Problem 9)}
+
+This example compares \mf and MT3DMS transport solutions in a two-dimensional plan-view setting with heterogeneity in the hydraulic conductivity field. The problem is purely hypothetical and was originally used for comparing different MT3DMS solutions (i.e., finite-difference, method-of-characteristics, and TVD advection schemes) to each other.  No analytical solution exists for this problem \citep{zheng1999mt3dms}.
+
+\subsection{Example description}
+
+A contaminant plume originates in an injection well located near the upper portion of the model (figure~\ref{fig:mt3dms-p09}).  After its injection, contaminant migrates toward a pumping well located several rows below a low hydraulic conductivity zone, itself located a couple rows below where contaminant enters the aquifer. 
+
+% MT3DMS manual figure 43
+\begin{StandardFigure}
+	{MT3DMS test problem 9 configuration showing grid discretization, constant head boundaries, and the locations of injection and pumping wells (from \cite{zheng1999mt3dms}).} 
+	{fig:mt3dms-p09}
+	{../images/mt3dms-p09.png}
+\end{StandardFigure}
+
+The model domain is discretized by 18 rows, 14 columns, and a single confined layer.  Grid cell dimensions are uniformly set to 100 $\times$ 100 $m$.  The left, right and bottom model boundaries are noo-flow.  The upper (north) boundary applies a specified head of 250 $m$ that is held constant throughout the simulation period.  Similarly, a specified head is applied to the lower (south) boundary that varies from 20 $m$ on the left to 52.5 $m$ on the right, a gradient of 2.5/100 $m/m$.  Water injected into the aquifer enters at a concentration of 57.87 $ppm$.  Mass is removed from the aquifer by both the pumping well and with the flow that exits the domain at the lower (south) boundary of the model.  Mass that exits the lower boundary does so at the simulated concentration of the water that is removed by the constant head boundary condition.  Mass is not allowed to leave through the upper, bottom, left, or right boundaries in the respective transport simulations.  All flow boundary conditions are held constant for the duration of the simulation period, resulting in steady-flow conditions.  However, the concentration of the injected water is reduced to 0.0 $ppm$ during the second of two stress periods.  Both the injection and pumping wells are assumed to be fully penetrating.  Aquifer heterogeneity is depicted in figure~\ref{fig:mt3dms-p09}.  Model parameters are summaried in table~\ref{tab:ex-gwt-mt3dms-p09-01}.
+
+% add 2nd static parameter value table
+\input{../tables/ex-gwt-mt3dms-p09-01}
+
+In \mf, the XT3D solver is not activated; however, both \mf and MT3DMS use their respective TVD advection schemes.  
+
+\subsection{Example results}
+
+Contrasting model results after one year, the leading edge of the plume advanced further within the \mf solution (figures~\ref{fig:ex-gwt-mt3dms-p09}). Confirmation that the same amount of mass entered both simultions (\mf and MT3DMS) was achieved by checking the mass budget information in the respective mode output listing files. In both simulations, the effect of the aquitard aquitard is clearly seen, though the isoconcentration lines appear to have infiltrated the aquitard more with MT3DMS compared to the \mf solution.  
+
+% MT3DMS manual figure 44 (but in 2D instead of 3D)
+\begin{StandardFigure}
+	{Migrating contaminant plume as calculated by (A) MT3D-USGS and (B) \mf after one year of simulation time.  The original problem was given in \citep{zheng1999mt3dms}.  Cells shaded in blue show the location of contstant head boundary cells.  Light brown shaded cells show the location of the aquitard.} 
+	{fig:ex-gwt-mt3dms-p09}
+	{../figures/ex-gwt-mt3dms-p09.png}
+\end{StandardFigure}
