@@ -11,6 +11,7 @@ MODFLOW 6 – Example problems
    _examples/ex-gwf-lgr
    _examples/ex-gwf-csub-p01
    _examples/ex-gwf-csub-p02
+   _examples/ex-gwf-csub-p04
    _examples/ex-gwf-sagehen
    _examples/ex-gwt-keating
    _examples/ex-gwt-moc3d-p01

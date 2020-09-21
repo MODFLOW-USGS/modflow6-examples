@@ -239,30 +239,16 @@ for ex in ex_list:
             f.write(line)
 
     # Jupyter Notebook section
-    # Determine the number of notebooks for the example
     ex_root = ex.replace(".tex", "")
-    no_nb = 0
-    nb_list = []
-    for ex_dir in ex_dirs:
-        if ex_root in ex_dir:
-            no_nb += 1
-            line  = "{0:d}. `{1} <../_notebooks/{1}.html>`_\n".format(no_nb, ex_dir)
-            nb_list.append(line)
 
     # write Jupyter Notebook section
-    if no_nb > 0:
-        line = "\n\nJupyter Notebooks\n"
-        line += "-----------------\n\n"
-        if no_nb > 1:
-            line += "The Jupyter notebook(s) used to create the MODFLOW 6 input files\n" + \
-                    "for this example and post-process the results are:\n\n"
-        else:
-            line += "The Jupyter notebook used to create the MODFLOW 6 input files\n" + \
-                    "for this example and post-process the results is:\n\n"
-        for nb in nb_list:
-            line += nb
-        line += "\n"
-        f.write(line)
+    line = "\n\nJupyter Notebook\n"
+    line += "----------------\n\n"
+    line += "The Jupyter notebook used to create the MODFLOW 6 input files\n" + \
+            "for this example and post-process the results is:\n\n"
+    line += "* `{0} <../_notebooks/{0}.html>`_\n".format(ex_root)
+    line += "\n"
+    f.write(line)
 
     f.close()
 

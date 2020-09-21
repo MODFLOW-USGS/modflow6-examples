@@ -884,14 +884,14 @@ def test_03():
 if __name__ == "__main__":
     # ### Delay interbed drainage
     #
-    # ### Head based solution
+    # #### Head based solution
 
     simulation(0)
 
-    # ### Effective stress solution
+    # #### Effective stress solution
 
     simulation(1)
 
-    # ### Head based for multiple interbed thicknesses
+    # #### Head based for multiple interbed thicknesses
 
     simulation(2)
