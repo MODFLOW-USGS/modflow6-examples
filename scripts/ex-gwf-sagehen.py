@@ -789,7 +789,7 @@ def plot_results(mf6, idx):
             style="-",
             color="darkgreen",
             linewidth=0.7,
-            label="Groundwater Discharge to Streams",
+            label="GW Discharge to Streams",
         )
         ax.set_ylim(0, 350000)
         plt.tick_params(
