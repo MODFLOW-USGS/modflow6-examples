@@ -30,6 +30,7 @@ MODFLOW 6 Examples Jupyter Notebooks
    ex-gwt-mt3dms-p05 <_notebooks/ex-gwt-mt3dms-p05.ipynb>
    ex-gwt-mt3dms-p06 <_notebooks/ex-gwt-mt3dms-p06.ipynb>
    ex-gwt-mt3dms-p07 <_notebooks/ex-gwt-mt3dms-p07.ipynb>
+   ex-gwt-mt3dms-p08 <_notebooks/ex-gwt-mt3dms-p08.ipynb>
    ex-gwt-prudic2004t2 <_notebooks/ex-gwt-prudic2004t2.ipynb>
 
 

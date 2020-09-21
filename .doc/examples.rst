@@ -26,4 +26,5 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-mt3dms-p05
    _examples/ex-gwt-mt3dms-p06
    _examples/ex-gwt-mt3dms-p07
+   _examples/ex-gwt-mt3dms-p08
    _examples/ex-gwt-prudic2004t2
