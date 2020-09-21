@@ -15,6 +15,7 @@ MODFLOW 6 Examples Jupyter Notebooks
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>
+   ex-gwf-csub-p04 <_notebooks/ex-gwf-csub-p04.ipynb>
    ex-gwf-sagehen <_notebooks/ex-gwf-sagehen.ipynb>
    ex-gwt-keating <_notebooks/ex-gwt-keating.ipynb>
    ex-gwt-moc3d-p01 <_notebooks/ex-gwt-moc3d-p01.ipynb>
@@ -29,6 +30,7 @@ MODFLOW 6 Examples Jupyter Notebooks
    ex-gwt-mt3dms-p05 <_notebooks/ex-gwt-mt3dms-p05.ipynb>
    ex-gwt-mt3dms-p06 <_notebooks/ex-gwt-mt3dms-p06.ipynb>
    ex-gwt-mt3dms-p07 <_notebooks/ex-gwt-mt3dms-p07.ipynb>
+   ex-gwt-mt3dms-p08 <_notebooks/ex-gwt-mt3dms-p08.ipynb>
    ex-gwt-prudic2004t2 <_notebooks/ex-gwt-prudic2004t2.ipynb>
 
 
