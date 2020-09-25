@@ -1,0 +1,46 @@
+\section{Simulation of a Two-Layer Aquifer System that Converts between Wet and Dry}
+
+% Describe source of problem
+This example is a version of the original MODFLOW rewetting example (BCF2SS) described in \cite{mcdonaldetal1991wetdry}. This problem is also is distributed with \mff~\citep{modflow2005} and \mf~\citep{modflow6software}. The problem has been modified to use a vertical hydraulic conductivity that is equivalent to the original quasi-3D vertical conductance (VCONT) value used in the original problem.
+
+In an aquifer system where two aquifers are separated by a confining bed, large pumpage withdrawals from the bottom aquifer can desaturate parts of the upper aquifer. If pumpage is discontinued, resaturation of the upper aquifer can occur. This problem demonstrates the capability of the BCF2 Package to successfully simulate this common hydrologic situation which is difficult or impossible to simulate with the original BCF1 Package. If both aquifers were simulated by one model layer using BCFl, the effect of the confining bed on vertical flow could not be simulated. Also, the transmissivity would not be correctly calculated as a function of saturated thickness. The changes in hydraulic conductivity between the confining bed and the aquifers could not be distinctly represented. If each aquifer were simulated by a separate model layer using BCFl, there would be solution difficulties. When simulating declining heads, too many cells might convert to dry; when simulating rising heads, dry cells could not convert to wet.
+
+\subsection{Conceptual Model}
+
+A hypothetical aquifer system consists of two aquifers separated by a confining unit. No-flow boundaries surround the system on all sides, except that the lower aquifer discharges to a stream along the right side of the area. Recharge from precipitation is applied evenly over the entire area. The stream penetrates the lower aquifer; in the region above the stream, the upper aquifer and confining unit are missing. Under natural conditions, recharge flows through the system to the stream. Under stressed conditions, two wells withdraw water from the lower aquifer. If enough water is pumped, cells in the upper aquifer will desaturate. Removal of the stresses will then cause the desaturated areas to resaturate.
+
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+The model consists of two layers--one for each aquifer. Because horizontal flow in the confining bed is small compared to horizontal flow in the aquifers and storage is not a factor in steady-state simulations, the confining bed is not treated as a separate layer. The effect of the confining bed is incorporated in the value for vertical hydraulic conductivity divided by thickness between aquifer layers (McDonald and Harbaugh, 1988, p. 5-16). Note that if storage in the confining bed were significant, transient simulations would require that the confining layer be simulated using one or more layers. A uniform horizontal grid of 10 rows and 15 columns is used. Aquifer parameters are specified as shown in Figure~\ref{fig:ex-gwf-bcf2ss-grid}.
+
+\begin{StandardFigure}{
+                                     Illustration of the system simulated in the BCF2SS example problem, from \cite{mcdonaldetal1991wetdry}.
+                                     }{fig:ex-gwf-bcf2ss-grid}{../figures/ex-gwf-bcf2ss-grid.png}
+\end{StandardFigure}                                 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-bcf2ss-01}
+
+
+% material properties
+The transmissivity of the middle and lower aquifers (fig.~\ref{fig:ex-gwf-bcf2ss-grid}) was converted to a horizontal hydraulic conductivity using the layer thickness (table~\ref{tab:ex-gwf-bcf2ss-01}). The vertical hydraulic conductivity in the aquifers was set equal to the horizontal hydraulic conductivity. The vertical hydraulic conductivity of the confining units was calculated from the vertical conductance of the confining beds defined in the original problem and the confining unit thickness (table~\ref{tab:ex-gwf-twri-01}); the horizontal hydraulic conductivity of the confining bed was set to the vertical hydraulic conductivity and results in vertical flow in the confining unit.
+
+
+% initial conditions
+An initial head of zero $ft$ was specified in all model layers. Any initial head exceeding the bottom of model layer 1 (-150 $ft$) could be specified since the model is steady-state.
+
+% boundary conditions
+Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $3 \times 10^{-7}$ $ft/s$ was specified for every cell in model layer 1. Flow out of the model is from buried drain tubes represented by drain (DRN) package cells in model layer 1, discharging wells represented by well (WEL) package cells in all three aquifers, and a lake represented by constant head (CHD) packages cells in the unconfined and middle aquifers (fig.~\ref{ffig:ex-gwf-bcf2ss-grid}).
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Two steady-state solutions were obtained to simulate natural conditions and pumping conditions. The two solutions are designed to demonstrate the ability of the BCF2 Package to handle a broad range of possibilities for cells converting between wet and dry in the top aquifer. When solving for natural conditions, the top aquifer initially is specified as being entirely dry and many cells must convert to wet. When solving for pumping conditions, the top aquifer is initially specified to be under natural conditions and many cells must convert to dry.
+
+The steady-state solutions were obtained through a single simulation consisting of two stress periods. The first stress period simulates natural conditions and the second period simulates the addition of pumping wells. The simulation is declared to be steady state, so no storage values are specified and each stress period requires only a single time step to produce a steady-state result. The PCG2 Package is used to solve the flow equations for the simulations. The complete output from the model simulation is provided in Table 1.
+
+In the process of simulating this problem, several trial simulations were made using different values for the WETDRY parameter. The absolute value of the WETDRY parameter is the wetting threshold, and the sign of the WETDRY parameter indicates which neighboring cells can cause a cell to become wet. Determination of the WETDRY parameter often requires considerable effort. The user may have to make multiple test runs trying different values in different areas of the model. On the right side of the model, the
+WETDRY parameter (table 1) is negative in order to cause a cell to become wet only when head in the layer below exceeds the wetting threshold. This was done to avoid incorrectly converting dry cells to wet because of the large head differences between adjacent horizontal cells. For example, the simulation of natural conditions (Stress Period 1) shows cells in column 14 of layer 1 being dry, which is reasonable based on the head below these cells. That is, the head in column 14 of layer 2 is over 20 feet below the bottom of layer 1. However, the head in column 13 of layer 1 is 21 feet above the bottom of the aquifer, which means that, if head in adjacent horizontal cells is allowed to wet cells, column 14 would convert to wet. Thus, it is not readily apparent whether column 14 should be wet or dry. The trial simulations showed that, when horizontal wetting is allowed, column 14 repeatedly oscillates between wet and dry, indicating that column 14 should be dry. If horizontal wetting is used, oscillation between wet and dry can be prevented by raising the wetting threshold, but this also can prevent some cells that should be partly saturated from converting to wet.
+
+On the left side of the model, horizontal head changes between adjacent cells generally are small, so head in the neighboring horizontal cells is a good indicator of whether or not a dry cell should become wet. Therefore, positive WETDRY parameters are used in most of this area to allow wetting to occur either from the cell below or from horizontally adjacent cells. Near the well, the horizontal head gradients under pumping conditions also are relatively large; consequently, a negative WETDRY parameter was used at the cells above the well. This prevents these cells from incorrectly becoming wet. It is also possible to use a larger positive wetting threshold to prevent these cells from incorrectly becoming wet.
