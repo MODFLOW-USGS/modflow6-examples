@@ -201,6 +201,19 @@ def plot_results(sim, silent=True):
         sim_ws = os.path.join(ws, sim_name)
         gwf = sim.get_model(sim_name)
 
+        # create MODFLOW 6 head object
+        file_name = gwf.oc.head_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
+        hobj = flopy.utils.HeadFile(fpth)
+
+        # create MODFLOW 6 cell-by-cell budget object
+        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
+        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+
+        # extract heads
+        head = hobj.get_data(totim=1)
+
         # plot grid
         fig = plt.figure(figsize=(6.8, 3), constrained_layout=True)
         gs = mpl.gridspec.GridSpec(7, 10, figure=fig, wspace=5)
@@ -212,16 +225,17 @@ def plot_results(sim, silent=True):
         mm.plot_grid(lw=0.5, color="0.5")
         mm.plot_bc(ftype="WEL", kper=1, plotAll=True)
         mm.plot_bc(ftype="RIV", color="green", plotAll=True)
-        ax.set_ylabel("y-coordinate, in meters")
-        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("y-coordinate, in feet")
+        ax.set_xlabel("x-coordinate, in feet")
         fs.heading(ax, letter="A", heading="Map view")
         fs.remove_edge_ticks(ax)
 
         ax = fig.add_subplot(gs[0:5, 7:])
         mm = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 7})
         mm.plot_grid(lw=0.5, color="0.5")
+        mm.plot_array(np.ones((nlay, nrow, ncol)), head=head, cmap="jet")
         mm.plot_bc(ftype="WEL", kper=1)
-        mm.plot_bc(ftype="RIV", color="green")
+        mm.plot_bc(ftype="RIV", color="green", head=head)
 
         # items for legend
         mm.ax.plot(
@@ -244,19 +258,31 @@ def plot_results(sim, silent=True):
             mew=0.5,
             label="Well",
         )
+        mm.ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="blue",
+            mec="black",
+            mew=0.5,
+            label="Steady-state\nwater level",
+        )
         fs.graph_legend(
             mm.ax,
             ncol=2,
-            bbox_to_anchor=(0.5, -0.6),
+            bbox_to_anchor=(0.5, -0.75),
             borderaxespad=0,
             frameon=False,
             loc="lower center",
         )
 
-        ax.set_ylabel("Elevation, in meters")
-        ax.set_xlabel("x-coordinate along model row 8, in meters")
+        ax.set_ylabel("Elevation, in feet")
+        ax.set_xlabel("x-coordinate along model row 8, in feet")
         fs.heading(ax, letter="B", heading="Cross-section view")
         fs.remove_edge_ticks(ax)
+
+        # figure with heads in each layer
 
         # save figure
         if config.plotSave:
@@ -264,20 +290,6 @@ def plot_results(sim, silent=True):
                 "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
             )
             fig.savefig(fpth)
-
-        # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
-
-        # create MODFLOW 6 cell-by-cell budget object
-        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
-
-        # extract heads
-        head = hobj.get_data()
-        vmin, vmax = -25, 100
 
         # save figure
         if config.plotSave:
