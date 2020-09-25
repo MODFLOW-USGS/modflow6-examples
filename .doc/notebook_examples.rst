@@ -2,10 +2,7 @@ MODFLOW 6 Examples - Jupyter Notebooks
 --------------------------------------
 
 The Jupyter Notebooks used to create the input files and figures for 
-each of the MODFLOW 6 `examples <examples.html>`_. A pdf of the examples can be downloaded from ReadtheDocs or from the `current release <https://github.com/MODFLOW-USGS/modflow6-examples/releases/download/current/mf6examples.pdf/>`_ on `GitHub <https://github.com/MODFLOW-USGS/modflow6-examples/>`_.
-
-MODFLOW 6 Examples Jupyter Notebooks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+each of the MODFLOW 6 `examples <examples.html>`_.
 
 .. toctree::
    :numbered:
@@ -14,6 +11,7 @@ MODFLOW 6 Examples Jupyter Notebooks
    ex-gwf-twri <_notebooks/ex-gwf-twri.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
+   ex-gwf-csub-p03 <_notebooks/ex-gwf-csub-p03.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>
    ex-gwf-csub-p04 <_notebooks/ex-gwf-csub-p04.ipynb>
    ex-gwf-sagehen <_notebooks/ex-gwf-sagehen.ipynb>
@@ -31,6 +29,7 @@ MODFLOW 6 Examples Jupyter Notebooks
    ex-gwt-mt3dms-p06 <_notebooks/ex-gwt-mt3dms-p06.ipynb>
    ex-gwt-mt3dms-p07 <_notebooks/ex-gwt-mt3dms-p07.ipynb>
    ex-gwt-mt3dms-p08 <_notebooks/ex-gwt-mt3dms-p08.ipynb>
+   ex-gwt-mt3dms-p09 <_notebooks/ex-gwt-mt3dms-p09.ipynb>
    ex-gwt-prudic2004t2 <_notebooks/ex-gwt-prudic2004t2.ipynb>
 
 

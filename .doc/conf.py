@@ -37,17 +37,11 @@ f = open("notebook_examples.rst", "w")
 lines = "MODFLOW 6 Examples - Jupyter Notebooks\n"
 lines += (len(lines) - 1) * "-" + "\n\n"
 lines += "The Jupyter Notebooks used to create the input files and figures for \n" + \
-         "each of the MODFLOW 6 `examples <examples.html>`_. A pdf of the examples " + \
-         "can be downloaded from ReadtheDocs or from the `current release " + \
-         "<https://github.com/MODFLOW-USGS/modflow6-examples/releases/download/" + \
-         "current/mf6examples.pdf/>`_ on `GitHub <https://github.com/MODFLOW-" + \
-         "USGS/modflow6-examples/>`_.\n\n"
+         "each of the MODFLOW 6 `examples <examples.html>`_.\n\n"
 f.write(lines)
 
 # gwf examples Jupyter Notebooks
-lines = "MODFLOW 6 Examples Jupyter Notebooks\n"
-lines += (len(lines) - 1) * "^" + "\n"
-lines += "\n.. toctree::\n"
+lines = ".. toctree::\n"
 lines += "   :numbered:\n"
 lines += "   :maxdepth: 1\n\n"
 for base_name in gwf_list:

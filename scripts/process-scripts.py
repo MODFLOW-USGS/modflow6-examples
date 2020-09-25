@@ -1,4 +1,8 @@
 import os
+import sys
+
+sys.path.append(os.path.join("..", "common"))
+import build_table as bt
 
 # only process python files starting with ex_
 files = [
@@ -51,7 +55,6 @@ def make_notebooks():
         # convert temporary python file to a notebook
         basename = os.path.splitext(file)[0] + ".ipynb"
         opth = os.path.join(nb_pth, basename)
-        # os.system("p2j {} -o -t {}".format(tpth, opth))
         cmd = (
             "jupytext",
             "--from py",
@@ -68,42 +71,27 @@ def make_notebooks():
             os.remove(tpth)
 
 def table_standard_header(caption, label):
-    header = "\\small\n"
-    header += "\\begin{longtable}[!htbp]{\n"
-    header += 38 * " " + "p{.5\\linewidth-2\\arraycolsep}\n"
-    header += 38 * " " + "p{.3\\linewidth-2\\arraycolsep}\n"
-    header += 38 * " " + "}\n"
-    header += "\t\\caption{{{}}} \\label{{tab:{}}} \\\\\n\n".format(caption, label)
-
-    header += "\t\\hline \\hline\n"
-    header +=  "\t\\rowcolor{Gray}\n"
-    header +=  "\t\\textbf{Parameter} & \\textbf{Value}  \\\\\n"
-    header +=  "\t\\hline\n"
-    header +=  "\t\\endhead\n\n"
-
-    return header
+    col_widths = (0.5, 0.3,)
+    headings = (
+        "Parameter",
+        "Value",
+    )
+    return bt.get_header(caption, label, headings,
+                         col_widths=col_widths, center=False)
 
 def table_scenario_header(caption, label):
-    header = "\\small\n"
-    header += "\\begin{longtable}[!htbp]{\n"
-    header += 38 * " " + "p{.1\\linewidth-2\\arraycolsep}\n"
-    header += 38 * " " + "p{.25\\linewidth-2\\arraycolsep}\n"
-    header += 38 * " " + "p{.3\\linewidth-2\\arraycolsep}\n"
-    header += 38 * " " + "p{.15\\linewidth-2\\arraycolsep}\n"
-    header += 38 * " " + "}\n"
-    header += "\t\\caption{{{}}} \\label{{tab:{}}} \\\\\n\n".format(caption, label)
-
-    header += "\t\\hline \\hline\n"
-    header +=  "\t\\rowcolor{Gray}\n"
-    header +=  "\t\\textbf{Scenario} & \\textbf{Scenario Name} & " + \
-               "\\textbf{Parameter} & \\textbf{Value}  \\\\\n"
-    header +=  "\t\\hline\n"
-    header +=  "\t\\endhead\n\n"
-
-    return header
+    col_widths = (0.1, 0.25, 0.3, 0.15, )
+    headings = (
+        "Scenario",
+        "Scenario Name",
+        "Parameter",
+        "Value",
+    )
+    return bt.get_header(caption, label, headings,
+                         col_widths=col_widths, center=False)
 
 def table_footer():
-    return "\t\\hline \\hline\n\\end{longtable}\n\\normalsize\n\n"
+    return bt.get_footer()
 
 def make_tables():
     tab_pth = os.path.join("..", "tables")
@@ -152,15 +140,16 @@ def make_tables():
         # create scenario table if parameters are specified in the script
         if parameters is not None:
             tab_name = "{}-scenario".format(basename)
+            label = "tab:{}".format(tab_name)
             fpth = os.path.join(tab_pth, tab_name + ".tex")
             f = open(fpth, "w")
 
-            f.write(table_scenario_header("Model Scenario Parameters", tab_name))
+            f.write(table_scenario_header("Model Scenario Parameters", label))
 
             scenario_count = 0
             for scenario_name, value_dict in parameters.items():
                 if scenario_count % 2 != 0:
-                    row_color = "\t\\rowcolor{Gray}\n"
+                    row_color = "\t\t\\rowcolor{Gray}\n"
                 else:
                     row_color = ""
                 scenario_count += 1
@@ -216,10 +205,11 @@ def make_tables():
             if len(table_text) > 0:
                 table_number += 1
                 tab_name = "{}-{:02d}".format(basename, table_number)
+                label = "tab:{}".format(tab_name)
                 fpth = os.path.join(tab_pth, tab_name + ".tex")
                 f = open(fpth, "w")
 
-                f.write(table_standard_header("Model Parameters", tab_name))
+                f.write(table_standard_header("Model Parameters", label))
 
                 # write table
                 line_count = 0
