@@ -31,7 +31,7 @@ line += ".. toctree::\n"
 line += "   :numbered:\n"
 line += "   :maxdepth: 1\n\n"
 for ex in ex_list:
-    line += "   _examples/{}\n".format(ex)
+    line += "   _examples/{}.rst\n".format(ex)
 f.write(line)
 f.close()
 
@@ -251,6 +251,23 @@ for ex in ex_list:
     f.write(line)
 
     f.close()
+
+    # # convert the rst tables
+    # print("running pandoc to create {}".format(dst))
+    # args = (
+    #     "rstlisttable",
+    #     dst,
+    # )
+    # print(" ".join(args))
+    # proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=doc_pth)
+    # stdout, stderr = proc.communicate()
+    # if stderr:
+    #     print("Errors:\n{}".format(stderr.decode("utf-8")))
+    # else:
+    #     f = open(dst, "w")
+    #     f.write(stdout.decode("utf-8"))
+    #     f.close()
+
 
     # clean up temporary latex file
     if os.path.isfile(src):

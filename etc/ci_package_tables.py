@@ -105,7 +105,12 @@ def build_tables(ex_paks):
     line = "### Introduction\n\n"
     line += "This document describes example problems for MODFLOW 6. The examples " + \
             "demonstrate use of the capabilities for select components of " + \
-            "MODFLOW 6. Examples have been included for the MODFLOW 6 components " + \
+            "MODFLOW 6. A pdf of the examples can be downloaded from " + \
+            "[ReadtheDocs](https://modflow6-examples.readthedocs.io/en/latest/) " + \
+            "or from the [current release](https://github.com/MODFLOW-USGS/" + \
+            "modflow6-examples/releases/download/current/mf6examples.pdf) on " + \
+            "[GitHub](https://github.com/MODFLOW-USGS/modflow6-examples/).\n\n" + \
+            "Examples have been included for the MODFLOW 6 components " + \
             "summarized in the tables below.\n\n"
     f.write(line)
 
