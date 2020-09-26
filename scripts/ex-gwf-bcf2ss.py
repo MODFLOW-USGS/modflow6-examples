@@ -52,13 +52,13 @@ delr = 500.0  # Column width ($ft$)
 delc = 500.0  # Row width ($ft$)
 top = 150.0  # Top of the model ($ft$)
 botm_str = "50.0, -50."  # Layer bottom elevations ($ft$)
-strt = 0.0  # Starting head ($ft$)
-wetfct = 1 # WETDRY factor
-iwetit = 1  # WETDRY iteration interval
-ihdwet = 0  # WETDRY equation (h = BOT + WETFCT (hm - BOT))
 icelltype_str = "1, 0"  # Cell conversion type
 k11_str = "10.0, 5.0"  # Horizontal hydraulic conductivity ($ft/d$)
 k33 = 0.1  # Vertical hydraulic conductivity ($ft/d$)
+wetfct = 1 # WETFCT - WETDRY factor
+iwetit = 1  # IWETIT - WETDRY iteration interval
+ihdwet = 0  # IHDWET - WETDRY use connected cells to rewet
+strt = 0.0  # Starting head ($ft$)
 recharge = 0.004  # Recharge rate ($ft/d$)
 
 # Static temporal data used by TDIS file
@@ -266,7 +266,7 @@ def plot_results(sim, silent=True):
             color="blue",
             mec="black",
             mew=0.5,
-            label="Steady-state\nwater level",
+            label="Steady-state\nwater table",
         )
         fs.graph_legend(
             mm.ax,
@@ -282,8 +282,6 @@ def plot_results(sim, silent=True):
         fs.heading(ax, letter="B", heading="Cross-section view")
         fs.remove_edge_ticks(ax)
 
-        # figure with heads in each layer
-
         # save figure
         if config.plotSave:
             fpth = os.path.join(
@@ -291,12 +289,151 @@ def plot_results(sim, silent=True):
             )
             fig.savefig(fpth)
 
+        # figure with wetdry array
+        fig = plt.figure(figsize=(4.76, 3), constrained_layout=True)
+        ax = fig.add_subplot(1,1,1)
+        ax.set_aspect('equal')
+        mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
+        wd = mm.plot_array(wetdry_layer0)
+        mm.plot_grid(lw=0.5, color="0.5")
+        cbar = plt.colorbar(wd, shrink=0.5)
+        cbar.ax.set_ylabel("WETDRY threshold")
+        ax.set_ylabel("y-coordinate, in feet")
+        ax.set_xlabel("x-coordinate, in feet")
+        fs.remove_edge_ticks(ax)
+
         # save figure
         if config.plotSave:
             fpth = os.path.join(
-                "..", "figures", "{}{}".format(sim_name, config.figure_ext)
+                "..", "figures", "{}-01{}".format(sim_name, config.figure_ext)
             )
-            # fig.savefig(fpth)
+            fig.savefig(fpth)
+
+        # figure with heads in each layer
+        fig = plt.figure(figsize=(6.8, 6), constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
+
+        ax1 = fig.add_subplot(gs[:3, :5])
+        ax2 = fig.add_subplot(gs[:3, 5:], sharey=ax1)
+        ax3 = fig.add_subplot(gs[3:6, :5], sharex=ax1)
+        ax4 = fig.add_subplot(gs[3:6, 5:], sharex=ax1, sharey=ax1)
+        ax5 = fig.add_subplot(gs[6, :])
+        axes = [ax1, ax2, ax3, ax4, ax5]
+
+        labels = ("A", "B", "C", "D")
+        aquifer = ("Upper aquifer", "Lower aquifer")
+        cond = ("natural conditions", "pumping conditions")
+        vmin, vmax = -10, 140
+        masked_values = [1e+30, -1e+30]
+        levels = np.arange(-20, 140, 10)
+        plot_number = 0
+        for totim in (1, 2):
+            head = hobj.get_data(totim=totim)
+            spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=(0, totim-1))
+
+            for k in range(nlay):
+                ax = axes[plot_number]
+                ax.set_aspect('equal')
+                mm = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=k)
+                mm.plot_grid(lw=0.5, color="0.5")
+                cm = mm.plot_array(head, masked_values=masked_values,
+                                   vmin=vmin, vmax=vmax)
+                mm.plot_bc(ftype="WEL", kper=totim-1)
+                mm.plot_bc(ftype="RIV", color="green", kper=0)
+                mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+                cn = mm.contour_array(head, masked_values=masked_values, levels=levels,
+                                      colors="black", linewidths=0.5)
+                plt.clabel(cn, fmt="%3.0f")
+                heading = "{} under {}".format(aquifer[k], cond[totim-1])
+                fs.heading(ax, letter=labels[plot_number], heading=heading)
+                fs.remove_edge_ticks(ax)
+
+                plot_number += 1
+
+        # set axis labels
+        ax1.set_ylabel("y-coordinate, in feet")
+        ax3.set_ylabel("y-coordinate, in feet")
+        ax3.set_xlabel("x-coordinate, in feet")
+        ax4.set_xlabel("x-coordinate, in feet")
+
+        # legend
+        ax = axes[-1]
+        ax.set_ylim(1, 0)
+        ax.set_xlim(-5, 5)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+
+        # items for legend
+        ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="green",
+            mec="black",
+            mew=0.5,
+            label="River",
+        )
+        ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="red",
+            mec="black",
+            mew=0.5,
+            label="Well",
+        )
+        ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="none",
+            mec="black",
+            mew=0.5,
+            label="Dry cell",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker=u"$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        ax.plot(
+            -1000,
+            -1000,
+            lw=0.5,
+            color="black",
+            label="Head, in feet",
+        )
+        fs.graph_legend(
+            ax,
+            ncol=5,
+            frameon=False,
+            loc="upper center",
+        )
+
+        cbar = plt.colorbar(cm, ax=ax, shrink=0.5, orientation='horizontal')
+        cbar.ax.set_xlabel("Head, in feet")
+
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", "{}-02{}".format(sim_name, config.figure_ext)
+            )
+            fig.savefig(fpth)
 
 
 # Function that wraps all of the steps for the TWRI model

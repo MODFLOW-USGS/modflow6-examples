@@ -9,10 +9,11 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    :maxdepth: 1
 
    ex-gwf-twri <_notebooks/ex-gwf-twri.ipynb>
+   ex-gwf-bcf2ss <_notebooks/ex-gwf-bcf2ss.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
-   ex-gwf-csub-p03 <_notebooks/ex-gwf-csub-p03.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>
+   ex-gwf-csub-p03 <_notebooks/ex-gwf-csub-p03.ipynb>
    ex-gwf-csub-p04 <_notebooks/ex-gwf-csub-p04.ipynb>
    ex-gwf-sagehen <_notebooks/ex-gwf-sagehen.ipynb>
    ex-gwt-keating <_notebooks/ex-gwt-keating.ipynb>
