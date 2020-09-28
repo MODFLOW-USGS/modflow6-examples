@@ -8,10 +8,11 @@ MODFLOW 6 – Example problems
    :maxdepth: 1
 
    _examples/ex-gwf-twri.rst
+   _examples/ex-gwf-bcf2ss.rst
    _examples/ex-gwf-lgr.rst
    _examples/ex-gwf-csub-p01.rst
-   _examples/ex-gwf-csub-p03.rst
    _examples/ex-gwf-csub-p02.rst
+   _examples/ex-gwf-csub-p03.rst
    _examples/ex-gwf-csub-p04.rst
    _examples/ex-gwf-sagehen.rst
    _examples/ex-gwt-keating.rst
@@ -29,4 +30,5 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-mt3dms-p07.rst
    _examples/ex-gwt-mt3dms-p08.rst
    _examples/ex-gwt-mt3dms-p09.rst
+   _examples/ex-gwt-mt3dms-p10.rst
    _examples/ex-gwt-prudic2004t2.rst

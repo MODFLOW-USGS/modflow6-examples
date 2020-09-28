@@ -9,10 +9,11 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    :maxdepth: 1
 
    ex-gwf-twri <_notebooks/ex-gwf-twri.ipynb>
+   ex-gwf-bcf2ss <_notebooks/ex-gwf-bcf2ss.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
-   ex-gwf-csub-p03 <_notebooks/ex-gwf-csub-p03.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>
+   ex-gwf-csub-p03 <_notebooks/ex-gwf-csub-p03.ipynb>
    ex-gwf-csub-p04 <_notebooks/ex-gwf-csub-p04.ipynb>
    ex-gwf-sagehen <_notebooks/ex-gwf-sagehen.ipynb>
    ex-gwt-keating <_notebooks/ex-gwt-keating.ipynb>
@@ -30,6 +31,7 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwt-mt3dms-p07 <_notebooks/ex-gwt-mt3dms-p07.ipynb>
    ex-gwt-mt3dms-p08 <_notebooks/ex-gwt-mt3dms-p08.ipynb>
    ex-gwt-mt3dms-p09 <_notebooks/ex-gwt-mt3dms-p09.ipynb>
+   ex-gwt-mt3dms-p10 <_notebooks/ex-gwt-mt3dms-p10.ipynb>
    ex-gwt-prudic2004t2 <_notebooks/ex-gwt-prudic2004t2.ipynb>
 
 
