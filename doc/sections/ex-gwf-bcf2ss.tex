@@ -1,9 +1,9 @@
-\section{Simulation of a Two-Layer Aquifer System that Converts Between Wet and Dry (BCFSS2)}
+\section{Simulation of a Two-Layer Aquifer System that Converts Between Wet and Dry}
 
 % Describe source of problem
 In an aquifer system where two aquifers are separated by a confining bed, large pumpage withdrawals from the bottom aquifer can desaturate parts of the upper aquifer. If pumpage is discontinued, resaturation of the upper aquifer can occur. This problem demonstrates the capability of the Node Property Flow (NPF) Package to successfully simulate this common hydrologic situation which is difficult or impossible to simulate without use of the rewetting option and the Standard Formulation or the Newton-Raphson Formulation.
 
-This example is a version of the original MODFLOW rewetting example (BCF2SS) described in \cite{mcdonaldetal1991wetdry}. This problem is also is distributed with \mff~\citep{modflow2005} and \mf~\citep{modflow6software}. The problem has been modified to use a vertical hydraulic conductivity that is equivalent to the original quasi-3D vertical conductance (VCONT) value used in the original problem.
+This example is a version of the original MODFLOW rewetting example (BCF2SS) described in \cite{mcdonaldetal1991wetdry}. This problem is also is distributed with \mff~\citep{modflow2005}. The problem has been modified to use a vertical hydraulic conductivity that is equivalent to the original quasi-3D vertical conductance (VCONT) value used in the original problem.
 
 
 \subsection{Conceptual Model}
@@ -23,17 +23,17 @@ The hypothetical aquifer system consists of a upper aquifer and a lower aquifer 
 The model consists of two layers--one for each aquifer. A uniform horizontal grid of 10 rows and 15 columns is used (fig.~\ref{fig:ex-gwf-bcf2ss-grid}). Two steady-state solutions were obtained to simulate natural conditions and pumping conditions. 
 
 % material properties
-Because horizontal flow in the confining bed is small compared to horizontal flow in the aquifers and storage is not a factor in steady-state simulations, the confining bed is not treated as a separate layer. A horizontal hydraulic conductivity of 10 and 5 $ft/day$ was specified for the upper and lower aquifers, respectively (table~\ref{tab:ex-gwf-twri-01}); the horizontal conductivity of the lower aquifer was calculated based on the transmissivity (500 $ft^2/day$) and 100 $ft$ layer thickness used in the original problem \citep{mcdonaldetal1991wetdry}. The vertical hydraulic conductivity of the confining units was calculated from the vertical conductance of the confining beds defined in the original problem ($0.9999999 \times 10^{-3}$ per day)  (table~\ref{tab:ex-gwf-twri-01}).
+Because horizontal flow in the confining bed is small compared to horizontal flow in the aquifers and storage is not a factor in steady-state simulations, the confining bed is not treated as a separate layer. A horizontal hydraulic conductivity of 10 and 5 $ft/day$ is specified for the upper and lower aquifers, respectively (table~\ref{tab:ex-gwf-twri-01}); the horizontal conductivity of the lower aquifer is calculated based on the transmissivity (500 $ft^2/day$) and 100 $ft$ layer thickness used in the original problem \citep{mcdonaldetal1991wetdry}. The vertical hydraulic conductivity of the confining units is calculated from the vertical conductance of the confining beds defined in the original problem ($0.9999999 \times 10^{-3}$ per day)  (table~\ref{tab:ex-gwf-twri-01}).
 
 % add static parameter table(s)
 \input{../tables/ex-gwf-bcf2ss-01}
 
 % initial conditions and boundary conditions
-An initial head of zero $ft$ was specified in all model layers. Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $4 \times 10^{-3}$ $ft/day$ was specified for every cell in the upper aquifer. Flow out of the model is from a stream represented by river (RIV) package cells in the lower aquifer, discharging wells represented by well (WEL) package cells in the lower aquifer. River cells were added to column 15 in every row in the lower aquifer and were specified to have a river stage, conductance, and bottom elevation of 0 $ft$, 10,000 $ft2/day$, and -5 $ft$, respectively (fig.~\ref{fig:ex-gwf-bcf2ss-grid}). Two wells were included in the second stress period, each pumping 35,000 $ft^3/day$, at (row 3, column 4) and (row 8, column 4) in the lower aquifer. 
+An initial head of zero $ft$ is specified in all model layers. Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $4 \times 10^{-3}$ $ft/day$ was specified for every cell in the upper aquifer. Flow out of the model is from a stream represented by river (RIV) package cells in the lower aquifer, discharging wells represented by well (WEL) package cells in the lower aquifer. River cells are located in column 15 of every row in the lower aquifer and have a river stage, conductance, and bottom elevation of 0 $ft$, 10,000 $ft^2/day$, and -5 $ft$, respectively (fig.~\ref{fig:ex-gwf-bcf2ss-grid}). Two wells are included in the second stress period, each pumping 35,000 $ft^3/day$, at (row 3, column 4) and (row 8, column 4) in the lower aquifer. 
 
 % wetdry properties
 The WETDRY parameter used in upper aquifer is shown in figure~\ref{fig:ex-gwf-bcf2ss-01}. On the right side of the model, the
-WETDRY parameter is negative in order to cause a cell to become wet only when head in the layer below exceeds the wetting threshold. This was done to avoid incorrectly converting dry cells to wet because of the large head differences between adjacent horizontal cells \citep{mcdonaldetal1991wetdry}. On the left side of the model, horizontal head changes between adjacent cells generally are small, so head in the neighboring horizontal cells is a good indicator of whether or not a dry cell should become wet. Therefore, positive WETDRY parameters are used in most of this area to allow wetting to occur either from the cell below or from horizontally adjacent cells. Near the well, the horizontal head gradients under pumping conditions also are relatively large; consequently, a negative WETDRY parameter was used at the cells above the well. This prevents these cells from incorrectly becoming wet \citep{mcdonaldetal1991wetdry}. Rewetting was not enabled in the lower aquifer.
+WETDRY parameter is negative in order to cause a cell to become wet only when head in the layer below exceeds the wetting threshold. This was done to avoid incorrectly converting dry cells to wet because of the large head differences between adjacent horizontal cells \citep{mcdonaldetal1991wetdry}. On the left side of the model, horizontal head changes between adjacent cells generally are small, so head in the neighboring horizontal cells is a good indicator of whether or not a dry cell should become wet. Therefore, positive WETDRY parameters are used in most of this area to allow wetting to occur either from the cell below or from horizontally adjacent cells. Near the well, the horizontal head gradients under pumping conditions also are relatively large; consequently, a negative WETDRY parameter was used at the cells above the well. This prevents these cells from incorrectly becoming wet \citep{mcdonaldetal1991wetdry}. Rewetting is not enabled in the lower aquifer.
 
 \begin{StandardFigure}{
                                      WETDRY parameter values used in the upper aquifer. Cells with negative values
@@ -52,11 +52,26 @@ Two steady-state solutions were obtained to simulate natural conditions and pump
 \begin{StandardFigure}{
                                      Simulated water levels and normalized specific discharge vectors in 
                                      the upper and lower aquifers under natural and pumping conditions
-                                     using the rewetting option in the Node Property Flow (NPF) Package.
+                                     using the rewetting option in the Node Property Flow (NPF) Package
+                                     with the Standard Conductance Formulation.
                                      \textit{A}. Upper aquifer results under natural conditions.
                                      \textit{B}. Lower aquifer results under natural conditions
                                      \textit{C}. Upper aquifer results under pumping conditions.
                                      \textit{D}. Lower aquifer results under pumping conditions
                                      }{fig:ex-gwf-bcf2ss-02}{../figures/ex-gwf-bcf2ss-02.png}
+\end{StandardFigure} 
+
+Simulated results for the example problem using the Newton-Raphson Formulation instead of the rewetting option and the Standard Formulation is shown in figure~\ref{fig:ex-gwf-bcf2ss-03}. In general, the simulated results are comparable for the Standard Formulation with the NPF Package rewetting option and the Newton-Raphson formulation. The largest differences between the two approaches occur in the upper aquifer under pumping conditions and is the result of differences in horizontal conductance weighting. Upstream weighting, which is used with the Newton-Raphson Formulation, increases the volumetric horizontal flow and decreases water-levels. Also note how saturated conditions propagate further into the domain in the upper aquifer under pumping conditions using the Newton-Raphson Formulation than when the Standard Formulation with the NPF Package rewetting option is used.               
+
+\begin{StandardFigure}{
+                                     Simulated water levels and normalized specific discharge vectors in 
+                                     the upper and lower aquifers under natural and pumping conditions
+                                     using the Newton-Raphson Formulation.
+                                     \textit{A}. Upper aquifer results under natural conditions.
+                                     \textit{B}. Lower aquifer results under natural conditions
+                                     \textit{C}. Upper aquifer results under pumping conditions.
+                                     \textit{D}. Lower aquifer results under pumping conditions
+                                     }{fig:ex-gwf-bcf2ss-03}{../figures/ex-gwf-bcf2ss-03.png}
 \end{StandardFigure}                                 
+
 
