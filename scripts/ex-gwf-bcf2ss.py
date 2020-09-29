@@ -411,30 +411,44 @@ def plot_results(silent=True):
         head = hobj.get_data(totim=1)
 
         # plot grid
-        fig = plt.figure(figsize=(6.8, 3), constrained_layout=True)
-        gs = mpl.gridspec.GridSpec(7, 10, figure=fig, wspace=5)
+        fig = plt.figure(figsize=(6.8, 3.5), constrained_layout=True)
+        gs = mpl.gridspec.GridSpec(nrows=8, ncols=10, figure=fig, wspace=5)
         plt.axis("off")
 
-        ax = fig.add_subplot(gs[:, 0:7])
+        ax = fig.add_subplot(gs[:7, 0:7])
         ax.set_aspect("equal")
         mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
-        mm.plot_grid(lw=0.5, color="0.5")
         mm.plot_bc(ftype="WEL", kper=1, plotAll=True)
         mm.plot_bc(ftype="RIV", color="green", plotAll=True)
+        mm.plot_grid(lw=0.5, color="0.5")
         ax.set_ylabel("y-coordinate, in feet")
         ax.set_xlabel("x-coordinate, in feet")
         fs.heading(ax, letter="A", heading="Map view")
         fs.remove_edge_ticks(ax)
 
-        ax = fig.add_subplot(gs[0:5, 7:])
+        ax = fig.add_subplot(gs[:5, 7:])
         mm = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 7})
-        mm.plot_grid(lw=0.5, color="0.5")
         mm.plot_array(np.ones((nlay, nrow, ncol)), head=head, cmap="jet")
         mm.plot_bc(ftype="WEL", kper=1)
         mm.plot_bc(ftype="RIV", color="green", head=head)
+        mm.plot_grid(lw=0.5, color="0.5")
+        ax.set_ylabel("Elevation, in feet")
+        ax.set_xlabel("x-coordinate along model row 8, in feet")
+        fs.heading(ax, letter="B", heading="Cross-section view")
+        fs.remove_edge_ticks(ax)
 
         # items for legend
-        mm.ax.plot(
+        ax = fig.add_subplot(gs[7, :])
+        ax.set_xlim(0,1)
+        ax.set_ylim(0,1)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+        ax.plot(
             -1000,
             -1000,
             "s",
@@ -444,7 +458,7 @@ def plot_results(silent=True):
             mew=0.5,
             label="River",
         )
-        mm.ax.plot(
+        ax.plot(
             -1000,
             -1000,
             "s",
@@ -454,7 +468,7 @@ def plot_results(silent=True):
             mew=0.5,
             label="Well",
         )
-        mm.ax.plot(
+        ax.plot(
             -1000,
             -1000,
             "s",
@@ -462,21 +476,15 @@ def plot_results(silent=True):
             color="blue",
             mec="black",
             mew=0.5,
-            label="Steady-state\nwater table",
+            label="Steady-state water table",
         )
         fs.graph_legend(
-            mm.ax,
-            ncol=2,
-            bbox_to_anchor=(0.5, -0.75),
-            borderaxespad=0,
+            ax,
+            ncol=3,
             frameon=False,
-            loc="lower center",
+            loc="upper center",
         )
 
-        ax.set_ylabel("Elevation, in feet")
-        ax.set_xlabel("x-coordinate along model row 8, in feet")
-        fs.heading(ax, letter="B", heading="Cross-section view")
-        fs.remove_edge_ticks(ax)
 
         # save figure
         if config.plotSave:
