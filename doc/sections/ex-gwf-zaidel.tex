@@ -1,0 +1,38 @@
+\section{Zaidel Problem}
+
+% Describe source of problem
+One of the most challenging numerical cases for \MF arises from drying-rewetting problems often associated with abrupt changes in the elevations of impervious base of a thin unconfined aquifer. This problem simulates a discontinuous water table configuration over a stairway impervious base and flow between constant-head boundaries at the left and right sides of the model domain. This problem is based on the problems that compared the analytical solution of \cite{zaidel2013discontinuous}~to \mfn~\cite[see][figure~6]{zaidel2013discontinuous}.
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-zaidel-01}. The model consists of a grid of 200 columns, 1 row, and 1 layer and a bottom altitude of ranging from 20 to 0 m (fig.~\ref{fig:ex-gwf-zaidel-01}). The discretization is 5 m in the row direction and 1 m in the column direction for all cells. A single steady-stress period with a total length of 1 day is simulated.
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-zaidel-01}
+
+A constant horizontal hydraulic conductivity of 0.0001 $m/d$ was specified in all cells. An initial head of 23 $m$ was specified in all model cells. Constant head boundary cells were specified in column 1 and 200. The constant head value in column 1 is 23 $m$ and was used in all simulations. A constant head value of 1 and 10 $m$ was specified in column 200 based on the values evaluated by \cite{zaidel2013discontinuous}.
+
+
+\begin{StandardFigure}{
+                                     Discontinuous water table configuration over a multistep impervious base.
+                                     Simulated results for the case where the constant head in column 200 is equal
+                                     to 1 meter is shown. The impervious model base and the location of constant
+                                     head boundary cells is also shown.
+                                     }{fig:ex-gwf-zaidel-01}{../figures/ex-gwf-zaidel-01.png}
+\end{StandardFigure}                                 
+
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Simulated results for the case with the constant head in column 200 equal to 1 $m$ and 10 $m$ are shown in figures~\ref{fig:ex-gwf-zaidel-01} and~\ref{fig:ex-gwf-zaidel-02}, respectively. Simulated results compare well with the results in \cite{zaidel2013discontinuous}.
+
+% a figure
+\begin{StandardFigure}{
+                                     Discontinuous water table configuration over a multistep impervious base.
+                                     Simulated results for the case where the constant head in column 200 is equal
+                                     to 10 meters is shown. The impervious model base and the location of constant
+                                     head boundary cells is also shown.
+                                     }{fig:ex-gwf-zaidel-02}{../figures/ex-gwf-zaidel-02.png}
+\end{StandardFigure}                                 
+
