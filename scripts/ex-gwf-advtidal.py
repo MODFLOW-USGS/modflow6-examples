@@ -43,7 +43,7 @@ sim_name = "ex-gwf-advtidal"
 
 # Model units
 
-length_units = "feet"
+length_units = "meters"
 time_units = "days"
 
 # Table Advgwtidal Model Parameters

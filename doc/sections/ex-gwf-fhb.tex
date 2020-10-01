@@ -1,0 +1,40 @@
+\section{Flow and Head Boundary (FHB) Package Replication}
+
+% Describe source of problem
+This example shows how the time series capability in \mf can be combined with the constant-head (CHD) and Well (WEL) Packages to replicate the capabilities of the Flow and Head Boundary (FHB) Package in previous versions of MODFLOW.  This synthetic example problem has been released with previous MODFLOW versions, such as MODFLOW-2005 \citep{modflow2005} and was first described by \cite{leake1997documentation}.
+
+\subsection{Example Description}
+
+% spatial discretization  and temporal discretization
+The problem consists of a very simple single-layer model representing a confined aquifer.  The grid consists of 3 rows and 10 columns.  Each cell is 1000 $m$ on a side.  There are three transient stress periods with lengths of 400, 200, and 400 days.   There are 10, 4, and 6 time steps per stress period.  Model parameters are listed in table~\ref{tab:ex-gwf-fhb-01}. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-fhb-01}
+
+% initial conditions
+An initial head of 0 $m$ was specified for the model.  The value is important as the model begins with a transient stress period.
+
+% boundary conditions
+The model demonstrates use of the CHD and WEL packages.  Locations for these boundaries are shown in figure~\ref{fig:ex-gwf-fhb-grid}. Both of these packages use time varying values for the constant head and the well flow rate.   
+
+\begin{StandardFigure}{
+                                     Model grid and boundary conditions used for the FHB example problem.
+                                     }{fig:ex-gwf-fhb-grid}{../figures/ex-gwf-fhb-grid.png}
+\end{StandardFigure}                                 
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The observation capability in \mf was used to extract time series of simulated heads and flows.  Time series of model results are shown in figures~\ref{fig:ex-gwf-fhb-obs-head} and \ref{fig:ex-gwf-fhb-obs-flow}.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated groundwater head in model cells (1, 2, 1) and (1, 2, 10).
+                                     }{fig:ex-gwf-fhb-obs-head}{../figures/ex-gwf-fhb-obs-head.png}
+\end{StandardFigure}                                 
+
+\begin{StandardFigure}{
+                                     Simulated groundwater flow for model cell (1, 2, 2) and its connection with model cell (1, 2, 1).  Positive values indicate flow into model cell (1, 2, 2).
+                                     }{fig:ex-gwf-fhb-obs-flow}{../figures/ex-gwf-fhb-obs-flow}
+\end{StandardFigure}                                 
+
