@@ -222,7 +222,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
     if config.buildModel:
         print("Building mf2005 model...{}".format(sim_name))
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
-        modelname_mf = "p10_mf"
+        modelname_mf = "p10-mf"
 
         # Instantiate the MODFLOW model
         mf = flopy.modflow.Modflow(
@@ -276,7 +276,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         # Transport
         print("Building mt3d-usgs model...{}".format(sim_name))
 
-        modelname_mt = "p10_mt"
+        modelname_mt = "p10-mt"
         mt = flopy.mt3d.Mt3dms(
             modelname=modelname_mt,
             model_ws=mt3d_ws,
@@ -330,8 +330,8 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         # MODFLOW 6
         print("Building mf6gwt model...{}".format(sim_name))
 
-        name = "p10_mf6"
-        gwfname = "gwf_" + name
+        name = "p10-mf6"
+        gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
@@ -482,7 +482,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         )
 
         # Instantiating MODFLOW 6 groundwater transport package
-        gwtname = "gwt_" + name
+        gwtname = "gwt-" + name
         gwt = flopy.mf6.MFModel(
             sim,
             model_type="gwt6",
