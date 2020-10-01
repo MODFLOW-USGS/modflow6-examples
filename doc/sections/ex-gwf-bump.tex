@@ -1,0 +1,68 @@
+\section{Flow Diversion Problem}
+
+% Describe source of problem
+This problem simulates unconfined groundwater flow in an aquifer with a high bottom elevation in the center of the aquifer and groundwater flow around a high bottom elevation.
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-bump-01}. The model consists of a grid of 51 columns, 51 rows, and 1 layer. The discretization is 1.96 $m$ in the row and column direction for all cells. The top of the aquifer is 25 $m$ and the bottom elevation of the aquifer ranges from 0 $m$ at the edges of the domain to 10 $m$ in the center of the domain (fig.~\ref{fig:ex-gwf-bump-grid}). A single steady-stress period with a total length of 1 day is simulated.
+
+
+\begin{StandardFigure}{
+                                     Bottom elevation of the flow diversion problem in meters. Bottom elevation are lowest at 
+                                     the edges of the domain and highest in the center of the domain. The location of constant
+                                     head boundary cells is also shown.
+                                     }{fig:ex-gwf-bump-grid}{../figures/ex-gwf-bump-grid.png}
+\end{StandardFigure}                                 
+
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-bump-01.tex}
+
+A constant horizontal hydraulic conductivity of 1 $m/day$ was specified in all cells. An initial head of 7.5 $m$ was specified in all model cells. Constant head boundary cells were specified for all rows in column 1 and 51. A constant head value of 7.5 and 2.5 $m$ is specified in column 1 and 51, respectively.
+
+
+% for examples without scenarios
+\subsection{Scenario Results}
+
+The flow diversion model was evaluated using the Newton-Raphson Formulation and the Standard Conductance Formulation with rewetting (table~\ref{tab:ex-gwf-bump-scenario}). A scenario that used a cylindrical obstruction and the Newton-Raphson Formulation was also evaluated.
+
+% scenario table
+\input{../tables/ex-gwf-bump-scenario.tex}
+
+\subsubsection{Newton-Raphson Formulation}
+
+Simulated results using the Newton-Raphson Formulation is shown in figure~\ref{fig:ex-gwf-bump-01}. Newton under-relaxation is used with the Newton-Raphson Formulation to maintain water-levels above the aquifer bottom \citep{modflow6framework}. Cells with bottom elevation ranging from approximately 7.5 to 10 $m$ are dry and normalized specific discharge vectors show that groundwater is flowing around the dry cells. Note the relatively constant heads of approximately 7.5 $m$ adjacent to the dry cells. A total of 10.94 $m^3/day$ is discharged to the constant head cells in column 51.
+
+
+\begin{StandardFigure}{
+                                     Simulated heads and normalized specific discharge vectors for the scenario using 
+                                     the Newton-Raphson Formulation. Bottom elevation contours are shown in areas 
+                                     with dry cells. The location of constant head boundary cells is also shown.
+                                     }{fig:ex-gwf-bump-01}{../figures/ex-gwf-bump-01.png}
+\end{StandardFigure}                                 
+
+\subsubsection{Standard Conductance Formulation with rewetting}
+
+Rewetting parameters specified in the Node Property Flow Package for this scenario are summarized in table~\ref{tab:ex-gwf-bump-scenario}. A positive WETDRY parameter value of 2 is used to allow wetting to occur from horizontally adjacent cells. Simulated results using the Standard Conductance Formulation with rewetting is shown in figure~\ref{fig:ex-gwf-bump-02}. Although the rewetting allows the model to converge the area of dry cells is significantly larger than the area of dry cells in the Newton-Raphson Formulation scenario. Furthermore, the increase in the area of dry cells is not symmetric and extends further in areas where there is a significant component of downstream flow. Simulated heads for both scenarios are comparable in areas that are not dry in both scenarios. A total of 10.50 $m^3/day$ is discharged to the constant head cells in column 51. The slight flow reduction for this scenario is a result of upstream horizontal conductance weighting used with the Newton-Raphson formulation and the slightly reduced total simulated horizontal conductance for the rewetting scenario. 
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated heads and normalized specific discharge vectors for the scenario using 
+                                     the Standard Conductance Formulation with rewetting. Bottom elevation contours 
+                                     are shown in areas with dry cells. The location of constant head boundary cells is 
+                                     also shown.
+                                     }{fig:ex-gwf-bump-02}{../figures/ex-gwf-bump-02.png}
+\end{StandardFigure}                                 
+
+\subsubsection{Newton-Raphson Formulation with a cylindrical obstruction}
+
+The model setup for this scenario is identical to the Newton-Raphson Formulation scenario except for the aquifer bottom elevations, which are used to represent the cylindrical obstruction. Aquifer bottom elevations are derived from aquifer bottom elevations shown in figure~\ref{fig:ex-gwf-bump-grid} and are equal to 0 and 20 $m$ where elevations are less than 7.5 $m$ and greater than or equal to 7.5 $m$, respectively. Simulated results using the Newton-Raphson Formulation and a cylindrical obstruction is shown in figure~\ref{fig:ex-gwf-bump-03}. Dry cells are limited to the location of the cylindrical obstruction. Simulated heads for this scenario show the typical characteristics of flow around a cylinder including increased heads on the upstream side of the cylinder and decreased heads on the downstream side of the cylinder. A total of 23.10 $m^3/day$ is discharged to the constant head cells in column 51, which is more than double to discharge rate in the other scenarios as a result of an increase in total simulated horizontal conductance resulting from bottom elevations equal to 0 $m$ except in the location of the cylindrical obstruction.
+
+
+\begin{StandardFigure}{
+                                     Simulated heads and normalized specific discharge vectors for the scenario using 
+                                     the Newton-Raphson Formulation with a cylindrical obstruction. The location of 
+                                     constant head boundary cells is also shown.
+                                     }{fig:ex-gwf-bump-03}{../figures/ex-gwf-bump-03.png}
+\end{StandardFigure}                                 

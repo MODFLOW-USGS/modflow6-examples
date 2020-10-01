@@ -11,6 +11,7 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwf-twri <_notebooks/ex-gwf-twri.ipynb>
    ex-gwf-bcf2ss <_notebooks/ex-gwf-bcf2ss.ipynb>
    ex-gwf-zaidel <_notebooks/ex-gwf-zaidel.ipynb>
+   ex-gwf-bump <_notebooks/ex-gwf-bump.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>

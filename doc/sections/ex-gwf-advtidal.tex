@@ -1,0 +1,46 @@
+\section{Tidal}
+
+% Describe source of problem
+This example demonstrates use of \mf observations and time series and the capability to use multiple stress packages of the same type in a single groundwater flow model.  This is a synthetic example problem that has not been documented elsewhere.
+
+\subsection{Example Description}
+
+% spatial discretization  and temporal discretization
+The problem consists of two aquifers, which are separated from each other by a confining layer. The upper aquifer is unconfined and the lower aquifer is confined.  The confining layer is 15 $m$ thick and is explicitly simulated as model layer 2. The grid consists of 15 rows and 10 columns.  Each cell is 500 $m$ on a side.  A single steady-stress period of 1 day is followed by three 10-day transient stress periods, each with 120 time steps.  Model parameters are listed in table~\ref{tab:ex-gwf-advtidal-01}. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-advtidal-01}
+
+% initial conditions
+An initial head of 50 $m$ was specified in all model layers. Any initial head exceeding the bottom of model layer 1 (5 $m$) could be specified since the model is steady-state.
+
+% boundary conditions
+The model demonstrates use of the GHB, WEL, RIV RCH, and EVT stress packages. Locations for these boundaries are shown in figure~\ref{fig:ex-gwf-advtidal-grid}. The GHB is used to apply a tidally varying boundary condition to the right side of the model in layers 2 and 3.  The GHB Package uses the time series capability to represent  tidally varying stage for these stress boundaries.  Stage values are linearly interpolated to each time step from a time series of tidal fluctuations.  The WEL Package also uses time series to change pumping rates by well according to a time series of pumping records.  The pumping rates are interpolated using the stepwise option, which indicates that rates are held constant at the specified value until a new value is specified.  This is an alternative to the linear interpolation method.  The WEL Package contains pumping rates specified with time series and pumping rates specified with a constant value for the stress period.  A simple RIV Package is also used with time series to change the river stage by time step.  
+
+The RCH and EVT Packages are used to assign and calculate recharge and evapotranspiration, respectively.  Three separate RCH Packages are used in this example to assign a different recharge rate to each of the three zones shown in figure~\ref{fig:ex-gwf-advtidal-grid}D.
+
+\begin{StandardFigure}{
+                                     Model grid and boundary conditions used for the Tidal example problem: (A) river and well boundaries in layer 1;  (B) general-head boundaries in layer 2;  (C) general-head and well boundaries in layer 3; and (D) zones used to assign recharge to layer 1.
+                                     }{fig:ex-gwf-advtidal-grid}{../figures/ex-gwf-advtidal-grid.png}
+\end{StandardFigure}                                 
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The observation capability in \mf was used to extract time series of simulated heads and flows.  Time series of model results are shown in figures~\ref{fig:ex-gwf-advtidal-obs-head}, \ref{fig:ex-gwf-advtidal-obs-flow}, and \ref{fig:ex-gwf-advtidal-ghb-obs}.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated groundwater head in model cell (1, 13, 8).
+                                     }{fig:ex-gwf-advtidal-obs-head}{../figures/ex-gwf-advtidal-obs-head.png}
+\end{StandardFigure}                                 
+
+\begin{StandardFigure}{
+                                     Simulated groundwater flow for model cell (1, 5, 6) and its connection with model cell (1, 6, 6).  Positive values indicate flow into model cell (1, 5, 6).
+                                     }{fig:ex-gwf-advtidal-obs-flow}{../figures/ex-gwf-advtidal-obs-flow}
+\end{StandardFigure}                                 
+
+\begin{StandardFigure}{
+                                     Simulated flow between general-head boundary cells and the groundwater flow model.  ESTUARY2 is the combined flow for all general-head cells in layer 2.  ESTUARY3 is the combined flow for all general-head cells in layer 3.  A positive value represents from from the general-head boundary into the groundwater model.
+                                     }{fig:ex-gwf-advtidal-ghb-obs}{../figures/ex-gwf-advtidal-ghb-obs.png}
+\end{StandardFigure}                                 
