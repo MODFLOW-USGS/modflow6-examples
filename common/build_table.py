@@ -35,9 +35,9 @@ def get_header(caption, label, headings, col_widths=None, center=True):
         dx = 0.8 / float(ncol)
         col_widths = [dx for idx in range(ncol)]
     if center:
-        align = "m"
+        align = "p"
     else:
-        align = "m"
+        align = "p"
 
     header = "\\small\n"
     header += "\\begin{longtable}[!htbp]{\n"

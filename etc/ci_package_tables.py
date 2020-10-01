@@ -51,11 +51,14 @@ def get_examples_list():
 
     return ex_final
 
-def get_example_packages():
+def get_examples_dict():
     ex_list = get_examples_list()
-    ex_paks = {}
+    ex_dict = {}
     for ex_name in ex_list:
+        namefiles = []
+        dimensions = []
         paks = []
+        simulation_paks = []
         rootDir = os.path.join(ex_pth, ex_name)
         for dirName, subdirList, fileList in os.walk(rootDir):
             print('Found directory: {}'.format(dirName))
@@ -66,32 +69,8 @@ def get_example_packages():
                     for pak in sim.sim_package_list:
                         if pak.package_abbr in ("gwfgwf", "gwfgwt",):
                             pak_type = pak.package_abbr
-                            if pak_type not in paks:
-                                paks.append(pak_type)
-                    for model_name in sim.model_names:
-                        model = sim.get_model(model_name)
-                        for pak in model.packagelist:
-                            pak_type = pak.package_type
-                            if pak_type not in paks:
-                                paks.append(pak_type)
-        # add packages for simulation to ex_paks dictionary
-        ex_paks[ex_name] = paks
-    return ex_paks
-
-def get_examples_dict():
-    ex_list = get_examples_list()
-    ex_dict = {}
-    for ex_name in ex_list:
-        namefiles = []
-        dimensions = []
-        paks = []
-        rootDir = os.path.join(ex_pth, ex_name)
-        for dirName, subdirList, fileList in os.walk(rootDir):
-            print('Found directory: {}'.format(dirName))
-            for file_name in fileList:
-                if file_name.lower() == "mfsim.nam":
-                    print('\t{}'.format(file_name))
-                    sim = flopy.mf6.MFSimulation.load(sim_ws=dirName, verbosity_level=0)
+                            if pak_type not in simulation_paks:
+                                simulation_paks.append(pak_type)
                     for model_name in sim.model_names:
                         model = sim.get_model(model_name)
                         namefiles.append(model.namefile)
@@ -110,11 +89,30 @@ def get_examples_dict():
             "namefiles": namefiles,
             "dimensions": dimensions,
             "paks": paks,
+            "simulation_paks": simulation_paks,
         }
     return ex_dict
 
-def build_md_tables(ex_paks):
+def build_md_tables(ex_dict):
+    # determine the order of the examples from the LaTeX document
     ex_order = get_ordered_examples()
+
+    # create a dictionary in the correct order
+    ex_md = {}
+    for ex in ex_order:
+        for key, d in ex_dict.items():
+            if ex in key:
+                ex_md[key] = d
+
+    # build a dictionary with all of the unique packages for a example
+    ex_paks = {}
+    for key, d in ex_md.items():
+        paks = d["simulation_paks"]
+        # add model packages that have not ben added yet
+        for model_paks in d["paks"]:
+            # this is the union of the two lists
+            paks = list(set(paks) | set(model_paks))
+        ex_paks[key] = paks
 
     # build dictionary with hyperlinks
     pak_link = {}
@@ -293,30 +291,33 @@ def build_md_tables(ex_paks):
 
 def build_tex_tables(ex_dict):
     ex_order = get_ordered_examples()
-
     ex_tex = {}
-
-    for ex in ex_order:
+    for idx, ex in enumerate(ex_order):
         for key, d in ex_dict.items():
             if ex in key:
+                ex_number = [idx + 1] + [" " for i in range(len(d["paks"]) - 1)]
+                d["ex_number"] = ex_number
                 ex_tex[key] = d
 
     # build latex table for pdf document
     headings = (
+        "Example",
         "Simulation",
         "Namefile(s)",
         "Grid \\newline Dimensions",
         "Packages",
     )
-    col_widths = (0.22, 0.255, .150, .375,)
+    col_widths = (0.10, 0.22, 0.25, 0.15, 0.28,)
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
     lines = bt.get_header(caption, label, headings, col_widths=col_widths)
 
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):
-        for jdx, (namefile, dimensions, paks) in enumerate(
-                zip(sim_dict["namefiles"],
+        for jdx, (ex_number, namefile, dimensions, paks) in enumerate(
+                zip(
+                    sim_dict["ex_number"],
+                    sim_dict["namefiles"],
                     sim_dict["dimensions"],
                     sim_dict["paks"]
                     )
@@ -324,6 +325,7 @@ def build_tex_tables(ex_dict):
             if idx % 2 != 0:
                 lines += "\t\t\\rowcolor{Gray}\n"
             lines += "\t\t"
+            lines += "{} & ".format(ex_number)
             if jdx == 0:
                 lines += "{} & ".format(key)
             else:
@@ -348,5 +350,4 @@ def build_tex_tables(ex_dict):
 if __name__ == "__main__":
     ex_dict = get_examples_dict()
     build_tex_tables(ex_dict)
-    ex_paks = get_example_packages()
-    build_md_tables(ex_paks)
+    build_md_tables(ex_dict)
