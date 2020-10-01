@@ -165,7 +165,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
     if config.buildModel:
 
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
-        modelname_mf = "p06_mf"
+        modelname_mf = "p06-mf"
 
         # Instantiate the MODFLOW model
         mf = flopy.modflow.Modflow(
@@ -206,7 +206,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         flopy.modflow.ModflowLmt(mf)
 
         # Transport
-        modelname_mt = "p06_mt"
+        modelname_mt = "p06-mt"
         mt = flopy.mt3d.Mt3dms(
             modelname=modelname_mt,
             model_ws=mt3d_ws,
@@ -253,8 +253,8 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         flopy.mt3d.Mt3dGcg(mt)
 
         # MODFLOW 6
-        name = "p06_mf6"
-        gwfname = "gwf_" + name
+        name = "p06-mf6"
+        gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe

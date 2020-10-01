@@ -175,7 +175,7 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
     if config.buildModel:
         print("Building mf2005 model...{}".format(sim_name))
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
-        modelname_mf = "p08_mf"
+        modelname_mf = "p08-mf"
 
         # Instantiate the MODFLOW model
         mf = flopy.modflow.Modflow(

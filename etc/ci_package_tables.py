@@ -1,6 +1,10 @@
 import os
+import sys
 import re
 import flopy
+
+sys.path.append(os.path.join("..", "common"))
+import build_table as bt
 
 ex_pth = os.path.join("..", "examples")
 
@@ -16,12 +20,17 @@ def get_ordered_examples():
     return ex_order
 
 def get_examples_list():
+    # examples to exclude
+    exclude = ("ex-gwf-csub-p02c",)
+
     # get order of examples from body.text
     ex_order = get_ordered_examples()
 
     # get list of all examples
     ex_list = []
     for name in sorted(os.listdir(ex_pth)):
+        if name in exclude:
+            continue
         pth = os.path.join(ex_pth, name)
         if os.path.isdir(pth):
             ex_list.append(name)
@@ -69,7 +78,42 @@ def get_example_packages():
         ex_paks[ex_name] = paks
     return ex_paks
 
-def build_tables(ex_paks):
+def get_examples_dict():
+    ex_list = get_examples_list()
+    ex_dict = {}
+    for ex_name in ex_list:
+        namefiles = []
+        dimensions = []
+        paks = []
+        rootDir = os.path.join(ex_pth, ex_name)
+        for dirName, subdirList, fileList in os.walk(rootDir):
+            print('Found directory: {}'.format(dirName))
+            for file_name in fileList:
+                if file_name.lower() == "mfsim.nam":
+                    print('\t{}'.format(file_name))
+                    sim = flopy.mf6.MFSimulation.load(sim_ws=dirName, verbosity_level=0)
+                    for model_name in sim.model_names:
+                        model = sim.get_model(model_name)
+                        namefiles.append(model.namefile)
+                        dimensions.append(model.modelgrid.shape)
+                        model_paks = []
+                        for pak in model.packagelist:
+                            pak_type = pak.package_type
+                            if pak_type not in model_paks:
+                                model_paks.append(pak_type)
+                                if pak_type == "npf":
+                                    if model.npf.xt3doptions.array:
+                                        model_paks.append("xt3d")
+                        paks.append(model_paks)
+        # add packages for simulation to ex_paks dictionary
+        ex_dict[ex_name] = {
+            "namefiles": namefiles,
+            "dimensions": dimensions,
+            "paks": paks,
+        }
+    return ex_dict
+
+def build_md_tables(ex_paks):
     ex_order = get_ordered_examples()
 
     # build dictionary with hyperlinks
@@ -247,6 +291,62 @@ def build_tables(ex_paks):
 
     f.close()
 
+def build_tex_tables(ex_dict):
+    ex_order = get_ordered_examples()
+
+    ex_tex = {}
+
+    for ex in ex_order:
+        for key, d in ex_dict.items():
+            if ex in key:
+                ex_tex[key] = d
+
+    # build latex table for pdf document
+    headings = (
+        "Simulation",
+        "Namefile(s)",
+        "Grid \\newline Dimensions",
+        "Packages",
+    )
+    col_widths = (0.22, 0.255, .150, .375,)
+    caption = "List of example problems and simulation characteristics."
+    label = "tab:ex-table"
+
+    lines = bt.get_header(caption, label, headings, col_widths=col_widths)
+
+    for idx, (key, sim_dict) in enumerate(ex_tex.items()):
+        for jdx, (namefile, dimensions, paks) in enumerate(
+                zip(sim_dict["namefiles"],
+                    sim_dict["dimensions"],
+                    sim_dict["paks"]
+                    )
+        ):
+            if idx % 2 != 0:
+                lines += "\t\t\\rowcolor{Gray}\n"
+            lines += "\t\t"
+            if jdx == 0:
+                lines += "{} & ".format(key)
+            else:
+                lines += " & "
+            lines += " {} & ".format(namefile.replace("_", "\\_"))
+            lines += " {} & ".format(dimensions)
+
+            # packages
+            pak_line = []
+            for pak in paks:
+                pak_line.append(pak.upper())
+            lines += " ".join(pak_line) + " \\\\\n"
+
+    lines += bt.get_footer()
+
+    # create table
+    pth = os.path.join("..", "tables", "ex-table.tex")
+    f = open(pth, "w")
+    f.write(lines)
+    f.close()
+
 if __name__ == "__main__":
+    ex_dict = get_examples_dict()
+    build_tex_tables(ex_dict)
     ex_paks = get_example_packages()
-    build_tables(ex_paks)
+    build_md_tables(ex_paks)
