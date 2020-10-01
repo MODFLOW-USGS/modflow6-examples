@@ -1,4 +1,10 @@
 % redefine equations, figures, and tables in body
+\newcommand{\inintroduction}{%
+\renewcommand{\thetable}{\arabic{table}}%
+\setcounter{table}{0}%
+}
+
+% redefine equations, figures, and tables in body
 \newcommand{\insection}{%
 \renewcommand{\theequation}{\thesection--\arabic{equation}}%
 \setcounter{equation}{0}%
