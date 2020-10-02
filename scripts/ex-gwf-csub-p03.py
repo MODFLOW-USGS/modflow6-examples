@@ -689,7 +689,7 @@ def export_tables(silent=True):
     if config.plotSave:
         name = list(parameters.keys())[1]
 
-        caption = "Aquifer system properties"
+        caption = "Aquifer properties for example {}.".format(sim_name)
         headings = (
             "Layer",
             "Thickness",
@@ -714,7 +714,7 @@ def export_tables(silent=True):
         col_widths = (0.1, 0.15, 0.30, 0.25)
         bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
-        caption = "Interbed thickness and initial stress conditions"
+        caption = "Interbed properties for example {}.".format(sim_name)
         headings = (
             "Interbed",
             "Layer",
@@ -744,7 +744,7 @@ def export_tables(silent=True):
             caption, fpth, arr, headings=headings
         )
 
-        caption = "Calibrated coarse-grained material storage properties"
+        caption = "Aquifer storage properties for example {}.".format(sim_name)
         headings = (
             "Layer",
             "Specific Storage",
@@ -760,7 +760,7 @@ def export_tables(silent=True):
         col_widths = (0.1, 0.25)
         bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
-        caption = "Calibrated interbed storage properties"
+        caption = "Interbed storage properties for example {}.".format(sim_name)
         headings = (
             "Interbed",
             "Layer",
@@ -782,8 +782,9 @@ def export_tables(silent=True):
             arr["sse"][idx] = bt.exp_format(parameters[name]["sse"][idx])
         if not silent:
             print("creating...'{}'".format(fpth))
+        col_widths = (0.2, 0.2, 0.2, 0.2)
         bt.build_table(
-            caption, fpth, arr, headings=headings
+            caption, fpth, arr, headings=headings, col_widths=col_widths,
         )
 
     return

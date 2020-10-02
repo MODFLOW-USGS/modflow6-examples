@@ -545,7 +545,8 @@ def build_tex_tables(ex_dict):
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
-    lines = bt.get_header(caption, label, headings, col_widths=col_widths)
+    lines = bt.get_header(caption, label, headings,
+                          col_widths=col_widths, firsthead=True)
 
     on_ex = 0
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):
@@ -563,6 +564,9 @@ def build_tex_tables(ex_dict):
             for pak in model_paks:
                 if pak not in paks:
                     paks.append(pak)
+
+            # eliminate any duplicate packages
+            paks = sorted(list(set(paks)))
 
             # separate examples by a line
             if isinstance(ex_number, int):
