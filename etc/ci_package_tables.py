@@ -9,6 +9,7 @@ import build_table as bt
 ex_pth = os.path.join("..", "examples")
 
 def get_ordered_examples():
+    print("creating a ordered list of examples from the LaTeX document")
     # get order of examples from body.text
     ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
     ex_order = []
@@ -20,6 +21,7 @@ def get_ordered_examples():
     return ex_order
 
 def get_examples_list():
+    print("creating a list of available examples")
     # examples to exclude
     exclude = ("ex-gwf-csub-p02c",)
 
@@ -52,6 +54,7 @@ def get_examples_list():
     return ex_final
 
 def get_examples_dict():
+    print("creating dictionary with examples information")
     ex_list = get_examples_list()
     ex_dict = {}
     for ex_name in ex_list:
@@ -66,11 +69,12 @@ def get_examples_dict():
                 if file_name.lower() == "mfsim.nam":
                     print('\t{}'.format(file_name))
                     sim = flopy.mf6.MFSimulation.load(sim_ws=dirName, verbosity_level=0)
+                    sim_paks = []
                     for pak in sim.sim_package_list:
-                        if pak.package_abbr in ("gwfgwf", "gwfgwt",):
-                            pak_type = pak.package_abbr
-                            if pak_type not in simulation_paks:
-                                simulation_paks.append(pak_type)
+                        # if pak.package_abbr in ("gwfgwf", "gwfgwt",):
+                        pak_type = pak.package_abbr
+                        if pak_type not in simulation_paks:
+                            sim_paks.append(pak_type)
                     for model_name in sim.model_names:
                         model = sim.get_model(model_name)
                         namefiles.append(model.namefile)
@@ -83,6 +87,7 @@ def get_examples_dict():
                                 if pak_type == "npf":
                                     if model.npf.xt3doptions.array:
                                         model_paks.append("xt3d")
+                        simulation_paks.append(sim_paks)
                         paks.append(model_paks)
         # add packages for simulation to ex_paks dictionary
         ex_dict[ex_name] = {
@@ -94,6 +99,7 @@ def get_examples_dict():
     return ex_dict
 
 def build_md_tables(ex_dict):
+    print("building markdown tables for ReadtheDocs")
     # determine the order of the examples from the LaTeX document
     ex_order = get_ordered_examples()
 
@@ -107,7 +113,7 @@ def build_md_tables(ex_dict):
     # build a dictionary with all of the unique packages for a example
     ex_paks = {}
     for key, d in ex_md.items():
-        paks = d["simulation_paks"]
+        paks = d["simulation_paks"][0]
         # add model packages that have not ben added yet
         for model_paks in d["paks"]:
             # this is the union of the two lists
@@ -290,6 +296,7 @@ def build_md_tables(ex_dict):
     f.close()
 
 def build_tex_tables(ex_dict):
+    print("building LaTeX table for mf6examples.tex introduction")
     ex_order = get_ordered_examples()
     ex_tex = {}
     for idx, ex in enumerate(ex_order):
@@ -313,19 +320,37 @@ def build_tex_tables(ex_dict):
 
     lines = bt.get_header(caption, label, headings, col_widths=col_widths)
 
+    on_ex = 0
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):
-        for jdx, (ex_number, namefile, dimensions, paks) in enumerate(
+        for jdx, (ex_number, namefile, dimensions, model_paks, sim_paks) in enumerate(
                 zip(
                     sim_dict["ex_number"],
                     sim_dict["namefiles"],
                     sim_dict["dimensions"],
-                    sim_dict["paks"]
+                    sim_dict["paks"],
+                    sim_dict["simulation_paks"],
                     )
         ):
-            if idx % 2 != 0:
+            # union of sim_paks and model_paks to create unique list of packages
+            paks = sim_paks
+            for pak in model_paks:
+                if pak not in paks:
+                    paks.append(pak)
+
+            # separate examples by a line
+            if isinstance(ex_number, int):
+                if ex_number > on_ex:
+                    on_ex = ex_number
+                    include_idx = True
+                    lines += "\t\t\\hline\n"
+            if on_ex % 2 == 0:
                 lines += "\t\t\\rowcolor{Gray}\n"
             lines += "\t\t"
-            lines += "{} & ".format(ex_number)
+            if include_idx:
+                include_idx = False
+                lines += "{} & ".format(ex_number)
+            else:
+                lines += " & "
             if jdx == 0:
                 lines += "{} & ".format(key)
             else:

@@ -57,6 +57,17 @@ def get_header(caption, label, headings, col_widths=None, center=True):
             header += " & "
     header += "  \\\\\n"
     header +=  "\t\\hline\n"
+    header +=  "\t\\endfirsthead\n\n"
+
+    header += "\t\\hline \\hline\n"
+    header +=  "\t\\rowcolor{Gray}\n"
+    header += "\t"
+    for idx, s in enumerate(headings):
+        header += "\\textbf{{{}}}".format(s)
+        if idx < len(headings) - 1:
+            header += " & "
+    header += "  \\\\\n"
+    header +=  "\t\\hline\n"
     header +=  "\t\\endhead\n\n"
 
     return header

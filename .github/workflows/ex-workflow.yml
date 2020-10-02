@@ -82,13 +82,6 @@ jobs:
           python ci_build_files.py --zip
           cd ..
 
-      - name: Run script to create the LaTeX package summary table
-        shell: bash
-        run: |
-          cd ./etc/
-          python ci_package_tables.py
-          cd ..
-
       - name: Run scripts plus processing script
         shell: bash
         run: |

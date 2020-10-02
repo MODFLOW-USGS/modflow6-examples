@@ -103,7 +103,6 @@ jobs:
         shell: bash
         run: |
           cd ./etc/
-          python ci_package_tables.py
           python ci_create_examples_rst.py
           cd ..
 
