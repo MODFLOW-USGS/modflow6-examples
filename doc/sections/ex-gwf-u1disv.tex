@@ -1,0 +1,47 @@
+\section{Nested Grid Problem}
+
+% Describe source of problem
+This example reproduces the nested grid problem described in the MODFLOW-USG documentation \citep{modflowusg}.  The problem is recreated here using the Discretization by Vertices (DISV) input and is run with the standard groundwater flow formulation and the XT3D  formulation \citep{modflow6xt3d}, which provides more accurate results for nested grids.  
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+The problem consists of a nested grid as shown in figure~\ref{fig:ex-gwf-u1disv-grid}.  The outer grid has cells that are 100 $m$ on a side; the nested grid has cells with sides that are 1/3 this length.  Cells and vertices are numbered in figure~\ref{fig:ex-gwf-u1disv-grid} and can be compared to the vertices and cell information listed in the input file for the DISV Package.  The top of the model is uniform and set to zero (table~\ref{tab:ex-gwf-u1disv-01}).  The bottom of the model is also uniform, and is set to -100 $m$.  The simulation consists of a single steady-state stress period with a length of one day.  The simulation starts with an initial head of zero. 
+
+Constant-heads are assigned a value of 1.0 $m$ on the left side of the model and 0.0 $m$ on the right side of the model.  
+
+
+\begin{StandardFigure}{
+                                     Model grid used for the nested grid problem.  Constant-head cells are marked in blue.  Cell numbers are shown inside each model cell.  Vertices are also numbered and are shown in red.  
+                                     }{fig:ex-gwf-u1disv-grid}{../figures/ex-gwf-u1disv-grid.png}
+\end{StandardFigure}                                 
+
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-u1disv-01.tex}
+
+% for examples without scenarios
+\subsection{Scenario Results}
+
+The nested grid problem was run with the standard groundwater flow formulation and the XT3D formulation \citep{modflow6xt3d} (table~\ref{tab:ex-gwf-u1disv-scenario}). 
+
+% scenario table
+\input{../tables/ex-gwf-u1disv-scenario.tex}
+
+\subsubsection{Standard Groundwater Flow Formulation}
+
+Model results for the simulation with the standard groundwater flow formulation are shown in figure~\ref{fig:ex-gwf-u1disv-head}.  Flow is from left to right and should be perfectly one dimensional.  The head surface should represent a flat plane with a value of 1.0 on the left and zero on the right.  Because the configuration of a nested grid violates the control-volume finite-difference assumptions, there are errors in the simulated heads as shown in figure~\ref{fig:ex-gwf-u1disv-head}B.  Head errors are larger than solution tolerances.
+
+\begin{StandardFigure}{
+                                     Simulated head (A) and errors in simulated head (B) for the nested grid problem simulated with the standard groundwater flow formulation.
+                                     }{fig:ex-gwf-u1disv-head}{../figures/ex-gwf-u1disv-head.png}
+\end{StandardFigure}                                 
+
+\subsubsection{XT3D}
+
+Model results for the simulation with the XT3D groundwater flow formulation \citep{modflow6xt3d} are shown in figure~\ref{fig:ex-gwf-u1disv-x-head}.  In this simulation, the XT3D formulation gives a much better solution than the standard groundwater flow formulation.  Errors in simulated head (figure~\ref{fig:ex-gwf-u1disv-x-head}B) are smaller than the tolerances used for the problem.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated head (A) and errors in simulated head (B) for the nested grid problem simulated with the XT3D groundwater flow formulation \citep{modflow6xt3d}.
+                                     }{fig:ex-gwf-u1disv-x-head}{../figures/ex-gwf-u1disv-x-head.png}
+\end{StandardFigure} 
