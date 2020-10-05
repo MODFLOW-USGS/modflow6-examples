@@ -15,8 +15,6 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import flopy
-from shapely.geometry import Polygon
-from flopy.utils.gridintersect import GridIntersect
 
 # Append to system path to include the common subdirectory
 

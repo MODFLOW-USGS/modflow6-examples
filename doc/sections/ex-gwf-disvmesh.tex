@@ -1,0 +1,34 @@
+\section{Circular Island with Triangular Mesh}
+
+% Describe source of problem
+This example shows how a triangular mesh can be used to simulate a circular island.  This is a synthetic example problem that has not been documented elsewhere.
+
+\subsection{Example Description}
+
+% spatial discretization  and temporal discretization
+The problem consists of a simple two-layer model representing groundwater flow in a circular island.  The island has a radius of 1025 $m$.  The extent of the grid extends out to 1500 $m$ from the island center.  The grid consists of 5240 triangular cells and 2778 vertices per layer.  The grid was created using an external mesh generator.  Vertices and cell definitions are provided to \mf using the Discretization by Vertices (DISV) Package.  There is a single steady-state stress period with a length of 1 day.   Model parameters are listed in table~\ref{tab:ex-gwf-disvmesh-01}. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-disvmesh-01}
+
+% initial conditions
+An initial head of 0 $m$ was specified for the model.  The value is not important as the model is steady state.
+
+% boundary conditions
+Recharge is assigned to cells in layer one that are within the 1025 $m$ radius of the island.  Outside the island, general-head boundaries (GHB) are assigned with a stage of zero.  GHB locations are shown in cyan in figure~\ref{fig:ex-gwf-disvmesh-grid}. Cells not colored in figure~\ref{fig:ex-gwf-disvmesh-grid} are assigned recharge.   
+
+\begin{StandardFigure}{
+                                     Model grid and boundary conditions used for the circular island problem.  General-head boundaries are shown in blue, and represent an off-shore boundary condition.  Cell not colored represent the island and are assigned groundwater recharge.
+                                     }{fig:ex-gwf-disvmesh-grid}{../figures/ex-gwf-disvmesh-grid.png}
+\end{StandardFigure}                                 
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Simulated heads for model layers 1 and 2 are shown in figure~\ref{fig:ex-gwf-disvmesh-head}.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated groundwater head in (A) model layer  1 and (B) model layer 2.
+                                     }{fig:ex-gwf-disvmesh-head}{../figures/ex-gwf-disvmesh-head.png}
+\end{StandardFigure}                                 
