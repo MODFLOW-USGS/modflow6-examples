@@ -213,7 +213,7 @@ def plot_head(idx, sim):
     cb = pmv.plot_array(0 - head, cmap="jet", alpha=0.25)
     cs = pmv.contour_array(0 - head, levels=np.arange(0.1, 1, 0.1))
     cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
+    cbar.ax.set_xlabel(r"Drawdown, ($m$)")
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
 

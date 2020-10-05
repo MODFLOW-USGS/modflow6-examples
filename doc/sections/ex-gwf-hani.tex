@@ -1,28 +1,27 @@
 \section{Hani Problem}
 
 % Describe source of problem
-This problem simulates groundwater flow to a pumping well under anisotropic conditions.  This is a synthetic example problem that has not been documented elsewhere. 
+This problem simulates groundwater flow to a pumping well under horizontally anisotropic groundwater flow conditions.  This is a synthetic example problem that has not been documented elsewhere. 
 
 \subsection{Example Description}
+
 % spatial discretization  and temporal discretization
 Model parameters for the example are summarized in table~\ref{tab:ex-gwf-hani-01}. The model consists of a grid of 51 columns, 51 rows, and 1 layer. The discretization is 10 $m$ in the row and column direction for all cells (fig.~\ref{fig:ex-gwf-hanir-grid}). The top of the aquifer is zero and the bottom elevation of the aquifer is -10 $m$. A single steady-stress period with a total length of 1 day is simulated.
 
+% add static parameter table(s)
+\input{../tables/ex-gwf-hani-01.tex}
 
 \begin{StandardFigure}{
                                      Model grid and boundary conditions used for the horizontal anisotropy problem.  Blue cells are constant-head cells and the pumping well is located in the cell shown in red.
                                      }{fig:ex-gwf-hanir-grid}{../figures/ex-gwf-hanir-grid.png}
 \end{StandardFigure}                                 
 
-
-% add static parameter table(s)
-\input{../tables/ex-gwf-hani-01.tex}
-
 For this problem, hydraulic conductivity is anisotropic with K11 specified as 100 times larger than K22.  For the first scenario the hydraulic conductivity ellipse is not rotated.  For the second scenario, the ellipse is rotated 25 degrees counter clockwise in the horizontal plane.  Because the ellipse axes do not align with the model grid, the XT3D option \citep{modflow6xt3d} is required to simulate this scenario.  For the third scenario, the ellipse is rotated 90 degrees, so that groundwater flows more easily in the column direction.  
 
 % scenario table
 \input{../tables/ex-gwf-hani-scenario.tex}
 
-An initial head of zero was specified in all model cells. Constant head boundary cells with a value of zero were specified for all perimeter model cells.
+An initial head of zero was specified in all model cells. Constant head boundary cells with a value of zero were specified for all perimeter model cells.  A pumping well with a rate of -1.0 $m^3/d$ is located in the center of the model domain.
 
 % for examples without scenarios
 \subsection{Scenario Results}
@@ -30,17 +29,17 @@ An initial head of zero was specified in all model cells. Constant head boundary
 Simulated drawdown for the three scenarios are shown in figures~\ref{fig:ex-gwf-hanir-head},  \ref{fig:ex-gwf-hanix-head}, and \ref{fig:ex-gwf-hanic-head}.
 
 \begin{StandardFigure}{
-                                     Simulated drawdown for anisotropic groundwater flow to a pumping well.  The dominant hydraulic conductivity ellipse is aligned with the x-axis.
+                                     Simulated drawdown for anisotropic groundwater flow to a pumping well for scenario 1.  The dominant hydraulic conductivity ellipse is aligned with the x-axis.
                                      }{fig:ex-gwf-hanir-head}{../figures/ex-gwf-hanir-head.png}
 \end{StandardFigure}                                 
 
 \begin{StandardFigure}{
-                                     Simulated drawdown for anisotropic groundwater flow to a pumping well.  The dominant hydraulic conductivity ellipse axis is rotated 25 degrees counter clockwise from the x-axis.  The XT3D option is required for this scenario because the ellipse axes do not align with the row and column directions.
+                                     Simulated drawdown for anisotropic groundwater flow to a pumping well for scenario 2.  The dominant hydraulic conductivity ellipse axis is rotated 25 degrees counter clockwise from the x-axis.  The XT3D option is required for this scenario because the ellipse axes do not align with the row and column directions.
                                      }{fig:ex-gwf-hanix-head}{../figures/ex-gwf-hanix-head.png}
 \end{StandardFigure}                                 
 
 \begin{StandardFigure}{
-                                     Simulated drawdown for anisotropic groundwater flow to a pumping well.  The dominant hydraulic conductivity ellipse axis is rotated 90 degrees counter clockwise from the x-axis so that the ellipse axes align with the column and row directions.
+                                     Simulated drawdown for anisotropic groundwater flow to a pumping well for scenario 3.  The dominant hydraulic conductivity ellipse axis is rotated 90 degrees counter clockwise from the x-axis so that the ellipse axes align with the column and row directions.
                                      }{fig:ex-gwf-hanic-head}{../figures/ex-gwf-hanic-head.png}
 \end{StandardFigure}                                 
 
