@@ -1,0 +1,30 @@
+\section{Groundwater Whirls}
+
+% Describe source of problem
+This problem is based on the first whirl problem described by \cite{modflow6xt3d}.  Using steady-state groundwater flow simulations, \citet{hemker2004ground} have shown that ``spiraling flow lines occur in layered aquifers that have different anisotropic horizontal hydraulic conductivities in adjacent layers.'' They refer to such spiraling flow lines as ``groundwater whirls.'' This example demonstrates the use of the XT3D option to implement anisotropy that induces groundwater whirls in a highly idealized two-aquifer system. 
+
+\subsection{Example Description}
+
+% spatial discretization  and temporal discretization
+The model domain (fig.~\ref{fig:whirl}) is a box that is 5,100 m by 1,000 m horizontally and 1,000 m thick, discretized into a regular grid of 10 rows, 51 columns, and 10 layers. The top five model layers form the top aquifer, and the bottom five model layers form the bottom aquifer. All cells are confined. Aquifer properties are homogeneous within each aquifer but differ between the aquifers. Groundwater recharges one end of the box at a total rate of 1 m$^{3}$/d, distributed equally among 100 cells, and is removed from the opposite end of the box at the same rate, also distributed equally among 100 cells.  There is a single steady-state stress period with a length of 1 day.   Model parameters are listed in table~\ref{tab:ex-gwf-whirl-01}. An initial head of 0 $m$ was specified for the model.  The value is not important as the model is steady state.
+
+The simulation reported, which corresponds to the first whirl problem presented by \cite{modflow6xt3d} here uses 10:1 horizontal anisotropy ($K11 = K33 =$ 1 m/d, $K22 =$ 0.1 m/d) rotated 45 degrees counterclockwise from the $x$ axis in the top aquifer and 45 degrees clockwise from the $x$ axis in the bottom aquifer.
+
+\begin{StandardFigure}{
+                                     Diagram showing the model domain for the whirl problem, which consists of a three-dimensional box with two hydrogeologic units (light and dark shading). Groundwater is injected into one end of the box (column 1, pink shading) at a rate of 0.01 cubic meters per day ($m^3/d$) into each cell and is removed from the opposite end of the box (column 51, pink shading) at a rate of 0.01 $m^3/d$ from each cell.  From \cite{modflow6xt3d}.
+                                     }{fig:whirl}{../images/whirl.png}
+\end{StandardFigure}                                 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-whirl-01}
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The whirl flow pattern is shown by plotting specific discharge vectors in cross section for column 1 (fig.~\ref{fig:ex-gwf-whirl-spdis}).  
+
+% a figure
+\begin{StandardFigure}{
+                                     Cross section showing vectors of specific discharge for column 1 of the groundwater whirl problem.  Vectors show the swirling flow pattern caused by the contrast in the hydraulic conductivity ellipsoid which occurs and the interface between model layer 5 and model layer 6.
+                                     }{fig:ex-gwf-whirl-spdis}{../figures/ex-gwf-whirl-spdis.png}
+\end{StandardFigure}                                 
