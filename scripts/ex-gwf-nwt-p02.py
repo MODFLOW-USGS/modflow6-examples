@@ -92,7 +92,7 @@ botm = np.arange(65., -5., 5.)
 
 # Create icelltype (which is the same as iconvert)
 
-icelltype
+icelltype = 9 * [1] + 5 * [0]
 
 fpth = os.path.join("..", "data", sim_name, "bottom.txt")
 botm = np.loadtxt(fpth).reshape(shape3d)
