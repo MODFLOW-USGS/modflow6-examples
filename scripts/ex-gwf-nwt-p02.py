@@ -24,7 +24,7 @@ from figspecs import USGSFigure
 
 # Set figure properties
 
-figure_size = (4, 5.33)
+figure_size = (6.3, 6.3)
 masked_values = (1e30, -1e30)
 
 # Base simulation and model name and workspace
@@ -46,12 +46,12 @@ parameters = {
     "ex-gwf-nwt-p02a": {
         "newton": True,
     },
-    "ex-gwf-bump-p02b": {
+    "ex-gwf-nwt-p02b": {
         "rewet": True,
-        "wetfct": 1.0,
+        "wetfct": 0.5,
         "iwetit": 1,
-        "ihdwet": 0,
-        "wetdry": 2.0,
+        "ihdwet": 1,
+        "wetdry": -0.5,
     },
 }
 
@@ -68,7 +68,7 @@ k11 = 5.0  # Horizontal hydraulic conductivity ($ft/day$)
 k33 = 0.25  # Horizontal hydraulic conductivity ($ft/day$)
 ss = 0.0002  # Specific storage ($1/day$)
 sy = 0.2  # Specific yield (unitless)
-H1 = 25  # Constant head along left and lower edges and starting head ($ft$)
+H1 = 25.  # Constant head along left and lower edges and starting head ($ft$)
 rech = 0.05 # Recharge rate ($ft/day$)
 
 
@@ -83,36 +83,38 @@ tdis_ds = (
 
 # Calculate extents, and shape3d
 
-extents = (0, delr * ncol, 0, delc * nrow)
+extents = (0, delr * ncol, 20, 65)
 shape3d = (nlay, nrow, ncol)
 
 # Create the bottom
 
-botm = np.arange(65., -5., 5.)
+botm = np.arange(65., -5., -5.)
 
 # Create icelltype (which is the same as iconvert)
 
 icelltype = 9 * [1] + 5 * [0]
 
-fpth = os.path.join("..", "data", sim_name, "bottom.txt")
-botm = np.loadtxt(fpth).reshape(shape3d)
-
-# create a cylinder
-
-cylinder = botm.copy()
-cylinder[cylinder < 7.5] = 0.0
-cylinder[cylinder >= 7.5] = 20.0
-
 # Constant head boundary conditions
-chd_spd = [[0, i, 0, H1] for i in range(nrow)]
-chd_spd += [[0, i, ncol - 1, H2] for i in range(nrow)]
+
+chd_spd = []
+for k in range(9, nlay, 1):
+    chd_spd += [[k, i, ncol-1, H1] for i in range(nrow-1)]
+    chd_spd += [[k, nrow - 1, j, H1] for j in range(ncol)]
+
+
+# Recharge boundary conditions
+
+rch_spd = []
+for i in range(0, 2, 1):
+    for j in range(0, 2, 1):
+        rch_spd.append([0, i, j, rech])
 
 # Solver parameters
 
 nouter = 500
-ninner = 500
-hclose = 1e-9
-rclose = 1e-6
+ninner = 100
+hclose = 1e-6
+rclose = 1000.
 
 # ### Functions to build, write, run, and plot the model
 #
@@ -123,7 +125,6 @@ def build_model(
     name,
     newton=False,
     rewet=False,
-    cylindrical=False,
     wetfct=None,
     iwetit=None,
     ihdwet=None,
@@ -138,16 +139,19 @@ def build_model(
             sim, nper=nper, perioddata=tdis_ds, time_units=time_units
         )
         if newton:
-            linear_acceleration = "bicgstab"
-            newtonoptions = "under_relaxation"
+            newtonoptions = " "
+            no_ptc = "ALL"
+            complexity = "complex"
         else:
-            linear_acceleration = "cg"
             newtonoptions = None
+            no_ptc = None
+            complexity = "simple"
 
         flopy.mf6.ModflowIms(
             sim,
-            print_option="ALL",
-            linear_acceleration=linear_acceleration,
+            complexity=complexity,
+            print_option="SUMMARY",
+            no_ptcrecord=no_ptc,
             outer_maximum=nouter,
             outer_dvclose=hclose,
             inner_maximum=ninner,
@@ -158,12 +162,7 @@ def build_model(
             sim,
             modelname=sim_name,
             newtonoptions=newtonoptions,
-            save_flows=True,
         )
-        if cylindrical:
-            bot = cylinder
-        else:
-            bot = botm
         flopy.mf6.ModflowGwfdis(
             gwf,
             length_units=length_units,
@@ -173,7 +172,7 @@ def build_model(
             delr=delr,
             delc=delc,
             top=top,
-            botm=bot,
+            botm=botm,
         )
         if rewet:
             rewet_record = [
@@ -184,26 +183,28 @@ def build_model(
                 "ihdwet",
                 ihdwet,
             ]
+            wetdry = 9 * [wetdry] + 5 * [0]
         else:
             rewet_record = None
         flopy.mf6.ModflowGwfnpf(
             gwf,
             rewet_record=rewet_record,
-            icelltype=1,
+            icelltype=icelltype,
             k=k11,
+            k33=k33,
             wetdry=wetdry,
-            save_specific_discharge=True,
         )
+        flopy.mf6.ModflowGwfsto(gwf, iconvert=icelltype, ss=ss, sy=sy,
+                                steady_state={3:True},)
         flopy.mf6.ModflowGwfic(gwf, strt=H1)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+        flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd)
 
         head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+            saverecord=[("HEAD", "LAST")],
         )
         return sim
     return None
@@ -230,235 +231,119 @@ def run_model(sim, silent=True):
 
     return success
 
+# Create a water-table array
 
-# Function to create a figure
-
-
-def create_figure():
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
-
-    # create axes
-    ax1 = fig.add_subplot(gs[:5, :])
-    ax2 = fig.add_subplot(gs[5:, :])
-
-    # set limits for map figure
-    ax1.set_xlim(extents[:2])
-    ax1.set_ylim(extents[2:])
-    ax1.set_aspect("equal")
-
-    # set limits for legend area
-    ax2.set_xlim(0, 1)
-    ax2.set_ylim(0, 1)
-
-    # get rid of ticks and spines for legend area
-    ax2.axis("off")
-    ax2.set_xticks([])
-    ax2.set_yticks([])
-    ax2.spines["top"].set_color("none")
-    ax2.spines["bottom"].set_color("none")
-    ax2.spines["left"].set_color("none")
-    ax2.spines["right"].set_color("none")
-    ax2.patch.set_alpha(0.0)
-
-    axes = [ax1, ax2]
-
-    return fig, axes
-
-
-# Function to plot the grid
-
-
-def plot_grid(gwf, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-
-    bot = gwf.dis.botm.array
-
-    fig, axes = create_figure()
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    bot_coll = mm.plot_array(bot, cmap="viridis", vmin=bmin, vmax=bmax)
-    mm.plot_bc("CHD", color="cyan")
-    cv = mm.contour_array(
-        bot,
-        levels=blevels,
-        linewidths=0.5,
-        linestyles=":",
-        colors=bcolor,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    ax.set_xlabel("x-coordinate, in meters")
-    ax.set_ylabel("y-coordinate, in meters")
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="cyan",
-        mec="cyan",
-        label="Constant Head",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls=":",
-        color=bcolor,
-        label="Bottom elevation contour, m",
-    )
-    fs.graph_legend(ax, loc="center", ncol=2)
-
-    cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-    cbar = plt.colorbar(
-        bot_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        cax=cax,
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Bottom Elevation, $m$")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            "{}-grid{}".format(sim_name, config.figure_ext),
-        )
-        fig.savefig(fpth)
-
-    return
+def get_water_table(h, bot):
+    imask = (h > -1e30) & (h <= bot)
+    h[imask] = -1e30
+    return np.amax(h, axis=0)
 
 
 # Function to plot the model results.
 
 
-def plot_results(idx, sim, silent=True):
+def plot_results(silent=True):
     verbose = not silent
+    if verbose:
+        verbosity_level = 1
+    else:
+        verbosity_level = 0
+
     if config.plotModel:
         fs = USGSFigure(figure_type="map", verbose=verbose)
-        name = list(parameters.keys())[idx]
+
+        # load the newton model
+        name = list(parameters.keys())[0]
         sim_ws = os.path.join(ws, name)
+        sim = flopy.mf6.MFSimulation.load(sim_name=sim_name, sim_ws=sim_ws,
+                                          verbosity_level=verbosity_level)
         gwf = sim.get_model(sim_name)
-
         bot = gwf.dis.botm.array
-
-        if idx == 0:
-            plot_grid(gwf, silent=silent)
+        xnode = gwf.modelgrid.xcellcenters[0, :]
 
         # create MODFLOW 6 head object
         file_name = gwf.oc.head_filerecord.get_data()[0][0]
         fpth = os.path.join(sim_ws, file_name)
         hobj = flopy.utils.HeadFile(fpth)
 
-        # create MODFLOW 6 cell-by-cell budget object
-        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
+        # get a list of times
+        times = hobj.get_times()
+
+        # load rewet model
+        name = list(parameters.keys())[1]
+        sim_ws = os.path.join(ws, name)
+
+        # create MODFLOW 6 head object
+        file_name = gwf.oc.head_filerecord.get_data()[0][0]
         fpth = os.path.join(sim_ws, file_name)
-        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        hobj1 = flopy.utils.HeadFile(fpth)
 
-        # extract heads and specific discharge
-        head = hobj.get_data(totim=1.0)
-        imask = (head > -1e30) & (head <= bot)
-        head[imask] = -1e30  # botm[imask]
-        spdis = cobj.get_data(text="DATA-SPDIS", totim=1.0)
+         # Create figure for simulation
+        fig, axes = plt.subplots(ncols=1, nrows=4, sharex=True,
+                                figsize=figure_size, constrained_layout=False)
 
-        # Create figure for simulation
-        fig, axes = create_figure()
+        # plot the results
+        for idx, ax in enumerate(axes):
 
-        ax = axes[0]
-        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-        if bot.max() < 20:
-            cv = mm.contour_array(
-                bot,
-                levels=blevels,
-                linewidths=0.5,
-                linestyles=":",
-                colors=bcolor,
-                zorder=9,
-            )
-            plt.clabel(cv, fmt="%1.0f", zorder=9)
-        h_coll = mm.plot_array(
-            head, vmin=vmin, vmax=vmax, masked_values=masked_values, zorder=10
+            # extract heads and specific discharge for newton model
+            head = hobj.get_data(totim=times[idx])
+            head = get_water_table(head, bot)
+
+            # extract heads and specific discharge for newton model
+            head1 = hobj1.get_data(totim=times[idx])
+            head1 = get_water_table(head1, bot)
+
+            # calculate mean error
+            diff = np.abs(head - head1)
+            # print("max", diff.max(), np.argmax(diff))
+            me = diff.sum() / float(ncol * nrow)
+            me_text = "Mean absolute water-table error {:.3f} feet".format(me)
+
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            mm = flopy.plot.PlotCrossSection(model=gwf, ax=ax,
+                                             extent=extents, line={"row": 1})
+            mm.plot_bc("CHD", color="cyan")
+            mm.plot_grid(lw=0.5)
+            ax.plot(xnode, head[0, :], lw=0.75, color="black", label="Newton-Raphson")
+            ax.plot(xnode, head1[0, :], lw=0, marker="o", ms=4, mfc="none", mec="blue",
+                    label="Rewetting")
+            if idx == 0:
+                ax.plot(-1000, -1000, lw=0, marker="s", ms=4, mec="0.5", mfc="none",
+                        label="Model cell")
+                ax.plot(-1000, -1000, lw=0, marker="s", ms=4, mec="0.5", mfc="cyan",
+                        label="Constant head")
+                fs.graph_legend(ax, loc="upper right", ncol=2,
+                                frameon=True, facecolor="white", edgecolor="none")
+            letter = chr(ord("@") + idx + 1)
+            fs.heading(letter=letter, ax=ax)
+            fs.add_text(ax, text=me_text, x=1, y=1.01, ha="right", bold=False)
+            fs.remove_edge_ticks(ax)
+
+            # set fake y-axis label
+            ax.set_ylabel(" ")
+
+        # set fake x-axis label
+        ax.set_xlabel(" ")
+
+        ax = fig.add_subplot(1, 1, 1, frameon=False)
+        ax.tick_params(
+            labelcolor="none", top="off", bottom="off", left="off", right="off"
         )
-        cv = mm.contour_array(
-            head,
-            masked_values=masked_values,
-            levels=vlevels,
-            linewidths=0.5,
-            linestyles="-",
-            colors=vcolor,
-            zorder=10,
-        )
-        plt.clabel(cv, fmt="%1.0f", zorder=10)
-        mm.plot_bc("CHD", color="cyan", zorder=11)
-        mm.plot_specific_discharge(
-            spdis, normalize=True, color="0.75", zorder=11
-        )
-        ax.set_xlabel("x-coordinate, in meters")
-        ax.set_ylabel("y-coordinate, in meters")
+        ax.set_xlim(0, 1)
+        ax.set_xticks([0, 1])
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylim(0, 1)
+        ax.set_yticks([0, 1])
+        ax.set_ylabel("Water-table elevation above arbitrary datum, in meters")
         fs.remove_edge_ticks(ax)
-
-        # create legend
-        ax = axes[-1]
-        ax.plot(
-            -10000,
-            -10000,
-            lw=0,
-            marker="s",
-            ms=10,
-            mfc="cyan",
-            mec="cyan",
-            label="Constant Head",
-        )
-        ax.plot(
-            -10000,
-            -10000,
-            lw=0,
-            marker=u"$\u2192$",
-            ms=10,
-            mfc="0.75",
-            mec="0.75",
-            label="Normalized specific discharge",
-        )
-        if bot.max() < 20:
-            ax.plot(
-                -10000,
-                -10000,
-                lw=0.5,
-                ls=":",
-                color=bcolor,
-                label="Bottom elevation contour, m",
-            )
-        ax.plot(
-            -10000,
-            -10000,
-            lw=0.5,
-            ls="-",
-            color=vcolor,
-            label="Head contour, m",
-        )
-        fs.graph_legend(ax, loc="center", ncol=2)
-
-        cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-        cbar = plt.colorbar(
-            h_coll, shrink=0.8, orientation="horizontal", cax=cax
-        )
-        cbar.ax.tick_params(size=0)
-        cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
 
         # save figure
         if config.plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{:02d}{}".format(sim_name, idx + 1, config.figure_ext),
+                "{}-01{}".format(sim_name, config.figure_ext),
             )
             fig.savefig(fpth)
 
@@ -481,9 +366,8 @@ def simulation(idx, silent=True):
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
+    assert success, "could not run...{}".format(key)
 
-    if success:
-        plot_results(idx, sim, silent=silent)
 
 
 # nosetest - exclude block from this nosetest to the next nosetest
@@ -494,25 +378,23 @@ def test_01():
 def test_02():
     simulation(1, silent=False)
 
-
-def test_03():
-    simulation(2, silent=False)
+def test_plot_results(silent=False):
+    plot_results(silent=silent)
 
 
 # nosetest end
 
 if __name__ == "__main__":
-    # ### Zaidel Simulation
+    # ### MODFLOW-NWT Problem 2 Simulation
     #
-    # Simulated heads in the flow diversion model with Newton-Raphson.
+    # Newton-Raphson.
 
     simulation(0)
 
-    # Simulated heads in the flow diversion model with rewetting.
+    # Rewetting.
 
     simulation(1)
 
-    # Simulated heads in the flow diversion model with Newton-Raphson and
-    # cylinderical topography.
+    # Plot results
 
-    simulation(2)
+    plot_results()

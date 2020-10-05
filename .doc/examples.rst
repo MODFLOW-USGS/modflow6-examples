@@ -11,8 +11,12 @@ MODFLOW 6 – Example problems
    _examples/ex-gwf-bcf2ss.rst
    _examples/ex-gwf-advtidal.rst
    _examples/ex-gwf-fhb.rst
+   _examples/ex-gwf-u1disv.rst
+   _examples/ex-gwf-nwt-p02.rst
    _examples/ex-gwf-zaidel.rst
    _examples/ex-gwf-bump.rst
+   _examples/ex-gwf-disvmesh.rst
+   _examples/ex-gwf-hani.rst
    _examples/ex-gwf-lgr.rst
    _examples/ex-gwf-csub-p01.rst
    _examples/ex-gwf-csub-p02.rst

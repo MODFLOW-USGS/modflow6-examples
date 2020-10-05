@@ -1,0 +1,47 @@
+\section{\mfn Problem 2}
+
+% Describe source of problem
+This example is based on problem 2 in \cite{modflownwt} which used the Newton-Raphson formulation to simulate dry cells under a recharge pond. This problem is also described in \cite{mcdonaldetal1991wetdry} and used the \MF rewetting option to rewet dry cells.
+
+\subsection{Example Description}
+
+The simulation represents a rectangular, unconfined aquifer with a deep water table. The model uses symmetry to simplify the problem by simulating one-quarter of the pond and the downgradient model domain (fig.~\ref{fig:ex-gwf-nwt-p02}). Model parameters for the example are summarized in table~\ref{tab:ex-gwf-nwt-p02-01} 
+
+\begin{StandardFigure}{
+                                     Hydrogeology, model grid, and model boundary conditions
+                                     \cite[from][]{mcdonaldetal1991wetdry}.
+                                     }{fig:ex-gwf-nwt-p02}{../images/ex-gwf-nwt-p02.png}
+\end{StandardFigure}                                 
+
+
+% spatial discretization  and temporal discretization
+The model consists of a grid of 40 columns, 40 rows, and 14 layers. The model domain is  5,000 $ft$ in the x- and y-directions. The discretization is 125 $ft$ in the row and column direction for all cells. The upper model layer is 15 $ft$ thick and the remaining model layers (layers 2 through 14) are 5 $ft$ thick. Four stress periods are simulated. The first three stress periods are transient and the last stress period is steady state. The stress periods are 190, 518, 1921, and 1 days in length and are broken up into 10, 2, 17, and 1 time steps of equal length. The total simulation time at the end of the four stress periods are 190, 708, 2,630, and 2,631 days, respectively.
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-nwt-p02-01}
+
+% material properties
+The horizontal hydraulic conductivity is 5 $ft/day$ and vertical hydraulic conductivity is 0.25 $ft/day$. The upper ten model layers are convertible and the lower four model layers are confined. The specific yield is 0.2 (unitless) and the specific storage is 0.0002 $1/day$. Unconfined and confined storage change is simulated in the upper ten model layers; confined storage change is simulated the lower four model layers.
+
+% initial conditions and boundary conditions
+A initial head of 25 $ft$ was specified in all model cells, which results in the upper 9 model layers being dry at the start of the simulation. Constant heads boundary condition cells with a specified value of 25 $ft$ were specified on the right and lower edges of the model in model layer 10 through 14. The pond area above the aquifer is approximately 6 acres and recharge is added to four cells in the upper left corner of the model (fig.~\ref{fig:ex-gwf-nwt-p02}). A constant recharge rate of 0.05 $ft/day$ is applied to the pond area and results in a total pond leakage rate equal to 12,500 $ft^3/day$ for the full model domain.
+
+
+\subsection{Scenario Results}
+
+The flow diversion model was evaluated using the Newton-Raphson Formulation and the Standard Conductance Formulation with rewetting (table~\ref{tab:ex-gwf-nwt-p02-scenario}). Complex and simple complexity Iterative Model Solver options were used for the simulation using the Newton-Raphson formulation and the Standard Conductance Formulation with rewetting scenarios, respectively. Rewetting was only activated in the upper 9 layers. The pseudo-transient continuation option \citep{modflow6framework} was disabled in the Newton-Raphson Formulation scenario.
+
+Water-table elevations were compared for four simulation times: 190 days; 708 days; 2,630 days; and at steady state (2,631 days). Water-table elevation in row 1 were very similar for the two solutions (fig.~\ref{fig:ex-gwf-nwt-p02-01}), with a maximum difference in head of 2.5 $ft$ directly under the pond (row 2, column 2). The mean absolute water-table error for the model domain ranged from 0.061 to 0.012 $ft$ (fig.~\ref{fig:ex-gwf-nwt-p02-01}). A portion of the difference between the two scenarios is likely a result of the upstream horizontal conductance weighting used with the Newton-Raphson formulation. 
+
+% scenario table
+\input{../tables/ex-gwf-nwt-p02-scenario.tex}
+
+\begin{StandardFigure}{
+                                      Comparison of water-table elevations simulated using the Newton-Raphson
+                                      Formulation and Standard Conductance Formulation with rewetting.
+                                      Water-table altitudes in row 1 are shown for \textit{A}, 190 days, \textit{B}, 
+                                      708 days, \textit{C}, 2,630 days, and \textit{D}, at steady state.
+                                      The location of the uppermost constant head boundary cell is also shown
+                                     }{fig:ex-gwf-nwt-p02-01}{../figures/ex-gwf-nwt-p02-01.png}
+\end{StandardFigure} 
+

@@ -1268,8 +1268,13 @@ def plot_head_es_comparison(silent=True):
     axp1.tick_params(
         labelcolor="none", top="off", bottom="off", left="off", right="off"
     )
+    axp1.set_xlim(0, 1)
+    axp1.set_xticks([0, 1])
+    axp1.set_ylim(0, 1)
+    axp1.set_yticks([0, 1])
     axp1.set_ylabel("Compaction, in {}".format(length_units))
     axp1.yaxis.set_label_coords(-0.05, 0.5)
+    fs.remove_edge_ticks(ax)
 
     fig.tight_layout(pad=0.0001)
 
