@@ -10,8 +10,15 @@ each of the MODFLOW 6 `examples <examples.html>`_.
 
    ex-gwf-twri <_notebooks/ex-gwf-twri.ipynb>
    ex-gwf-bcf2ss <_notebooks/ex-gwf-bcf2ss.ipynb>
+   ex-gwf-advtidal <_notebooks/ex-gwf-advtidal.ipynb>
+   ex-gwf-fhb <_notebooks/ex-gwf-fhb.ipynb>
+   ex-gwf-u1disv <_notebooks/ex-gwf-u1disv.ipynb>
+   ex-gwf-nwt-p02 <_notebooks/ex-gwf-nwt-p02.ipynb>
    ex-gwf-zaidel <_notebooks/ex-gwf-zaidel.ipynb>
    ex-gwf-bump <_notebooks/ex-gwf-bump.ipynb>
+   ex-gwf-disvmesh <_notebooks/ex-gwf-disvmesh.ipynb>
+   ex-gwf-hani <_notebooks/ex-gwf-hani.ipynb>
+   ex-gwf-whirl <_notebooks/ex-gwf-whirl.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>

@@ -29,15 +29,15 @@ def build_table(caption, fpth, arr, headings=None, col_widths=None):
 
     return
 
-def get_header(caption, label, headings, col_widths=None, center=True):
+def get_header(caption, label, headings, col_widths=None, center=True, firsthead=False):
     ncol = len(headings)
     if col_widths is None:
         dx = 0.8 / float(ncol)
         col_widths = [dx for idx in range(ncol)]
     if center:
-        align = "m"
+        align = "p"
     else:
-        align = "m"
+        align = "p"
 
     header = "\\small\n"
     header += "\\begin{longtable}[!htbp]{\n"
@@ -47,6 +47,18 @@ def get_header(caption, label, headings, col_widths=None, center=True):
                   "{{{}\\linewidth-2\\arraycolsep}}\n".format(col_width)
     header += 38 * " " + "}\n"
     header += "\t\\caption{{{}}} \\label{{{}}} \\\\\n\n".format(caption, label)
+
+    if firsthead:
+        header += "\t\\hline \\hline\n"
+        header +=  "\t\\rowcolor{Gray}\n"
+        header += "\t"
+        for idx, s in enumerate(headings):
+            header += "\\textbf{{{}}}".format(s)
+            if idx < len(headings) - 1:
+                header += " & "
+        header += "  \\\\\n"
+        header +=  "\t\\hline\n"
+        header +=  "\t\\endfirsthead\n\n"
 
     header += "\t\\hline \\hline\n"
     header +=  "\t\\rowcolor{Gray}\n"
