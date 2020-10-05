@@ -532,7 +532,7 @@ def build_model(sim_name, silent=False):
 
         # Instantiate the MODFLOW 6 simulation
         name = "lgr"
-        gwfname = "gwf_" + name
+        gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name,
@@ -551,7 +551,7 @@ def build_model(sim_name, silent=False):
         )
 
         # Instantiating MODFLOW 6 groundwater flow model
-        gwfname = gwfname + "_parent"
+        gwfname = gwfname + "-parent"
         gwf = flopy.mf6.ModflowGwf(
             sim,
             modelname=gwfname,
@@ -703,7 +703,7 @@ def build_model(sim_name, silent=False):
         topc, botmc = lgr.get_top_botm()  # top/bottom of child grid
 
         # Instantiate MODFLOW 6 child gwf model
-        gwfnamec = "gwf_" + name + "_child"
+        gwfnamec = "gwf-" + name + "-child"
         gwfc = flopy.mf6.ModflowGwf(
             sim,
             modelname=gwfnamec,

@@ -376,7 +376,7 @@ def build_model(
         )
 
         # Instantiating MODFLOW 6 groundwater transport package
-        gwtname = "gwt_" + name
+        gwtname = "gwt-" + name
         gwt = flopy.mf6.MFModel(
             sim,
             model_type="gwt6",

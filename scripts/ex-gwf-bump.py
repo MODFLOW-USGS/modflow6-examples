@@ -78,8 +78,8 @@ vmin, vmax = H2, H1
 bmin, bmax = 0, 10
 vlevels = np.arange(vmin + 0.5, vmax, 1)
 blevels = np.arange(bmin + 2, bmax, 2)
-bcolor = "#39ff14"
-vcolor = "#80c5de"
+bcolor = "black"
+vcolor = "black"
 
 
 # Static temporal data used by TDIS file
@@ -280,7 +280,7 @@ def plot_grid(gwf, silent=True):
     fig, axes = create_figure()
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    bot_coll = mm.plot_array(bot, cmap="viridis", vmin=bmin, vmax=bmax)
+    bot_coll = mm.plot_array(bot, vmin=bmin, vmax=bmax)
     mm.plot_bc("CHD", color="cyan")
     cv = mm.contour_array(
         bot,
