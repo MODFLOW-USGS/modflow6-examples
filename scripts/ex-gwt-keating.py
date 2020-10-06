@@ -119,6 +119,7 @@ def build_mf6gwf(sim_folder):
         sim,
         print_option="summary",
         complexity="complex",
+        no_ptcrecord="all",
         outer_dvclose=1.0e-4,
         outer_maximum=2000,
         under_relaxation="dbd",
