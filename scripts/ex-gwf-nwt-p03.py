@@ -24,7 +24,7 @@ from figspecs import USGSFigure
 
 # Set figure properties
 
-figure_size = (4, 4)
+figure_size = (6.3, 5.6)
 masked_values = (1e30, -1e30)
 
 # Base simulation and model name and workspace
@@ -61,26 +61,30 @@ delr = 100.0  # Cell size in the x-direction ($m$)
 delc = 100.0  # Cell size in y-direction ($m$)
 top = 200.0  # Top of the model ($m$)
 k11 = 1.0  # Horizontal hydraulic conductivity ($m/day$)
-H1 = 24.  # Constant head water level ($m$)
+H1 = 24.0  # Constant head water level ($m$)
 
 # plotting ranges and contour levels
 
 vmin, vmax = 20, 60
+smin, smax = 0, 25
 bmin, bmax = 0, 90
-vlevels = np.arange(vmin, vmax, 10)
+vlevels = np.arange(vmin, vmax + 5, 5)
+slevels = np.arange(smin, smax + 5, 5)
 blevels = np.arange(bmin + 10, bmax, 10)
+vcolor = "black"
+scolor = "black"
 bcolor = "black"
-vcolor = "#80c5de"
 
 
 # Static temporal data used by TDIS file
 
 tdis_ds = ((365.0, 1, 1.0),)
 
-# Calculate delr, delc, extents, and shape3d
+# Calculate extents, and shape3d
 
 extents = (0, delr * ncol, 0, delc * nrow)
 shape3d = (nlay, nrow, ncol)
+ticklabels = np.arange(0, 10000, 2000)
 
 # Load the bottom
 
@@ -89,19 +93,26 @@ botm = np.loadtxt(fpth).reshape(shape3d)
 
 # Set the starting heads
 
-strt = botm + 20.
+strt = botm + 20.0
 
-# Load the high and low recharge rates
+# Load the high recharge rate
 
 fpth = os.path.join("..", "data", sim_name, "recharge_high.txt")
-rch_high = np.loadtxt(fpth).reshape(shape3d)
+rch_high = np.loadtxt(fpth)
 
-fpth = os.path.join("..", "data", sim_name, "recharge_low.txt")
-rch_low = np.loadtxt(fpth).reshape(shape3d)
+# Generate the low recharge rate from the high recharge rate
 
+rch_low = rch_high.copy() * 1e-3
 
 # Constant head boundary conditions
-chd_spd = [[0, i, ncol-1, H1] for i in (49, 50, 51,)]
+chd_spd = [
+    [0, i, ncol - 1, H1]
+    for i in (
+        45,
+        46,
+        47,
+    )
+]
 
 # Solver parameters
 
@@ -142,7 +153,6 @@ def build_model(
             sim,
             modelname=sim_name,
             newtonoptions="under_relaxation",
-            save_flows=True,
         )
         flopy.mf6.ModflowGwfdis(
             gwf,
@@ -159,7 +169,6 @@ def build_model(
             gwf,
             icelltype=1,
             k=k11,
-            save_specific_discharge=True,
         )
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
@@ -171,12 +180,10 @@ def build_model(
         flopy.mf6.ModflowGwfrcha(gwf, recharge=rch)
 
         head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+            saverecord=[("HEAD", "ALL")],
         )
         return sim
     return None
@@ -207,35 +214,42 @@ def run_model(sim, silent=True):
 # Function to create a figure
 
 
-def create_figure():
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
+def create_figure(nsubs=1, size=(4, 4)):
+    fig = plt.figure(figsize=size, constrained_layout=False)
     gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
     plt.axis("off")
 
-    # create axes
-    ax1 = fig.add_subplot(gs[:5, :])
-    ax2 = fig.add_subplot(gs[5:, :])
+    axes = []
+    if nsubs == 1:
+        axes.append(fig.add_subplot(gs[:5, :]))
+    elif nsubs == 2:
+        axes.append(fig.add_subplot(gs[:6, :5]))
+        axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
 
-    # set limits for map figure
-    ax1.set_xlim(extents[:2])
-    ax1.set_ylim(extents[2:])
-    ax1.set_aspect("equal")
+    for ax in axes:
+        ax.set_xlim(extents[:2])
+        ax.set_ylim(extents[2:])
+        ax.set_aspect("equal")
+        ax.set_xticks(ticklabels)
+        ax.set_yticks(ticklabels)
+
+    # legend axis
+    axes.append(fig.add_subplot(gs[5:, :]))
 
     # set limits for legend area
-    ax2.set_xlim(0, 1)
-    ax2.set_ylim(0, 1)
+    ax = axes[-1]
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
 
     # get rid of ticks and spines for legend area
-    ax2.axis("off")
-    ax2.set_xticks([])
-    ax2.set_yticks([])
-    ax2.spines["top"].set_color("none")
-    ax2.spines["bottom"].set_color("none")
-    ax2.spines["left"].set_color("none")
-    ax2.spines["right"].set_color("none")
-    ax2.patch.set_alpha(0.0)
-
-    axes = [ax1, ax2]
+    ax.axis("off")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines["top"].set_color("none")
+    ax.spines["bottom"].set_color("none")
+    ax.spines["left"].set_color("none")
+    ax.spines["right"].set_color("none")
+    ax.patch.set_alpha(0.0)
 
     return fig, axes
 
@@ -249,7 +263,7 @@ def plot_grid(gwf, silent=True):
 
     bot = gwf.dis.botm.array
 
-    fig, axes = create_figure()
+    fig, axes = create_figure(size=(3.15, 4))
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
     bot_coll = mm.plot_array(bot, vmin=bmin, vmax=bmax)
@@ -258,7 +272,7 @@ def plot_grid(gwf, silent=True):
         bot,
         levels=blevels,
         linewidths=0.5,
-        linestyles=":",
+        linestyles="-",
         colors=bcolor,
     )
     plt.clabel(cv, fmt="%1.0f")
@@ -282,7 +296,7 @@ def plot_grid(gwf, silent=True):
         -10000,
         -10000,
         lw=0.5,
-        ls=":",
+        ls="-",
         color=bcolor,
         label="Bottom elevation contour, m",
     )
@@ -310,6 +324,96 @@ def plot_grid(gwf, silent=True):
     return
 
 
+def plot_recharge(gwf, silent=True):
+    verbose = not silent
+    fs = USGSFigure(figure_type="map", verbose=verbose)
+
+    fig, axes = create_figure(nsubs=2, size=figure_size)
+    ax = axes[0]
+    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+    rch_coll = mm.plot_array(rch_high)
+    mm.plot_bc("CHD", color="cyan")
+    cv = mm.contour_array(
+        rch_high,
+        levels=[1e-6, 2e-6, 3e-6, 4e-6, 5e-6, 6e-6, 7e-6],
+        linewidths=0.5,
+        linestyles="-",
+        colors="black",
+    )
+    plt.clabel(cv, fmt="%1.0e")
+    cbar = plt.colorbar(
+        rch_coll,
+        shrink=0.8,
+        orientation="horizontal",
+        ax=ax,
+        format="%.0e",
+    )
+    cbar.ax.tick_params(size=0)
+    cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
+    ax.set_xlabel("x-coordinate, in meters")
+    ax.set_ylabel("y-coordinate, in meters")
+    fs.heading(ax, letter="A")
+    fs.remove_edge_ticks(ax)
+
+    ax = axes[1]
+    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+    rch_coll = mm.plot_array(rch_low)
+    mm.plot_bc("CHD", color="cyan")
+    cv = mm.contour_array(
+        rch_low,
+        levels=[1e-9, 2e-9, 3e-9, 4e-9, 5e-9, 6e-9, 7e-9],
+        linewidths=0.5,
+        linestyles="-",
+        colors="black",
+    )
+    plt.clabel(cv, fmt="%1.0e")
+    cbar = plt.colorbar(
+        rch_coll,
+        shrink=0.8,
+        orientation="horizontal",
+        ax=ax,
+        format="%.0e",
+    )
+    cbar.ax.tick_params(size=0)
+    cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
+    ax.set_xlabel("x-coordinate, in meters")
+    fs.heading(ax, letter="B")
+    fs.remove_edge_ticks(ax)
+
+    # legend
+    ax = axes[-1]
+    ax.plot(
+        -10000,
+        -10000,
+        lw=0,
+        marker="s",
+        ms=10,
+        mfc="cyan",
+        mec="cyan",
+        label="Constant Head",
+    )
+    ax.plot(
+        -10000,
+        -10000,
+        lw=0.5,
+        ls="-",
+        color=bcolor,
+        label=r"Recharge rate contour, $m/day$",
+    )
+    fs.graph_legend(ax, loc="center", ncol=2)
+
+    # save figure
+    if config.plotSave:
+        fpth = os.path.join(
+            "..",
+            "figures",
+            "{}-01{}".format(sim_name, config.figure_ext),
+        )
+        fig.savefig(fpth)
+
+    return
+
+
 # Function to plot the model results.
 
 
@@ -325,115 +429,128 @@ def plot_results(idx, sim, silent=True):
 
         if idx == 0:
             plot_grid(gwf, silent=silent)
+            plot_recharge(gwf, silent=silent)
 
-        # # create MODFLOW 6 head object
-        # file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        # fpth = os.path.join(sim_ws, file_name)
-        # hobj = flopy.utils.HeadFile(fpth)
-        #
-        # # create MODFLOW 6 cell-by-cell budget object
-        # file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-        # fpth = os.path.join(sim_ws, file_name)
-        # cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
-        #
-        # # extract heads and specific discharge
-        # head = hobj.get_data(totim=1.0)
-        # imask = (head > -1e30) & (head <= bot)
-        # head[imask] = -1e30  # botm[imask]
-        # spdis = cobj.get_data(text="DATA-SPDIS", totim=1.0)
-        #
-        # # Create figure for simulation
-        # fig, axes = create_figure()
-        #
-        # ax = axes[0]
-        # mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-        # if bot.max() < 20:
-        #     cv = mm.contour_array(
-        #         bot,
-        #         levels=blevels,
-        #         linewidths=0.5,
-        #         linestyles=":",
-        #         colors=bcolor,
-        #         zorder=9,
-        #     )
-        #     plt.clabel(cv, fmt="%1.0f", zorder=9)
-        # h_coll = mm.plot_array(
-        #     head, vmin=vmin, vmax=vmax, masked_values=masked_values, zorder=10
-        # )
-        # cv = mm.contour_array(
-        #     head,
-        #     masked_values=masked_values,
-        #     levels=vlevels,
-        #     linewidths=0.5,
-        #     linestyles="-",
-        #     colors=vcolor,
-        #     zorder=10,
-        # )
-        # plt.clabel(cv, fmt="%1.0f", zorder=10)
-        # mm.plot_bc("CHD", color="cyan", zorder=11)
-        # mm.plot_specific_discharge(
-        #     spdis, normalize=True, color="0.75", zorder=11
-        # )
-        # ax.set_xlabel("x-coordinate, in meters")
+        # create MODFLOW 6 head object
+        file_name = gwf.oc.head_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
+        hobj = flopy.utils.HeadFile(fpth)
+
+        # get times
+        times = hobj.get_times()
+
+        # extract heads and specific discharge
+        head = hobj.get_data(totim=times[0])
+        imask = head <= bot + 0.001
+        head[imask] = -1e30
+        sat_thick = head - botm
+        sat_thick[imask] = -1e30
+
+        # Create figure for simulation
+        fig, axes = create_figure(nsubs=2, size=figure_size)
+
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        h_coll = mm.plot_array(
+            head, vmin=vmin, vmax=vmax, masked_values=masked_values, zorder=10
+        )
+        cv = mm.contour_array(
+            head,
+            masked_values=masked_values,
+            levels=vlevels,
+            linewidths=0.5,
+            linestyles="-",
+            colors=vcolor,
+            zorder=10,
+        )
+        plt.clabel(cv, fmt="%1.0f", zorder=10)
+        mm.plot_bc("CHD", color="cyan", zorder=11)
+        cbar = plt.colorbar(
+            h_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Water level, $m$")
+        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("y-coordinate, in meters")
+        fs.heading(ax, letter="A")
+        fs.remove_edge_ticks(ax)
+
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        s_coll = mm.plot_array(
+            sat_thick,
+            vmin=smin,
+            vmax=smax,
+            masked_values=masked_values,
+            zorder=10,
+        )
+        cv = mm.contour_array(
+            sat_thick,
+            masked_values=masked_values,
+            levels=slevels,
+            linewidths=0.5,
+            linestyles=":",
+            colors=scolor,
+            zorder=10,
+        )
+        plt.clabel(cv, fmt="%1.0f", zorder=10)
+        mm.plot_bc("CHD", color="cyan", zorder=11)
+        cbar = plt.colorbar(
+            s_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Saturated thickness, $m$")
+        ax.set_xlabel("x-coordinate, in meters")
         # ax.set_ylabel("y-coordinate, in meters")
-        # fs.remove_edge_ticks(ax)
-        #
-        # # create legend
-        # ax = axes[-1]
-        # ax.plot(
-        #     -10000,
-        #     -10000,
-        #     lw=0,
-        #     marker="s",
-        #     ms=10,
-        #     mfc="cyan",
-        #     mec="cyan",
-        #     label="Constant Head",
-        # )
-        # ax.plot(
-        #     -10000,
-        #     -10000,
-        #     lw=0,
-        #     marker=u"$\u2192$",
-        #     ms=10,
-        #     mfc="0.75",
-        #     mec="0.75",
-        #     label="Normalized specific discharge",
-        # )
-        # if bot.max() < 20:
-        #     ax.plot(
-        #         -10000,
-        #         -10000,
-        #         lw=0.5,
-        #         ls=":",
-        #         color=bcolor,
-        #         label="Bottom elevation contour, m",
-        #     )
-        # ax.plot(
-        #     -10000,
-        #     -10000,
-        #     lw=0.5,
-        #     ls="-",
-        #     color=vcolor,
-        #     label="Head contour, m",
-        # )
-        # fs.graph_legend(ax, loc="center", ncol=2)
-        #
-        # cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-        # cbar = plt.colorbar(
-        #     h_coll, shrink=0.8, orientation="horizontal", cax=cax
-        # )
-        # cbar.ax.tick_params(size=0)
-        # cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
-        #
-        # # save figure
-        # if config.plotSave:
-        #     fpth = os.path.join(
-        #         "..",
-        #         "figures",
-        #         "{}-{:02d}{}".format(sim_name, idx + 1, config.figure_ext),
-        #     )
-        #     fig.savefig(fpth)
+        fs.heading(ax, letter="B")
+        fs.remove_edge_ticks(ax)
+
+        # create legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="cyan",
+            mec="cyan",
+            label="Constant Head",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color=vcolor,
+            label="Head contour, m",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls=":",
+            color=scolor,
+            label="Saturated thickness contour, m",
+        )
+        fs.graph_legend(ax, loc="center", ncol=3)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                "{}-{:02d}{}".format(sim_name, idx + 2, config.figure_ext),
+            )
+            fig.savefig(fpth)
 
 
 # Function that wraps all of the steps for MODFLOW-NWT Problem 3 model
