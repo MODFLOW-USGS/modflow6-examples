@@ -21,6 +21,7 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwf-hani <_notebooks/ex-gwf-hani.ipynb>
    ex-gwf-whirl <_notebooks/ex-gwf-whirl.ipynb>
    ex-gwf-lgr <_notebooks/ex-gwf-lgr.ipynb>
+   ex-gwf-spbc <_notebooks/ex-gwf-spbc.ipynb>
    ex-gwf-csub-p01 <_notebooks/ex-gwf-csub-p01.ipynb>
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>
    ex-gwf-csub-p03 <_notebooks/ex-gwf-csub-p03.ipynb>
