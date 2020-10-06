@@ -1,0 +1,29 @@
+\section{Spatial Periodic Boundary Condition (SPBC)}
+
+% Describe source of problem
+This example shows how the exchange capability in \mf can be used to simulate spatial periodic boundary conditions (SPBC), such as the one described by \cite{laattoe2014spatial}.  A SPBC can be used to represent spatially repeating groundwater flow conditions, such as those that might form beneath repeating bedforms on the sea floor.  The example simulated here is equivalent to the first MODFLOW simulation reported by \cite{laattoe2014spatial}.  
+
+\subsection{Example Description}
+
+% spatial discretization  and temporal discretization
+The problem consists of a two-dimensional cross-section model consisting of 190 layers and 100 columns.  Each cell is 0.06 $m$ wide and each layer has a width of 0.03 $m$.  Model parameters are listed in table~\ref{tab:ex-gwf-spbc-01}. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-spbc-01}
+
+% initial conditions
+An initial head of 0 $m$ was specified for the model; however this model is not important as the model represents steady-state conditions.
+
+% boundary conditions
+The top of model has a constant-head condition assigned to layer 1.  A different constant-head value is assigned to each cell based on a sine wave with an amplitude of 1.0 $m$ and a wavelength of 6 $m$, which is the length of the model in the x direction.  The GWF-GWF Exchange is used to connect the cells on the left side of the model with the cells on the right side of the model.  The first cell in each model cell is hydraulically connected to the last cell in each model layer.  For example, the cell in (1, 1, 1) is hydraulically connected to the cell in (1, 1, 100).  In \mf, these cells are connected at the matrix solution level, rather than through outer iterations as was done by \cite{laattoe2014spatial}.  
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Model results are shown in figure~\ref{fig:ex-gwf-spbc-grid}.  Groundwater flowing into cells on the left side of the model is instantaneously applied to cells on the right side of the model.   Because the first column of cells is hydraulically connected to the last column of cell through the GWF-GWF Exchange, flow exiting the model through the left face automatically flows back into the model through the right face.
+
+% a figure
+\begin{StandardFigure}{
+                                     Cross section showing simulated head and vectors of specific discharge for the spatial periodic boundary condition example problem.  Vectors of specific discharge are shown for every fifth cell in the layer and column directions.
+                                     }{fig:ex-gwf-spbc-grid}{../figures/ex-gwf-spbc-grid.png}
+\end{StandardFigure}                                 
