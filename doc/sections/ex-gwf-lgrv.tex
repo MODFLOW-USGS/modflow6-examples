@@ -1,0 +1,77 @@
+\section{Buried Valley Aquifer with LGR}
+
+% Describe source of problem
+This example reproduces several models described by \cite{vilhelmsen2012}, which simulate groundwater flow in a buried valley aquifer at different grid resolution.  The domain is simulated using a globally refined (GR) grid, a globally coarsened (GC) grid, and a coarse outer grid with a locally refined inset grid (LGR).  
+
+\subsection{Example Description}
+
+% spatial discretization  and temporal discretization
+Groundwater flow is simulated using three different simulations corresponding to three different grid configurations: GR, GC, and LGR (tab.~\ref{ex-gwf-lgrv-scenario}).  The GR grid consists of 25 layers, 183 rows and 147 columns.  The grid spacing along rows is 35 $m$ and the grid spacing along columns is 25 $m$.  The top of the model is variable, based on topography in the area (fig.~\ref{fig:ex-gwf-lgrv-gr-grid}).  Layer bottoms are flat.  The bottom for layer 1 is set to 30 $m$.  Bottom elevations for layers 2 through 25 are calculated using a uniform layer thickness of 5 $m$.  A cross section for the GR grid is shown in figure~\ref{fig:ex-gwf-lgrv-gr-xsect}
+
+The GC grid fits evenly into the GF grid, and has 1/3 the number of cells in the row and column directions.  Instead of 25 layers, the GC grid has only 9 layers.  Layer 1 corresponds to layer 1 in the GF model; however, each underlying layer in the GC grid corresponds to three layers in the GF model.  The GC grid is shown in map view in figure~\ref{fig:ex-gwf-lgrv-gc-grid} and as a cross section in figure~\ref{fig:ex-gwf-lgrv-gc-xsect}.
+
+The LGR grid is a combination of the GF and GC grids.  The course outer parent grid is comprised of the GC grid, whereas the inset child grid consists of the GF grid (fig~\ref{fig:ex-gwf-lgrv-gc-grid}).  The LGR simulation consists of two separate model input files, one for the parent model and one for the child model.  The two models are connected in \mf using the GWF-GWF Exchange, which is used to connect cells from the parent model to cells in the child model.
+
+There are three different hydrogeologic units.  The upper layer represents overburden material.  The buried valley is filled with valley sediments, and the bottom material consists of the deposits into which the valley is incised.  These three units are assigned a single value for hydraulic conductivity.
+
+Recharge is uniformly applied to the water table at a rate of 1.1098e-9 $m/s$.  A river is represented in model layer 1 using the River (RIV) Package.  The models are run as steady state using a single time step with a duration of 1 second. 
+
+Describe discretization (\ref{fig:ex-gwf-lgrv-grid}).  Model parameters are listed in table~\ref{tab:ex-gwf-lgrv-01}. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-lgrv-01}
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-lgrv-scenario}
+
+% a figure
+\begin{StandardFigure}{
+                                     Globally refined model grid showing top elevation and river cells.  Area of interest is shown as a dashed line.
+                                     }{fig:ex-gwf-lgrv-gr-grid}{../figures/ex-gwf-lgrv-gr-grid.png}
+\end{StandardFigure}                                 
+
+\begin{StandardFigure}{
+                                     Cross section for y = 3000 $m$ showing globally refined model grid.  Color flood of hydraulic conductivity shows overburden material, valley fill, and deposits into which the valley is incised.
+                                     }{fig:ex-gwf-lgrv-gr-xsect}{../figures/ex-gwf-lgrv-gr-xsect.png}
+\end{StandardFigure}                                 
+
+% a figure
+\begin{StandardFigure}{
+                                     Globally coarsened model grid showing top elevation and river cells.  Area of interest is shown as a dashed line.
+                                     }{fig:ex-gwf-lgrv-gc-grid}{../figures/ex-gwf-lgrv-gc-grid.png}
+\end{StandardFigure}                                 
+
+\begin{StandardFigure}{
+                                     Cross section for y = 3000 $m$ showing globally coarsened model grid.  Color flood of hydraulic conductivity shows overburden material, valley fill, and deposits into which the valley is incised.
+                                     }{fig:ex-gwf-lgrv-gc-xsect}{../figures/ex-gwf-lgrv-gc-xsect.png}
+\end{StandardFigure}                                 
+
+
+% a figure
+\begin{StandardFigure}{
+                                     Local grid refinement model showing the outer coarse grid and the inner refined model grid.  Top elevation and river cells are shown for both the outer and inner grids.  Refinement area is shown as a dashed line.
+                                     }{fig:ex-gwf-lgrv-grid}{../figures/ex-gwf-lgrv-grid.png}
+\end{StandardFigure}                                 
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Model results for the three different simulations are shown in figures~\ref{fig:ex-gwf-lgrv-gf-head}, \ref{fig:ex-gwf-lgrv-gc-head}, and \ref{fig:ex-gwf-lgrv-head}.  Simulated results from the three simulations are in good agreement and demonstrate the different levels of detail that can be achieved with the three grids.  Testing of the three simulations indicates that the LGR model is about 25 times slower than the GC model; however the GF model is about 100 times slower than the GC.  These numbers indicate that LGR can be used effectively in \mf to include refined inset models within coarser regional models.
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated head in layer 1 for the GR model.
+                                     }{fig:ex-gwf-lgrv-gr-head}{../figures/ex-gwf-lgrv-gr-head.png}
+\end{StandardFigure}                                 
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated head in layer 1 for the GC model.
+                                     }{fig:ex-gwf-lgrv-gc-head}{../figures/ex-gwf-lgrv-gc-head.png}
+\end{StandardFigure}                                 
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated head in layer 1 for the LGR model.
+                                     }{fig:ex-gwf-lgrv-head}{../figures/ex-gwf-lgrv-head.png}
+\end{StandardFigure}                                 
