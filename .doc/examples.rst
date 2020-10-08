@@ -21,6 +21,7 @@ MODFLOW 6 – Example problems
    _examples/ex-gwf-hani.rst
    _examples/ex-gwf-whirl.rst
    _examples/ex-gwf-lgr.rst
+   _examples/ex-gwf-lgrv.rst
    _examples/ex-gwf-spbc.rst
    _examples/ex-gwf-csub-p01.rst
    _examples/ex-gwf-csub-p02.rst
