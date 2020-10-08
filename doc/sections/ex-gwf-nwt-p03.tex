@@ -1,0 +1,58 @@
+\section{\mfn Problem 3}
+
+% Describe source of problem
+This example is based on problem 3 in \cite{modflownwt} which used the Newton-Raphson formulation to simulate water levels in a rectangular, unconfined aquifer with a complex bottom elevation and receiving areally distributed recharge. This problem provides a good example of the utility of Newton-Raphson Formulation for solving problems with wetting and drying of cells.
+
+\subsection{Example Description}
+
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-nwt-p03-01}. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-nwt-p03-01}
+
+% spatial discretization  and temporal discretization
+The model consists of a grid of 40 columns, 40 rows, and 1 layer. The model domain is  8,000 $m$ in the x- and y-directions. The discretization is 100 $m$ in the row and column direction for all cells. The top of the model is specified to be 200 $m$ and the bottom of the model ranges from about 4 to 80 $m$ (fig.~\ref{fig:ex-gwf-nwt-p03-grid}). A single steady-state stress period, 365 days in length, with a single time step is simulated.
+
+\begin{StandardFigure}{
+                                     Distribution of layer-bottom elevations. The location of constant
+                                     head boundary cells is also shown.
+                                     }{fig:ex-gwf-nwt-p03-grid}{../figures/ex-gwf-nwt-p03-grid.png}
+\end{StandardFigure}                                 
+
+% material properties and initial conditions
+The horizontal hydraulic conductivity is 1 $m/day$ and each cell is convertible. A initial head 20 $m$ above the cell bottom was specified in all model cells.
+
+% initial conditions and boundary conditions
+Constant heads boundary condition cells with a specified value of 24 $m$ are specified in column 80 for rows 46 through 48 (fig.~\ref{fig:ex-gwf-nwt-p03-grid}). Recharge that is a function of the bottom elevation is specified for each active cells; two different recharge distributions are specified and are discussed further below.
+
+% solution 
+Newton under-relaxation to maintain water-levels above the aquifer bottom \citep{modflow6framework}. The simple complexity Iterative Model Solver option and preconditioned bi-conjugate gradient stabilized linear accelerator was used for both scenarios.
+
+\subsection{Scenario Results}
+
+The model was evaluated using high and low recharge rates (fig.~\ref{fig:ex-gwf-nwt-p03-01}). Low recharge rates are 3 orders of magnitude less than the high recharge rates and simulate more arid conditions. Simulation results with large recharge rates are shown in figure~\ref{fig:ex-gwf-nwt-p03-02}. The entire model domain is saturated and simulated saturated thickness ranges between zero and 25 $m$ (fig.~\ref{fig:ex-gwf-nwt-p03-02}\textit{B}). Simulation results with low recharge rates are shown in figure~\ref{fig:ex-gwf-nwt-p03-03}. Only a small portion of the model domain has heads that are significantly above the cell bottom. However, all cells in the simulation have a non-zero saturated thickness (greater than 2 $mm$), which allows the applied recharge to flow horizontally toward the constant-head boundaries at the outlet of the aquifer.
+
+\begin{StandardFigure}{
+                                      Distribution of groundwater recharge applied in the model scenarios.  
+                                      \textit{A}, higher recharge rates, and \textit{B}, lower recharge rates. 
+                                      The location of constant head boundary cells is also shown.
+                                     }{fig:ex-gwf-nwt-p03-01}{../figures/ex-gwf-nwt-p03-01.png}
+\end{StandardFigure} 
+
+\begin{StandardFigure}{
+                                      Distribution of heads and saturated thicknesses for the high recharge
+                                      scenario. \textit{A}, heads, and \textit{B}, saturated thicknesses.
+                                      The location of constant head boundary cells is also shown.
+                                     }{fig:ex-gwf-nwt-p03-02}{../figures/ex-gwf-nwt-p03-02.png}
+\end{StandardFigure} 
+
+
+
+\begin{StandardFigure}{
+                                      Distribution of heads and saturated thicknesses for the low recharge
+                                      scenario. \textit{A}, heads, and \textit{B}, saturated thicknesses.
+                                      The white regions indicate cells that have saturated thicknesses less
+                                      than 1 $mm$. The location of constant head boundary cells is also shown.
+                                     }{fig:ex-gwf-nwt-p03-03}{../figures/ex-gwf-nwt-p03-03.png}
+\end{StandardFigure} 
+
