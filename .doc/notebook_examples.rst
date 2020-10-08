@@ -16,6 +16,7 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwf-nwt-p02 <_notebooks/ex-gwf-nwt-p02.ipynb>
    ex-gwf-nwt-p03 <_notebooks/ex-gwf-nwt-p03.ipynb>
    ex-gwf-zaidel <_notebooks/ex-gwf-zaidel.ipynb>
+   ex-gwf-sfr-p01 <_notebooks/ex-gwf-sfr-p01.ipynb>
    ex-gwf-bump <_notebooks/ex-gwf-bump.ipynb>
    ex-gwf-disvmesh <_notebooks/ex-gwf-disvmesh.ipynb>
    ex-gwf-hani <_notebooks/ex-gwf-hani.ipynb>
