@@ -121,7 +121,7 @@ class USGSFigure:
         leg.set_title(title, prop=font)
         return leg
 
-    def heading(self, ax=None, letter=None, heading=None, x=0.00, y=1.01):
+    def heading(self, ax=None, letter=None, heading=None, x=0.00, y=1.01, idx=None):
         """Add a USGS-style heading to a matplotlib axis object
 
         Parameters
@@ -138,6 +138,9 @@ class USGSFigure:
         y : float
             location of the heading in the y-direction in normalized plot dimensions
             ranging from 0 to 1 (default is 1.01)
+        idx : int
+            index for programatically generating the heading letter when letter
+            is None and idx is not None. idx = 0 will generate A (default is None)
 
         Returns
         -------
@@ -147,6 +150,9 @@ class USGSFigure:
         """
         if ax is None:
             ax = plt.gca()
+
+        if letter is None and idx is not None:
+            letter = chr(ord("A") + idx)
 
         text = None
         if letter is not None:
