@@ -48,19 +48,19 @@ nper = 1  # Number of periods
 nlay = 5  # Number of layers
 nrow = 17  # Number of rows
 ncol = 17  # Number of columns
-top = 200.0  # Top of the model ($ft$)
+top = 500.0  # Top of the model ($ft$)
 botm_str = "107., 97., 87., 77., 67."  # Bottom elevations ($ft$)
 strt = 115.0  # Starting head ($ft$)
-k11 = 30.  # Horizontal hydraulic conductivity ($ft/d$)
+k11 = 30.0  # Horizontal hydraulic conductivity ($ft/d$)
 k33_str = "1179., 30., 30., 30., 30."  # Vertical hydraulic conductivity ($ft/d$)
 ss = 3e-4  # Specific storage ($1/d$)
 sy = 0.2  # Specific yield (unitless)
-H1 = 160.  # Constant head on left side of model ($ft$)
-H2 = 140.  # Constant head on right side of model ($ft$)
+H1 = 160.0  # Constant head on left side of model ($ft$)
+H2 = 140.0  # Constant head on right side of model ($ft$)
 recharge = 0.0116  # Aereal recharge rate ($ft/d$)
 etvrate = 0.0141  # Maximum evapotranspiration rate ($ft/d$)
 etvdepth = 15.0  # Evapotranspiration extinction depth ($ft$)
-lak_strt = 110.  # Starting lake stage ($ft$)
+lak_strt = 110.0  # Starting lake stage ($ft$)
 lak_etrate = 0.0103  # Lake evaporation rate ($ft/d$)
 
 # parse parameter strings into tuples
@@ -70,21 +70,49 @@ k33 = [float(value) for value in k33_str.split(",")]
 
 # Static temporal data used by TDIS file
 
-tdis_ds = (
-    (5000.0, 100, 1.02),
-)
+tdis_ds = ((5000.0, 100, 1.02),)
 
 # define delr and delc
 delr = np.array(
     [
-        250.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 500.00, 500.00, 500.00, 500.0,
-        500.00, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 250.0
+        250.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        500.00,
+        500.00,
+        500.00,
+        500.0,
+        500.00,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        250.0,
     ]
 )
 delc = np.array(
     [
-        250.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 500.00, 500.00, 500.00, 500.0,
-        500.00, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 250.0
+        250.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        500.00,
+        500.00,
+        500.00,
+        500.0,
+        500.00,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        1000.0,
+        250.0,
     ]
 )
 
@@ -101,8 +129,19 @@ idomain0 = np.loadtxt(fpth, dtype=np.int)
 fpth = os.path.join(data_pth, "idomain-02.txt")
 idomain1 = np.loadtxt(fpth, dtype=np.int)
 idomain = [idomain0, idomain1, 1, 1, 1]
-fpth = os.path.join(data_pth, "surf.txt")
-surf = np.loadtxt(fpth, dtype=np.float)
+
+# create linearly varying evapotranspiration surface
+
+xlen = delr.sum() - 0.5 * (delr[0] + delr[-1])
+x = 0.
+s1d = H1 * np.ones((ncol), dtype=np.float)
+for idx in range(1, ncol):
+    x += 0.5 * (delr[idx - 1] + delr[idx])
+    frac = x / xlen
+    s1d[idx] = H1 + (H2 - H1) * frac
+surf = np.tile(s1d, (nrow, 1))
+surf[idomain0 == 0] = botm[0] - 2
+surf[idomain1 == 0] = botm[1] - 2
 
 # ### Create LAK Package Problem 1 Model Boundary Conditions
 #
@@ -176,9 +215,7 @@ lak_conn = [
     [0, 56, 0, 10, 11, "HORIZONTAL", 0.1, 0, 0, 500, 500],
 ]
 
-lak_packagedata = [
-    [0, lak_strt, len(lak_conn)]
-]
+lak_packagedata = [[0, lak_strt, len(lak_conn)]]
 
 lak_spd = [
     [0, "rainfall", recharge],
@@ -403,10 +440,28 @@ def plot_grid(gwf, silent=True):
     ax.set_xlabel("x-coordinate, in feet")
     ax.set_ylabel("y-coordinate, in feet")
     fs.heading(ax, heading="Map view", idx=0)
-    fs.add_text(ax, "A", x=p1[0]+150, y=p1[1]+150, transform=False, bold=False,
-                color="red", ha="left", va="bottom")
-    fs.add_text(ax, "B", x=p2[0]+150, y=p2[1]+150, transform=False, bold=False,
-                color="red", ha="left", va="bottom")
+    fs.add_text(
+        ax,
+        "A",
+        x=p1[0] + 150,
+        y=p1[1] + 150,
+        transform=False,
+        bold=False,
+        color="red",
+        ha="left",
+        va="bottom",
+    )
+    fs.add_text(
+        ax,
+        "B",
+        x=p2[0] + 150,
+        y=p2[1] + 150,
+        transform=False,
+        bold=False,
+        color="red",
+        ha="left",
+        va="bottom",
+    )
     fs.remove_edge_ticks(ax)
 
     ax = axes[1]
@@ -511,16 +566,20 @@ def plot_lak_results(gwf, silent=True):
     fpth = os.path.join(ws, sim_name, "{}.gwf.obs.csv".format(sim_name))
     gwf_results = np.genfromtxt(fpth, delimiter=",", names=True)
 
-    dtype = [("time", np.float), ("STAGE", np.float),
-             ("A", np.float), ("B", np.float), ]
+    dtype = [
+        ("time", np.float),
+        ("STAGE", np.float),
+        ("A", np.float),
+        ("B", np.float),
+    ]
 
     results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)
     results["time"][1:] = lak_results["time"]
-    results["STAGE"][0] = 110.
+    results["STAGE"][0] = 110.0
     results["STAGE"][1:] = lak_results["STAGE"]
-    results["A"][0] = 115.
+    results["A"][0] = 115.0
     results["A"][1:] = gwf_results["A"]
-    results["B"][0] = 115.
+    results["B"][0] = 115.0
     results["B"][1:] = gwf_results["B"]
 
     # create the figure
@@ -534,12 +593,30 @@ def plot_lak_results(gwf, silent=True):
 
     ax.set_xlim(0, 3000)
     ax.set_ylim(110, 160)
-    ax.plot(results["time"], results["STAGE"], lw=0.75,
-            ls="--", color="black", label="Lake stage")
-    ax.plot(results["time"], results["A"], lw=0.75,
-            ls="-", color="0.5", label="Point A")
-    ax.plot(results["time"], results["B"], lw=0.75,
-            ls="-", color="black", label="Point B")
+    ax.plot(
+        results["time"],
+        results["STAGE"],
+        lw=0.75,
+        ls="--",
+        color="black",
+        label="Lake stage",
+    )
+    ax.plot(
+        results["time"],
+        results["A"],
+        lw=0.75,
+        ls="-",
+        color="0.5",
+        label="Point A",
+    )
+    ax.plot(
+        results["time"],
+        results["B"],
+        lw=0.75,
+        ls="-",
+        color="black",
+        label="Point B",
+    )
     ax.set_xlabel("Simulation time, in days")
     ax.set_ylabel("Head or stage, in feet")
     fs.graph_legend(ax, loc="lower right")
