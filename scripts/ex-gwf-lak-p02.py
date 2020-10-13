@@ -11,7 +11,6 @@
 import os
 import sys
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import flopy
 import shapefile as shp
@@ -429,7 +428,8 @@ def build_model():
         csv_file = obs_file + ".csv"
         obslist = [
             ["A", "head", (0, 3, 3)],
-            ["B", "head", (0, 13, 13)],
+            ["B", "head", (0, 13, 8)],
+            ["C", "head", (0, 23, 13)],
         ]
         obsdict = {csv_file: obslist}
         flopy.mf6.ModflowUtlobs(
@@ -608,7 +608,12 @@ def plot_grid(gwf, silent=True):
 
     # observation locations
     p1 = (xcenters[3], ycenters[3])
-    p2 = (xcenters[13], ycenters[13])
+    p2 = (xcenters[8], ycenters[13])
+    p3 = (xcenters[13], ycenters[23])
+
+    # lake text locations
+    pl1 = (xcenters[8], ycenters[8])
+    pl2 = (xcenters[8], ycenters[18])
 
     fs = USGSFigure(figure_type="map", verbose=False)
     fig = plt.figure(
@@ -649,7 +654,7 @@ def plot_grid(gwf, silent=True):
     for shape in sfr.shapeRecords():
         x = [i[0] for i in shape.shape.points[:]]
         y = [i[1] for i in shape.shape.points[:]]
-        ax.plot(x, y, color="#3BB3D0", lw=1.5)
+        ax.plot(x, y, color="#3BB3D0", lw=1.5, zorder=1)
     mm.plot_inactive(color_noflow="#5DBB63")
     mm.plot_grid(lw=0.5, color="black")
     cv = mm.contour_array(
@@ -664,9 +669,9 @@ def plot_grid(gwf, silent=True):
     mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
     ax.plot(p1[0], p1[1], marker="o", mfc="red", mec="black", ms=4)
     ax.plot(p2[0], p2[1], marker="o", mfc="red", mec="black", ms=4)
+    ax.plot(p3[0], p3[1], marker="o", mfc="red", mec="black", ms=4)
     ax.set_xlabel("x-coordinate, in feet")
     ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Map view", idx=0)
     fs.add_text(
         ax,
         "A",
@@ -688,6 +693,39 @@ def plot_grid(gwf, silent=True):
         color="red",
         ha="left",
         va="bottom",
+    )
+    fs.add_text(
+        ax,
+        "C",
+        x=p3[0] + 150,
+        y=p3[1] + 150,
+        transform=False,
+        bold=False,
+        color="red",
+        ha="left",
+        va="bottom",
+    )
+    fs.add_text(
+        ax,
+        "Lake 1",
+        x=pl1[0],
+        y=pl1[1],
+        transform=False,
+        italic=False,
+        color="white",
+        ha="center",
+        va="center",
+    )
+    fs.add_text(
+        ax,
+        "Lake 2",
+        x=pl2[0],
+        y=pl2[1],
+        transform=False,
+        italic=False,
+        color="white",
+        ha="center",
+        va="center",
     )
     fs.remove_edge_ticks(ax)
 
@@ -783,6 +821,7 @@ def plot_lak_results(gwf, silent=True):
         ("LAKE2", np.float),
         ("A", np.float),
         ("B", np.float),
+        ("C", np.float),
     ]
 
     results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)
@@ -795,13 +834,15 @@ def plot_lak_results(gwf, silent=True):
     results["A"][1:] = gwf_results["A"]
     results["B"][0] = strt
     results["B"][1:] = gwf_results["B"]
+    results["C"][0] = strt
+    results["C"][1:] = gwf_results["C"]
 
     # create the figure
     fig, axes = plt.subplots(
         ncols=1,
         nrows=2,
         sharex=True,
-        figsize=(6.3, 6.3),
+        figsize=(6.3, 4.3),
         constrained_layout=True,
     )
 
@@ -824,9 +865,11 @@ def plot_lak_results(gwf, silent=True):
         color="black",
         label="Lake 2 stage",
     )
+    ax.set_xticks([0, 250, 500, 750, 1000, 1250, 1500])
     ax.set_yticks([110, 115, 120, 125, 130])
     ax.set_ylabel("Lake stage, in feet")
     fs.graph_legend(ax, loc="upper right")
+    fs.heading(ax, idx=0)
 
 
     ax = axes[1]
@@ -848,10 +891,20 @@ def plot_lak_results(gwf, silent=True):
         color="black",
         label="Point B",
     )
+    ax.plot(
+        results["time"],
+        results["C"],
+        lw=0.75,
+        ls="-.",
+        color="black",
+        label="Point C",
+    )
+    ax.set_xticks([0, 250, 500, 750, 1000, 1250, 1500])
     ax.set_xlabel("Simulation time, in days")
     ax.set_yticks([110, 120, 130, 140, 150, 160])
     ax.set_ylabel("Head, in feet")
-    fs.graph_legend(ax, loc="lower right")
+    fs.graph_legend(ax, loc="upper left")
+    fs.heading(ax, idx=1)
 
     # save figure
     if config.plotSave:

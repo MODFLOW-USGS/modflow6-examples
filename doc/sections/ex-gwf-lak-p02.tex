@@ -1,0 +1,49 @@
+\section{Lake Package Problem 2}
+
+% Describe source of problem
+This example is based on problem 2 in the Lake (LAK) Package for \mftk described in \cite{modflowlak3pack}. The example represents a two lakes connected by a stream surrounded by a surficial aquifer (fig.~\ref{fig:ex-gwf-lak-p02-grid}).                                
+
+\begin{StandardFigure}{
+                                     Lateral grid discretization. The location of lake and constant head boundary
+                                     cells are also shown. Simulated heads and lake stage at the end of stress 
+                                     period 1, normalized specific discharge vectors, and the location of three 
+                                     observation locations are also shown.
+                                     }{fig:ex-gwf-lak-p02-grid}{../figures/ex-gwf-lak-p02-grid.png}
+\end{StandardFigure}   
+
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-lak-p02-01}.  The model consists of a grid of 17 columns, 27 rows, and 5 layers. The model domain is 13,000 and 20,500 $ft$ in the x- and y-directions, respectively. The discretization is in the row and column directions ranges from 250 to 1,000 $ft$ and is 500 $ft$ where the lakes are located (fig.~\ref{fig:ex-gwf-lak-p02-grid}). The top of the model is specified to be 200 $ft$ and the bottom of each layer is specified to be 102, 97, 87, 77, and 67 $ft$. Groundwater flow was inactivated in the location of the lakes in model layers 1 and 2 by specifying an \texttt{IDOMAIN} value of zero in these cells.
+
+One transient stress period 1,500 days in length is simulated. The stress period has 200 stress periods and uses a time step multiplier equal to 1.005 that results in time step lengths that range 4.40 to 11.82 days.
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-lak-p02-01}
+
+% material properties and initial conditions
+The horizontal and vertical hydraulic conductivity is 30 $ft/d$. A constant specific storage value of $3 \times 10^{-4}$ ($1/day$) and specific yield of 0.2 (unitless) were specified. All model layers were specified to convert between confined and unconfined conditions. An initial head of 115 $ft$ was specified in all model layers.
+
+% boundary conditions
+Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package and a constant recharge rate of 0.0116 $ft/d$. Flow out of the model is from groundwater evapotranspiration represented by evapotranspiration (EVT) package cells. Groundwater evapotranspiration occurs where depth to water is within 15 $ft$ of land surface, has a maximum rate of 0.0141 $ft/d$ at land surface. The evapotranspiration surface, the elevation in the aquifer below which evapotranspiration is assumed to decline linearly, is represented as linearly sloping from 160 $ft$ on the left side of the model to 140 $ft$ on the right side of the model, except in the lake area, where the elevation is specified as 3 $ft$ below the lakebed, which is equal to 2 $ft$ below the layer bottom elevation. This means that in the possible case of lake drying, land-surface evapotranspiration from the water table under the dry lakebed is at the maximum rate if the water table is not deeper than 3 $ft$ below the lakebed. Away from the lake, the evapotranspiration surface is an implicit representation of land surface, since the latter is normally equal to or slightly above the evapotranspiration surface. Constant head boundary cells were added in column 1 and column 17 in all rows and layers; constant heads are specified to be 160 and 140 $ft$ on the left and right sides of the model, respectively.
+
+The lakes are located in the center of the finest resolution model cells (500 $ft$) in model layers 1 and 2 and has an initial stage of 130 $ft$. The lakes is connected horizontally to the aquifer in model layers 1 and 2 and vertically to cells in model layer 2 and 3 that directly underly the lake. A lakebed leakance value of 0.1 $1/d$ was specified for all lake connections to the aquifer. The connection length for horizontal lake connections were calculated from grid dimensions and are 500 $ft$ in layer 1 and 250 $ft$ in layer 2; the connection width for horizontal connections was 500 $ft$. Rainfall and evaporation rates equal to 0.0116 and 0.0103 $ft/d$ are specified for the lake, respectively.
+
+
+
+% solution 
+The model uses the Newton-Raphson Formulation. The simple complexity Iterative Model Solver option and preconditioned bi-conjugate gradient stabilized linear accelerator is also used.
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Simulated results at the end of the stress period are shown in figure~\ref{fig:ex-gwf-lak-p02-grid}. Transient results for the lake stage and groundwater heads at two aquifer locations are shown in figure~\ref{fig:ex-gwf-lak-p02-01}. Both water-table elevations and the lake stage converge asymptotically to equilibrium values. The water-table elevations approximately converge in about 1,000 days and the lake stage in about 2,000 days of simulation time.
+
+% a figure
+\begin{StandardFigure}{
+                                     Selected lake stages and heads in the aquifer. 
+                                     \textit{A}. Lake stages. \textit{B}. Heads in the aquifer. 
+                                     The location of points A, B, and C are shown in 
+                                     figure~\ref{fig:ex-gwf-lak-p02-grid}.
+                                     }{fig:ex-gwf-lak-p02-01}{../figures/ex-gwf-lak-p02-01.png}
+\end{StandardFigure}                                 
