@@ -43,7 +43,7 @@ time_units = "seconds"
 parameters = {
     "ex-gwf-lgrv-gr": {"configuration": "Refined"},
     "ex-gwf-lgrv-gc": {"configuration": "Coarse"},
-    "ex-gwf-lgrv": {"configuration": "LGR"},
+    "ex-gwf-lgrv-lgr": {"configuration": "LGR"},
 }
 
 # Table LGRV Model Parameters
@@ -227,11 +227,12 @@ def build_lgr_model(sim_name):
     # parent model with coarse grid
     icoarsen = 3
     ncppl = [1, 3, 3, 3, 3, 3, 3, 3, 3]
-    sim = build_parent_model(sim_name, icoarsen=icoarsen, ncppl=ncppl, sim=sim)
+    sim = build_parent_model(sim, sim_name, icoarsen=icoarsen, ncppl=ncppl)
     gwf = sim.get_model("parent")
 
     # child model with fine grid
-    simc = build_child_model(sim_name, sim=sim)
+    sim = build_child_model(sim, sim_name)
+    gwfc = sim.get_model("child")
 
     # use flopy lgr utility to wire up connections between parent and child
     nlayp = len(ncppl)
@@ -256,7 +257,6 @@ def build_lgr_model(sim_name):
     )
 
     # swap out lgr child top and botm with
-    gwfc = simc.get_model("child")
     topc = gwfc.dis.top.array
     botmc = gwfc.dis.botm.array
     lgr.top = topc
@@ -275,7 +275,7 @@ def build_lgr_model(sim_name):
     return sim
 
 
-def build_parent_model(sim_name, icoarsen, ncppl, sim=None):
+def build_parent_model(sim, sim_name, icoarsen, ncppl):
     xminp, xmaxp, yminp, ymaxp = model_domain
     xminc, xmaxc, yminc, ymaxc = child_domain
     delcp = delc * icoarsen
@@ -299,7 +299,7 @@ def build_parent_model(sim_name, icoarsen, ncppl, sim=None):
     return sim
 
 
-def build_child_model(sim_name, sim=None):
+def build_child_model(sim, sim_name):
     icoarsen = 1
     xminp, xmaxp, yminp, ymaxp = model_domain
     xminc, xmaxc, yminc, ymaxc = child_domain

@@ -64,6 +64,12 @@ else:
 
 # base example workspace
 base_ws = os.path.join("..", "examples")
+for idx, arg in enumerate(sys.argv):
+    if arg in ("--destination"):
+        if idx + 1 < len(sys.argv):
+            base_ws = sys.argv[idx + 1]
+            base_ws = os.path.abspath(base_ws)
+assert os.path.isdir(base_ws)
 
 # data files required for examples
 data_ws = os.path.join("..", "data")
