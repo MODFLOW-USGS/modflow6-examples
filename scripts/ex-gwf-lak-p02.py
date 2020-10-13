@@ -373,7 +373,7 @@ mvr_spd = [
     ["SFR-1", 7, "LAK-1", 0, "FACTOR", 1.0],
     ["LAK-1", 0, "SFR-1", 8, "FACTOR", 1.0],
     ["SFR-1", 13, "LAK-1", 1, "FACTOR", 1.0],
-    ["LAK-1",  1,"SFR-1", 14, "FACTOR", 0.5],
+    ["LAK-1", 1, "SFR-1", 14, "FACTOR", 0.5],
 
 ]
 
@@ -461,6 +461,7 @@ def build_model():
             time_conversion=lak_time_conv,
             length_conversion=lak_len_conv,
             mover=True,
+            print_stage=True,
             nlakes=2,
             noutlets=len(lak_outlets),
             packagedata=lak_packagedata,
@@ -484,6 +485,8 @@ def build_model():
             pname="SFR-1",
             unit_conversion=sfr_conv,
             mover=True,
+            print_stage=True,
+            print_flows=True,
             nreaches=len(sfr_pakdata),
             packagedata=sfr_pakdata,
             connectiondata=sfr_conn,
@@ -870,7 +873,6 @@ def plot_lak_results(gwf, silent=True):
     ax.set_ylabel("Lake stage, in feet")
     fs.graph_legend(ax, loc="upper right")
     fs.heading(ax, idx=0)
-
 
     ax = axes[1]
     ax.set_xlim(0, 1500)

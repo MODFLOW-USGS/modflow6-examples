@@ -20,7 +20,7 @@ This example is based on problem 1 in the Lake (LAK) Package for \mftk described
 % spatial discretization  and temporal discretization
 Model parameters for the example are summarized in table~\ref{tab:ex-gwf-lak-p01-01}.  The model consists of a grid of 17 columns, 17 rows, and 5 layers. The model domain is 13,000 $ft$ in the x- and y-directions. The discretization is in the row and column directions ranges from 250 to 1,000 $ft$ and is 500 $ft$ in the center of the model domain where the lake is located (fig.~\ref{fig:ex-gwf-lak-p01-grid}). The top of the model is specified to be 500 $ft$ and the bottom of each layer is specified to be 107, 97, 87, 77, and 67 $ft$. Groundwater flow was inactivated in the location of the lake in model layers 1 and 2 by specifying an \texttt{IDOMAIN} value of zero in these cells.
 
-One transient stress period 5,000 days in length is simulated. The stress period has 100 stress periods and uses a time step multiplier equal to 1.02 that results in time step lengths that range 16.01 to 113.74 days.
+One transient stress period 5,000 days in length is simulated. The stress period has 100 time steps and uses a time step multiplier equal to 1.02, which results in time step lengths that range 16.01 to 113.74 days.
 
 % add static parameter table(s)
 \input{../tables/ex-gwf-lak-p01-01}

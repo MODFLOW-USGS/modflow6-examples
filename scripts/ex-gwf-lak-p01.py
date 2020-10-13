@@ -301,6 +301,7 @@ def build_model():
         )
         lak = flopy.mf6.ModflowGwflak(
             gwf,
+            print_stage=True,
             nlakes=1,
             noutlets=0,
             packagedata=lak_packagedata,
