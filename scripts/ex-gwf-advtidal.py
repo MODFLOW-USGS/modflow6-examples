@@ -5,7 +5,7 @@
 # The grid is 15 rows by 10 columns.  The length unit is feet and the time unit
 # is days. Each cell is 500 ft × 500 ft.  The estuary is represented by GHB
 # boundaries in column 10.  Two rivers cross the area from left to right.
-# Recharge is “zoned” by the use of three Recharge-Package input files
+# Recharge is zoned by the use of three Recharge-Package input files
 #
 
 # ### Advgwtidal Problem Setup

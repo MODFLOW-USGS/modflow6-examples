@@ -1377,7 +1377,7 @@ def plot_calibration(silent=True):
     # -- subplot c -----------------------------------------------------------
 
     ctext = "Calibration period\n{} to {}".format(
-        xc0.strftime("%B %-d, %Y"), xc1.strftime("%B %-d, %Y")
+        xc0.strftime("%B %d, %Y"), xc1.strftime("%B %d, %Y")
     )
 
     fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(6.8, 6.8))
@@ -1416,7 +1416,7 @@ def plot_calibration(silent=True):
 
     ax.set_ylim(1.5, -0.1)
     ax.xaxis.set_ticks(df_xticks)
-    ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%-m/%-d/%Y"))
+    ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%m/%d/%Y"))
 
     ax.set_ylabel("Compaction, in {}".format(length_units))
     ax.set_xlabel("Year")
@@ -1512,7 +1512,7 @@ def plot_calibration(silent=True):
     )
 
     for idx, ixc in enumerate(ixs):
-        text = "{}".format(df_iobs_pc.index[ixc].strftime("%-m/%-d/%Y"))
+        text = "{}".format(df_iobs_pc.index[ixc].strftime("%m/%d/%Y"))
         if df_iobs_pc.index[ixc].month == 4:
             dxc = -0.001
             dyc = -1
@@ -1539,7 +1539,7 @@ def plot_calibration(silent=True):
         )
 
     xtext = "Total compaction since {}, in {}".format(
-        df_sim_pc.index[0].strftime("%B %-d, %Y"), length_units
+        df_sim_pc.index[0].strftime("%B %d, %Y"), length_units
     )
     ytext = (
         "Effective stress at the bottom of\nthe lower aquifer, in "
