@@ -1,0 +1,37 @@
+\section{Henry Problem}
+
+% Describe source of problem
+This problem simulates the classic Henry problem \citep{henry1964}  for variable-density groundwater flow and solute transport.  The \mf simulations presented here are based on the hydraulic-head formulation for variable-density flow as presented by \cite{langevin2020hydraulic}.  
+
+\subsection{Example Description}
+
+Variations on the Henry problem \citep{henry1964} are commonly used as benchmark test problems for variable-density flow and transport codes.  The model domain for the Henry problem is 2 $m$ long by 1 $m$ tall. In the original version of the problem, for which \cite{henry1964} presented a semianalytical solution, freshwater with a density of 1000 $kg/m^3$ flows into the domain through the left side at a rate of 5.7024 $m^3/d$. \cite{Simpson2004} reduced the rate of inflow to 2.851 $m^3/d$ in their numerical simulations, rendering the flow system less ``advective dominant'' and effecting ``an increase in the relative importance of density-driven processes'' \citep{Simpson2004}. This modified version of the problem, called the ``low-inflow'' version here, provides a better benchmark test of density-dependent flow behavior than Henry's original version. Results from both versions of the problem are presented.
+
+\cite{henry1964} and \cite{Simpson2004} assign the same flow and transport boundary conditions at the right boundary. The boundary condition for flow is a hydrostatic condition based on seawater concentration, 35 $kg/m^3$, which corresponds to a density of 1024.5 $kg/m^3$. For transport, the concentration at the right boundary is fixed at seawater concentration. The simulations presented here use a variation in which the right boundary is assigned a mixed boundary condition: water that flows into the model from the right boundary enters at seawater concentration, and water that flows out of the model at the right boundary exits at the groundwater concentration computed for that boundary cell. Use of a mixed boundary condition in the Henry problem was introduced by \cite{Segol1975}, who imposed a Neumann-type condition for transport when water flows out of the model. The mixed boundary condition used here, in which outflow is at the prevailing groundwater concentration, is the condition used for the Henry problem by \cite{Voss1984sutra} and \cite{VossSouza1987}. This manner of representing the seawater boundary, which is often used in saltwater intrusion models, allows a freshwater outflow zone to form above the zone of recirculating saltwater. 
+
+% spatial discretization  and temporal discretization
+The freshwater hydraulic conductivity is set to 864 $m/d$, and the porosity to 0.35 (tab.~\ref{tab:ex-gwt-henry-01}).  Mechanical dispersion is not represented; all mixing occurs solely by molecular diffusion with a diffusion coefficient of 0.57024 $m^2/d$. The simulation begins with the model domain initially filled with seawater, although the problem can also be simulated with the domain initially filled with freshwater.  If the hydraulic head is fixed for the seawater boundary and the mixed boundary condition is used for transport, then it may be necessary to start the simulation with some saltwater in the domain or there may be no seawater inflow.  In the simulations presented here, the domain is divided into 40 layers and 80 columns of cells, and a simulation period of 0.5 $d$ is divided into 500 equally sized time steps of 0.001 $d$.
+
+% add static parameter table(s)
+\input{../tables/ex-gwt-henry-01.tex}
+
+% for examples without scenarios
+\subsection{Scenario Results}
+
+The original and low-inflow versions of the Henry problem (tab.~\ref{tab:ex-gwt-henry-scenario}) were  simulated with a mixed boundary condition for concentration in cells along the right boundary. The mixed boundary condition is represented using the General-Head Boundary (GHB) Package, which allows the hydrostatic boundary condition to be effectively imposed at the right edge of the model domain by accounting for the conductance of aquifer material between the cell center and the right edge of the model domain. Conceptually, a seawater reservoir is attached to the edge of each model cell at the right boundary. Flow into the model domain enters at the concentration of seawater, and flow out of the model domain exists at the concentration computed in the corresponding boundary cell. Figure~\ref{fig:ex-gwt-henry-a-conc} shows contours of concentration (relative seawater concentrations of 0.01, 0.1, 0.5, 0.9, and 0.99) at the end of the 0.5 $d$ simulation period for the classic Henry problem.  Figure~\ref{fig:ex-gwt-henry-b-conc} shows results from the low-inflow version of the Henry problem.  These same simulations were reported by \cite{langevin2020hydraulic} and were shown to be in good agreement with results from SEAWAT simulations.
+
+% scenario table
+\input{../tables/ex-gwt-henry-scenario.tex}
+
+\begin{StandardFigure}{
+                                     Simulation results for the classic Henry problem.
+                                     }{fig:ex-gwt-henry-a-conc}{../figures/ex-gwt-henry-a-conc.png}
+\end{StandardFigure}                                 
+
+% a figure
+\begin{StandardFigure}{
+                                    Simulation results for the low-inflow version of the Henry problem.
+                                     }{fig:ex-gwt-henry-b-conc}{../figures/ex-gwt-henry-b-conc.png}
+\end{StandardFigure}                                 
+
+                      
