@@ -190,7 +190,7 @@ def build_model(sim_folder, inflow):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtic(gwt, strt=initial_concentration)
     flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
-    flopy.mf6.ModflowGwtdsp(gwt, xt3d=False, diffc=diffusion_coefficient)
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, diffc=diffusion_coefficient)
     sourcerecarray = [
         ("GHB-1", "AUX", "CONCENTRATION"),
         ("WEL-1", "AUX", "CONCENTRATION"),

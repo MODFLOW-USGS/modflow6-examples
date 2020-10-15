@@ -231,7 +231,8 @@ def build_mf6gwt(
     )
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt, alh=longitudinal_dispersivity, ath1=longitudinal_dispersivity
+        gwt, xt3d_off=True, alh=longitudinal_dispersivity,
+        ath1=longitudinal_dispersivity
     )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),

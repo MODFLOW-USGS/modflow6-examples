@@ -55,16 +55,16 @@ example_name = "ex-gwt-mt3dms-p04"
 # This entire dictionary is passed to _build_model()_ using the kwargs argument
 
 parameters = {
-    "ex-gwt-mt3dms-p04a": {"xt3d": True, "mixelm": 0},
-    "ex-gwt-mt3dms-p04b": {"xt3d": True, "mixelm": -1},
-    "ex-gwt-mt3dms-p04c": {"xt3d": True, "mixelm": 1},
+    "ex-gwt-mt3dms-p04a": {"mixelm": 0},
+    "ex-gwt-mt3dms-p04b": {"mixelm": -1},
+    "ex-gwt-mt3dms-p04c": {"mixelm": 1},
 }
 # Scenario parameter units
 #
 # add parameter_units to add units to the scenario parameter table that is automatically
 # built and used by the .tex input
 
-parameter_units = {"xt3d": "unitless", "mixelm": "unitless"}
+parameter_units = {"mixelm": "unitless"}
 
 # Setup some lists that will assist with labeling contours in the figures
 
@@ -170,7 +170,7 @@ tdis_rc.append((perlen, nstp, 1.0))
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(sim_name, xt3d=True, mixelm=0, silent=False):
+def build_model(sim_name, mixelm=0, silent=False):
     if config.buildModel:
 
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
@@ -451,7 +451,6 @@ def build_model(sim_name, xt3d=True, mixelm=0, silent=False):
         if al != 0:
             flopy.mf6.ModflowGwtdsp(
                 gwt,
-                xt3d=xt3d,
                 alh=al,
                 ath1=ath1,
                 filename="{}.dsp".format(gwtname),

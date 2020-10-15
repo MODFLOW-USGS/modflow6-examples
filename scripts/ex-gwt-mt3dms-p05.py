@@ -84,7 +84,6 @@ sconc = 0.0
 c0 = 0.0
 dt0 = 0.3
 ath1 = al * trpt
-xt3d = [True]
 botm = [top - delz]  # Model geometry
 k33 = k11  # Vertical hydraulic conductivity ($m/d$)
 icelltype = 0
@@ -150,7 +149,7 @@ tdis_rc.append((perlen, nstp, 1.0))
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
+def build_model(sim_name, mixelm=0, silent=False):
     if config.buildModel:
 
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
@@ -416,7 +415,6 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         if al != 0:
             flopy.mf6.ModflowGwtdsp(
                 gwt,
-                xt3d=xt3d,
                 alh=al,
                 ath1=ath1,
                 filename="{}.dsp".format(gwtname),

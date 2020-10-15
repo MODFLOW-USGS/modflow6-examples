@@ -433,7 +433,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d=True, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
+        gwt, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
     )
     sourcerecarray = [[]]
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)

@@ -435,6 +435,7 @@ def build_model(
         if dispersivity != 0:
             flopy.mf6.ModflowGwtdsp(
                 gwt,
+                xt3d_off=True,
                 alh=dispersivity,
                 ath1=dispersivity,
                 filename="{}.dsp".format(gwtname),

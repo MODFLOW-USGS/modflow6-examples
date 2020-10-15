@@ -232,7 +232,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="upstream")
     flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d=False, alh=alpha_l, ath1=alpha_th, atv=alpha_tv
+        gwt, xt3d_off=True, alh=alpha_l, ath1=alpha_th, atv=alpha_tv
     )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),

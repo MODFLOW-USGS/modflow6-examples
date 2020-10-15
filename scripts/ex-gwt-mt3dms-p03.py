@@ -83,7 +83,6 @@ sconc = 0.0
 dt0 = 0.3
 ath1 = al * trpt
 dmcoef = 0.0
-xt3d = [False]
 
 botm = [top - delz]  # Model geometry
 
@@ -415,7 +414,7 @@ def build_model(sim_name, mixelm=0, silent=False):
         if al != 0:
             flopy.mf6.ModflowGwtdsp(
                 gwt,
-                xt3d=xt3d,
+                xt3d_off=True,
                 alh=al,
                 ath1=ath1,
                 filename="{}.dsp".format(gwtname),

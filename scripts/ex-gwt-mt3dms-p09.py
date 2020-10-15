@@ -117,7 +117,6 @@ spd_mf6 = {0: wellist_sp1, 1: wellist_sp2}
 sconc = 0.0
 ath1 = al * trpt
 dmcoef = 0.0  # m^2/s
-xt3d = [True]
 # Time variables
 perlen = [365.0 * 86400, 365.0 * 86400]
 steady = [False, False]
@@ -153,7 +152,7 @@ nadvfd = 1
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
+def build_model(sim_name, mixelm=0, silent=False):
     if config.buildModel:
         print("Building mf2005 model...{}".format(sim_name))
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
@@ -440,7 +439,6 @@ def build_model(sim_name, xt3d=False, mixelm=0, silent=False):
         if al != 0:
             flopy.mf6.ModflowGwtdsp(
                 gwt,
-                xt3d=xt3d,
                 alh=al,
                 ath1=ath1,
                 filename="{}.dsp".format(gwtname),
@@ -620,7 +618,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
 
 
 def scenario(idx, silent=True):
-    mf2k5, mt3d, sim = build_model(example_name, xt3d=xt3d, mixelm=mixelm)
+    mf2k5, mt3d, sim = build_model(example_name, mixelm=mixelm)
     write_model(mf2k5, mt3d, sim, silent=silent)
     success = run_model(mf2k5, mt3d, sim, silent=silent)
     if success:
