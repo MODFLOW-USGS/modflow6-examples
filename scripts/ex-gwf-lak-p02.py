@@ -374,7 +374,6 @@ mvr_spd = [
     ["LAK-1", 0, "SFR-1", 8, "FACTOR", 1.0],
     ["SFR-1", 13, "LAK-1", 1, "FACTOR", 1.0],
     ["LAK-1", 1, "SFR-1", 14, "FACTOR", 0.5],
-
 ]
 
 # Solver parameters

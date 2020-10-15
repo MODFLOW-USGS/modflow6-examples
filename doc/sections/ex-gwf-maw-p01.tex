@@ -1,0 +1,51 @@
+\section{Multi-Aquifer Well Package Problem 1}
+
+% Describe source of problem
+This is the multi-aquifer well simulation described in \cite{nevilletonkin2004}. The example simulates an upper and lower aquifer separated by an impermeable confining unit but connected by a well that is open across both aquifers.                                
+
+\begin{StandardFigure}{
+                                     Location of inactive cells and the multi-aquifer well. 
+                                     }{fig:ex-gwf-maw-p01-grid}{../figures/ex-gwf-maw-p01-grid.png}
+\end{StandardFigure}   
+
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-maw-p01-01}.  The model consists of a grid of 101 columns, 101 rows, and 2 layers. The model domain is 14,342 $m$ in the x- and y-directions (fig.~\ref{fig:ex-gwf-maw-p01-grid}). The discretization is in the row and column directions is 142 $m$. The top of the model is specified to be -50 $m$ and the bottom of each layer is specified to be 142.9 and -514.5 $m$. Groundwater flow was inactivated beyond a distance of 7,163 $m$ from the center cell (row 51, column 51) in model layers 1 and 2 by specifying an \texttt{IDOMAIN} value of zero in these cells (fig.~\ref{fig:ex-gwf-maw-p01-grid}).
+
+One transient stress period 2.1314815 days in length is simulated. The stress period has 50 time steps and uses a time step multiplier equal to 1.2, which results in time step lengths that range $0.51 \times 10^{-4}$ to $0.39$ days. A short simulation time is specified to prevent the effect of the well propagating to the model boundary.
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-maw-p01-01}
+
+% material properties and initial conditions
+The horizontal and vertical hydraulic conductivity is 1 and $1 \times 10^{-16}$ $m/d$. The transmissivity of of the upper and lower aquifer is 92.9 and 371.6 $m^2/d$. A constant specific storage value of $1 \times 10^{-4}$ ($1/d$) is specified. All model layers are specified to be confined. An initial head of 3.05 and 9.14 $m$ are specified in the upper and lower aquifer, respectively. 
+
+% boundary conditions
+The multi-aquifer well was the only boundary condition specified in the model. The well is located in the center of the model domain (fig.~\ref{fig:ex-gwf-maw-p01-grid}), fully penetrates both aquifers, and has a well radius of 0.15 $m$. The Thiem conductance equation was used to calculate the well conductance in each aquifer. The initial head in the well was set equal to the initial head in the lower aquifer (9.14 $m$) and well storage was not simulated.
+
+% solution 
+The simple complexity Iterative Model Solver option and preconditioned conjugate gradient linear accelerator is used.
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The model was run for the case where the well was not pumping and a case where the well was pumping 1,767 $m^{3}/d$. Transient results for non-pumping and pumping case are shown in figure~\ref{fig:ex-gwf-maw-p01-01}. For the non-pumping case, the flow from the lower aquifer is balanced by flow to the upper aquifer (fig.~\ref{fig:ex-gwf-maw-p01-01}\textit{A}). The water level in the multi-aquifer well under non-pumping can be calculated using the Sokol solution \citep{sokol1963position}. The Sokol solution is
+
+\begin{equation}
+	\label{eq:Sokol}
+	h_w = \frac{\sum\limits_{m=1}^{N} T_m h_m}{\sum\limits_{m=1}^{N} T_m}
+\end{equation}
+
+\noindent where $h_w$ is the water-level in the well (L), $T_m$ is the aquifer transmissivity (L$^{2}$/T), and $h_m$ is the aquifer head at the outer-constant head boundary (L). For the non-pumping case, the water-level in the well calculated using equation~\ref{eq:Sokol} is 7.922 $m$, which is identical the water-level in the multi-aquifer well.
+
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated aquifer discharges to the multi-aquifer well. 
+                                     \textit{A}. Non-pumping case.
+                                     \textit{B}. Pumping case.
+                                     }{fig:ex-gwf-maw-p01-01}{../figures/ex-gwf-maw-p01-01.png}
+\end{StandardFigure}                                 
+
+For the pumping case, the flow from the upper aquifer is actually initially negative, indicating that at early time water flows up the wellbore and into the upper aquifer, rather than discharging from it (fig.~\ref{fig:ex-gwf-maw-p01-01}\textit{B}).
