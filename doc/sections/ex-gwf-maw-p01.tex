@@ -24,13 +24,10 @@ The horizontal and vertical hydraulic conductivity is 1 and $1 \times 10^{-16}$ 
 % boundary conditions
 The multi-aquifer well was the only boundary condition specified in the model. The well is located in the center of the model domain (fig.~\ref{fig:ex-gwf-maw-p01-grid}), fully penetrates both aquifers, and has a well radius of 0.15 $m$. The Thiem conductance equation was used to calculate the well conductance in each aquifer. The initial head in the well was set equal to the initial head in the lower aquifer (9.14 $m$) and well storage was not simulated.
 
-% solution 
-The simple complexity Iterative Model Solver option and preconditioned conjugate gradient linear accelerator is used.
-
 % for examples without scenarios
 \subsection{Example Results}
 
-The model was run for the case where the well was not pumping and a case where the well was pumping 1,767 $m^{3}/d$. Transient results for non-pumping and pumping case are shown in figure~\ref{fig:ex-gwf-maw-p01-01}. For the non-pumping case, the flow from the lower aquifer is balanced by flow to the upper aquifer (fig.~\ref{fig:ex-gwf-maw-p01-01}\textit{A}). The water level in the multi-aquifer well under non-pumping can be calculated using the Sokol solution \citep{sokol1963position}. The Sokol solution is
+The model was run for the case where the well was not pumping and a case where the well is pumping 1,767 $m^{3}/d$. Transient results for non-pumping and pumping case are shown in figure~\ref{fig:ex-gwf-maw-p01-01}. For the non-pumping case, the flow from the lower aquifer is balanced by flow to the upper aquifer (fig.~\ref{fig:ex-gwf-maw-p01-01}\textit{A}). The water level in the multi-aquifer well under non-pumping can be calculated using the Sokol solution \citep{sokol1963position}. The Sokol solution is
 
 \begin{equation}
 	\label{eq:Sokol}
@@ -42,7 +39,9 @@ The model was run for the case where the well was not pumping and a case where t
 
 % a figure
 \begin{StandardFigure}{
-                                     Simulated aquifer discharges to the multi-aquifer well. 
+                                     Simulated aquifer discharges to the multi-aquifer well. Discharge rates 
+                                     are relative to the multi-aquifer well; positive and negative discharge rates 
+                                     represent inflow to and outflow from the multi-aquifer, respectively.                                    
                                      \textit{A}. Non-pumping case.
                                      \textit{B}. Pumping case.
                                      }{fig:ex-gwf-maw-p01-01}{../figures/ex-gwf-maw-p01-01.png}

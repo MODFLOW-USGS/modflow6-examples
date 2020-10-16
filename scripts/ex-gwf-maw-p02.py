@@ -1,10 +1,10 @@
-# ## Neville-Tonkin Multi-Aquifer Well Problem,
+# ## Flowing well Multi-Aquifer Well Problem,
 #
-# This is the Neville-Tonkin Multi-Aquifer Well from the
-# Lake Package documentation (Neville and Tonkin, 2004).
+# This is a modified version of the Neville-Tonkin Multi-Aquifer Well problem
+# from Neville and Tonkin, 2004 that uses the flowing well option.
 #
 
-# ### Neville-Tonkin MAW Problem Setup
+# ### Flowing Well Problem Setup
 #
 # Imports
 
@@ -35,25 +35,14 @@ ws = config.base_ws
 
 # Simulation name
 
-sim_name = "ex-gwf-maw-p01"
+sim_name = "ex-gwf-maw-p02"
 
 # Model units
 
 length_units = "meters"
 time_units = "days"
 
-# Scenario parameters
-
-parameters = {
-    "ex-gwf-maw-p01a": {
-        "rate": 0.0,
-    },
-    "ex-gwf-maw-p01b": {
-        "rate": -1767.0,
-    },
-}
-
-# Table Neville-Tonkin MAW Problem Model Parameters
+# Table Flowing Well Problem Model Parameters
 
 nper = 1  # Number of periods
 nlay = 2  # Number of layers
@@ -68,6 +57,7 @@ k11 = 1.0  # Horizontal hydraulic conductivity ($m/d$)
 k33 = 1.0e-16  # Vertical hydraulic conductivity ($m/d$)
 ss = 1e-4  # Specific storage ($1/d$)
 maw_radius = 0.15  # Well radius ($m$)
+maw_rate = 0.0  # Well pumping rate ($m^{3}/d$)
 
 # parse parameter strings into tuples
 
@@ -98,20 +88,21 @@ for i in range(nrow):
         if r > 7163.0:
             idomain[:, i, j] = 0
 
-# ### Create Neville-Tonkin MAW Problem Model Boundary Conditions
+# ### Create Flowing Well Problem Model Boundary Conditions
 
 # MAW Package
 
 maw_row = int(nrow / 2)
 maw_col = int(ncol / 2)
 
-maw_packagedata = [[0, maw_radius, botm[-1], strt[-1], "THIEM", 2]]
+maw_packagedata = [[0, maw_radius, botm[-1], strt[-1], "SPECIFIED", 2]]
 
 maw_conn = [
-    [0, 0, 0, maw_row, maw_col, top, botm[-1], -999.0, -999.0],
-    [0, 1, 1, maw_row, maw_col, top, botm[-1], -999.0, -999.0],
+    [0, 0, 0, maw_row, maw_col, top, botm[-1], 111.3763, -999.0],
+    [0, 1, 1, maw_row, maw_col, top, botm[-1], 445.9849, -999.0],
 ]
 
+maw_spd = [[0, "rate", maw_rate], [0, "flowing_well", 0.0, 7500.0, 0.5]]
 
 # Solver parameters
 
@@ -121,14 +112,14 @@ hclose = 1e-9
 rclose = 1e-4
 
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 Neville-Tonkin MAW Problem model
+# ### Functions to build, write, run, and plot the MODFLOW 6 Flowing Well Problem model
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(name, rate=0.0):
+def build_model():
     if config.buildModel:
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
@@ -171,10 +162,9 @@ def build_model(name, rate=0.0):
         )
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        maw_spd = [[0, "rate", rate]]
         maw = flopy.mf6.ModflowGwfmaw(
             gwf,
-            no_well_storage=True,
+            flowing_wells=True,
             nmawwells=1,
             packagedata=maw_packagedata,
             connectiondata=maw_conn,
@@ -187,6 +177,7 @@ def build_model(name, rate=0.0):
                 ("head", "head", (0,)),
                 ("Q1", "maw", (0,), (0,)),
                 ("Q2", "maw", (0,), (1,)),
+                ("FW", "fw-rate", (0,)),
             ]
         }
         maw.obs.initialize(
@@ -201,7 +192,7 @@ def build_model(name, rate=0.0):
     return None
 
 
-# Function to write MODFLOW 6 Neville-Tonkin MAW Problem model files
+# Function to write MODFLOW 6 Flowing Well Problem model files
 
 
 def write_model(sim, silent=True):
@@ -209,7 +200,7 @@ def write_model(sim, silent=True):
         sim.write_simulation(silent=silent)
 
 
-# Function to run the Neville-Tonkin MAW Problem model.
+# Function to run the Flowing Well Problem model.
 # True is returned if the model runs successfully
 #
 
@@ -230,14 +221,10 @@ def plot_maw_results(silent=True):
     fs = USGSFigure(figure_type="graph", verbose=False)
 
     # load the observations
-    name = list(parameters.keys())[0]
-    fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
-    maw0 = np.genfromtxt(fpth, delimiter=",", names=True)
-    name = list(parameters.keys())[1]
-    fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
-    maw1 = np.genfromtxt(fpth, delimiter=",", names=True)
+    fpth = os.path.join(ws, sim_name, "{}.maw.obs.csv".format(sim_name))
+    maw = np.genfromtxt(fpth, delimiter=",", names=True)
 
-    time = maw0["time"] * 86400.0
+    time = maw["time"] * 86400.0
 
     tmin = time[0]
     tmax = time[-1]
@@ -253,10 +240,10 @@ def plot_maw_results(silent=True):
 
     ax = axes[0]
     ax.set_xlim(tmin, tmax)
-    ax.set_ylim(-1000, 1000)
+    ax.set_ylim(0, 4500)
     ax.semilogx(
         time,
-        maw0["Q1"],
+        maw["Q1"],
         lw=0.75,
         ls="-",
         color="blue",
@@ -264,7 +251,7 @@ def plot_maw_results(silent=True):
     )
     ax.semilogx(
         time,
-        maw0["Q2"],
+        maw["Q2"],
         lw=0.75,
         ls="-",
         color="red",
@@ -272,34 +259,40 @@ def plot_maw_results(silent=True):
     )
     ax.axhline(0, lw=0.5, color="0.5")
     ax.set_ylabel(" ")
-    fs.heading(ax, heading="Non-pumping case", idx=0)
-    fs.graph_legend(ax, loc="upper right", ncol=2)
+    fs.heading(ax, idx=0)
+    # fs.graph_legend(ax, loc="upper right", ncol=2)
 
     ax = axes[1]
     ax.set_xlim(tmin, tmax)
-    ax.set_ylim(-500, 2500)
-    ax.semilogx(
-        time,
-        maw1["Q1"],
+    ax.set_ylim(-4500, 0)
+    ax.axhline(
+        10.0,
         lw=0.75,
         ls="-",
         color="blue",
         label="Upper aquifer",
     )
-    ax.semilogx(
-        time,
-        maw1["Q2"],
+    ax.axhline(
+        10.0,
         lw=0.75,
         ls="-",
         color="red",
         label="Lower aquifer",
     )
-    ax.axhline(0, lw=0.5, color="0.5")
+    ax.semilogx(
+        time,
+        maw["FW"],
+        lw=0.75,
+        ls="-",
+        color="black",
+        label="Flowing well discharge",
+    )
     ax.set_xlabel(" ")
     ax.set_ylabel(" ")
     for axis in (ax.xaxis,):
         axis.set_major_formatter(mpl.ticker.ScalarFormatter())
-    fs.heading(ax, heading="Pumping case", idx=1)
+    fs.heading(ax, idx=1)
+    fs.graph_legend(ax, loc="upper left", ncol=1)
 
     # add y-axis label that spans both subplots
     ax = fig.add_subplot(1, 1, 1)
@@ -334,16 +327,7 @@ def plot_maw_results(silent=True):
 # Plot the grid
 
 
-def plot_grid(silent=True):
-    if silent:
-        verbosity = 0
-    else:
-        verbosity = 1
-    name = list(parameters.keys())[0]
-    sim_ws = os.path.join(ws, name)
-    sim = flopy.mf6.MFSimulation.load(
-        sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity
-    )
+def plot_grid(sim, silent=True):
     gwf = sim.get_model(sim_name)
     fs = USGSFigure(figure_type="map", verbose=False)
     fig = plt.figure(
@@ -420,16 +404,16 @@ def plot_grid(silent=True):
         fig.savefig(fpth)
 
 
-# Function to plot the Neville-Tonkin MAW Problem model results.
+# Function to plot the Flowing Well Problem model results.
 
 
-def plot_results(silent=True):
+def plot_results(sim, silent=True):
     if config.plotModel:
-        plot_grid(silent=silent)
+        plot_grid(sim, silent=silent)
         plot_maw_results(silent=silent)
 
 
-# Function that wraps all of the steps for the Neville-Tonkin MAW Problem model
+# Function that wraps all of the steps for the Flowing Well Problem model
 #
 # 1. build_model,
 # 2. write_model,
@@ -438,44 +422,26 @@ def plot_results(silent=True):
 #
 
 
-def simulation(idx=0, silent=True):
-    key = list(parameters.keys())[idx]
-    params = parameters[key].copy()
-
-    sim = build_model(key, **params)
+def simulation(silent=True):
+    sim = build_model()
 
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
     assert success, "could not run...{}".format(sim_name)
 
+    if success:
+        plot_results(sim, silent=silent)
+
 
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
-    simulation(idx=0, silent=False)
-
-
-def test_02():
-    simulation(idx=1, silent=False)
-
-
-def test_plot():
-    plot_results()
+    simulation(silent=False)
 
 
 # nosetest end
 
 if __name__ == "__main__":
-    # ### Neville-Tonkin MAW Problem Simulation
-    #
-    # No pumping case
+    # ### Flowing Well Problem Simulation
 
-    simulation(0)
-
-    # Pumping case
-
-    simulation(1)
-
-    # Plot the results
-
-    plot_results()
+    simulation()

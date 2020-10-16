@@ -19,6 +19,8 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwf-sfr-p01 <_notebooks/ex-gwf-sfr-p01.ipynb>
    ex-gwf-lak-p01 <_notebooks/ex-gwf-lak-p01.ipynb>
    ex-gwf-lak-p02 <_notebooks/ex-gwf-lak-p02.ipynb>
+   ex-gwf-maw-p01 <_notebooks/ex-gwf-maw-p01.ipynb>
+   ex-gwf-maw-p02 <_notebooks/ex-gwf-maw-p02.ipynb>
    ex-gwf-bump <_notebooks/ex-gwf-bump.ipynb>
    ex-gwf-disvmesh <_notebooks/ex-gwf-disvmesh.ipynb>
    ex-gwf-hani <_notebooks/ex-gwf-hani.ipynb>
@@ -48,5 +50,6 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwt-mt3dms-p09 <_notebooks/ex-gwt-mt3dms-p09.ipynb>
    ex-gwt-mt3dms-p10 <_notebooks/ex-gwt-mt3dms-p10.ipynb>
    ex-gwt-prudic2004t2 <_notebooks/ex-gwt-prudic2004t2.ipynb>
+   ex-gwt-henry <_notebooks/ex-gwt-henry.ipynb>
 
 
