@@ -92,33 +92,33 @@ maw_highK = 1e9  # Hydraulic conductivity for well ($ft/d$)
 # set delr and delc for the local model
 
 delr = [
-    1.000e1,
-    1.000e1,
-    9.000e0,
-    6.000e0,
-    4.000e0,
-    5.000e0,
-    2.000e0,
-    1.330e0,
-    1.250e0,
-    1.000e0,
-    1.000e0,
-    7.500e-1,
-    5.000e-1,
-    3.330e-1,
-    5.000e-1,
-    7.500e-1,
-    1.000e0,
-    1.000e0,
-    1.250e0,
-    1.333e0,
-    2.000e0,
-    3.000e0,
-    4.000e0,
-    6.000e0,
-    9.000e0,
-    1.000e1,
-    1.000e1,
+    10.,
+    10.,
+    9.002,
+    6.0,
+    4.0,
+    3.0,
+    2.0,
+    1.33,
+    1.25,
+    1.00,
+    1.00,
+    0.75,
+    0.50,
+    0.333,
+    0.50,
+    0.75,
+    1.00,
+    1.00,
+    1.25,
+    1.333,
+    2.0,
+    3.0,
+    4.0,
+    6.0,
+    9.002,
+    10.0,
+    10.,
 ]
 
 delc = [
@@ -419,8 +419,13 @@ def build_local(name, simulation):
             gwf, filename=obs_file, print_input=False, continuous=obsdict
         )
 
+    head_filerecord = "{}.hds".format(sim_name)
+    budget_filerecord = "{}.cbc".format(sim_name)
     flopy.mf6.ModflowGwfoc(
         gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         printrecord=[("BUDGET", "LAST")],
     )
     return sim
@@ -687,7 +692,125 @@ def plot_regional_grid(silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-grid{}".format(sim_name, config.figure_ext),
+            "{}-regional-grid{}".format(sim_name, config.figure_ext),
+        )
+        fig.savefig(fpth)
+
+
+# Plot the local grid
+
+
+def plot_local_grid(silent=True):
+    if silent:
+        verbosity = 0
+    else:
+        verbosity = 1
+    name = list(parameters.keys())[1]
+    sim_ws = os.path.join(ws, name)
+    sim = flopy.mf6.MFSimulation.load(
+        sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity
+    )
+    gwf = sim.get_model(sim_name)
+
+    maw = np.ones(shape3d, dtype=np.float) * np.nan
+    i, j = maw_loc
+    for k in range(maw_lay[0], maw_lay[1], 1):
+        maw[k, i, j] = 1.
+
+    # get regional heads for constant head boundaries
+    fpth = os.path.join(ws, name, "{}.hds".format(sim_name))
+    hobj = flopy.utils.HeadFile(fpth)
+    h = hobj.get_data()
+
+    fs = USGSFigure(figure_type="map", verbose=False)
+    fig = plt.figure(
+        figsize=(6.3, 3.5),
+    )
+    plt.axis("off")
+
+    nrows, ncols = 10, 1
+    axes = [fig.add_subplot(nrows, ncols, (1, 6))]
+
+    for idx, ax in enumerate(axes):
+        ax.set_xlim(extents[:2])
+        ax.set_ylim(extents[2:])
+        ax.set_aspect("equal")
+
+    # legend axis
+    axes.append(fig.add_subplot(nrows, ncols, (7, 10)))
+
+    # set limits for legend area
+    ax = axes[-1]
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+
+    # get rid of ticks and spines for legend area
+    ax.axis("off")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines["top"].set_color("none")
+    ax.spines["bottom"].set_color("none")
+    ax.spines["left"].set_color("none")
+    ax.spines["right"].set_color("none")
+    ax.patch.set_alpha(0.0)
+
+    ax = axes[0]
+    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents, layer=2)
+    mm.plot_bc("CHD", color="cyan", plotAll=True)
+    mm.plot_grid(lw=0.25, color="0.5")
+    cv = mm.contour_array(
+        h,
+        levels=np.arange(4., 5., 0.005),
+        linewidths=0.5,
+        linestyles="-",
+        colors="black",
+        masked_values=masked_values,
+    )
+    plt.clabel(cv, fmt="%1.3f")
+    mm.plot_array(maw, cmap="jet_r", zorder=200)
+    ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xlabel("x-coordinate, in feet")
+    ax.set_ylabel("y-coordinate, in feet")
+
+    # legend
+    ax = axes[-1]
+    ax.plot(
+        -10000,
+        -10000,
+        lw=0,
+        marker="s",
+        ms=10,
+        mfc="cyan",
+        mec="0.5",
+        markeredgewidth=0.25,
+        label="Constant head",
+    )
+    ax.plot(
+        -10000,
+        -10000,
+        lw=0,
+        marker="s",
+        ms=10,
+        mfc="red",
+        mec="0.5",
+        markeredgewidth=0.25,
+        label="Multi-aquifer well",
+    )
+    ax.plot(
+        -10000,
+        -10000,
+        lw=0.5,
+        color="black",
+        label="Head contour, $ft$",
+    )
+    fs.graph_legend(ax, loc="lower center", ncol=3)
+
+    # save figure
+    if config.plotSave:
+        fpth = os.path.join(
+            "..",
+            "figures",
+            "{}-local-grid{}".format(sim_name, config.figure_ext),
         )
         fig.savefig(fpth)
 
@@ -698,6 +821,7 @@ def plot_regional_grid(silent=True):
 def plot_results(silent=True):
     if config.plotModel:
         plot_regional_grid(silent=silent)
+        plot_local_grid(silent=silent)
         plot_maw_results(silent=silent)
         pass
 

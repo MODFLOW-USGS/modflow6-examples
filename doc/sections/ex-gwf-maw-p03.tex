@@ -1,0 +1,47 @@
+\section{Multi-Aquifer Well Package Problem 3}
+
+% Describe source of problem
+This is a modified version of the multi-aquifer well simulation described in \cite{reilly1989bias}. The example simulates an upper and lower aquifer separated by an impermeable confining unit but connected by a well that is open across both aquifers. The multi-aquifer well uses the flowing well Multi-Aquifer Well (MAW) Package option to simulate discharge of water from the well at land surface.                               
+
+\begin{StandardFigure}{
+                                     Location of inactive cells and the multi-aquifer well. 
+                                     }{fig:ex-gwf-maw-p03-regional-grid}{../figures/ex-gwf-maw-p03-regional-grid.png}
+\end{StandardFigure}   
+
+\begin{StandardFigure}{
+                                     Location of inactive cells and the multi-aquifer well. 
+                                     }{fig:ex-gwf-maw-p03-local-grid}{../figures/ex-gwf-maw-p03-local-grid.png}
+\end{StandardFigure}   
+
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-maw-p03-01}.  The model consists of a grid of 101 columns, 101 rows, and 2 layers. The model domain is 14,342 $m$ in the x- and y-directions (fig.~\ref{fig:ex-gwf-maw-p03-grid}). The discretization is in the row and column directions is 142 $m$. The top of the model is specified to be -50 $m$ and the bottom of each layer is specified to be 142.9 and -514.5 $m$. Groundwater flow was inactivated beyond a distance of 7,163 $m$ from the center cell (row 51, column 51) in model layers 1 and 2 by specifying an \texttt{IDOMAIN} value of zero in these cells (fig.~\ref{fig:ex-gwf-maw-p03-grid}).
+
+One transient stress period 2.1314815 days in length is simulated. The stress period has 50 time steps and uses a time step multiplier equal to 1.2, which results in time step lengths that range $0.51 \times 10^{-4}$ to $0.39$ days. A short simulation time is specified to prevent the effect of the well propagating to the model boundary.
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-maw-p03-01}
+
+% material properties and initial conditions
+The horizontal and vertical hydraulic conductivity is 1 and $1 \times 10^{-16}$ $m/d$. The transmissivity of of the upper and lower aquifer is 92.9 and 371.6 $m^2/d$. A constant specific storage value of $1 \times 10^{-4}$ ($1/d$) is specified. All model layers are specified to be confined. An initial head of 3.05 and 9.14 $m$ are specified in the upper and lower aquifer, respectively. 
+
+% boundary conditions
+The multi-aquifer well was the only boundary condition specified in the model. The well is located in the center of the model domain (fig.~\ref{fig:ex-gwf-maw-p03-grid}), fully penetrates both aquifers, has a well radius of 0.15 $m$, and is not pumping. The well conductance is specified to be 111.3763 and 445.9849 $m^{2}/d$ in the upper and lower aquifer, respectively. The initial head in the well was set equal to the initial head in the lower aquifer (9.14 $m$) and well storage is simulated. The flowing well discharge elevation and conductance are specified to be 0.0 $m$ and $m^{2}/d$.
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Transient results for non-pumping and pumping case are shown in figure~\ref{fig:ex-gwf-maw-p03-01}. Inflow to the well from the upper and lower aquifers is equal to the flowing well discharge. Initially the water level in the well and aquifers is above the flowing well discharge elevation. As a result, flowing well discharge begins immediately and continues throughout the simulation. Flowing well discharge decreases during the simulation as water-levels in the well and in the aquifer adjacent to the well decrease during the simulation.
+
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated aquifer discharges to the multi-aquifer well and flowing well discharge. 
+                                     Discharge rates are relative to the multi-aquifer well; positive and negative discharge rates 
+                                     represent inflow to and outflow from the multi-aquifer, respectively.
+                                     \textit{A}. Aquifer discharge to the multi-aquifer well.
+                                     \textit{B}. Flowing well discharge. 
+                                     }{fig:ex-gwf-maw-p03-01}{../figures/ex-gwf-maw-p03-01.png}
+\end{StandardFigure}                                 
+
