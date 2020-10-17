@@ -58,6 +58,7 @@ parameters = {
 
 # function to calculate the well connection conductance
 
+
 def calc_cond(area, l1, l2, k1, k2):
     c1 = area * k1 / l1
     c2 = area * k2 / l2
@@ -76,48 +77,48 @@ ncol = 27  # Number of columns (local)
 delr_r = 50.0  # Regional column width ($ft$)
 delc_r = 1.0  # Regional row width ($ft$)
 top = 10.0  # Top of the model ($ft$)
-aq_bottom = -205.  # Model bottom elevation ($ft$)
-strt = 10.  # Starting head ($ft$)
-k11 = 250.  # Horizontal hydraulic conductivity ($ft/d$)
-k33 = 50.  # Vertical hydraulic conductivity ($ft/d$)
+aq_bottom = -205.0  # Model bottom elevation ($ft$)
+strt = 10.0  # Starting head ($ft$)
+k11 = 250.0  # Horizontal hydraulic conductivity ($ft/d$)
+k33 = 50.0  # Vertical hydraulic conductivity ($ft/d$)
 recharge = 0.004566  # Areal recharge ($ft/d$)
-H1 = 0.  # Regional downgradient constant head ($ft$)
+H1 = 0.0  # Regional downgradient constant head ($ft$)
 maw_loc = (15, 13)  # Row, column location of well
 maw_lay = (1, 12)  # Layers with well screen
 maw_radius = 0.1333  # Well radius ($ft$)
-maw_bot = -65.  # Bottom of the well ($ft$)
-maw_highK = 1e+9  # Hydraulic conductivity for well ($ft/d$)
+maw_bot = -65.0  # Bottom of the well ($ft$)
+maw_highK = 1e9  # Hydraulic conductivity for well ($ft/d$)
 
 # set delr and delc for the local model
 
 delr = [
-    1.000e+1,
-    1.000e+1,
-    9.000e+0,
-    6.000e+0,
-    4.000e+0,
-    5.000e+0,
-    2.000e+0,
-    1.330e+0,
-    1.250e+0,
-    1.000e+0,
-    1.000e+0,
+    1.000e1,
+    1.000e1,
+    9.000e0,
+    6.000e0,
+    4.000e0,
+    5.000e0,
+    2.000e0,
+    1.330e0,
+    1.250e0,
+    1.000e0,
+    1.000e0,
     7.500e-1,
     5.000e-1,
     3.330e-1,
     5.000e-1,
     7.500e-1,
-    1.000e+0,
-    1.000e+0,
-    1.250e+0,
-    1.333e+0,
-    2.000e+0,
-    3.000e+0,
-    4.000e+0,
-    6.000e+0,
-    9.000e+0,
-    1.000e+1,
-    1.000e+1,
+    1.000e0,
+    1.000e0,
+    1.250e0,
+    1.333e0,
+    2.000e0,
+    3.000e0,
+    4.000e0,
+    6.000e0,
+    9.000e0,
+    1.000e1,
+    1.000e1,
 ]
 
 delc = [
@@ -141,7 +142,7 @@ delc = [
 
 # Static temporal data used by TDIS file
 
-tdis_ds = ((1.0, 1, 1.),)
+tdis_ds = ((1.0, 1, 1.0),)
 
 # Define dimensions
 
@@ -158,9 +159,17 @@ maw_packagedata = [[0, maw_radius, maw_bot, strt, "SPECIFIED", nconn]]
 
 # Build the MAW connection data
 
-maw_conn = []
 i, j = maw_loc
+obs_elev = {}
+maw_conn = []
+gwf_obs = []
+for k in range(maw_lay[0], maw_lay[1] + 1, 1):
+    gwf_obs.append(["H0_{}".format(k), "HEAD", (k, i, j)])
+maw_obs = [
+    ["H0", "HEAD", (0,)],
+]
 iconn = 0
+z = -5.0
 for k in range(maw_lay[0], maw_lay[1] + 1, 1):
     # connection to layer below
     if k == maw_lay[0]:
@@ -169,40 +178,63 @@ for k in range(maw_lay[0], maw_lay[1] + 1, 1):
         l2 = 2.5
         cond = calc_cond(area, l1, l2, k33, maw_highK)
         maw_conn.append([0, iconn, k - 1, i, j, top, maw_bot, cond, -999.0])
+        tag = "Q{:02d}".format(iconn)
+        obs_elev[tag] = z
+        maw_obs.append([tag, "maw", (0,), (iconn,)])
+        gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k - 1, i, j)])
         iconn += 1
+        z -= 2.5
+
+    # connection to left
+    area = delc[i] * 5.0
+    l1 = 0.5 * delr[j]
+    l2 = 0.5 * delr[j - 1]
+    cond = calc_cond(area, l1, l2, maw_highK, k11)
+    maw_conn.append([0, iconn, k, i, j - 1, top, maw_bot, cond, -999.0])
+    tag = "Q{:02d}".format(iconn)
+    obs_elev[tag] = z
+    maw_obs.append([tag, "maw", (0,), (iconn,)])
+    gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k, i, j - 1)])
+    iconn += 1
+
+    # connection to north
+    area = delr[j] * 5.0
+    l1 = 0.5 * delc[i]
+    l2 = 0.5 * delc[i - 1]
+    cond = calc_cond(area, l1, l2, maw_highK, k11)
+    maw_conn.append([0, iconn, k, i - 1, j, top, maw_bot, cond, -999.0])
+    tag = "Q{:02d}".format(iconn)
+    obs_elev[tag] = z
+    maw_obs.append([tag, "maw", (0,), (iconn,)])
+    gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k, i - 1, j)])
+    iconn += 1
+
+    # connection to right
+    area = delc[i] * 5.0
+    l1 = 0.5 * delr[j]
+    l2 = 0.5 * delr[j + 1]
+    cond = calc_cond(area, l1, l2, maw_highK, k11)
+    maw_conn.append([0, iconn, k, i, j + 1, top, maw_bot, cond, -999.0])
+    tag = "Q{:02d}".format(iconn)
+    obs_elev[tag] = z
+    maw_obs.append([tag, "maw", (0,), (iconn,)])
+    gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k, i, j + 1)])
+    iconn += 1
+    z -= 5.0
 
     # connection to layer below
     if k == maw_lay[1]:
+        z += 2.5
         area = delc[i] * delr[j]
         l1 = 2.5
         l2 = 2.5
         cond = calc_cond(area, l1, l2, maw_highK, k33)
         maw_conn.append([0, iconn, k + 1, i, j, top, maw_bot, cond, -999.0])
+        tag = "Q{:02d}".format(iconn)
+        obs_elev[tag] = z
+        maw_obs.append([tag, "maw", (0,), (iconn,)])
+        gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k + 1, i, j)])
         iconn += 1
-
-    # connection to left
-    area = delc[i] * 5.
-    l1 = 0.5 * delr[j]
-    l2 = 0.5 * delr[j - 1]
-    cond = calc_cond(area, l1, l2, maw_highK, k11)
-    maw_conn.append([0, iconn, k, i, j - 1, top, maw_bot, cond, -999.0])
-    iconn += 1
-
-    # connection to north
-    area = delr[j] * 5.
-    l1 = 0.5 * delc[i]
-    l2 = 0.5 * delc[i - 1]
-    cond = calc_cond(area, l1, l2, maw_highK, k11)
-    maw_conn.append([0, iconn, k, i - 1, j, top, maw_bot, cond, -999.0])
-    iconn += 1
-
-    # connection to right
-    area = delc[i] * 5.
-    l1 = 0.5 * delr[j]
-    l2 = 0.5 * delr[j + 1]
-    cond = calc_cond(area, l1, l2, maw_highK, k11)
-    maw_conn.append([0, iconn, k, i, j + 1, top, maw_bot, cond, -999.0])
-    iconn += 1
 
 # Solver parameters
 
@@ -244,7 +276,7 @@ def build_regional(name):
         inner_dvclose=hclose,
         rcloserecord=[rclose, "strict"],
     )
-    botm = np.arange(-5, aq_bottom - 10., -10.)
+    botm = np.arange(-5, aq_bottom - 10.0, -10.0)
     icelltype = [1] + [0 for k in range(1, nlay_r)]
     gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name)
     flopy.mf6.ModflowGwfdis(
@@ -265,7 +297,7 @@ def build_regional(name):
         k33=k33,
     )
     flopy.mf6.ModflowGwfic(gwf, strt=strt)
-    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=[[0, 0, ncol_r - 1, 0.]])
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=[[0, 0, ncol_r - 1, 0.0]])
     flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
 
     head_filerecord = "{}.hds".format(sim_name)
@@ -324,7 +356,7 @@ def build_local(name, simulation):
     )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
 
-    botm = np.arange(-5, aq_bottom - 5., -5.)
+    botm = np.arange(-5, aq_bottom - 5.0, -5.0)
     icelltype = [1] + [0 for k in range(1, nlay)]
     i, j = maw_loc
     if simulation == "multi-aquifer well":
@@ -351,7 +383,7 @@ def build_local(name, simulation):
         delc=delc,
         top=top,
         botm=botm,
-        idomain=idomain
+        idomain=idomain,
     )
     flopy.mf6.ModflowGwfnpf(
         gwf,
@@ -375,15 +407,16 @@ def build_local(name, simulation):
         )
         obs_file = "{}.maw.obs".format(sim_name)
         csv_file = obs_file + ".csv"
-        obs_dict = {
-            csv_file: [
-                ("head", "head", (0,)),
-                ("Q1", "maw", (0,), (0,)),
-                ("Q2", "maw", (0,), (1,)),
-            ]
-        }
+        obs_dict = {csv_file: maw_obs}
         maw.obs.initialize(
             filename=obs_file, digits=10, print_input=True, continuous=obs_dict
+        )
+    else:
+        obs_file = "{}.gwf.obs".format(sim_name)
+        csv_file = obs_file + ".csv"
+        obsdict = {csv_file: gwf_obs}
+        flopy.mf6.ModflowUtlobs(
+            gwf, filename=obs_file, print_input=False, continuous=obsdict
         )
 
     flopy.mf6.ModflowGwfoc(
@@ -422,94 +455,109 @@ def plot_maw_results(silent=True):
     fs = USGSFigure(figure_type="graph", verbose=False)
 
     # load the observations
-    name = list(parameters.keys())[0]
-    fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
-    maw0 = np.genfromtxt(fpth, delimiter=",", names=True)
     name = list(parameters.keys())[1]
     fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
-    maw1 = np.genfromtxt(fpth, delimiter=",", names=True)
+    maw = np.genfromtxt(fpth, delimiter=",", names=True)
+    name = list(parameters.keys())[2]
+    fpth = os.path.join(ws, name, "{}.gwf.obs.csv".format(sim_name))
+    gwf = np.genfromtxt(fpth, delimiter=",", names=True)
 
-    time = maw0["time"] * 86400.0
+    # process heads
+    hgwf = 0.0
+    ihds = 0.0
+    for name in gwf.dtype.names:
+        if name.startswith("H0_"):
+            hgwf += gwf[name]
+            ihds += 1.0
+    hgwf /= ihds
 
-    tmin = time[0]
-    tmax = time[-1]
+    if silent:
+        print("MAW head: {}  Average head: {}".format(maw["H0"], hgwf))
+
+    zelev = sorted(list(set(list(obs_elev.values()))), reverse=True)
+
+    results = {
+        "maw": {},
+        "gwf": {},
+    }
+    for z in zelev:
+        results["maw"][z] = 0.0
+        results["gwf"][z] = 0.0
+
+    for name in maw.dtype.names:
+        if name.startswith("Q"):
+            z = obs_elev[name]
+            results["maw"][z] += 2 * maw[name]
+
+    for name in gwf.dtype.names:
+        if name.startswith("Q"):
+            z = obs_elev[name]
+            results["gwf"][z] += 2.0 * gwf[name]
+
+    mean_error = np.mean(
+        np.array(list(results["maw"].values()))
+        - np.array(list(results["gwf"].values()))
+    )
 
     # create the figure
-    fig, axes = plt.subplots(
+    fig, ax = plt.subplots(
         ncols=1,
-        nrows=2,
+        nrows=1,
         sharex=True,
-        figsize=figure_size,
+        figsize=(4, 4),
         constrained_layout=True,
     )
 
-    ax = axes[0]
-    ax.set_xlim(tmin, tmax)
-    ax.set_ylim(-1000, 1000)
-    ax.semilogx(
-        time,
-        maw0["Q1"],
-        lw=0.75,
+    ax.set_xlim(-3.5, 3.5)
+    ax.set_ylim(-67.5, -2.5)
+    ax.axvline(0, lw=0.5, ls=":", color="0.5")
+    for z in np.arange(-5, -70, -5):
+        ax.axhline(z, lw=0.5, color="0.5")
+    ax.plot(
+        results["maw"].values(),
+        zelev,
+        lw=1.75,
         ls="-",
         color="blue",
-        label="Upper aquifer",
+        label="Multi-aquifer well",
     )
-    ax.semilogx(
-        time,
-        maw0["Q2"],
+    ax.plot(
+        results["gwf"].values(),
+        zelev,
+        marker="o",
+        ms=4,
+        mfc="red",
+        mec="black",
+        markeredgewidth=0.5,
         lw=0.75,
         ls="-",
         color="red",
-        label="Lower aquifer",
+        label="High K well",
     )
-    ax.axhline(0, lw=0.5, color="0.5")
-    ax.set_ylabel(" ")
-    fs.heading(ax, heading="Non-pumping case", idx=0)
-    fs.graph_legend(ax, loc="upper right", ncol=2)
-
-    ax = axes[1]
-    ax.set_xlim(tmin, tmax)
-    ax.set_ylim(-500, 2500)
-    ax.semilogx(
-        time,
-        maw1["Q1"],
-        lw=0.75,
+    ax.plot(
+        -1000,
+        -1000,
+        lw=0.5,
         ls="-",
-        color="blue",
-        label="Upper aquifer",
+        color="0.5",
+        label="Grid cell",
     )
-    ax.semilogx(
-        time,
-        maw1["Q2"],
-        lw=0.75,
-        ls="-",
-        color="red",
-        label="Lower aquifer",
+
+    fs.graph_legend(ax, loc="upper left", ncol=1, frameon=True)
+    fs.add_text(
+        ax,
+        "Mean Error {:.2e} cubic feet per day".format(mean_error),
+        bold=False,
+        italic=False,
+        x=1.0,
+        y=1.01,
+        va="bottom",
+        ha="right",
+        fontsize=7,
     )
-    ax.axhline(0, lw=0.5, color="0.5")
-    ax.set_xlabel(" ")
-    ax.set_ylabel(" ")
-    for axis in (ax.xaxis,):
-        axis.set_major_formatter(mpl.ticker.ScalarFormatter())
-    fs.heading(ax, heading="Pumping case", idx=1)
 
-    # add y-axis label that spans both subplots
-    ax = fig.add_subplot(1, 1, 1)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-
-    # get rid of ticks and spines for legend area
-    # ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
-
-    ax.set_xlabel("Simulation time, in seconds")
-    ax.set_ylabel("Discharge rate, in cubic meters per day")
+    ax.set_xlabel("Discharge rate, in cubic feet per day")
+    ax.set_ylabel("Elevation, in feet")
 
     # save figure
     if config.plotSave:
@@ -523,10 +571,10 @@ def plot_maw_results(silent=True):
     return
 
 
-# Plot the grid
+# Plot the regional grid
 
 
-def plot_grid(silent=True):
+def plot_regional_grid(silent=True):
     if silent:
         verbosity = 0
     else:
@@ -589,8 +637,12 @@ def plot_grid(silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.1f")
-    ax.plot([50, 150, 150, 50, 50], [10, 10, aq_bottom, aq_bottom, 10],
-            lw=1.5, color="#39FF14")
+    ax.plot(
+        [50, 150, 150, 50, 50],
+        [10, 10, aq_bottom, aq_bottom, 10],
+        lw=1.25,
+        color="#39FF14",
+    )
     ax.set_xlabel("x-coordinate, in feet")
     ax.set_ylabel("Elevation, in feet")
 
@@ -615,7 +667,7 @@ def plot_grid(silent=True):
         ms=10,
         mfc="none",
         mec="#39FF14",
-        markeredgewidth=1.5,
+        markeredgewidth=1.25,
         label="Local model domain",
     )
     ax.plot(
@@ -625,9 +677,7 @@ def plot_grid(silent=True):
         color="black",
         label="Head contour, $ft$",
     )
-    cbar = plt.colorbar(
-        ca, shrink=0.5, orientation="horizontal", ax=ax
-    )
+    cbar = plt.colorbar(ca, shrink=0.5, orientation="horizontal", ax=ax)
     cbar.ax.tick_params(size=0)
     cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
     fs.graph_legend(ax, loc="lower center", ncol=3)
@@ -647,8 +697,8 @@ def plot_grid(silent=True):
 
 def plot_results(silent=True):
     if config.plotModel:
-        plot_grid(silent=silent)
-        # plot_maw_results(silent=silent)
+        plot_regional_grid(silent=silent)
+        plot_maw_results(silent=silent)
         pass
 
 
