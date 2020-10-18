@@ -1,33 +1,79 @@
 \section{Multi-Aquifer Well Package Problem 3}
 
 % Describe source of problem
-This is a modified version of the multi-aquifer well simulation described in \cite{reilly1989bias}. The example simulates an upper and lower aquifer separated by an impermeable confining unit but connected by a well that is open across both aquifers. The multi-aquifer well uses the flowing well Multi-Aquifer Well (MAW) Package option to simulate discharge of water from the well at land surface.                               
-
-\begin{StandardFigure}{
-                                     Location of inactive cells and the multi-aquifer well. 
-                                     }{fig:ex-gwf-maw-p03-regional-grid}{../figures/ex-gwf-maw-p03-regional-grid.png}
-\end{StandardFigure}   
-
-\begin{StandardFigure}{
-                                     Location of inactive cells and the multi-aquifer well. 
-                                     }{fig:ex-gwf-maw-p03-local-grid}{../figures/ex-gwf-maw-p03-local-grid.png}
-\end{StandardFigure}   
-
+This is the unstressed multi-aquifer well simulation described in \cite{reilly1989bias}. The example simulates a unconfined groundwater system that exhibits two-dimensional flow in vertical section and quantify the movement of water through a well under nonpumping conditions.                               
 
 \subsection{Example Description}
-% spatial discretization  and temporal discretization
-Model parameters for the example are summarized in table~\ref{tab:ex-gwf-maw-p03-01}.  The model consists of a grid of 101 columns, 101 rows, and 2 layers. The model domain is 14,342 $m$ in the x- and y-directions (fig.~\ref{fig:ex-gwf-maw-p03-grid}). The discretization is in the row and column directions is 142 $m$. The top of the model is specified to be -50 $m$ and the bottom of each layer is specified to be 142.9 and -514.5 $m$. Groundwater flow was inactivated beyond a distance of 7,163 $m$ from the center cell (row 51, column 51) in model layers 1 and 2 by specifying an \texttt{IDOMAIN} value of zero in these cells (fig.~\ref{fig:ex-gwf-maw-p03-grid}).
 
-One transient stress period 2.1314815 days in length is simulated. The stress period has 50 time steps and uses a time step multiplier equal to 1.2, which results in time step lengths that range $0.51 \times 10^{-4}$ to $0.39$ days. A short simulation time is specified to prevent the effect of the well propagating to the model boundary.
+A two-dimensional cross-section model was developed to provide lateral boundary conditions for a local scale model that included the effects of a nonpumping well screened across multiple model layers. The multi-aquifer well was represented using a multi-aquifer well and a vertical string of high hydraulic conductivity cells in order to compare multi-aquifer well results to the results of \cite{reilly1989bias}. Model parameters for the regional and local model examples are summarized in table~\ref{tab:ex-gwf-maw-p03-01}.
 
 % add static parameter table(s)
 \input{../tables/ex-gwf-maw-p03-01}
 
+\subsubsection{Regional Model}
+
+% spatial discretization  and temporal discretization
+The regional model consists of a grid of 200 columns, 1 row, and 21 layers. The model domain is 10,000 and 1 $ft$ in the x- and y-directions (fig.~\ref{fig:ex-gwf-maw-p03-regional-grid}). The discretization is in the column directions is 50 $ft$. The top of the model is specified to be 10 $ft$ and the bottom of the aquifer is specified to be -205 $ft$. The bottom of the first model layer is -5 $ft$ and layers 2 through 21 are 10 $ft$ thick. A single steady-state stress period 1 day in length is simulated. The stress period has 1 time step.
+
+\begin{StandardFigure}{
+                                     Diagram showing the regional cross-section model with the location of the 
+                                     local three-dimensional model simulating flow through a wellbore. Steady-state
+                                     water-table elevation and heads along with the location of the downgradient 
+                                     constant head boundary.
+                                     }{fig:ex-gwf-maw-p03-regional-grid}{../figures/ex-gwf-maw-p03-regional-grid.png}
+\end{StandardFigure}   
+
+
 % material properties and initial conditions
-The horizontal and vertical hydraulic conductivity is 1 and $1 \times 10^{-16}$ $m/d$. The transmissivity of of the upper and lower aquifer is 92.9 and 371.6 $m^2/d$. A constant specific storage value of $1 \times 10^{-4}$ ($1/d$) is specified. All model layers are specified to be confined. An initial head of 3.05 and 9.14 $m$ are specified in the upper and lower aquifer, respectively. 
+The horizontal and vertical hydraulic conductivity is 250 and 50 $ft/d$. The upper model layer was specified to be convertible (unconfined) and all other model layers are specified to be confined. An initial head of 10 $ft$ is specified, but any value above the bottom of each layer could have been specified since the simulation is steady state. 
 
 % boundary conditions
-The multi-aquifer well was the only boundary condition specified in the model. The well is located in the center of the model domain (fig.~\ref{fig:ex-gwf-maw-p03-grid}), fully penetrates both aquifers, has a well radius of 0.15 $m$, and is not pumping. The well conductance is specified to be 111.3763 and 445.9849 $m^{2}/d$ in the upper and lower aquifer, respectively. The initial head in the well was set equal to the initial head in the lower aquifer (9.14 $m$) and well storage is simulated. The flowing well discharge elevation and conductance are specified to be 0.0 $m$ and $m^{2}/d$.
+Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $4.566 \times 10^{-3}$ $ft/d$ (20 $in/yr$) was specified for every cell in model layer 1. Flow out of the model is from a specified downgradient outflow boundary represented by a constant head (CHD) package cells in model layer 1.
+
+\subsubsection{Local Model}
+
+% spatial discretization  and temporal discretization
+Since the flow system is symmetric around the well, only half of the local domain was simulated. The local model consists of a grid of 27 columns, 16 rows, and 41 layers. The model domain is 100 and 50 $ft$ in the x- and y-directions (fig.~\ref{fig:ex-gwf-maw-p03-local-grid}). The discretization is in the column and row directions, ranging from 10 to 0.1665 $ft$. In the cell containing the well (row 16, column 14) the discretization is 0.333 and 0.1665 $ft$ (4 and 2 $in$) in the x- and y-directions, respectively. The top of the model is specified to be 10 $ft$ and the bottom of the aquifer is specified to be -205 $ft$. The bottom of the first model layer is -5 $ft$ and layers 2 through 41 are 5 $ft$ thick. A single steady-state stress period 1 day in length is simulated. The stress period has 1 time step.
+
+
+\begin{StandardFigure}{
+                                     Diagram showing the horizontal discretization used in the local three-dimensional
+                                     model simulating flow through a wellbore. Steady-state head contours are shown
+                                     along with the location of the multi-aquifer well and constant head boundaries. 
+                                     }{fig:ex-gwf-maw-p03-local-grid}{../figures/ex-gwf-maw-p03-local-grid.png}
+\end{StandardFigure}   
+
+% material properties and initial conditions
+The horizontal and vertical hydraulic conductivity is 250 and 50 $ft/d$. The upper model layer was specified to be convertible (unconfined) and all other model layers are specified to be confined. An initial head of 10 $ft$ is specified, but any value above the bottom of each layer could have been specified since the simulation is steady state. 
+
+% boundary conditions
+Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $4.566 \times 10^{-3}$ $ft/d$ (20 $in/yr$) was specified for every cell in model layer 1. Simulated regional results were used to define constant head values specified in columns 1 and 27. The heads in column 1 and 2 of the regional model were linearly interpolated to constant heads in column 1 of the local model. The heads in column 3 and 4 of the regional model were linearly interpolated to constant heads in column 27 of the local model. Vertically, linearly interpolated heads from layer 2 through 21 in the regional model were applied to the two equivalent layers in the local model.
+
+The well is located in the lower center of the model domain (fig.~\ref{fig:ex-gwf-maw-p03-local-grid}), has a 60 $ft$ screened interval that fully penetrates model layers 2 through 13, has a well radius of 0.1333 $ft$, the well bottom is at -65 $ft$, and is not pumping. In order to compare results to a version of the local model that simulated the well using high hydraulic conductivity the well is located in (row 16, column 14) but physically connected to the three cells horizontally connected to the cell. Furthermore, the top and bottom of the well are connected to the overlying and underlying cells in layer 1 and layer 14. The conductance for each connection was calculated using the same harmonic average used by \mf to calculate intercell conductance \cite[see][eq.4-24]{modflow6gwf}. The equivalent hydraulic conductivity of the cell containing the well is based on the Hagen-Poiseuille equation for laminar pipe flow by an equivalent form of Darcy's law and is used in \mf. For laminar flow, the Hagen-Poiseuille equation is
+
+\begin{equation}
+	\label{eq:hagenpoiseuille}
+	Q_{pipe} = VA = \frac{g d^{2} A}{32 \nu L} \Delta h,
+\end{equation}
+
+\noindent where $Q_{pipe}$ is the flow through the pipe (in this case wellbore) (L$^{3}$/T), $V$ is the velocity (L/T), $A$ is the cross-sectional area of the pipe (L$^{2}$), $d$ is the diameter of the pipe (L), $g$ is the acceleration due to gravity (L/T$^{2}$), $\nu$ is the kinematic viscosity of the flowing fluid (L$^{2}$/T), and $\Delta h$ is the head loss (L). Darcy's law is
+
+\begin{equation}
+	\label{eq:darcy}
+	Q - \frac{K A}{L} \Delta h,
+\end{equation}
+
+\noindent where $Q$ is the flow through a block of porous medium, $K$ is the hydraulic conductivity of the medium (L/T), and $L$ is the length of flow section (L). The equivalent hydraulic conductivity ($K_{eq}$) representing the wellbore can be calculated by equation equations~\refl{eq:hagenpoiseuille} and~\ref{eq:darcy} and rearranging to solve for $K_{eq}$. The equivalent hydraulic conductivity is
+
+\begin{equation}
+	\label{eq:keq}
+	K_{eq} = \frac{g d^{2}{32 \nu} = 1 \times 10^{9} ft/d .
+\end{equation}
+
+
+The well conductance is specified to be 111.3763 and 445.9849 $m^{2}/d$ in the upper and lower aquifer, respectively. The initial head in the well was set equal to the initial head in the lower aquifer (9.14 $ft$) and well storage is simulated. The flowing well discharge elevation and conductance are specified to be 0.0 $ft$ and $m^{2}/d$.
+
+For the case where the well was represented using high hydraulic conductivity
 
 % for examples without scenarios
 \subsection{Example Results}

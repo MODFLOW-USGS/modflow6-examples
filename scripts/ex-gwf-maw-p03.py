@@ -10,7 +10,6 @@
 import os
 import sys
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import flopy
 
@@ -27,6 +26,7 @@ from figspecs import USGSFigure
 
 figure_size = (6.3, 4.3)
 masked_values = (0, 1e30, -1e30)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1)
 
 # Base simulation and model name and workspace
 
@@ -521,7 +521,7 @@ def plot_maw_results(silent=True):
     ax.plot(
         results["maw"].values(),
         zelev,
-        lw=1.75,
+        lw=0.75,
         ls="-",
         color="blue",
         label="Multi-aquifer well",
@@ -534,7 +534,7 @@ def plot_maw_results(silent=True):
         mfc="red",
         mec="black",
         markeredgewidth=0.5,
-        lw=0.75,
+        lw=0.0,
         ls="-",
         color="red",
         label="High K well",
@@ -605,11 +605,6 @@ def plot_regional_grid(silent=True):
     nrows, ncols = 10, 1
     axes = [fig.add_subplot(nrows, ncols, (1, 6))]
 
-    # for idx, ax in enumerate(axes):
-    #     ax.set_xlim(extents[:2])
-    #     # ax.set_ylim(extents[2:])
-    #     # ax.set_aspect("equal")
-
     # legend axis
     axes.append(fig.add_subplot(nrows, ncols, (7, 10)))
 
@@ -659,6 +654,17 @@ def plot_regional_grid(silent=True):
         lw=0,
         marker="s",
         ms=10,
+        mfc="none",
+        mec="0.5",
+        markeredgewidth=0.5,
+        label="Grid cell",
+    )
+    ax.plot(
+        -10000,
+        -10000,
+        lw=0,
+        marker="s",
+        ms=10,
         mfc="cyan",
         mec="0.5",
         markeredgewidth=0.5,
@@ -685,7 +691,7 @@ def plot_regional_grid(silent=True):
     cbar = plt.colorbar(ca, shrink=0.5, orientation="horizontal", ax=ax)
     cbar.ax.tick_params(size=0)
     cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
-    fs.graph_legend(ax, loc="lower center", ncol=3)
+    fs.graph_legend(ax, loc="lower center", ncol=4)
 
     # save figure
     if config.plotSave:
@@ -712,10 +718,16 @@ def plot_local_grid(silent=True):
     )
     gwf = sim.get_model(sim_name)
 
-    maw = np.ones(shape3d, dtype=np.float) * np.nan
     i, j = maw_loc
-    for k in range(maw_lay[0], maw_lay[1], 1):
-        maw[k, i, j] = 1.
+    dx, dy = delr[j], delc[i]
+    px = (
+        50. - 0.5 * dx,
+        50. + 0.5 * dx,
+    )
+    py = (
+        0. + dy,
+        0. + dy,
+    )
 
     # get regional heads for constant head boundaries
     fpth = os.path.join(ws, name, "{}.hds".format(sim_name))
@@ -724,12 +736,12 @@ def plot_local_grid(silent=True):
 
     fs = USGSFigure(figure_type="map", verbose=False)
     fig = plt.figure(
-        figsize=(6.3, 3.5),
+        figsize=(6.3, 5.3),
     )
     plt.axis("off")
 
     nrows, ncols = 10, 1
-    axes = [fig.add_subplot(nrows, ncols, (1, 6))]
+    axes = [fig.add_subplot(nrows, ncols, (1, 9))]
 
     for idx, ax in enumerate(axes):
         ax.set_xlim(extents[:2])
@@ -737,7 +749,7 @@ def plot_local_grid(silent=True):
         ax.set_aspect("equal")
 
     # legend axis
-    axes.append(fig.add_subplot(nrows, ncols, (7, 10)))
+    axes.append(fig.add_subplot(nrows, ncols, (10, 10)))
 
     # set limits for legend area
     ax = axes[-1]
@@ -767,7 +779,10 @@ def plot_local_grid(silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.3f")
-    mm.plot_array(maw, cmap="jet_r", zorder=200)
+    ax.fill_between(px, py, y2=0, ec="none", fc="red", lw=0, zorder=200, step="post")
+    fs.add_annotation(ax, text="Well location", xy=(50., 0.),
+                      xytext=(45, 5), bold=False, italic=False, ha="right",
+                      fontsize=7, arrowprops=arrow_props)
     ax.set_xticks([0, 25, 50, 75, 100])
     ax.set_xlabel("x-coordinate, in feet")
     ax.set_ylabel("y-coordinate, in feet")
