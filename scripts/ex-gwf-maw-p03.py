@@ -26,7 +26,9 @@ from figspecs import USGSFigure
 
 figure_size = (6.3, 4.3)
 masked_values = (0, 1e30, -1e30)
-arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1)
+arrow_props = dict(
+    facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1
+)
 
 # Base simulation and model name and workspace
 
@@ -92,8 +94,8 @@ maw_highK = 1e9  # Hydraulic conductivity for well ($ft/d$)
 # set delr and delc for the local model
 
 delr = [
-    10.,
-    10.,
+    10.0,
+    10.0,
     9.002,
     6.0,
     4.0,
@@ -118,7 +120,7 @@ delr = [
     6.0,
     9.002,
     10.0,
-    10.,
+    10.0,
 ]
 
 delc = [
@@ -135,7 +137,7 @@ delc = [
     1,
     0.75,
     0.5,
-    0.375,
+    0.3735,
     0.25,
     0.1665,
 ]
@@ -492,17 +494,21 @@ def plot_maw_results(silent=True):
     for name in maw.dtype.names:
         if name.startswith("Q"):
             z = obs_elev[name]
-            results["maw"][z] += 2 * maw[name]
+            results["maw"][z] += 2.0 * maw[name]
 
     for name in gwf.dtype.names:
         if name.startswith("Q"):
             z = obs_elev[name]
             results["gwf"][z] += 2.0 * gwf[name]
 
-    mean_error = np.mean(
-        np.array(list(results["maw"].values()))
-        - np.array(list(results["gwf"].values()))
-    )
+    q0 = np.array(list(results["maw"].values()))
+    q1 = np.array(list(results["gwf"].values()))
+    mean_error = np.mean(q0 - q1)
+    if silent:
+        print("total well inflow:  {}".format(q0[q0 >= 0].sum()))
+        print("total well outflow: {}".format(q0[q0 < 0].sum()))
+        print("total cell inflow:  {}".format(q1[q1 >= 0].sum()))
+        print("total cell outflow: {}".format(q1[q1 < 0].sum()))
 
     # create the figure
     fig, ax = plt.subplots(
@@ -643,6 +649,7 @@ def plot_regional_grid(silent=True):
         lw=1.25,
         color="#39FF14",
     )
+    fs.remove_edge_ticks(ax)
     ax.set_xlabel("x-coordinate, in feet")
     ax.set_ylabel("Elevation, in feet")
 
@@ -721,12 +728,12 @@ def plot_local_grid(silent=True):
     i, j = maw_loc
     dx, dy = delr[j], delc[i]
     px = (
-        50. - 0.5 * dx,
-        50. + 0.5 * dx,
+        50.0 - 0.5 * dx,
+        50.0 + 0.5 * dx,
     )
     py = (
-        0. + dy,
-        0. + dy,
+        0.0 + dy,
+        0.0 + dy,
     )
 
     # get regional heads for constant head boundaries
@@ -736,12 +743,13 @@ def plot_local_grid(silent=True):
 
     fs = USGSFigure(figure_type="map", verbose=False)
     fig = plt.figure(
-        figsize=(6.3, 5.3),
+        figsize=(6.3, 4.1),
+        tight_layout=True,
     )
     plt.axis("off")
 
     nrows, ncols = 10, 1
-    axes = [fig.add_subplot(nrows, ncols, (1, 9))]
+    axes = [fig.add_subplot(nrows, ncols, (1, 8))]
 
     for idx, ax in enumerate(axes):
         ax.set_xlim(extents[:2])
@@ -749,7 +757,7 @@ def plot_local_grid(silent=True):
         ax.set_aspect("equal")
 
     # legend axis
-    axes.append(fig.add_subplot(nrows, ncols, (10, 10)))
+    axes.append(fig.add_subplot(nrows, ncols, (8, 10)))
 
     # set limits for legend area
     ax = axes[-1]
@@ -767,24 +775,36 @@ def plot_local_grid(silent=True):
     ax.patch.set_alpha(0.0)
 
     ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents, layer=2)
+    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents, layer=0)
     mm.plot_bc("CHD", color="cyan", plotAll=True)
     mm.plot_grid(lw=0.25, color="0.5")
     cv = mm.contour_array(
         h,
-        levels=np.arange(4., 5., 0.005),
+        levels=np.arange(4.0, 5.0, 0.005),
         linewidths=0.5,
         linestyles="-",
         colors="black",
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.3f")
-    ax.fill_between(px, py, y2=0, ec="none", fc="red", lw=0, zorder=200, step="post")
-    fs.add_annotation(ax, text="Well location", xy=(50., 0.),
-                      xytext=(45, 5), bold=False, italic=False, ha="right",
-                      fontsize=7, arrowprops=arrow_props)
+    ax.fill_between(
+        px, py, y2=0, ec="none", fc="red", lw=0, zorder=200, step="post"
+    )
+    fs.add_annotation(
+        ax,
+        text="Well location",
+        xy=(50.0, 0.0),
+        xytext=(55, 5),
+        bold=False,
+        italic=False,
+        ha="left",
+        fontsize=7,
+        arrowprops=arrow_props,
+    )
+    fs.remove_edge_ticks(ax)
     ax.set_xticks([0, 25, 50, 75, 100])
     ax.set_xlabel("x-coordinate, in feet")
+    ax.set_yticks([0, 25, 50])
     ax.set_ylabel("y-coordinate, in feet")
 
     # legend
@@ -816,7 +836,7 @@ def plot_local_grid(silent=True):
         -10000,
         lw=0.5,
         color="black",
-        label="Head contour, $ft$",
+        label="Water-table contour, $ft$",
     )
     fs.graph_legend(ax, loc="lower center", ncol=3)
 

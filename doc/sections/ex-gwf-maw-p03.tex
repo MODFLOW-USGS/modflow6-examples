@@ -38,8 +38,8 @@ Since the flow system is symmetric around the well, only half of the local domai
 
 \begin{StandardFigure}{
                                      Diagram showing the horizontal discretization used in the local three-dimensional
-                                     model simulating flow through a wellbore. Steady-state head contours are shown
-                                     along with the location of the multi-aquifer well and constant head boundaries. 
+                                     model simulating flow through a wellbore. Steady-state water-table contours are 
+                                     shown along with the location of the multi-aquifer well and constant head boundaries. 
                                      }{fig:ex-gwf-maw-p03-local-grid}{../figures/ex-gwf-maw-p03-local-grid.png}
 \end{StandardFigure}   
 
@@ -47,9 +47,11 @@ Since the flow system is symmetric around the well, only half of the local domai
 The horizontal and vertical hydraulic conductivity is 250 and 50 $ft/d$. The upper model layer was specified to be convertible (unconfined) and all other model layers are specified to be confined. An initial head of 10 $ft$ is specified, but any value above the bottom of each layer could have been specified since the simulation is steady state. 
 
 % boundary conditions
-Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $4.566 \times 10^{-3}$ $ft/d$ (20 $in/yr$) was specified for every cell in model layer 1. Simulated regional results were used to define constant head values specified in columns 1 and 27. The heads in column 1 and 2 of the regional model were linearly interpolated to constant heads in column 1 of the local model. The heads in column 3 and 4 of the regional model were linearly interpolated to constant heads in column 27 of the local model. Vertically, linearly interpolated heads from layer 2 through 21 in the regional model were applied to the two equivalent layers in the local model.
+Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $4.566 \times 10^{-3}$ $ft/d$ (20 $in/yr$) was specified for every cell in model layer 1. Simulated regional results were used to define constant head values specified in columns 1 and 27. The heads in column 1 and 2 of the regional model were linearly interpolated to the node position in column 1 to define constant heads in the first column of the local model. The heads in column 3 and 4 of the regional model were linearly interpolated to the node position in column 27 to define constant heads in the last column of the local model. Vertically, linearly interpolated heads from layer 2 through 21 in the regional model were applied to the two equivalent layers in the local model.
 
-The well is located in the lower center of the model domain (fig.~\ref{fig:ex-gwf-maw-p03-local-grid}), has a 60 $ft$ screened interval that fully penetrates model layers 2 through 13, has a well radius of 0.1333 $ft$, the well bottom is at -65 $ft$, and is not pumping. In order to compare results to a version of the local model that simulated the well using high hydraulic conductivity the well is located in (row 16, column 14) but physically connected to the three cells horizontally connected to the cell. Furthermore, the top and bottom of the well are connected to the overlying and underlying cells in layer 1 and layer 14. The conductance for each connection was calculated using the same harmonic average used by \mf to calculate intercell conductance \cite[see][eq.4-24]{modflow6gwf}. The equivalent hydraulic conductivity of the cell containing the well is based on the Hagen-Poiseuille equation for laminar pipe flow by an equivalent form of Darcy's law and is used in \mf. For laminar flow, the Hagen-Poiseuille equation is
+The well is located in the lower center of the model domain (fig.~\ref{fig:ex-gwf-maw-p03-local-grid}), has a 60 $ft$ screened interval that fully penetrates model layers 2 through 13, has a well radius of 0.1333 $ft$, the well bottom is at -65 $ft$, and is not pumping. In order to compare results to a version of the local model that simulated the well using high hydraulic conductivity the well is located in (row 16, column 14) but physically connected to the three cells horizontally connected to the cell. Furthermore, the top and bottom of the well are connected to the overlying and underlying cells in layer 1 and layer 14.
+
+The conductance for each connection was calculated using the same harmonic average used by \mf to calculate intercell conductance \cite[see][eq.4-24]{modflow6gwf}. The equivalent hydraulic conductivity of the cell containing the well is based on the Hagen-Poiseuille equation for laminar pipe flow by an equivalent form of Darcy's law and is used in \mf. For laminar flow, the Hagen-Poiseuille equation is
 
 \begin{equation}
 	\label{eq:hagenpoiseuille}
@@ -60,34 +62,32 @@ The well is located in the lower center of the model domain (fig.~\ref{fig:ex-gw
 
 \begin{equation}
 	\label{eq:darcy}
-	Q - \frac{K A}{L} \Delta h,
+	Q = \frac{K A}{L} \Delta h,
 \end{equation}
 
-\noindent where $Q$ is the flow through a block of porous medium, $K$ is the hydraulic conductivity of the medium (L/T), and $L$ is the length of flow section (L). The equivalent hydraulic conductivity ($K_{eq}$) representing the wellbore can be calculated by equation equations~\refl{eq:hagenpoiseuille} and~\ref{eq:darcy} and rearranging to solve for $K_{eq}$. The equivalent hydraulic conductivity is
+\noindent where $Q$ is the flow through a block of porous medium, $K$ is the hydraulic conductivity of the medium (L/T), and $L$ is the length of flow section (L). The equivalent hydraulic conductivity ($K_{eq}$) representing the wellbore can be calculated by equating equations~\ref{eq:hagenpoiseuille} and~\ref{eq:darcy} and rearranging to solve for $K_{eq}$. The equivalent hydraulic conductivity is
 
 \begin{equation}
 	\label{eq:keq}
-	K_{eq} = \frac{g d^{2}{32 \nu} = 1 \times 10^{9} ft/d .
+	K_{eq} = \frac{g d^{2}}{32 \nu} = 1 \times 10^{9} ft/d .
 \end{equation}
 
-
-The well conductance is specified to be 111.3763 and 445.9849 $m^{2}/d$ in the upper and lower aquifer, respectively. The initial head in the well was set equal to the initial head in the lower aquifer (9.14 $ft$) and well storage is simulated. The flowing well discharge elevation and conductance are specified to be 0.0 $ft$ and $m^{2}/d$.
-
-For the case where the well was represented using high hydraulic conductivity
+A total of 38 multi-aquifer well connections to the connected aquifer were defined and had conductances values equal to 1.11 (connections to layer 1 and 14), 832.50 (connections to column 13 and 15 in layers 2 through 13), and 3330.000 $ft^{2}/d$ (connection to row 15 in all layers). The initial head in the well was set equal to the initial head in the aquifer (10.0 $ft$). For the case where the well represented as a multi-aquifer well, the cell in row 16, column 14, and layers 2 through 13 was inactivated by specifying an IDOMAIN value of 0 in these cells. For the case where the well was represented using high hydraulic conductivity, the horizontal and vertical hydraulic conductivity in row 16, column 14, and layers 2 through 13 was set to $1 \times 10^{9}$ $ft/d$ (see eq.~\ref{eq:keq}).
 
 % for examples without scenarios
 \subsection{Example Results}
 
-Transient results for non-pumping and pumping case are shown in figure~\ref{fig:ex-gwf-maw-p03-01}. Inflow to the well from the upper and lower aquifers is equal to the flowing well discharge. Initially the water level in the well and aquifers is above the flowing well discharge elevation. As a result, flowing well discharge begins immediately and continues throughout the simulation. Flowing well discharge decreases during the simulation as water-levels in the well and in the aquifer adjacent to the well decrease during the simulation.
+Steady-state results for the regional model are shown in figure~\ref{fig:ex-gwf-maw-p03-regional-grid}. Steady-state water-table elevations for the local three-dimensional model with the well simulated using a multi-aquifer well are shown in figure~\ref{fig:ex-gwf-maw-p03-local-grid}. The flow with depth into or from the wellbore is shown in figure~\ref{fig:ex-gwf-maw-p03-01}. The flow to or from the wellbore for the case where the multi-aquifer well and high hydraulic conductivity were used is in close agreement and the mean error for all of the cells connected to the wellbore  is $-2.14 \times 10^{-6}$ $ft^{3}/d$. The total flow into and out of the wellbore is 9.53 and 9.52 $ft^{3}/d$ for the case with the multi-aquifer well and high hydraulic conductivity, respectively. The steady-state head in the wellbore and the average head for all cells representing the well in the high hydraulic conductivity case are both 4.93 $ft$.
 
 
 % a figure
 \begin{StandardFigure}{
-                                     Simulated aquifer discharges to the multi-aquifer well and flowing well discharge. 
-                                     Discharge rates are relative to the multi-aquifer well; positive and negative discharge rates 
-                                     represent inflow to and outflow from the multi-aquifer, respectively.
-                                     \textit{A}. Aquifer discharge to the multi-aquifer well.
-                                     \textit{B}. Flowing well discharge. 
+                                     Graph of flow between the aquifer and the borehole with depth
+                                     for the three-dimensional local model with the well represented as
+                                     a multi-aquifer well and using high hydraulic conductivity. Positive 
+                                     discharge values indicate flow from the aquifer to the wellbore.
+                                     Negative discharge values indicate flow from the wellbore to the
+                                     aquifer. 
                                      }{fig:ex-gwf-maw-p03-01}{../figures/ex-gwf-maw-p03-01.png}
 \end{StandardFigure}                                 
 

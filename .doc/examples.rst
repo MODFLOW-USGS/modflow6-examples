@@ -20,6 +20,7 @@ MODFLOW 6 – Example problems
    _examples/ex-gwf-lak-p02.rst
    _examples/ex-gwf-maw-p01.rst
    _examples/ex-gwf-maw-p02.rst
+   _examples/ex-gwf-maw-p03.rst
    _examples/ex-gwf-bump.rst
    _examples/ex-gwf-disvmesh.rst
    _examples/ex-gwf-hani.rst
