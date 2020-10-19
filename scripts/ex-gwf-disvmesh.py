@@ -180,7 +180,7 @@ def build_model(sim_name):
         hole = [(x, y) for x, y in zip(x, y)]
         p = Polygon(outer, holes=[hole])
         ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
-        result = ix.intersect_polygon(p)
+        result = ix.intersect(p)
         ghb_cellids = np.array(result["cellids"], dtype=np.int)
 
         ghb_spd = []
