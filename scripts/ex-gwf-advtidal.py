@@ -262,7 +262,7 @@ def build_model():
             [recharge_zone_1, recharge_zone_2, recharge_zone_3]
         ):
             ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
-            result = ix.intersect_polygon(p)
+            result = ix.intersect(p)
             rch_spd = []
             for i in range(result.shape[0]):
                 rch_spd.append(
