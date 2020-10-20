@@ -1,0 +1,55 @@
+\section{Drain Package Drainage Discharge Scaling Option Problem 1}
+
+% Describe source of problem
+This example is a modified version of the Unsaturated Zone Flow (UZF) Package problem 2 described in \cite{UZF}. UZF Package problem 2 is based on the Green Valley problem (Streamflow Routing (SFR) Package problem 1) described in \cite{modflowsfr1pack}. The problem has been modified by converting all of the SFR reaches to use rectangular channels and to use the drain package drainage option to simulate groundwater discharge to the land surface.                               
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-drn-p01-01}.  The model consists of a grid of 10 columns, 15 rows, and 1 layer. The model domain is  50,000 $ft$ and 80,000 $ft$ in the x- and y-directions, respectively. The discretization is 5,000 $ft$ in the row and column direction for all cells. The top of the model ranges from about 1,000 to 1,100 $ft$ and the bottom of the model ranges from about 500 to 1,000 $ft$.
+
+Twelve stress periods are simulated. The first stress period is steady state and the remaining stress periods are transient. The stress periods are $2.628 \times 10^{6}$ seconds (30.42 days) in length. The first stress period is broken into one time step. Stress periods 2 through 12 are each broken up into 15 time steps and use a time step multiplier of 1.1.
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-drn-p01-01}
+
+% material properties
+The basin fill thickens toward the center of the valley and hydraulic conductivity of the basin fill is highest in the region of the stream channels. Hydraulic conductivity is 173 $ft/day$ ($2 \times 10^{-4}$ $ft/s$) in the vicinity of the stream channels and 35 $ft/day$ ($4 \times 10^{-4}$ $ft/s$) elsewhere in the alluvial basin. A constant specific storage value of $1 \times 10^{-6}$ ($1/day$) was specified throughout the alluvial basin. Specific yield is 0.2 (unitless) in the vicinity of the stream channels and 0.1 (unitless) elsewhere in the alluvial basin.
+
+% initial conditions
+An initial head of 1,050 $ft$ is specified in all model layers. Any initial head exceeding the bottom of each cell could be specified since the first stress period is steady-state.
+
+% boundary conditions
+The UZF Package was used to simulated delayed groundwater recharge through the unsaturated zone. A UZF boundary cell is simulated in every active model cell. Constant vertical hydraulic conductivity, saturated water content, initial water content, and Brooks-Corey epsilon exponent \citep{brookscorey1966} are specified for each UZF boundary cell (table~\ref{tab:ex-gwf-drn-p01-02}). The specified evapotranspiration extinction water content (table~\ref{tab:ex-gwf-drn-p01-02} is multipled by a factor of 1 in the valley lowland and 2 elsewhere. 
+
+\input{../tables/ex-gwf-drn-p01-02}
+
+Infiltration from precipitation and evapotranspiration are represented using the UZF Package. Specified infiltration rates (table~\ref{tab:ex-gwf-drn-p01-02}) are multiplied by a factor ranging from 1 to 8; specified infiltration rates range from $1.0 \times 10^{-9}$ to $1.6 \times 10^{-7}$ $ft/s$, with lower rates in the vicinity of the stream channels and higher rates elsewhere in the alluvial basin. Evapotranspiration is represented using the UZF package and occurs where depth to water is within 15 $ft$ of land surface, has a maximum rate of $5.0 \times 10^{-8}$ $ft/s$ (1.6 $ft/yr$) at land surface, and is coincident with the valley lowland through which several streams flow. 
+
+Wells are  located in ten cells (rows 6 through 10 and columns 4 and 5) along the west side of the valley. Withdrawal rates for each well ranged from 0 to -2 $ft^{3}/s$ during the simulation (table~\ref{tab:ex-gwf-drn-p01-02}). Two general-head boundary cells were added in (row 13, column 1) and (row 14, column 8) with a specified head equal to 988 and 1,045 $ft$, respectively, and a constant conductance of 0.038 $ft^{2}/s$.
+
+The streams in the model domain were represented using a total of 36 reaches. External inflows of 25, 10, and 100 $ft^{3}/s$ were specified for reach 1, 16, and 28, respectively. Reach 1 is located in (row 1, column 1), reach 16 is in (row 5, column 10), and reach 28 is in (row 14, column 9). Streamflow discharges from the model at the downstream end of reach 36 in (row 13, column 1). Reach widths were specified to be 12, 0, 5, 12, 55, and 40 $ft$ for reaches 1--9, 10--18, 19--22, 23--27, 28--30, and 31--36, respectively. The remaining streambed properties and stream dimensions used for each stream reach are the same as those used in 
+ \cite{modflowsfr1pack} \cite[see][Table~1]{modflowsfr1pack}. Constant stage reaches were used to define the ditch represented by reaches 10--15 and ranged from approximately 1,075.5--1061.6 $ft$. A diversion from reach 4 to 10 was specified to represent managed inflows to the ditch. Ditch inflows were specified to be 10 $ft^{3}/s$ except if the downstream flow in reach 4 is less than the specified diversion rate; in cases where the downstream flow in reach 4 is less than the specified diversion rate all of the downstream flow in reach 4 is diverted to the ditch and the inflow to reach.
+ 
+Groundwater discharge to land surface was simulated with the drain (DRN) Package and the UZF Package groundwater seepage option.  A surface depression depth of 1 $ft$ was specified. When using the DRN Package to simulate groundwater discharge to land surface, the drain elevation is 0.5 $ft$ below land surface, the drain conductance is 25 $ft^{2}/d$, and the drainage depth is equal to the surface depression depth.
+
+The mover (MVR) Package was used to route rejected infiltration and groundwater discharge to the land surface calculated by the UZF Package to the stream network. In the case where the DRN Package is used the MVR package routes the drainage discharge representing groundwater discharge to the land surface to the stream network. All of the rejected infiltration and groundwater discharge to the land surface are routed to the stream network using the FACTOR mover type with a value equal to 1.
+
+% solution 
+The model uses the Newton-Raphson Formulation. The simple complexity Iterative Model Solver option and preconditioned bi-conjugate gradient stabilized linear accelerator is also used. Since the Newton-Raphson Formulation is used the simulation using the DRN Package to simulated groundwater discharge to the land surface cubic scaling is used to scale the drain conductance, consisting with groundwater seepage option in the UZF Package.
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Simulated infiltration to the unsaturated zone and groundwater seepage to the land surface results simulated using the DRN and UZF Packages are shown in figure~\ref{fig:ex-gwf-drn-p01-01}. Results using the DRN and UZF Packages are essentially identical (mean error = $2.72 \times 10^{-8}$ $ft^{3}/s$) indicating the DRN package is capable of duplicating the groundwater seepage results for the UZF Package. Periods of high infiltration to the unsaturated zone correspond to increased in groundwater seepage to the land surface.
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated infiltration to the unsaturated zone and groundwater seepage 
+                                     to the land surface using the drain and unsaturated zone flow packages. 
+                                     The colored vertical bars delineate different stress periods.
+                                     \textit{A}. Infiltration to the unsaturated zone.
+                                     \textit{B}. Groundwater seepage to the land surface. 
+                                     }{fig:ex-gwf-drn-p01-01}{../figures/ex-gwf-drn-p01-01.png}
+\end{StandardFigure}                                 
+
+
