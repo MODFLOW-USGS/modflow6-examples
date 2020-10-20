@@ -1,0 +1,37 @@
+\section{Advanced Packages with MVR}
+
+% Describe source of problem
+The Advanced \mf Packages example problem is designed to demonstrate the combined use of the UZF, SFR and LAK Packages in \mf.  It originally appeared in the "Getting Started" pdf document in the \mf -docs.git repository, and is included here for completeness of the examples. 
+
+Flows exchanged between the advanced packages (i.e., UZF, SFR, and LAK) and the WEL package are made with the MVR Package. The problem was adapted from a previously developed test problem documented in \cite{modflowsfr1pack} and \cite{modflowsfr2pack} and represents a developed basinfill aquifer in the northern Great Basin. Streamflow enters the valley from three perennial streams. Because the valley is much lower in altitude than the surrounding uplands, recharge in the valley floor is relatively low as compared to recharge from streams and lakes that receive flow from precipitation falling in the mountains. In the lowland areas, native plants use the ground water. Two lakes were added to the original test problem to illustrate the capabilities of the Lake Package (figure~\ref{fig:ex-gwf-sfr-p01b}).
+
+% a figure
+\begin{StandardFigure}
+	{Plan view of lakes and stream reaches in the \mf model that demonstrates usage of the MVR package with the advanced packages (i.e., UZF, SFR, LAK) and includes a linkage with the WEL package.}
+	{fig:ex-gwf-sfr-p01b}{../images/ex-gwf-sfr-p01b.png}
+\end{StandardFigure}
+
+The topography, and the locations of streams and lakes within the basin are shown in figure~\ref{fig:ex-gwf-sfr-p01b}. Note that unlike the streamflow routing package for MODFLOW-2005, the SFR Package for \mf does not support designation of stream segments. Stream networks now consist solely of reaches that are numbered consecutively from 1 to the total number of reaches, and all stream property information is input on a reach basis. The simulation also includes and general head boundary conditions (GHB Package) and 10 agricultural wells. Aquifer properties are provided in table~\ref{tab:ex-gwf-sfr-p01b-01}.
+
+% add scenario table
+\input{../tables/ex-gwf-sfr-p01b-01}
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Unlike the original UZF1 Package \citep{UZF} for MODFLOW-2005, the UZF Package for MODFLOW 6 can simulate unsaturated flow separately for each layer. Thus, rather than simulating homogenous unsaturated flow between the water table and land surface, the unsaturated zone in cells in different MODFLOW layers can be specified with different unsaturated hydraulic properties to represent vertical heterogeneity. Results from the UZF Package are shown below for the cell at row 5, column 2, layers 1 and 2 (the infiltration is shown for the cell in layer 1 while the recharge occurs in layer 2.  The moisture content is for the cell located in layer 1).  The unsaturated-zone package is ideal for simulating the delay between when water infiltrates at land-surface and recharges the saturated zone.  
+
+% a figure
+\begin{StandardFigure}
+	{Simulated infiltration and recharge to and from the unsaturated-zone (left y-axis), respectively, for the cells located at row 5 column 2, including the moisture content of the cell in layer 1 (right y-axis).}
+	{fig:ex-gwf-sfr-p01b-uz}{../figures/ex-gwf-sfr-p01b-uz.png}
+\end{StandardFigure}
+
+Additionally, after calculating any rejected infiltration based on the user-specified infiltration rate, the unsaturated-zone package will partition the net infiltration into evapotranspiration (ET), changes in soil moisture storage, and recharge as mentioned above.  For this problem, the MVR package is used to transfer pumped groundwater (WEL package) to land surface for simulating irrigation with groundwater.  Figure~\ref{fig:ex-gwf-sfr-p01b-mvr} shows the monthly totals of pumped water used for irrigation for each month of the simulation.  Figure~\ref{fig:ex-gwf-sfr-p01b-mvr} also shows the total runoff, primarily groundwater discharge to land surface (spring flow) that is transferred to the stream network (or lakes) using the MVR package.
+
+% a figure
+\begin{StandardFigure}
+	{Monthly totals of pumped water from all 10 simulated wells transferred to UZF cells via the MVR package.  Total monthly runoff amounts transferred to the surface water network are also shown.}
+	{fig:ex-gwf-sfr-p01b-mvr}{../figures/ex-gwf-sfr-p01b-mvr.png}
+\end{StandardFigure}
+
