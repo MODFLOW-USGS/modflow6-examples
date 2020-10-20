@@ -33,6 +33,7 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwf-csub-p02 <_notebooks/ex-gwf-csub-p02.ipynb>
    ex-gwf-csub-p03 <_notebooks/ex-gwf-csub-p03.ipynb>
    ex-gwf-csub-p04 <_notebooks/ex-gwf-csub-p04.ipynb>
+   ex-gwf-drn-p01 <_notebooks/ex-gwf-drn-p01.ipynb>
    ex-gwf-sagehen <_notebooks/ex-gwf-sagehen.ipynb>
    ex-gwt-keating <_notebooks/ex-gwt-keating.ipynb>
    ex-gwt-moc3d-p01 <_notebooks/ex-gwt-moc3d-p01.ipynb>

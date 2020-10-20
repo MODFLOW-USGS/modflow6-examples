@@ -69,15 +69,15 @@ k11_basin = 0.0004  # Hydraulic conductivity in the basin ($ft/s$)
 ss = 1e-6  # Specific storage ($1/s)$
 sy_stream = 0.2  # Specific yield near the stream (unitless)
 sy_basin = 0.1  # Specific yield in the basin (unitless)
+uzf_kv = 1e-6  # Vertical saturated hydraulic conductivity ($ft/s$)
+thts = 0.3  # Saturated water content (unitless)
+thti = 0.1  # Initial water content (unitless)
+thtr = 0.1  # Base residual water content (unitless)
+eps = 3.5  # Epsilon exponent (unitless)
 evap_rate = 5.0e-8  # Evapotranspiration rate ($ft/s$)
 extwc = 0.10005  # Evapotranspiration extinction wilting content (unitless)
 ext_depth = 15.0  # Evapotranspiration extinction depth ($ft$)
 surf_dep = 1.0  # Surface depression depth ($ft$)
-uzf_kv = 1e-6  # Vertical saturated hydraulic conductivity ($ft/s$)
-thtr = 0.1  # Base residual water content (unitless)
-thts = 0.3  # Saturated water content (unitless)
-thti = 0.1  # Base initial water content (unitless)
-eps = 3.5  # Epsilon exponent (unitless)
 
 # Static temporal data used by TDIS file
 
@@ -1032,6 +1032,7 @@ def build_model(name, uzf_gwseep=None):
             obs_dict = {
                 csv_file: [
                     ("surfrate", "uzf-gwd-to-mvr", "surfrate"),
+                    ("netinfil", "net-infiltration", "surfrate"),
                 ]
             }
             uzf.obs.initialize(
@@ -1102,6 +1103,33 @@ def run_model(sim, silent=True):
     return success
 
 
+# plot vertical bars for stress periods
+
+
+def plot_stress_periods(ax):
+    vmin, vmax = ax.get_ylim()
+    x0 = 0.0
+    x1 = 0.0
+    for n in range(nper):
+        if n % 2 == 0:
+            color = "#3399FF"
+        else:
+            color = "#FFCC99"
+        x1 += 30.42
+        ax.fill_between(
+            [x0, x1],
+            vmin,
+            y2=vmax,
+            lw=0,
+            color=color,
+            step="post",
+            alpha=0.25,
+            ec="none",
+        )
+        x0 = x1
+    return
+
+
 # plot the groundwater seepage results
 
 
@@ -1122,16 +1150,51 @@ def plot_gwseep_results(silent=True):
     mean_error = np.mean(q0 - q1)
 
     # create the figure
-    fig, ax = plt.subplots(
-        ncols=1,
+    fig, axes = plt.subplots(
+        ncols=2,
         nrows=1,
         sharex=True,
-        figsize=(4, 4),
+        figsize=(6.3, 3.15),
         constrained_layout=True,
     )
 
+    ax = axes[0]
     ax.set_xlim(0, 365)
-    ax.set_ylim(50.8, 51.6)
+    ax.set_ylim(0, 175)
+
+    xp, yp = [0.0], [uzf["NETINFIL"][0]]
+    for idx in range(time.shape[0]):
+        if idx == 0:
+            x0, x1 = 0.0, time[idx]
+        else:
+            x0, x1 = time[idx - 1], time[idx]
+        y2 = uzf["NETINFIL"][idx]
+        xp.append(x0)
+        xp.append(x1)
+        yp.append(y2)
+        yp.append(y2)
+        ax.fill_between(
+            [x0, x1],
+            0,
+            y2=y2,
+            lw=0,
+            color="blue",
+            step="post",
+            ec="none",
+            zorder=100,
+        )
+    ax.plot(xp, yp, lw=0.5, color="black", zorder=101)
+    plot_stress_periods(ax)
+    fs.heading(ax, idx=0)
+
+    ax.set_xlabel("Simulation time, in days")
+    ax.set_ylabel(
+        "Infiltration to the unsaturated zone,\nin cubic feet per second"
+    )
+
+    ax = axes[-1]
+    ax.set_xlim(0, 365)
+    ax.set_ylim(50.8, 51.8)
     ax.plot(
         time,
         -drn["SURFRATE"],
@@ -1153,8 +1216,12 @@ def plot_gwseep_results(silent=True):
         color="red",
         label="UZF groundwater seepage",
     )
+    plot_stress_periods(ax)
 
-    fs.graph_legend(ax, loc="upper right", ncol=1)
+    fs.graph_legend(
+        ax, loc="upper center", ncol=1, frameon=True, edgecolor="none"
+    )
+    fs.heading(ax, idx=1)
     fs.add_text(
         ax,
         "Mean Error {:.2e} cubic feet per second".format(mean_error),
@@ -1169,7 +1236,7 @@ def plot_gwseep_results(silent=True):
 
     ax.set_xlabel("Simulation time, in days")
     ax.set_ylabel(
-        "Groundwater discharge to the land surface, in cubic feet per second"
+        "Groundwater seepage to the land surface,\nin cubic feet per second"
     )
 
     # save figure
@@ -1187,9 +1254,8 @@ def plot_gwseep_results(silent=True):
 def export_tables(silent=True):
     if config.plotSave:
 
-        caption = (
-            "Specified infiltration and "
-            + "pumping rates for example {}.".format(sim_name)
+        caption = "Infiltration and pumping rates for example {}.".format(
+            sim_name
         )
         headings = (
             "Stress period",
