@@ -102,8 +102,7 @@ shape3d = (nlay, nrow, ncol)
 data_pth = os.path.join("..", "data", sim_name)
 fpth = os.path.join(data_pth, "strt1.txt")
 strt1 = np.loadtxt(fpth, dtype=np.float)
-fpth = os.path.join(data_pth, "strt2.txt")
-strt2 = np.loadtxt(fpth, dtype=np.float)
+strt2 = strt1
 strt = [strt1, strt2]
 fpth = os.path.join(data_pth, "idomain1.txt")
 idomain1 = np.loadtxt(fpth, dtype=np.int)
