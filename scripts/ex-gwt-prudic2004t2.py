@@ -498,7 +498,7 @@ def build_mf6gwt(sim_folder):
         t = (irno, 0.0, 99.0, 999.0, "myreach{}".format(irno + 1))
         sftpackagedata.append(t)
 
-    sftperioddata = [(0, "STATUS", "ACTIVE"), (0, "CONCENTRATION", 0.0)]
+    sftperioddata = [(0, "STATUS", "ACTIVE"), ]
 
     sft_obs = {
         (name + ".sft.obs.csv",): [
