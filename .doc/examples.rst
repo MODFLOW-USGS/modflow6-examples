@@ -32,6 +32,7 @@ MODFLOW 6 – Example problems
    _examples/ex-gwf-csub-p02.rst
    _examples/ex-gwf-csub-p03.rst
    _examples/ex-gwf-csub-p04.rst
+   _examples/ex-gwf-drn-p01.rst
    _examples/ex-gwf-sagehen.rst
    _examples/ex-gwt-keating.rst
    _examples/ex-gwt-moc3d-p01.rst
