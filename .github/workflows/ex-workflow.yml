@@ -160,8 +160,8 @@ jobs:
           TIME: "${{ steps.current-time.outputs.time }}"
           F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
         run: |
-          echo "::set-env name=F_TIME::${{ steps.current-time.outputs.formattedTime }}"
-          echo "::set-env name=TIME::${{ steps.current-time.outputs.time }}"
+          echo "F_TIME=${{ steps.current-time.outputs.formattedTime }}" >> $GITHUB_ENV
+          echo "TIME=${{ steps.current-time.outputs.time }}" >> $GITHUB_ENV
           echo $TIME
           echo $F_TIME
           echo "MODFLOW 6 examples: built at ${F_TIME}"
