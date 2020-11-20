@@ -1,0 +1,37 @@
+\section{Two-Dimensional Test of Unsaturated-Saturated Transport}
+
+This example first appeared as scenario 6 in \cite{morway2013}.  At that time, new capabilites programmed into MT3DMS \citep{zheng1999mt3dms} allowed for simulation of solute transport in the unsaturated-zone using flux terms calculated by the unsaturated-zone flow (UZF1; \cite{UZF}) package. \cite{morway2013} referred to the published MT3DMS variant as UZF-MT3DMS. Eventually, however, these capabilities were better documented and released with MT3D-USGS \citep{mt3dusgs}. For the purpose of testing unsaturated-zone transport using the UZF/UZT packages inside \mf, the \mf solution is compared against the MT3D-USGS solution. Moreover, we note that the results of the  MT3D-USGS simulation were compared to results calculated by VS2DT \citep{lappalaetal1987VS2D} for establishing the accuracy of the MT3D solution.  VS2DT solves Richards' equation and as such can simulate flow and solute fluxes across the unsaturated-saturated interface.  Therefore, this example problem tests the ability of \mf to accurately simulate the infiltration, unsaturated-zone transport, recharge, and subsequent saturated transport of dissolved solute.
+
+Currently, the UZT package inside \mf does not simulate dispersion in the unsaturated zone.  As a result, two scenarios were setup in both MT3D-USGS and \mf.  The first maintains fidelity with \cite{morway2013} and simulates dispersion in the unsaturate zone.  In the second scenario, no dispersion is simulated in the unsaturated zone by setting the longitudinal, transverse, and vertical dispersion equal to zero in the upper 11 layers as summarized in the following table.  Brackets (``[ ]'') in the table indicate a list of values, one per layer, is used to define the value for the entire layer.  Where only one value appears inside the brackets, a constant value is used throughout the model domain.
+
+% add scenario table
+\input{../tables/ex-gwt-uzt-2d-scenario}
+
+\subsection{Example description}
+
+For this problem, a relatively small, two-dimensional profile that is 10 $m$ wide by 5 $m$ deep is used.  Layer thickness, as well as the column widths, are 0.25 $m$. A constant head boundary of 1.625 $m$ is set on the left and right sides of the active model domain.  An infiltration rate of 0.1 $m/day$ is specified all along the top boundary except for the left- and right-most columns where the constant head boundary condition exists.  A no-flow boundary is used along the bottom of the simulation domain.  The simulation domain starts out clean; however, solute enters with the infiltrating water in the middle 10 columns only.  Additional model parameter values are listed in table~\ref{tab:ex-gwt-uzt-2d-01}.  
+
+% add 2nd static parameter value table
+\input{../tables/ex-gwt-uzt-2d-01}
+
+Given the relatively dry initial condition within the unsaturated zone, the infiltrating front reaches the water table on day 8 of the 60 day simulation period. Once the infiltrating wave reaches the saturated zone, the water table rises into the unsaturated zone and further tests the accuracy of the transport solution.
+
+\subsection{Example results}
+
+Because \mf does not (yet) simulate dispersion in the unsaturated-zone, there are some significant differences between the two solutions (figure~\ref{fig:ex-gwt-uzt-2d-a}).  Whereas longitudinal and transverse dispersive fluxes spread solute ahead and to the side of the downward migrating plume within the MT3D-USGS unsaturated zone solution, the UZF/UZT formulation within \mf simulates purely advective transport in the unsaturated zone.  However, once solute reaches the saturated zone, dispersion is simulated using the XT3D package (the default setting).  
+
+% Morway et al. (2013) figure 6
+\begin{StandardFigure}
+	{A two-dimensional problem first published in \cite{morway2013}.  MT3D-USGS results closely match a benchmark solution calculated by VS2DT \citep{lappalaetal1987VS2D}.  The light blue shaded region shows the location of the saturated zone.}
+	{fig:ex-gwt-uzt-2d-a}
+	{../figures/ex-gwt-uzt-2d-a.png}
+\end{StandardFigure}
+
+A second scenario in which longitudinal, transverse, and vertical dispersion are set equal to zero in the unsaturated zone of the MT3D-USGS solution was run.  Because this setup more closely mimicks the \mf unsaturated zone solution, results between the respective models more closely match one another.  We note, however, that because many transport problems originate at land surface, the final transport solution within the satured zone may ultimately depend on accurately simulating unsaturated zone transport processes.  That is, the extent and severity of the saturated zone plume may be inextricably tied to the spread and delay of migrating solute in the unsaturated zone, as demonstrated by the two different solutions within the saturated zone when dispersion is and is not accounted for in the unsaturated zone.
+
+% Morway et al. (2013) figure 6
+\begin{StandardFigure}
+	{A two-dimensional transport problem with no dispersive fluxes in either \mf or MT3D-USGS within the unsaturated-zone.  The light blue shaded region shows the location of the saturated zone.}
+	{fig:ex-gwt-uzt-2d-b}
+	{../figures/ex-gwt-uzt-2d-b.png}
+\end{StandardFigure}

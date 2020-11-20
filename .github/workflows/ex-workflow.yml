@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
 
       - name: Output repo information
         run: |
@@ -39,7 +39,7 @@ jobs:
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
       - name: Cache pip
-        uses: actions/cache@v2.1.0
+        uses: actions/cache@v2.1.3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('etc/requirements.pip.txt') }}
@@ -160,8 +160,8 @@ jobs:
           TIME: "${{ steps.current-time.outputs.time }}"
           F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
         run: |
-          echo "::set-env name=F_TIME::${{ steps.current-time.outputs.formattedTime }}"
-          echo "::set-env name=TIME::${{ steps.current-time.outputs.time }}"
+          echo "F_TIME=${{ steps.current-time.outputs.formattedTime }}" >> $GITHUB_ENV
+          echo "TIME=${{ steps.current-time.outputs.time }}" >> $GITHUB_ENV
           echo $TIME
           echo $F_TIME
           echo "MODFLOW 6 examples: built at ${F_TIME}"
@@ -200,8 +200,8 @@ jobs:
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload compiled executables to the current GitHub release
-        uses: svenstaro/upload-release-action@2.0.0
+      - name: Upload MODFLOW 6 examples to the current GitHub release
+        uses: svenstaro/upload-release-action@2.2.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./current/*
