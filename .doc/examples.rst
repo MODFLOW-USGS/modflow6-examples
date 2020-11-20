@@ -16,6 +16,7 @@ MODFLOW 6 – Example problems
    _examples/ex-gwf-nwt-p03.rst
    _examples/ex-gwf-zaidel.rst
    _examples/ex-gwf-sfr-p01.rst
+   _examples/ex-gwf-sfr-p01b.rst
    _examples/ex-gwf-lak-p01.rst
    _examples/ex-gwf-lak-p02.rst
    _examples/ex-gwf-maw-p01.rst
@@ -51,4 +52,5 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-mt3dms-p09.rst
    _examples/ex-gwt-mt3dms-p10.rst
    _examples/ex-gwt-prudic2004t2.rst
+   _examples/ex-gwt-uzt-2d.rst
    _examples/ex-gwt-henry.rst
