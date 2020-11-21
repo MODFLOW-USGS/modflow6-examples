@@ -4597,4 +4597,4 @@ if __name__ == "__main__":
     # conditions, normalized specific discharge, and head contours (25 ft contour
     # intervals) are also shown.
 
-    simulation(0, silent=False)
+    simulation(0)
