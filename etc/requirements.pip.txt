@@ -16,4 +16,4 @@ descartes
 pyproj
 shapely
 jupyter
-jupytext!=1.7.1
+jupytext

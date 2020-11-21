@@ -1,0 +1,20 @@
+dependencies:
+  - nose
+  - nose-timer
+  - appdirs
+  - requests
+  - numpy
+  - matplotlib
+  - bmipy
+  - affine
+  - scipy
+  - pandas
+  - netcdf4
+  - pyshp
+  - rasterio
+  - fiona
+  - descartes
+  - pyproj
+  - shapely
+  - jupyter
+  - jupytext
