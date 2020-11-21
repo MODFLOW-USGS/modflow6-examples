@@ -46,6 +46,15 @@ jobs:
           sudo tar xvzf pandoc-2.10.1-linux-amd64.tar.gz --strip-components=1 -C /usr/local
           pandoc --version
 
+      - name: Cache Miniconda
+        uses: actions/cache@v2.1.3
+        env:
+          # Increase this value to reset cache if dependencies.yml has changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.run-type }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('etc/dependencies.yml') }}
+
       # Standard python fails on windows without GDAL installation
       # Using custom bash shell ("shell: bash -l {0}") with Miniconda
       - name: Setup Miniconda
@@ -63,7 +72,7 @@ jobs:
         run: |
           python --version
 
-      - name: Add packages to flopy environment using mamba or conda
+      - name: Add packages to mf6ex environment using mamba and pip
         shell: bash -l {0}
         run: |
           mamba env update --name mf6ex --file etc/dependencies.yml
