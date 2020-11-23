@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import shutil
 from subprocess import Popen, PIPE
@@ -64,7 +65,7 @@ for ex in ex_list:
     # create restructured text file for example using using pandoc
     dst = os.path.join("..", ".doc", "_examples", "{}.rst".format(ex))
     print("running pandoc to create {}".format(dst))
-    args = (
+    args = [
         "pandoc",
         "-s",
         "-f",
@@ -76,7 +77,10 @@ for ex in ex_list:
         "ex.tex",
         "-o",
         dst,
-    )
+    ]
+    if "linux" in sys.platform.lower():
+        args.append("--citeproc")
+
     print(" ".join(args))
     proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=doc_pth)
     stdout, stderr = proc.communicate()
@@ -218,7 +222,7 @@ for ex in ex_list:
         if tag in line:
             line = ".. _{}:\n\n".format(table_name) + line.lstrip() + "\n"
 
-        tag = ".. container:: references hanging-indent"
+        tag = ".. container:: references"
         if tag in line:
             in_reference = True
             line = "References Cited\n----------------\n\n"
