@@ -42,8 +42,8 @@ jobs:
       - name: Install pandoc
         shell: bash
         run: |
-          wget https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-linux-amd64.tar.gz
-          sudo tar xvzf pandoc-2.10.1-linux-amd64.tar.gz --strip-components=1 -C /usr/local
+          wget https://github.com/jgm/pandoc/releases/download/2.11.2/pandoc-2.11.2-linux-amd64.tar.gz
+          sudo tar xvzf pandoc-2.11.2-linux-amd64.tar.gz --strip-components=1 -C /usr/local
           pandoc --version
 
       - name: Cache Miniconda
