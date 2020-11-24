@@ -1,8 +1,30 @@
 import os
-import sys
 import re
 import shutil
 from subprocess import Popen, PIPE
+
+# check that pandoc is available and the version is sufficient
+args = ("pandoc", "--version")
+proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=".")
+stdout, stderr = proc.communicate()
+msg = ""
+if stdout:
+    for line in stdout.decode("utf-8").splitlines():
+        if "pandoc" in line:
+            t = line.split()[1]
+            version = []
+            for v in t.split("."):
+                version.append(int(v))
+            version = tuple(version)
+            if version[0:2] < (2, 11):
+                msg = "pandoc 2.11 or higher must be available"
+            break
+if stderr:
+    msg = stderr.decode("utf-8")
+if len(msg) > 0:
+    raise RuntimeError(msg)
+else:
+    print("\npandoc version: {}\n".format(t))
 
 # get list of examples from body.text
 ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
@@ -65,9 +87,10 @@ for ex in ex_list:
     # create restructured text file for example using using pandoc
     dst = os.path.join("..", ".doc", "_examples", "{}.rst".format(ex))
     print("running pandoc to create {}".format(dst))
-    args = [
+    args = (
         "pandoc",
         "-s",
+        "--citeproc",
         "-f",
         "latex",
         "-t",
@@ -77,9 +100,7 @@ for ex in ex_list:
         "ex.tex",
         "-o",
         dst,
-    ]
-    if "linux" in sys.platform.lower():
-        args.append("--citeproc")
+    )
 
     print(" ".join(args))
     proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=doc_pth)
