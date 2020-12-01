@@ -54,3 +54,4 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-prudic2004t2.rst
    _examples/ex-gwt-uzt-2d.rst
    _examples/ex-gwt-henry.rst
+   _examples/ex-gwt-saltlake.rst

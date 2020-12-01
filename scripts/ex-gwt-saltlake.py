@@ -320,9 +320,48 @@ def plot_conc(sim, idx):
     return
 
 
+def make_animated_gif(sim, idx):
+    from matplotlib.animation import FuncAnimation, PillowWriter
+    fs = USGSFigure(figure_type="map", verbose=False)
+    sim_name = example_name
+    sim_ws = os.path.join(ws, sim_name)
+    gwf = sim.get_model("flow")
+    gwt = sim.get_model("trans")
+
+    fpth = os.path.join(sim_ws, "trans.ucn")
+    cobj = flopy.utils.HeadFile(fpth, text="concentration")
+    times = cobj.get_times()
+    times = np.array(times)
+    conc = cobj.get_alldata()
+
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.add_subplot(1, 1, 1, aspect="equal")
+    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+    pc = pxs.plot_array(conc[0], cmap="jet", vmin=conc_inflow, vmax=conc_sat)
+
+    def init():
+        ax.set_xlim(0, 75.)
+        ax.set_ylim(0, 75.)
+        ax.set_title("Time = {} seconds".format(times[0]))
+
+    def update(i):
+        pc.set_array(conc[i].flatten())
+        ax.set_title("Time = {} seconds".format(times[i]))
+
+    ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
+    writer = PillowWriter(fps=50)
+    fpth = os.path.join(
+        "..", "figures", "{}{}".format(sim_name, ".gif")
+    )
+    ani.save(fpth, writer=writer)
+    return
+
+
 def plot_results(sim, idx):
     if config.plotModel:
         plot_conc(sim, idx)
+        if config.plotSave:
+            make_animated_gif(sim, idx)
     return
 
 

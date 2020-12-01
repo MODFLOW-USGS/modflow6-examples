@@ -275,6 +275,17 @@ for ex in ex_list:
     line += "\n"
     f.write(line)
 
+    # write animation section
+    fname = "{}.gif".format(ex)
+    if fname in os.listdir("../figures"):
+        line = "\n\nAnimation\n"
+        line += "----------------\n\n"
+        line += "Animation of model results:\n\n"
+        line += ".. image:: ../_images/{}".format(fname)
+
+    line += "\n"
+    f.write(line)
+
     f.close()
 
     # # convert the rst tables
@@ -310,7 +321,7 @@ src_dirs = (os.path.join("..", "figures"),
             os.path.join("..", "images"))
 for src_dir in src_dirs:
     file_names = [file_name for file_name in os.listdir(src_dir) if os.path.isfile(
-        os.path.join(src_dir, file_name)) and file_name.endswith(".png")]
+        os.path.join(src_dir, file_name)) and (file_name.endswith(".png") or file_name.endswith(".gif"))]
     for file_name in file_names:
         src = os.path.join(src_dir, file_name)
         print("copy '{}' -> '{}' directory".format(src, dst))

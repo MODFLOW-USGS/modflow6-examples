@@ -55,5 +55,6 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwt-prudic2004t2 <_notebooks/ex-gwt-prudic2004t2.ipynb>
    ex-gwt-uzt-2d <_notebooks/ex-gwt-uzt-2d.ipynb>
    ex-gwt-henry <_notebooks/ex-gwt-henry.ipynb>
+   ex-gwt-saltlake <_notebooks/ex-gwt-saltlake.ipynb>
 
 
