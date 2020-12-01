@@ -1,0 +1,31 @@
+\section{Salt Lake Problem}
+
+% Describe source of problem
+The salt lake problem was suggested by \cite{simmons1999} as a comprehensive benchmark test for variable-density groundwater flow models. The problem is based on dense salt fingers that descend from an evaporating salt lake. Although an analytical solution is not available for the salt lake problem, an equivalent Hele-Shaw analysis was performed in the laboratory to investigate the movement of dense salt fingers \citep{wooding1997a, wooding1997b}. In addition to the SUTRA simulation, this salt lake problem was simulated by \cite{langevin2003seawat} using the MODFLOW-based SEAWAT-2000 program.  The approach described by   \cite{langevin2003seawat} is followed here to reproduce the salt lake problem with \mf.
+
+\subsection{Example description}
+
+Model parameters used for the \mf simulation of the salt lake problem are shown in table~\ref{tab:ex-gwt-saltlake-01} The model grid and boundary conditions used for the \mf simulation are shown in figure~\ref{fig:ex-gwt-saltlake-bc}. The model grid consists of 135 columns and 57 layers. To accurately capture the number and growth of salt fingers, the model grid has an increased level of resolution beneath the evaporative boundary.  The evaporative boundary is represented in the model by using the Recharge (RCH) Package and specifying a negative recharge rate.  \cite{simmons1999} describe the method for applying the SUTRA code to the salt lake problem. A random numerical perturbation was required to match the formation of the salt fingers observed in the Hele-Shaw experiment. Concentrations along the evaporative boundary were randomly assigned for each node and for each time step.  A similar approach is used here for the \mf simulation, except that the random variations are not reassigned each time step.  The inflow boundary is represented using constant-head cells with a constant inflow concentration.  The \mf model was run for 24,000 seconds (400 minutes) using 60-second transport timesteps. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwt-saltlake-01}
+
+% a figure
+\begin{StandardFigure}{
+                                     Model grid and boundary conditions used for the salt lake problem.  Evaporation occurs from the cells highlighted in red.  Inflow into the model grid occurs through the constant-head cells shown in blue.
+                                     }{fig:ex-gwt-saltlake-bc}{../figures/ex-gwt-saltlake-bc.png}
+\end{StandardFigure}                                 
+
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The salt lake problem represents a complex system of salt fingers that form, descend, and then coalesce due to the larger-scale flow system. Although the results from \mf are not identical with the results from the Hele-Shaw experiment, \mf seems capable of representing the growth rate and number of salt fingers (fig.~\ref{fig:ex-gwt-saltlake-conc}). In the experiment and model, six or seven salt fingers are initially produced, of which only two persist. The rate of descent is similar for both the experiment and model.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Color-shaded plots of concentration simulated by \mf for the \cite{simmons1999} problem involving density-driven groundwater flow and solute transport.  Panels can be compared with the panels shown for the Hele-Shaw experient \citep{wooding1997b} and for the SEAWAT-2000 numerical simulation \citep{langevin2003seawat}.
+                                     }{fig:ex-gwt-saltlake-conc}{../figures/ex-gwt-saltlake-conc.png}
+\end{StandardFigure}                                 
+
+                              
