@@ -492,13 +492,13 @@ def make_animated_gif(sims, idx):
     pxs.plot_bc(ftype="CHD")
 
     def init():
-        ax.set_title("Time = {} seconds".format(conc_times[0]))
+        ax.set_title("Time = {} days".format(conc_times[0]))
 
     def update(i):
         a = np.where(head > botm, conc[i], nodata)
         a = np.ma.masked_where(a < 0, a)
         pc.set_array(a.flatten())
-        ax.set_title("Time = {} seconds".format(conc_times[i]))
+        ax.set_title("Time = {} days".format(conc_times[i]))
 
     ani = FuncAnimation(
         fig, update, range(1, conc_times.shape[0]), init_func=init
