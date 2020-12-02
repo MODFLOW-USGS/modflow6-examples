@@ -273,19 +273,20 @@ for ex in ex_list:
             "for this example and post-process the results is:\n\n"
     line += "* `{0} <../_notebooks/{0}.html>`_\n".format(ex_root)
     line += "\n"
-    f.write(line)
 
-    # write animation section
+    # Check to see if there is a gif with the same name as the example name
+    # (e.g. ex-gwt-saltlake.gif) and if so, then assume this is an animated
+    # gif and add an Animation section to the restructured text file
     fname = "{}.gif".format(ex)
     if fname in os.listdir("../figures"):
         line = "\n\nAnimation\n"
         line += "----------------\n\n"
         line += "Animation of model results:\n\n"
         line += ".. image:: ../_images/{}".format(fname)
-
     line += "\n"
-    f.write(line)
 
+    # Write the restructured text lines and close the file
+    f.write(line)
     f.close()
 
     # # convert the rst tables
