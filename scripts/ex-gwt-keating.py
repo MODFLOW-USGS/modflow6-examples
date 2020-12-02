@@ -195,7 +195,10 @@ def build_mf6gwt(sim_folder):
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe, continue_=True,
+        sim_name=name,
+        sim_ws=sim_ws,
+        exe_name=config.mf6_exe,
+        continue_=True,
     )
     tdis_ds = ((period1, 73, 1.0), (period2, 2927, 1.0))
     flopy.mf6.ModflowTdis(
@@ -246,8 +249,16 @@ def build_mf6gwt(sim_folder):
     ]
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     saverecord = {
-        0: [("CONCENTRATION", "STEPS", 10)],
-        1: [("CONCENTRATION", "STEPS", 27, 227)],
+        0: [
+            ("CONCENTRATION", "STEPS", 10),
+            ("CONCENTRATION", "LAST"),
+            ("CONCENTRATION", "FREQUENCY", 10),
+        ],
+        1: [
+            ("CONCENTRATION", "STEPS", 27, 227),
+            ("CONCENTRATION", "LAST"),
+            ("CONCENTRATION", "FREQUENCY", 10),
+        ],
     }
     flopy.mf6.ModflowGwtoc(
         gwt,
@@ -257,7 +268,13 @@ def build_mf6gwt(sim_folder):
             ("COLUMNS", ncol, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
         saverecord=saverecord,
-        printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "ALL",)],
+        printrecord=[
+            ("CONCENTRATION", "LAST"),
+            (
+                "BUDGET",
+                "ALL",
+            ),
+        ],
     )
     obs_data = {
         "{}.obs.csv".format(name): [
@@ -322,6 +339,8 @@ def plot_results(sims, idx):
         plot_head_results(sims, idx)
         plot_conc_results(sims, idx)
         plot_cvt_results(sims, idx)
+        if config.plotSave:
+            make_animated_gif(sims, idx)
     return
 
 
@@ -378,12 +397,19 @@ def plot_conc_results(sims, idx):
     fname = os.path.join(sim_ws, "trans.ucn")
     cobj = flopy.utils.HeadFile(fname, text="concentration")
     conc_times = cobj.get_times()
+    conc_times = np.array(conc_times)
     fig, axes = plt.subplots(
         3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True
     )
     xgrid, _, zgrid = gwt.modelgrid.xyzcellcenters
-    for iplot, time_index in enumerate([0, 1, 2]):
-        totim = conc_times[time_index]
+    # Desired plot times
+    plot_times = [100.0, 1000.0, 3000.0]
+    nplots = len(plot_times)
+    for iplot in range(nplots):
+        print("  Plotting conc {}".format(iplot + 1))
+        time_in_pub = plot_times[iplot]
+        idx_conc = (np.abs(conc_times - time_in_pub)).argmin()
+        totim = conc_times[idx_conc]
         ax = axes[iplot]
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
         conc = cobj.get_data(totim=totim)
@@ -414,7 +440,6 @@ def plot_conc_results(sims, idx):
                 marker="o",
                 markersize="4",
             )
-
     # save figure
     if config.plotSave:
         sim_folder = os.path.split(sim_ws)[0]
@@ -422,6 +447,66 @@ def plot_conc_results(sims, idx):
         fname = "{}-conc{}".format(sim_folder, config.figure_ext)
         fpth = os.path.join(ws, "..", "figures", fname)
         fig.savefig(fpth)
+
+
+def make_animated_gif(sims, idx):
+    import matplotlib as mpl
+    from matplotlib.animation import FuncAnimation, PillowWriter
+    import copy
+
+    print("Animating conc model results...")
+    sim_name = example_name
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    gwf = sim_mf6gwf.flow
+    gwt = sim_mf6gwt.trans
+    botm = gwf.dis.botm.array
+
+    # load head
+    fs = USGSFigure(figure_type="map", verbose=False)
+    sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
+    fname = os.path.join(sim_ws, "flow.hds")
+    hobj = flopy.utils.HeadFile(fname)
+    head = hobj.get_data()
+    head = np.where(head > botm, head, np.nan)
+
+    # load concentration
+    sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
+    fname = os.path.join(sim_ws, "trans.ucn")
+    cobj = flopy.utils.HeadFile(fname, text="concentration")
+    conc_times = cobj.get_times()
+    conc_times = np.array(conc_times)
+    conc = cobj.get_alldata()
+
+    # set up the figure
+    fig = plt.figure(figsize=(7.5, 3))
+    ax = fig.add_subplot(1, 1, 1)
+    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+
+    cmap = copy.copy(mpl.cm.get_cmap("jet"))
+    cmap.set_bad("white")
+    nodata = -999.0
+    a = np.where(head > botm, conc[0], nodata)
+    a = np.ma.masked_where(a < 0, a)
+    pc = pxs.plot_array(a, head=head, cmap=cmap, vmin=0, vmax=1)
+    pxs.plot_bc(ftype="RCH", color="red")
+    pxs.plot_bc(ftype="CHD")
+
+    def init():
+        ax.set_title("Time = {} seconds".format(conc_times[0]))
+
+    def update(i):
+        a = np.where(head > botm, conc[i], nodata)
+        a = np.ma.masked_where(a < 0, a)
+        pc.set_array(a.flatten())
+        ax.set_title("Time = {} seconds".format(conc_times[i]))
+
+    ani = FuncAnimation(
+        fig, update, range(1, conc_times.shape[0]), init_func=init
+    )
+    writer = PillowWriter(fps=25)
+    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+    ani.save(fpth, writer=writer)
+    return
 
 
 def plot_cvt_results(sims, idx):
@@ -460,8 +545,8 @@ def plot_cvt_results(sims, idx):
     )
     ax.set_xlim(0, 8000)
     ax.set_ylim(0, 0.80)
-    ax.set_xlabel('time, in days')
-    ax.set_ylabel('normalized concentration, unitless')
+    ax.set_xlabel("time, in days")
+    ax.set_ylabel("normalized concentration, unitless")
     fs.graph_legend(ax)
     ax = axes[1]
     ax.plot(
@@ -483,8 +568,8 @@ def plot_cvt_results(sims, idx):
     )
     ax.set_xlim(0, 30000)
     ax.set_ylim(0, 0.20)
-    ax.set_xlabel('time, in days')
-    ax.set_ylabel('normalized concentration, unitless')
+    ax.set_xlabel("time, in days")
+    ax.set_ylabel("normalized concentration, unitless")
     fs.graph_legend(ax)
     # save figure
     if config.plotSave:
