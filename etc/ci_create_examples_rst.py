@@ -3,6 +3,29 @@ import re
 import shutil
 from subprocess import Popen, PIPE
 
+# check that pandoc is available and the version is sufficient
+args = ("pandoc", "--version")
+proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=".")
+stdout, stderr = proc.communicate()
+msg = ""
+if stdout:
+    for line in stdout.decode("utf-8").splitlines():
+        if "pandoc" in line:
+            t = line.split()[1]
+            version = []
+            for v in t.split("."):
+                version.append(int(v))
+            version = tuple(version)
+            if version[0:2] < (2, 11):
+                msg = "pandoc 2.11 or higher must be available"
+            break
+if stderr:
+    msg = stderr.decode("utf-8")
+if len(msg) > 0:
+    raise RuntimeError(msg)
+else:
+    print("\npandoc version: {}\n".format(t))
+
 # get list of examples from body.text
 ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
 ex_list = []
@@ -67,6 +90,7 @@ for ex in ex_list:
     args = (
         "pandoc",
         "-s",
+        "--citeproc",
         "-f",
         "latex",
         "-t",
@@ -77,6 +101,7 @@ for ex in ex_list:
         "-o",
         dst,
     )
+
     print(" ".join(args))
     proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=doc_pth)
     stdout, stderr = proc.communicate()
@@ -218,7 +243,7 @@ for ex in ex_list:
         if tag in line:
             line = ".. _{}:\n\n".format(table_name) + line.lstrip() + "\n"
 
-        tag = ".. container:: references hanging-indent"
+        tag = ".. container:: references"
         if tag in line:
             in_reference = True
             line = "References Cited\n----------------\n\n"
@@ -248,8 +273,20 @@ for ex in ex_list:
             "for this example and post-process the results is:\n\n"
     line += "* `{0} <../_notebooks/{0}.html>`_\n".format(ex_root)
     line += "\n"
-    f.write(line)
 
+    # Check to see if there is a gif with the same name as the example name
+    # (e.g. ex-gwt-saltlake.gif) and if so, then assume this is an animated
+    # gif and add an Animation section to the restructured text file
+    fname = "{}.gif".format(ex)
+    if fname in os.listdir("../figures"):
+        line = "\n\nAnimation\n"
+        line += "----------------\n\n"
+        line += "Animation of model results:\n\n"
+        line += ".. image:: ../_images/{}".format(fname)
+    line += "\n"
+
+    # Write the restructured text lines and close the file
+    f.write(line)
     f.close()
 
     # # convert the rst tables
@@ -285,7 +322,7 @@ src_dirs = (os.path.join("..", "figures"),
             os.path.join("..", "images"))
 for src_dir in src_dirs:
     file_names = [file_name for file_name in os.listdir(src_dir) if os.path.isfile(
-        os.path.join(src_dir, file_name)) and file_name.endswith(".png")]
+        os.path.join(src_dir, file_name)) and (file_name.endswith(".png") or file_name.endswith(".gif"))]
     for file_name in file_names:
         src = os.path.join(src_dir, file_name)
         print("copy '{}' -> '{}' directory".format(src, dst))

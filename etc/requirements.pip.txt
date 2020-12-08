@@ -15,7 +15,5 @@ fiona
 descartes
 pyproj
 shapely
-p2j
-ipython
 jupyter
 jupytext
