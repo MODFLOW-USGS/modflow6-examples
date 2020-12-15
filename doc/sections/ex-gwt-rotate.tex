@@ -1,11 +1,11 @@
 \section{Rotating Interface Problem}
 
 % Describe source of problem
-The rotating interface problem was suggested by \cite{bakker2004} as a  benchmark test for variable-density groundwater flow models. The problem consists of a box filled with three immiscible fluids that are separated by sharp interfaces.  The fluid are initially in an unstable configuration that causes them to rotate.  This salt lake problem was simulated by \cite{langevin2003seawat} using the MODFLOW-based SEAWAT-2000 program.  \cite{bakker2004} also shows simulation results for the SWI Package for MODFLOW and MOCDENS3D.  The approach described by   \cite{langevin2003seawat} is followed here to reproduce the salt lake problem with \mf.
+The rotating interface problem was suggested by \cite{bakker2004} as a  benchmark test for variable-density groundwater flow models. The problem consists of a box filled with three immiscible fluids that are separated by sharp interfaces.  The fluid are initially in an unstable configuration that causes them to rotate.  This rotating interface problem was simulated by \cite{langevin2003seawat} using the MODFLOW-based SEAWAT-2000 program.  \cite{bakker2004} also shows simulation results for the SWI Package for MODFLOW, MOCDENS3D, and for SEAWAT.  There are two cases of this problem, one for symmetric rotational flow and one for asymmetric rotational flow.   \cite{bakker2004}  and  \cite{langevin2003seawat} show both the symmetric and asymmetric versions of the rotating interface problem; however, only the symmetric case is shown here.
 
 \subsection{Example description}
 
- The problem consists of a cross-sectional box filled with three fluids of different densities (fig.~\ref{fig:ex-gwt-rotate-config}). The initial boundaries between the fluids are not horizontal, and thus, the fluids rotate. There are two cases of this problem, one for symmetric rotational flow and one for asymmetric rotational flow.  \cite{bakker2004} and \cite{langevin2003seawat} compared simulated velocities at the onset of rotation with velocities obtained using an analytical solution.  In this \mf version, the transient evolution of the rotating surfaces is shown for the case involving symmetric rotational flow.
+ The problem consists of a cross-sectional box filled with three fluids of different densities (fig.~\ref{fig:ex-gwt-rotate-config}). The initial boundaries between the fluids are not horizontal, and thus, the fluids rotate. \cite{bakker2004} and \cite{langevin2003seawat} compared simulated velocities at the onset of rotation with velocities obtained using an analytical solution.  This same comparison with simulated velocities is also shown here for \mf.  
  
  % a figure
 \begin{StandardFigure}{
@@ -28,7 +28,15 @@ Model parameters used for the \mf simulation of the rotating interface problem a
 % for examples without scenarios
 \subsection{Example Results}
 
-The rotating interface problem represents a complex variable-density flow system that results from an unstable initial density configuration.  During the simulation period, the fluid rotate toward a stable position with lighter water overlying denser water.  Although the problem dictates that the fluids are immiscible, the \mf simulation shows some mixing caused by numerical dispersion.
+The rotating interface problem represents a complex variable-density flow system that results from an unstable initial density configuration.  The analytical solution of \cite{bakker2004} is used here to calculate the horizontal interface velocity as a function of z for the left interface (fig.~\ref{fig:ex-gwt-rotate-vh}).  Also shown on figure~\ref{fig:ex-gwt-rotate-vh} is the horizontal interface velocity as simulated by \mf.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Initial horizontal velocity versus vertical position of the left interface, exact (solid), and \mf (blue circles).
+                                     }{fig:ex-gwt-rotate-vh}{../figures/ex-gwt-rotate-vh.png}
+\end{StandardFigure}                                 
+
+During the simulation period, the fluid rotate toward a stable position with lighter water overlying denser water.  Although the problem dictates that the fluids are immiscible, the \mf simulation shows some mixing caused by numerical dispersion.
 
 % a figure
 \begin{StandardFigure}{

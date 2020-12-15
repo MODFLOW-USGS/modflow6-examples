@@ -23,6 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 
 import config
 from figspecs import USGSFigure
+from analytical import BakkerRotatingInterface
 
 mf6exe = os.path.abspath(config.mf6_exe)
 exe_name_mf = config.mf2005_exe
@@ -56,7 +57,7 @@ system_length = 150.0  # Length of system ($m$)
 delr = 1.0  # Column width ($m$)
 delc = 1.0  # Row width ($m$)
 delv = 0.5  # Layer thickness
-top = 0.0  # Top of the model ($m$)
+top = height / 2  # Top of the model ($m$)
 hydraulic_conductivity = 2.0  # Hydraulic conductivity ($m d^{-1}$)
 denseref = 1000.0  # Reference density
 denseslp = 0.7  # Density and concentration slope
@@ -68,6 +69,7 @@ c2 = 17.5  # Concentration of zone 2 ($kg m^3$)
 c3 = 35  # Concentration of zone 3 ($kg m^3$)
 a1 = 40.0  # Interface extent for zone 1 and 2
 a2 = 40.0  # Interface extent for zone 2 and 3
+b = height / 2.0
 x1 = 170.0  # X-midpoint location for zone 1 and 2 interface
 x2 = 130.0  # X-midpoint location for zone 2 and 3 interface
 porosity = 0.2  # Porosity (unitless)
@@ -236,6 +238,85 @@ def run_model(sim, silent=True):
 # Function to plot the model results
 
 
+def plot_velocity_profile(sim, idx):
+    fs = USGSFigure(figure_type="map", verbose=False)
+    sim_name = example_name
+    sim_ws = os.path.join(ws, sim_name)
+    gwf = sim.get_model("flow")
+    gwt = sim.get_model("trans")
+    print("Creating velocity profile plot...")
+
+    # find line of cells on left side of first interface
+    cstrt = gwt.ic.strt.array
+    cstrt = cstrt.reshape((nlay, ncol))
+    interface_coords = []
+    for k in range(nlay):
+        crow = cstrt[k]
+        j = (np.abs(crow - c2)).argmin() - 1
+        interface_coords.append((k, j))
+
+    # plot velocity
+    xc, yc, zc = gwt.modelgrid.xyzcellcenters
+    xg = []
+    zg = []
+    for k, j in interface_coords:
+        x = xc[0, j]
+        z = zc[k, 0, j]
+        xg.append(x)
+        zg.append(z)
+    xg = np.array(xg)
+    zg = np.array(zg)
+
+    # set up plot
+    fig = plt.figure(figsize=(4, 6))
+    ax = fig.add_subplot(1, 1, 1)
+
+    # plot analytical solution
+    qx1, qz1 = BakkerRotatingInterface.get_w(
+        xg, zg, hydraulic_conductivity, rho1, rho2, a1, b, x1
+    )
+    qx2, qz2 = BakkerRotatingInterface.get_w(
+        xg, zg, hydraulic_conductivity, rho2, rho3, a2, b, x2
+    )
+    qx = qx1 + qx2
+    qz = qz1 + qz2
+    vh = qx + qz * a1 / b
+    vh = vh / porosity
+    ax.plot(vh, zg, "k-")
+
+    # plot numerical results
+    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
+    fpth = os.path.join(sim_ws, file_name)
+    bobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+    kstpkper = bobj.get_kstpkper()
+    spdis = bobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0]
+    qxsim = spdis["qx"].reshape((nlay, ncol))
+    qzsim = spdis["qz"].reshape((nlay, ncol))
+    qx = []
+    qz = []
+    for k, j in interface_coords:
+        qx.append(qxsim[k, j])
+        qz.append(qzsim[k, j])
+    qx = np.array(qx)
+    qz = np.array(qz)
+    vh = qx + qz * a1 / b
+    vh = vh / porosity
+    ax.plot(vh, zg, "bo", mfc="none")
+
+    # configure plot and save
+    ax.plot([0, 0], [-b, b], "k--", linewidth=0.5)
+    ax.set_xlim(-0.1, 0.1)
+    ax.set_ylim(-b, b)
+    ax.set_ylabel("z location of left interface (m)")
+    ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
+    # save figure
+    if config.plotSave:
+        fpth = os.path.join(
+            "..", "figures", "{}-vh{}".format(sim_name, config.figure_ext)
+        )
+        fig.savefig(fpth)
+
+
 def plot_conc(sim, idx):
     fs = USGSFigure(figure_type="map", verbose=False)
     sim_name = example_name
@@ -288,7 +369,7 @@ def plot_conc(sim, idx):
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
         pxs.plot_array(conc, cmap="jet", vmin=c1, vmax=c3)
         ax.set_xlim(0, length)
-        ax.set_ylim(-height, 0)
+        ax.set_ylim(-height / 2.0, height / 2.0)
         ax.set_ylabel("z position (m)")
         ax.set_xlabel("x position (m)")
         ax.set_title("Time = {} days".format(time_this_plot))
@@ -326,7 +407,7 @@ def make_animated_gif(sim, idx):
 
     def init():
         ax.set_xlim(0, length)
-        ax.set_ylim(-height, 0)
+        ax.set_ylim(-height / 2, height / 2)
         ax.set_title("Time = {} seconds".format(times[0]))
 
     def update(i):
@@ -345,6 +426,7 @@ def make_animated_gif(sim, idx):
 def plot_results(sim, idx):
     if config.plotModel:
         plot_conc(sim, idx)
+        plot_velocity_profile(sim, idx)
         if config.plotSave:
             make_animated_gif(sim, idx)
     return

@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.special import erfc
 
+
 def diffusion(x, t, v, R, D):
     """
     Calculate the analytical solution for one-dimension advection and
@@ -26,7 +27,7 @@ def diffusion(x, t, v, R, D):
         normalized concentration value
 
     """
-    denom = 2. * np.sqrt(D * R * t)
+    denom = 2.0 * np.sqrt(D * R * t)
     t1 = 0.5 * erfc((R * x - v * t) / denom)
     t2 = 0.5 * np.exp(v * x / D)
     t3 = erfc((R * x + v * t) / denom)
@@ -41,40 +42,50 @@ class Wexler1d(object):
     """
 
     def betaeqn(self, beta, d, v, l):
-        return beta / np.tan(beta) - beta ** 2 * d / v / l + v * l / 4. / d
+        return beta / np.tan(beta) - beta ** 2 * d / v / l + v * l / 4.0 / d
 
     def fprimebetaeqn(self, beta, d, v, l):
         """
         f1 = cotx - x/sinx2 - (2.0D0*C*x)
 
         """
-        c = v * l / 4. / d
-        return 1. / np.tan(beta) - beta / np.sin(beta) ** 2 - 2. * c * beta
+        c = v * l / 4.0 / d
+        return 1.0 / np.tan(beta) - beta / np.sin(beta) ** 2 - 2.0 * c * beta
 
     def fprime2betaeqn(self, beta, d, v, l):
         """
         f2 = -1.0D0/sinx2 - (sinx2-x*DSIN(x*2.0D0))/(sinx2*sinx2) - 2.0D0*C
 
         """
-        c = v * l / 4. / d
+        c = v * l / 4.0 / d
         sinx2 = np.sin(beta) ** 2
-        return -1. / sinx2 - (sinx2 - beta * np.sin(beta * 2.)) / (sinx2 * sinx2) - 2. * c
+        return (
+            -1.0 / sinx2
+            - (sinx2 - beta * np.sin(beta * 2.0)) / (sinx2 * sinx2)
+            - 2.0 * c
+        )
 
-    def solvebetaeqn(self, beta, d, v, l, xtol = 1.e-12):
+    def solvebetaeqn(self, beta, d, v, l, xtol=1.0e-12):
         from scipy.optimize import fsolve
-        t = fsolve(self.betaeqn, beta, args=(d, v, l),
-                   fprime=self.fprime2betaeqn,
-                   xtol=xtol, full_output=True)
+
+        t = fsolve(
+            self.betaeqn,
+            beta,
+            args=(d, v, l),
+            fprime=self.fprime2betaeqn,
+            xtol=xtol,
+            full_output=True,
+        )
         result = t[0][0]
         infod = t[1]
         isoln = t[2]
         msg = t[3]
         if abs(result - beta) > np.pi:
-            raise Exception('Error in beta solution')
+            raise Exception("Error in beta solution")
         err = self.betaeqn(result, d, v, l)
-        fvec = infod['fvec'][0]
+        fvec = infod["fvec"][0]
         if isoln != 1:
-            print('Error in beta solve', err, result, d, v, l, msg)
+            print("Error in beta solve", err, result, d, v, l, msg)
         return result
 
     def root3(self, d, v, l, nval=1000):
@@ -87,33 +98,46 @@ class Wexler1d(object):
             b += np.pi
         return betalist
 
-    def analytical(self, x, t, v, l, d, tol=1.e-20, nval=5000):
-        sigma = 0.
+    def analytical(self, x, t, v, l, d, tol=1.0e-20, nval=5000):
+        sigma = 0.0
         betalist = self.root3(d, v, l, nval=nval)
         for i, bi in enumerate(betalist):
-            
-            denom = (bi ** 2 + (v * l / 2. / d) ** 2 + v * l / d)
-            x1 = bi * (bi * np.cos(bi * x / l) + v * l / 2. / d * np.sin(bi * x / l)) / denom
-            
-            denom = (bi ** 2 + (v * l / 2. / d) ** 2)
+
+            denom = bi ** 2 + (v * l / 2.0 / d) ** 2 + v * l / d
+            x1 = (
+                bi
+                * (
+                    bi * np.cos(bi * x / l)
+                    + v * l / 2.0 / d * np.sin(bi * x / l)
+                )
+                / denom
+            )
+
+            denom = bi ** 2 + (v * l / 2.0 / d) ** 2
             x2 = np.exp(-1 * bi ** 2 * d * t / l ** 2) / denom
-            
+
             sigma += x1 * x2
-            term1 = 2. * v * l / d * np.exp(v * x / 2. / d - v ** 2 * t / 4. / d)
-            conc = 1. - term1 * sigma
+            term1 = (
+                2.0
+                * v
+                * l
+                / d
+                * np.exp(v * x / 2.0 / d - v ** 2 * t / 4.0 / d)
+            )
+            conc = 1.0 - term1 * sigma
             if i > 0:
                 diff = abs(conc - concold)
                 if np.all(diff < tol):
                     break
             concold = conc
         return conc
-        
-    def analytical2(self, x, t, v, l, d, e=0., tol=1.e-20, nval=5000):
+
+    def analytical2(self, x, t, v, l, d, e=0.0, tol=1.0e-20, nval=5000):
         """
         Calculate the analytical solution for one-dimension advection and
         dispersion using the solution of Lapidus and Amundson (1952) and
         Ogata and Banks (1961)
-    
+
         Parameters
         ----------
         x : float or ndarray
@@ -128,31 +152,48 @@ class Wexler1d(object):
             dispersion coefficient
         e : float
             decay rate
-    
+
         Returns
         -------
         result : float or ndarray
             normalized concentration value
-    
+
         """
-        u = v ** 2 + 4. * e * d
+        u = v ** 2 + 4.0 * e * d
         u = np.sqrt(u)
-        sigma = 0.
-        denom = (u + v) / 2. / v - (u - v) ** 2. / 2. / v / (u + v) * np.exp(-u * l / d)
-        term1 = np.exp( (v - u) * x / 2. / d) + (u - v) / (u + v) * np.exp((v + u) * x / 2. / d - u * l / d)
+        sigma = 0.0
+        denom = (u + v) / 2.0 / v - (u - v) ** 2.0 / 2.0 / v / (
+            u + v
+        ) * np.exp(-u * l / d)
+        term1 = np.exp((v - u) * x / 2.0 / d) + (u - v) / (u + v) * np.exp(
+            (v + u) * x / 2.0 / d - u * l / d
+        )
         term1 = term1 / denom
-        term2 = 2. * v * l / d * np.exp(v * x / 2. / d - v ** 2 * t / 4. / d - e * t)
+        term2 = (
+            2.0
+            * v
+            * l
+            / d
+            * np.exp(v * x / 2.0 / d - v ** 2 * t / 4.0 / d - e * t)
+        )
         betalist = self.root3(d, v, l, nval=nval)
         for i, bi in enumerate(betalist):
 
-            denom = (bi ** 2 + (v * l / 2. / d) ** 2 + v * l / d)
-            x1 = bi * (bi * np.cos(bi * x / l) + v * l / 2. / d * np.sin(bi * x / l)) / denom
-            
-            denom = bi ** 2 + (v * l / 2. / d) ** 2 + e * l ** 2 / d
+            denom = bi ** 2 + (v * l / 2.0 / d) ** 2 + v * l / d
+            x1 = (
+                bi
+                * (
+                    bi * np.cos(bi * x / l)
+                    + v * l / 2.0 / d * np.sin(bi * x / l)
+                )
+                / denom
+            )
+
+            denom = bi ** 2 + (v * l / 2.0 / d) ** 2 + e * l ** 2 / d
             x2 = np.exp(-1 * bi ** 2 * d * t / l ** 2) / denom
-            
+
             sigma += x1 * x2
-            
+
             conc = term1 - term2 * sigma
             if i > 0:
                 diff = abs(conc - concold)
@@ -160,9 +201,9 @@ class Wexler1d(object):
                     break
             concold = conc
         return conc
-        
 
-class Wexler3d():
+
+class Wexler3d:
     """
     Analytical solution for 3D transport with inflow at a well with a
     specified concentration.
@@ -171,29 +212,122 @@ class Wexler3d():
 
     def calcgamma(self, x, y, z, xc, yc, zc, dx, dy, dz):
         gam = np.sqrt(
-            (x - xc) ** 2 + dx / dy * (y - yc) ** 2 + dx / dz * (z - zc) ** 2)
+            (x - xc) ** 2 + dx / dy * (y - yc) ** 2 + dx / dz * (z - zc) ** 2
+        )
         return gam
 
     def calcbeta(self, v, dx, gam, lam):
-        beta = np.sqrt(v ** 2 + 4. * dx * gam * lam)
+        beta = np.sqrt(v ** 2 + 4.0 * dx * gam * lam)
         return beta
 
-    def analytical(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam=0., c0=1.):
+    def analytical(
+        self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam=0.0, c0=1.0
+    ):
         gam = self.calcgamma(x, y, z, xc, yc, zc, dx, dy, dz)
         beta = self.calcbeta(v, dx, gam, lam)
-        term1 = c0 * q * np.exp(
-            v * (x - xc) / 2. / dx) / 8. / n / np.pi / gam / np.sqrt(dy * dz)
-        term2 = np.exp(gam * beta / 2. / dx) * erfc(
-            (gam + beta * t) / 2. / np.sqrt(dx * t))
-        term3 = np.exp(-gam * beta / 2. / dx) * erfc(
-            (gam - beta * t) / 2. / np.sqrt(dx * t))
+        term1 = (
+            c0
+            * q
+            * np.exp(v * (x - xc) / 2.0 / dx)
+            / 8.0
+            / n
+            / np.pi
+            / gam
+            / np.sqrt(dy * dz)
+        )
+        term2 = np.exp(gam * beta / 2.0 / dx) * erfc(
+            (gam + beta * t) / 2.0 / np.sqrt(dx * t)
+        )
+        term3 = np.exp(-gam * beta / 2.0 / dx) * erfc(
+            (gam - beta * t) / 2.0 / np.sqrt(dx * t)
+        )
         return term1 * (term2 + term3)
 
-    def multiwell(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, ql, lam=0., c0=1.):
-        shape = self.analytical(x, y, z, t, v, xc[0], yc[0], zc[0], dx, dy, dz, n,
-                           ql[0], lam).shape
+    def multiwell(
+        self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, ql, lam=0.0, c0=1.0
+    ):
+        shape = self.analytical(
+            x, y, z, t, v, xc[0], yc[0], zc[0], dx, dy, dz, n, ql[0], lam
+        ).shape
         result = np.zeros(shape)
         for xx, yy, zz, q in zip(xc, yc, zc, ql):
-            result += self.analytical(x, y, z, t, v, xx, yy, zz, dx, dy, dz, n, q,
-                                 lam, c0)
+            result += self.analytical(
+                x, y, z, t, v, xx, yy, zz, dx, dy, dz, n, q, lam, c0
+            )
         return result
+
+
+class BakkerRotatingInterface:
+    """
+    Analytical solution for rotating interfaces (Bakker et al. 2004)
+
+    """
+
+    @staticmethod
+    def get_s(k, rhoa, rhob, alpha):
+        return k * (rhob - rhoa) / rhoa * np.sin(alpha)
+
+    @staticmethod
+    def get_F(z, zeta1, omega1, s):
+        l = (zeta1.real - omega1.real) ** 2 + (zeta1.imag - omega1.imag) ** 2
+        l = np.sqrt(l)
+        try:
+            v = (
+                s
+                * l
+                * complex(0, 1)
+                / 2
+                / np.pi
+                / (zeta1 - omega1)
+                * np.log((z - zeta1) / (z - omega1))
+            )
+        except:
+            v = 0.0
+        return v
+
+    @staticmethod
+    def get_Fgrid(xg, yg, zeta1, omega1, s):
+        qxg = []
+        qyg = []
+        for x, y in zip(xg.flatten(), yg.flatten()):
+            z = complex(x, y)
+            W = BakkerRotatingInterface.get_F(z, zeta1, omega1, s)
+            qx = W.real
+            qy = -W.imag
+            qxg.append(qx)
+            qyg.append(qy)
+        qxg = np.array(qxg)
+        qyg = np.array(qyg)
+        qxg = qxg.reshape(xg.shape)
+        qyg = qyg.reshape(yg.shape)
+        return qxg, qyg
+
+    @staticmethod
+    def get_zetan(n, x0, a, b):
+        return complex(x0 + (-1) ** n * a, (2 * n - 1) * b)
+
+    @staticmethod
+    def get_omegan(n, x0, a, b):
+        return complex(x0 + (-1) ** (1 + n) * a, -(2 * n - 1) * b)
+
+    @staticmethod
+    def get_w(xg, yg, k, rhoa, rhob, a, b, x0):
+        zeta1 = BakkerRotatingInterface.get_zetan(1, x0, a, b)
+        omega1 = BakkerRotatingInterface.get_omegan(1, x0, a, b)
+        alpha = np.arctan2(b, a)
+        s = BakkerRotatingInterface.get_s(k, rhoa, rhob, alpha)
+        qxg, qyg = BakkerRotatingInterface.get_Fgrid(xg, yg, zeta1, omega1, s)
+        for n in range(1, 5):
+            zetan = BakkerRotatingInterface.get_zetan(n, x0, a, b)
+            zetanp1 = BakkerRotatingInterface.get_zetan(n + 1, x0, a, b)
+            qx1, qy1 = BakkerRotatingInterface.get_Fgrid(
+                xg, yg, zetan, zetanp1, (-1) ** n * s
+            )
+            omegan = BakkerRotatingInterface.get_omegan(n, x0, a, b)
+            omeganp1 = BakkerRotatingInterface.get_omegan(n + 1, x0, a, b)
+            qx2, qy2 = BakkerRotatingInterface.get_Fgrid(
+                xg, yg, omegan, omeganp1, (-1) ** n * s
+            )
+            qxg += qx1 + qx2
+            qyg += qy1 + qy2
+        return qxg, qyg
