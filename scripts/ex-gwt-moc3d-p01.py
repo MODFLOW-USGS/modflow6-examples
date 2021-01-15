@@ -101,30 +101,30 @@ initial_concentration = 0.0  # Initial concentration (unitless)
 #
 
 
-def get_sorbtion_dict(retardation_factor):
-    sorbtion = False
+def get_sorption_dict(retardation_factor):
+    sorption = None
     bulk_density = None
     distcoef = None
     if retardation_factor > 1.0:
-        sorbtion = True
+        sorption = "linear"
         bulk_density = 1.0
         distcoef = (retardation_factor - 1.0) * porosity / bulk_density
-    sorbtion_dict = {
-        "sorbtion": sorbtion,
+    sorption_dict = {
+        "sorption": sorption,
         "bulk_density": bulk_density,
         "distcoef": distcoef,
     }
-    return sorbtion_dict
+    return sorption_dict
 
 
-def get_decay_dict(decay_rate, sorbtion=False):
+def get_decay_dict(decay_rate, sorption=False):
     first_order_decay = None
     decay = None
     decay_sorbed = None
     if decay_rate != 0.0:
         first_order_decay = True
         decay = decay_rate
-        if sorbtion:
+        if sorption:
             decay_sorbed = decay_rate
     decay_dict = {
         "first_order_decay": first_order_decay,
@@ -226,13 +226,15 @@ def build_mf6gwt(
     flopy.mf6.ModflowGwtmst(
         gwt,
         porosity=porosity,
-        **get_sorbtion_dict(retardation_factor),
+        **get_sorption_dict(retardation_factor),
         **get_decay_dict(decay_rate, retardation_factor > 1.0),
     )
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=longitudinal_dispersivity,
-        ath1=longitudinal_dispersivity
+        gwt,
+        xt3d_off=True,
+        alh=longitudinal_dispersivity,
+        ath1=longitudinal_dispersivity,
     )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),

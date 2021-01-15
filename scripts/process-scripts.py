@@ -75,28 +75,42 @@ def make_notebooks():
         if os.path.isfile(tpth):
             os.remove(tpth)
 
+
 def table_standard_header(caption, label):
-    col_widths = (0.5, 0.3,)
+    col_widths = (
+        0.5,
+        0.3,
+    )
     headings = (
         "Parameter",
         "Value",
     )
-    return bt.get_header(caption, label, headings,
-                         col_widths=col_widths, center=False)
+    return bt.get_header(
+        caption, label, headings, col_widths=col_widths, center=False
+    )
+
 
 def table_scenario_header(caption, label):
-    col_widths = (0.1, 0.25, 0.3, 0.15, )
+    col_widths = (
+        0.1,
+        0.25,
+        0.3,
+        0.15,
+    )
     headings = (
         "Scenario",
         "Scenario Name",
         "Parameter",
         "Value",
     )
-    return bt.get_header(caption, label, headings,
-                         col_widths=col_widths, center=False)
+    return bt.get_header(
+        caption, label, headings, col_widths=col_widths, center=False
+    )
+
 
 def table_footer():
     return bt.get_footer()
+
 
 def make_tables():
     tab_pth = os.path.join("..", "tables")
@@ -105,7 +119,9 @@ def make_tables():
 
     for file in files:
         print("processing...'{}'".format(file))
-        basename = os.path.splitext(os.path.basename(file))[0].replace("_", "-")
+        basename = os.path.splitext(os.path.basename(file))[0].replace(
+            "_", "-"
+        )
         # do a little processing
         with open(file) as f:
             lines = f.read().splitlines()
@@ -232,6 +248,7 @@ def make_tables():
                 # finalize table
                 f.close()
 
+
 def get_ordered_examples():
     print("creating a ordered list of examples from the LaTeX document")
     # get order of examples from body.text
@@ -243,6 +260,7 @@ def get_ordered_examples():
     for v in ex_regex.findall(lines):
         ex_order.append(v.replace(".tex", ""))
     return ex_order
+
 
 def get_examples_list():
     print("creating a list of available examples")
@@ -277,6 +295,7 @@ def get_examples_list():
 
     return ex_final
 
+
 def get_examples_dict(verbose=False):
     print("creating dictionary with examples information")
     ex_list = get_examples_list()
@@ -289,14 +308,18 @@ def get_examples_dict(verbose=False):
         rootDir = os.path.join(ex_pth, ex_name)
         for dirName, subdirList, fileList in os.walk(rootDir):
             if verbose:
-                print('Found directory: {}'.format(dirName))
+                print("Found directory: {}".format(dirName))
             for file_name in fileList:
                 if file_name.lower() == "mfsim.nam":
                     if verbose:
-                        msg = "  Found MODFLOW 6 simulation " + \
-                              "name file: {}".format(file_name)
+                        msg = (
+                            "  Found MODFLOW 6 simulation "
+                            + "name file: {}".format(file_name)
+                        )
                         print(msg)
-                    sim = flopy.mf6.MFSimulation.load(sim_ws=dirName, verbosity_level=0)
+                    sim = flopy.mf6.MFSimulation.load(
+                        sim_ws=dirName, verbosity_level=0
+                    )
                     sim_paks = []
                     for pak in sim.sim_package_list:
                         pak_type = pak.package_abbr
@@ -325,6 +348,7 @@ def get_examples_dict(verbose=False):
         }
     return ex_dict
 
+
 def build_md_tables(ex_dict):
     print("building markdown tables for ReadtheDocs")
     # determine the order of the examples from the LaTeX document
@@ -352,7 +376,9 @@ def build_md_tables(ex_dict):
     for ex_name in ex_paks.keys():
         for ex_root in ex_order:
             if ex_root in ex_name:
-                pak_link[ex_name] = "[{}](_examples/{}.html)".format(ex_name, ex_root)
+                pak_link[ex_name] = "[{}](_examples/{}.html)".format(
+                    ex_name, ex_root
+                )
                 break
         if ex_name not in list(pak_link.keys()):
             pak_link[ex_name] = ex_name
@@ -378,21 +404,26 @@ def build_md_tables(ex_dict):
     f = open(pth, "w")
 
     line = "### Introduction\n\n"
-    line += "This document describes example problems for MODFLOW 6. The examples " + \
-            "demonstrate use of the capabilities for select components of " + \
-            "MODFLOW 6. A pdf of the examples can be downloaded from " + \
-            "[ReadtheDocs](https://modflow6-examples.readthedocs.io/en/latest/) " + \
-            "or from the [current release](https://github.com/MODFLOW-USGS/" + \
-            "modflow6-examples/releases/download/current/mf6examples.pdf) on " + \
-            "[GitHub](https://github.com/MODFLOW-USGS/modflow6-examples/).\n\n" + \
-            "Examples have been included for the MODFLOW 6 components " + \
-            "summarized in the tables below.\n\n"
+    line += (
+        "This document describes example problems for MODFLOW 6. The examples "
+        + "demonstrate use of the capabilities for select components of "
+        + "MODFLOW 6. A pdf of the examples can be downloaded from "
+        + "[ReadtheDocs](https://modflow6-examples.readthedocs.io/en/latest/) "
+        + "or from the [current release](https://github.com/MODFLOW-USGS/"
+        + "modflow6-examples/releases/download/current/mf6examples.pdf) on "
+        + "[GitHub](https://github.com/MODFLOW-USGS/modflow6-examples/).\n\n"
+        + "Examples have been included for the MODFLOW 6 components "
+        + "summarized in the tables below.\n\n"
+    )
     f.write(line)
 
     join_fmt = ", "
-    header = "| Package | Examples                                            " + \
-             "               |\n" + "|---------|------------------------------" + \
-             "--------------------------------------|\n"
+    header = (
+        "| Package | Examples                                            "
+        + "               |\n"
+        + "|---------|------------------------------"
+        + "--------------------------------------|\n"
+    )
     footer = "\n\n"
 
     pak_link = {
@@ -522,6 +553,7 @@ def build_md_tables(ex_dict):
 
     f.close()
 
+
 def build_tex_tables(ex_dict):
     print("building LaTeX table for mf6examples.tex introduction")
     ex_order = get_ordered_examples()
@@ -529,7 +561,9 @@ def build_tex_tables(ex_dict):
     for idx, ex in enumerate(ex_order):
         for key, d in ex_dict.items():
             if ex in key:
-                ex_number = [idx + 1] + [" " for i in range(len(d["paks"]) - 1)]
+                ex_number = [idx + 1] + [
+                    " " for i in range(len(d["paks"]) - 1)
+                ]
                 d["ex_number"] = ex_number
                 ex_tex[key] = d
 
@@ -541,23 +575,36 @@ def build_tex_tables(ex_dict):
         "Grid \\newline Dimensions",
         "Packages",
     )
-    col_widths = (0.10, 0.22, 0.25, 0.15, 0.28,)
+    col_widths = (
+        0.10,
+        0.22,
+        0.25,
+        0.15,
+        0.28,
+    )
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
-    lines = bt.get_header(caption, label, headings,
-                          col_widths=col_widths, firsthead=True)
+    lines = bt.get_header(
+        caption, label, headings, col_widths=col_widths, firsthead=True
+    )
 
     on_ex = 0
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):
-        for jdx, (ex_number, namefile, dimensions, model_paks, sim_paks) in enumerate(
-                zip(
-                    sim_dict["ex_number"],
-                    sim_dict["namefiles"],
-                    sim_dict["dimensions"],
-                    sim_dict["paks"],
-                    sim_dict["simulation_paks"],
-                    )
+        for jdx, (
+            ex_number,
+            namefile,
+            dimensions,
+            model_paks,
+            sim_paks,
+        ) in enumerate(
+            zip(
+                sim_dict["ex_number"],
+                sim_dict["namefiles"],
+                sim_dict["dimensions"],
+                sim_dict["paks"],
+                sim_dict["simulation_paks"],
+            )
         ):
             # union of sim_paks and model_paks to create unique list of packages
             paks = sim_paks
@@ -625,4 +672,3 @@ if __name__ == "__main__":
 
     # make the markdown table for ReadtheDocs
     build_md_tables(ex_dict)
-

@@ -1,0 +1,59 @@
+\section{MT3DMS Problem 2}
+
+% Describe source of problem
+This is the second example problem presented in \cite{zheng1999mt3dms}, titled ``one-dimensional transport with nonlinear or nonequilibrium sorption''.  The purpose of this example is to demonstrate simulation of nonlinear and nonequilibrium sorption.   For the nonlinear sorption, \cite{zheng1999mt3dms} compared MT3DMS results to the results from an independent transport simulator called CXTFIT.  For the nonequilibrium sorption example \cite{zheng1999mt3dms} compared the results from MT3DMS to an analytical solution.  In this section the results from the \mf GWT Model are compared with the results from MT3DMS.
+
+In MT3DMS, nonequilibrium sorption is represented using the following expression for the dissolved and sorbed solute mass,
+
+\begin{equation}
+	\rho_b \frac{\partial \overline{C}}{\partial t} = \beta \left ( C - \frac{\overline{C}}{K_d} \right ),
+	\label{eq:nonequilbrium}
+\end{equation}
+
+\noindent where $\rho_b$ is the bulk density, $\overline{C}$ is the sorbed concentration, $C$ is the dissolved solute mass, $\beta$ is the first-order mass transfer rate between the dissolved and sorbed phases, $t$ is time, and $K_d$ is the linear distribution coefficient.  The current version of the \mf GWT Model does not have the capability to represent this type of nonequilibrium sorption.  
+
+For the example presented by \cite{zheng1999mt3dms}, the distribution coefficient has a value close to one (0.933). Because this value is so close to one, we can take advantage of immobile domain capability to approximate nonequilibrium sorption.  If it is possible to neglect a separate sorption process within the immobile domain and decay or production within the immobile domain (as has been defined for this example), then transfer of dissolved solute mass between a mobile and immobile domain is expressed as
+
+\begin{equation}
+	\theta_{im} \frac{\partial C_{im}}{\partial t} = \zeta \left ( C - C_{im} \right ),
+	\label{eq:nonequilbrium}
+\end{equation}
+
+\noindent where $\theta_{im}$ is the porosity of the immobile domain, $\zeta$ is the first-order mass transfer rate between the mobile and immobile domains, and $C_{im}$ is the concentration of the immobile domain.  From the similar form of these two equations, it is possible to approximate the nonequilibrium sorption capability in MT3DMS by assigning the immobile domain porosity as bulk density and the first-order mass transfer rate for the mobile and immobile domain as the first-order mass transfer rate for the dissolved and sorbed phases.
+
+There are six scenarios described here (tab. \ref{tab:ex-gwt-mt3dms-p02-scenario}).  The first two represent nonlinear sorption with the Freundlich and Langmuir isotherms, respectively.  The remaining four scenarios represent nonequilibrium sorption with different values for the first-order mass transfer coefficient.  These six scenarios and corresponding figures correspond to the ones reported by \cite{zheng1999mt3dms}.
+
+% add scenario table
+\input{../tables/ex-gwt-mt3dms-p02-scenario}
+
+\subsection{Example description}
+
+All model scenarios have 101 columns, 1 row, and 1 layer. The first column has a specified inflow rate that results in a velocity of 0.1 $cm/s$. The last column is assigned as a constant-head boundary to allow water to exit.  For the first 160 $s$, a pulse of solute is introduced to the inflowing water.  For the remaining 1340 $s$, the concentration of inflowing water is zero.  Additional model parameters are shown in table~\ref{tab:ex-gwt-mt3dms-p02-01}.
+
+% add 2nd static parameter value table
+\input{../tables/ex-gwt-mt3dms-p02-01}
+
+% for examples without scenarios
+\subsection{Example Results}
+Simulated results for nonlinear sorption are shown for the Freundlich isotherm in figure~\ref{fig:ex-gwt-mt3dms-p02a} and for the Langmuir isotherm in figure~\ref{fig:ex-gwt-mt3dms-p02b}.  Results for the four simulations with different values for beta are shown in figure~\ref{fig:ex-gwt-mt3dms-p02}.
+
+% a figure
+\begin{StandardFigure}
+	{Comparison of the MT3DMS (solid lines) and \mf (circles) results for Freundlich isotherm.}
+	{fig:ex-gwt-mt3dms-p02a}{../figures/ex-gwt-mt3dms-p02a-ct.png}
+\end{StandardFigure}
+
+% a figure
+\begin{StandardFigure}
+	{Comparison of the MT3DMS (solid lines) and \mf (circles) results for Langmuir isotherm.}
+	{fig:ex-gwt-mt3dms-p02b}{../figures/ex-gwt-mt3dms-p02b-ct.png}
+\end{StandardFigure}
+
+% a figure
+\begin{StandardFigure}
+	{Comparison of the MT3DMS (solid lines) and \mf (circles) results for four different values of the nonequilibrium exchange coefficient (beta).}
+	{fig:ex-gwt-mt3dms-p02}{../figures/ex-gwt-mt3dms-p02.png}
+\end{StandardFigure}
+
+
+

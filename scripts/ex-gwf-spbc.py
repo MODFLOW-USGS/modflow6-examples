@@ -143,7 +143,9 @@ def build_model():
         for j in range(ncol):
             chd_spd.append([0, 0, j, chd_head[0, j]])
         flopy.mf6.ModflowGwfchd(
-            gwf, stress_period_data=chd_spd, pname="CHD",
+            gwf,
+            stress_period_data=chd_spd,
+            pname="CHD",
         )
         head_filerecord = "{}.hds".format(sim_name)
         budget_filerecord = "{}.cbc".format(sim_name)

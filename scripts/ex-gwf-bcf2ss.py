@@ -439,8 +439,8 @@ def plot_results(silent=True):
 
         # items for legend
         ax = fig.add_subplot(gs[7, :])
-        ax.set_xlim(0,1)
-        ax.set_ylim(0,1)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.spines["top"].set_color("none")
@@ -484,7 +484,6 @@ def plot_results(silent=True):
             frameon=False,
             loc="upper center",
         )
-
 
         # save figure
         if config.plotSave:

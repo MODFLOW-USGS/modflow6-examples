@@ -104,7 +104,9 @@ def build_mf6gwf(sim_folder):
         print_flows=True,
         save_flows=False,
         pname="CHD-1",
-        auxiliary=[("CONCENTRATION"),],
+        auxiliary=[
+            ("CONCENTRATION"),
+        ],
     )
     wellbottom = 0.0
     wellradius = 0.01
@@ -195,9 +197,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtic(gwt, strt=0)
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="upstream")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, alh=alpha_l, ath1=alpha_th, atv=alpha_tv
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, alh=alpha_l, ath1=alpha_th, atv=alpha_tv)
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
@@ -249,7 +249,13 @@ def build_mf6gwt(sim_folder):
             ("COLUMNS", ncol, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
         saverecord=[("CONCENTRATION", "ALL")],
-        printrecord=[("CONCENTRATION", "ALL"), ("BUDGET", "ALL",)],
+        printrecord=[
+            ("CONCENTRATION", "ALL"),
+            (
+                "BUDGET",
+                "ALL",
+            ),
+        ],
     )
     return sim
 

@@ -62,7 +62,7 @@ ss = 0.01  # Specific storage ($/m$)
 # and 3 transient stress periods (10 days each).
 # Each transient stress period has 120 2-hour time steps.
 
-perlen = [400., 200., 400.]
+perlen = [400.0, 200.0, 400.0]
 nstp = [10, 4, 6]
 tsmult = [1.0, 1.0, 1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
@@ -131,18 +131,13 @@ def build_model():
         )
 
         chd_spd = []
-        chd_spd += [
-            [0, i, 9, "CHDHEAD"] for i in range(3)
-        ]
+        chd_spd += [[0, i, 9, "CHDHEAD"] for i in range(3)]
         chd_spd = {0: chd_spd}
-        tsdata = [(0.0, 0.),
-                  (307., 1.),
-                  (791., 5.),
-                  (1000., 2.)]
+        tsdata = [(0.0, 0.0), (307.0, 1.0), (791.0, 5.0), (1000.0, 2.0)]
         tsdict = {
             "timeseries": tsdata,
-            "time_series_namerecord": 'CHDHEAD',
-            "interpolation_methodrecord": 'LINEAREND',
+            "time_series_namerecord": "CHDHEAD",
+            "interpolation_methodrecord": "LINEAREND",
         }
         flopy.mf6.ModflowGwfchd(
             gwf,
@@ -154,14 +149,16 @@ def build_model():
         wel_spd = []
         wel_spd += [[0, 1, 0, "FLOWRATE"]]
         wel_spd = {0: wel_spd}
-        tsdata = [(0.0, 2000.),
-                  (307., 6000.),
-                  (791., 5000.),
-                  (1000., 9000.)]
+        tsdata = [
+            (0.0, 2000.0),
+            (307.0, 6000.0),
+            (791.0, 5000.0),
+            (1000.0, 9000.0),
+        ]
         tsdict = {
             "timeseries": tsdata,
-            "time_series_namerecord": 'FLOWRATE',
-            "interpolation_methodrecord": 'LINEAREND',
+            "time_series_namerecord": "FLOWRATE",
+            "interpolation_methodrecord": "LINEAREND",
         }
         flopy.mf6.ModflowGwfwel(
             gwf,
@@ -180,8 +177,10 @@ def build_model():
         )
 
         obsdict = {}
-        obslist = [["h1_2_1", "head", (0, 1, 0)],
-                   ["h1_2_10", "head", (0, 1, 9)],]
+        obslist = [
+            ["h1_2_1", "head", (0, 1, 0)],
+            ["h1_2_10", "head", (0, 1, 9)],
+        ]
         obsdict["{}.obs.head.csv".format(sim_name)] = obslist
         obslist = [["icf1", "flow-ja-face", (0, 1, 1), (0, 1, 0)]]
         obsdict["{}.obs.flow.csv".format(sim_name)] = obslist
@@ -253,7 +252,7 @@ def plot_ts(sim):
         fname = os.path.join(sim_ws, "{}.{}.csv".format(sim_name, obstype))
         tsdata = np.genfromtxt(fname, names=True, delimiter=",")
         for name in tsdata.dtype.names[1:]:
-            ax.plot(tsdata["time"], tsdata[name], label=name, marker='o')
+            ax.plot(tsdata["time"], tsdata[name], label=name, marker="o")
         ax.set_xlabel("time (d)")
         ax.set_ylabel(ylabel[iplot])
         fs.graph_legend(ax)

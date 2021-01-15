@@ -125,10 +125,14 @@ def build_model(sim_name, angle1, xt3d):
         chdrow, chdcol = np.where(ibd == -1)
         chd_spd = [[0, i, j, 0.0] for i, j in zip(chdrow, chdcol)]
         flopy.mf6.ModflowGwfchd(
-            gwf, stress_period_data=chd_spd, pname="CHD",
+            gwf,
+            stress_period_data=chd_spd,
+            pname="CHD",
         )
         flopy.mf6.ModflowGwfwel(
-            gwf, stress_period_data=[0, 25, 25, pumping_rate], pname="WEL",
+            gwf,
+            stress_period_data=[0, 25, 25, pumping_rate],
+            pname="WEL",
         )
         head_filerecord = "{}.hds".format(sim_name)
         budget_filerecord = "{}.cbc".format(sim_name)

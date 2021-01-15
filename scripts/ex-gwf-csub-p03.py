@@ -712,7 +712,9 @@ def export_tables(silent=True):
         if not silent:
             print("creating...'{}'".format(fpth))
         col_widths = (0.1, 0.15, 0.30, 0.25)
-        bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
+        bt.build_table(
+            caption, fpth, arr, headings=headings, col_widths=col_widths
+        )
 
         caption = "Interbed properties for example {}.".format(sim_name)
         headings = (
@@ -740,9 +742,7 @@ def export_tables(silent=True):
             arr["pcs0"][idx] = bt.float_format(parameters[name]["pcs0"][idx])
         if not silent:
             print("creating...'{}'".format(fpth))
-        bt.build_table(
-            caption, fpth, arr, headings=headings
-        )
+        bt.build_table(caption, fpth, arr, headings=headings)
 
         caption = "Aquifer storage properties for example {}.".format(sim_name)
         headings = (
@@ -758,9 +758,13 @@ def export_tables(silent=True):
         if not silent:
             print("creating...'{}'".format(fpth))
         col_widths = (0.1, 0.25)
-        bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
+        bt.build_table(
+            caption, fpth, arr, headings=headings, col_widths=col_widths
+        )
 
-        caption = "Interbed storage properties for example {}.".format(sim_name)
+        caption = "Interbed storage properties for example {}.".format(
+            sim_name
+        )
         headings = (
             "Interbed",
             "Layer",
@@ -784,7 +788,11 @@ def export_tables(silent=True):
             print("creating...'{}'".format(fpth))
         col_widths = (0.2, 0.2, 0.2, 0.2)
         bt.build_table(
-            caption, fpth, arr, headings=headings, col_widths=col_widths,
+            caption,
+            fpth,
+            arr,
+            headings=headings,
+            col_widths=col_widths,
         )
 
     return
