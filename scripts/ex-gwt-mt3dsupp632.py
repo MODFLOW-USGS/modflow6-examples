@@ -181,27 +181,28 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     else:
         first_order_decay = True
     if distribution_coefficient > 0:
-        sorbtion = True
+        sorption = "linear"
     else:
-        sorbtion = False
+        sorption = None
     flopy.mf6.ModflowGwtic(gwt, strt=0)
     flopy.mf6.ModflowGwtmst(
         gwt,
         zero_order_decay=zero_order_decay,
         first_order_decay=first_order_decay,
-        sorbtion=sorbtion,
+        sorption=sorption,
         porosity=porosity,
         decay=decay,
         decay_sorbed=decay_sorbed,
         bulk_density=bulk_density,
         distcoef=distribution_coefficient,
     )
+    istsorption = sorption is not None
     if dual_domain:
         flopy.mf6.ModflowGwtist(
             gwt,
             zero_order_decay=zero_order_decay,
             first_order_decay=first_order_decay,
-            sorbtion=sorbtion,
+            sorption=istsorption,
             thetaim=porosity_immobile,
             zetaim=zeta_im,
             decay=decay,
@@ -211,8 +212,10 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
         )
     flopy.mf6.ModflowGwtadv(gwt)
     flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=longitudinal_dispersivity,
-        ath1=longitudinal_dispersivity
+        gwt,
+        xt3d_off=True,
+        alh=longitudinal_dispersivity,
+        ath1=longitudinal_dispersivity,
     )
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
@@ -228,7 +231,9 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obsj = int(obs_xloc / delr) + 1
     obs_data = {
-        "{}.obs.csv".format(name): [("myobs", "CONCENTRATION", (0, 0, obsj)),],
+        "{}.obs.csv".format(name): [
+            ("myobs", "CONCENTRATION", (0, 0, obsj)),
+        ],
     }
     obs_package = flopy.mf6.ModflowUtlobs(
         gwt, digits=10, print_input=True, continuous=obs_data

@@ -557,7 +557,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             first_order_decay=False,
             decay=None,
             decay_sorbed=None,
-            sorbtion=True,
+            sorption="linear",
             bulk_density=rhob,
             distcoef=Kd,
             pname="MST-1",

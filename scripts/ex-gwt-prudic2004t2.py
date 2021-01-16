@@ -313,7 +313,14 @@ def build_mf6gwf(sim_folder):
         if len(ll) == 4:
             k, i, j, hd = ll
             chdlist.append(
-                [(int(k) - 1, int(i) - 1, int(j) - 1,), float(hd),]
+                [
+                    (
+                        int(k) - 1,
+                        int(i) - 1,
+                        int(j) - 1,
+                    ),
+                    float(hd),
+                ]
             )
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chdlist, pname="CHD-1")
 
@@ -433,7 +440,10 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
-        gwt, alh=alpha_l, ath1=alpha_th, ath2=alpha_tv,
+        gwt,
+        alh=alpha_l,
+        ath1=alpha_th,
+        ath2=alpha_tv,
     )
     sourcerecarray = [[]]
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
@@ -498,7 +508,9 @@ def build_mf6gwt(sim_folder):
         t = (irno, 0.0, 99.0, 999.0, "myreach{}".format(irno + 1))
         sftpackagedata.append(t)
 
-    sftperioddata = [(0, "STATUS", "ACTIVE"), ]
+    sftperioddata = [
+        (0, "STATUS", "ACTIVE"),
+    ]
 
     sft_obs = {
         (name + ".sft.obs.csv",): [

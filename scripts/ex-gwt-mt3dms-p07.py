@@ -434,7 +434,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             first_order_decay=False,
             decay=None,
             decay_sorbed=None,
-            sorbtion=False,
+            sorption=None,
             bulk_density=None,
             distcoef=None,
             filename="{}.mst".format(gwtname),
@@ -611,7 +611,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         # save figure
         if config.plotSave:
             fpth = os.path.join(
-                "..", "figures", "{}{}".format(sim_name, config.figure_ext),
+                "..",
+                "figures",
+                "{}{}".format(sim_name, config.figure_ext),
             )
             fig.savefig(fpth)
 

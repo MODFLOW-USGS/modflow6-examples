@@ -68,8 +68,8 @@ k11 = 5.0  # Horizontal hydraulic conductivity ($ft/day$)
 k33 = 0.25  # Horizontal hydraulic conductivity ($ft/day$)
 ss = 0.0002  # Specific storage ($1/day$)
 sy = 0.2  # Specific yield (unitless)
-H1 = 25.  # Constant head along left and lower edges and starting head ($ft$)
-rech = 0.05 # Recharge rate ($ft/day$)
+H1 = 25.0  # Constant head along left and lower edges and starting head ($ft$)
+rech = 0.05  # Recharge rate ($ft/day$)
 
 
 # Static temporal data used by TDIS file
@@ -88,7 +88,7 @@ shape3d = (nlay, nrow, ncol)
 
 # Create the bottom
 
-botm = np.arange(65., -5., -5.)
+botm = np.arange(65.0, -5.0, -5.0)
 
 # Create icelltype (which is the same as iconvert)
 
@@ -98,7 +98,7 @@ icelltype = 9 * [1] + 5 * [0]
 
 chd_spd = []
 for k in range(9, nlay, 1):
-    chd_spd += [[k, i, ncol-1, H1] for i in range(nrow-1)]
+    chd_spd += [[k, i, ncol - 1, H1] for i in range(nrow - 1)]
     chd_spd += [[k, nrow - 1, j, H1] for j in range(ncol)]
 
 
@@ -114,7 +114,7 @@ for i in range(0, 2, 1):
 nouter = 500
 ninner = 100
 hclose = 1e-6
-rclose = 1000.
+rclose = 1000.0
 
 # ### Functions to build, write, run, and plot the model
 #
@@ -194,8 +194,13 @@ def build_model(
             k33=k33,
             wetdry=wetdry,
         )
-        flopy.mf6.ModflowGwfsto(gwf, iconvert=icelltype, ss=ss, sy=sy,
-                                steady_state={3:True},)
+        flopy.mf6.ModflowGwfsto(
+            gwf,
+            iconvert=icelltype,
+            ss=ss,
+            sy=sy,
+            steady_state={3: True},
+        )
         flopy.mf6.ModflowGwfic(gwf, strt=H1)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
         flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd)
@@ -231,7 +236,9 @@ def run_model(sim, silent=True):
 
     return success
 
+
 # Create a water-table array
+
 
 def get_water_table(h, bot):
     imask = (h > -1e30) & (h <= bot)
@@ -255,8 +262,9 @@ def plot_results(silent=True):
         # load the newton model
         name = list(parameters.keys())[0]
         sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation.load(sim_name=sim_name, sim_ws=sim_ws,
-                                          verbosity_level=verbosity_level)
+        sim = flopy.mf6.MFSimulation.load(
+            sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
+        )
         gwf = sim.get_model(sim_name)
         bot = gwf.dis.botm.array
         xnode = gwf.modelgrid.xcellcenters[0, :]
@@ -278,9 +286,14 @@ def plot_results(silent=True):
         fpth = os.path.join(sim_ws, file_name)
         hobj1 = flopy.utils.HeadFile(fpth)
 
-         # Create figure for simulation
-        fig, axes = plt.subplots(ncols=1, nrows=4, sharex=True,
-                                figsize=figure_size, constrained_layout=False)
+        # Create figure for simulation
+        fig, axes = plt.subplots(
+            ncols=1,
+            nrows=4,
+            sharex=True,
+            figsize=figure_size,
+            constrained_layout=False,
+        )
 
         # plot the results
         for idx, ax in enumerate(axes):
@@ -301,20 +314,57 @@ def plot_results(silent=True):
 
             ax.set_xlim(extents[:2])
             ax.set_ylim(extents[2:])
-            mm = flopy.plot.PlotCrossSection(model=gwf, ax=ax,
-                                             extent=extents, line={"row": 1})
+            mm = flopy.plot.PlotCrossSection(
+                model=gwf, ax=ax, extent=extents, line={"row": 1}
+            )
             mm.plot_bc("CHD", color="cyan")
             mm.plot_grid(lw=0.5)
-            ax.plot(xnode, head[0, :], lw=0.75, color="black", label="Newton-Raphson")
-            ax.plot(xnode, head1[0, :], lw=0, marker="o", ms=4, mfc="none", mec="blue",
-                    label="Rewetting")
+            ax.plot(
+                xnode,
+                head[0, :],
+                lw=0.75,
+                color="black",
+                label="Newton-Raphson",
+            )
+            ax.plot(
+                xnode,
+                head1[0, :],
+                lw=0,
+                marker="o",
+                ms=4,
+                mfc="none",
+                mec="blue",
+                label="Rewetting",
+            )
             if idx == 0:
-                ax.plot(-1000, -1000, lw=0, marker="s", ms=4, mec="0.5", mfc="none",
-                        label="Model cell")
-                ax.plot(-1000, -1000, lw=0, marker="s", ms=4, mec="0.5", mfc="cyan",
-                        label="Constant head")
-                fs.graph_legend(ax, loc="upper right", ncol=2,
-                                frameon=True, facecolor="white", edgecolor="none")
+                ax.plot(
+                    -1000,
+                    -1000,
+                    lw=0,
+                    marker="s",
+                    ms=4,
+                    mec="0.5",
+                    mfc="none",
+                    label="Model cell",
+                )
+                ax.plot(
+                    -1000,
+                    -1000,
+                    lw=0,
+                    marker="s",
+                    ms=4,
+                    mec="0.5",
+                    mfc="cyan",
+                    label="Constant head",
+                )
+                fs.graph_legend(
+                    ax,
+                    loc="upper right",
+                    ncol=2,
+                    frameon=True,
+                    facecolor="white",
+                    edgecolor="none",
+                )
             letter = chr(ord("@") + idx + 1)
             fs.heading(letter=letter, ax=ax)
             fs.add_text(ax, text=me_text, x=1, y=1.01, ha="right", bold=False)
@@ -369,7 +419,6 @@ def simulation(idx, silent=True):
     assert success, "could not run...{}".format(key)
 
 
-
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     simulation(0, silent=False)
@@ -377,6 +426,7 @@ def test_01():
 
 def test_02():
     simulation(1, silent=False)
+
 
 def test_plot_results(silent=False):
     plot_results(silent=silent)

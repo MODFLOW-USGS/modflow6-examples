@@ -414,7 +414,9 @@ def build_model(
         )
         riv_spd = {0: rivdatc}
         flopy.mf6.ModflowGwfriv(
-            gwf, stress_period_data=riv_spd, pname="RIV",
+            gwf,
+            stress_period_data=riv_spd,
+            pname="RIV",
         )
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge, pname="RCH")
         head_filerecord = "{}.hds".format(modelname)

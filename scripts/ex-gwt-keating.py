@@ -502,9 +502,7 @@ def make_animated_gif(sims, idx):
 
     # Stop the animation at 18,000 days
     idx_end = (np.abs(conc_times - 18000.0)).argmin()
-    ani = FuncAnimation(
-        fig, update, range(1, idx_end), init_func=init
-    )
+    ani = FuncAnimation(fig, update, range(1, idx_end), init_func=init)
     writer = PillowWriter(fps=25)
     fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
     ani.save(fpth, writer=writer)

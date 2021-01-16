@@ -716,7 +716,7 @@ def build_model(
             first_order_decay=False,
             decay=None,
             decay_sorbed=None,
-            sorbtion=False,
+            sorption=None,
             bulk_density=None,
             distcoef=None,
             pname="MST-1",

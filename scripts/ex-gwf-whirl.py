@@ -133,7 +133,9 @@ def build_model():
         ]
         wel_spd = {0: wel_spd}
         flopy.mf6.ModflowGwfwel(
-            gwf, stress_period_data=wel_spd, pname="WEL",
+            gwf,
+            stress_period_data=wel_spd,
+            pname="WEL",
         )
         head_filerecord = "{}.hds".format(sim_name)
         budget_filerecord = "{}.cbc".format(sim_name)
