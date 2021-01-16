@@ -462,6 +462,7 @@ def build_model(
             distcoef=kd,
             first_order_decay=first_order_decay,
             decay=decay,
+            decay_sorbed=decay,
             filename="{}.mst".format(gwtname),
         )
 
