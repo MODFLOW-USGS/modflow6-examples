@@ -68,7 +68,7 @@ parameters = {
 
 parameter_units = {
     "beta": "$s^{-1}$",
-    "sorption": "",
+    "sorption": "text string",
     "Kf": "$\mu g L g^{} mg^{-1}$",
     "a": "unitless",
     "Kl": "$L mg^{-1}$",
@@ -88,6 +88,7 @@ nrow = 1  # Number of rows
 ncol = 101  # Number of columns
 period1 = 160  # Length of period 1 ($s$)
 period2 = 1340  # Length of period 2 ($s$)
+delta_time = 1.0 # Length of time steps ($s$)
 delr = 0.16  # Column width ($cm$)
 delc = 0.16  # Row width ($cm$)
 top = 1.0  # Top of the model ($cm$)
@@ -104,7 +105,6 @@ initial_concentration = 0.0  # Initial concentration (unitless)
 specific_discharge = velocity * porosity
 inflow_rate = specific_discharge * delc * (top - botm)
 system_length = ncol * delr
-delta_time = 1.0
 
 # ### Functions to build, write, run, and plot models
 #
