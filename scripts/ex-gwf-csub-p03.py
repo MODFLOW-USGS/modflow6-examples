@@ -841,7 +841,7 @@ def get_sim_dataframe(
 
     # calculate total skeletal and total
     shape = v[col_list[0]].values.shape[0]
-    s = np.zeros(shape, dtype=np.float)
+    s = np.zeros(shape, dtype=float)
     # skeletal
     for tag in col_list:
         if "SKC" in tag[:3]:
@@ -879,13 +879,13 @@ def dataframe_interp(df_in, new_index):
 def process_csub_obs(fpth):
     tdata = np.genfromtxt(fpth, names=True, delimiter=",")
     dtype = [
-        ("time", np.float),
-        ("CUNIT", np.float),
-        ("AQUITARD", np.float),
-        ("NODELAY", np.float),
-        ("DELAY", np.float),
-        ("SKELETAL", np.float),
-        ("TOTAL", np.float),
+        ("time", float),
+        ("CUNIT", float),
+        ("AQUITARD", float),
+        ("NODELAY", float),
+        ("DELAY", float),
+        ("SKELETAL", float),
+        ("TOTAL", float),
     ]
 
     # create structured array and fill time

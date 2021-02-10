@@ -101,30 +101,30 @@ shape3d = (nlay, nrow, ncol)
 
 data_pth = os.path.join("..", "data", sim_name)
 fpth = os.path.join(data_pth, "strt1.txt")
-strt1 = np.loadtxt(fpth, dtype=np.float)
+strt1 = np.loadtxt(fpth, dtype=float)
 strt2 = strt1
 strt = [strt1, strt2]
 fpth = os.path.join(data_pth, "idomain1.txt")
-idomain1 = np.loadtxt(fpth, dtype=np.int)
+idomain1 = np.loadtxt(fpth, dtype=int)
 fpth = os.path.join(data_pth, "idomain2.txt")
-idomain2 = np.loadtxt(fpth, dtype=np.int)
+idomain2 = np.loadtxt(fpth, dtype=int)
 idomain = [idomain1, idomain2]
 fpth = os.path.join(data_pth, "top1.txt")
-top = np.loadtxt(fpth, dtype=np.float)
+top = np.loadtxt(fpth, dtype=float)
 fpth = os.path.join(data_pth, "bot1.txt")
-bot1 = np.loadtxt(fpth, dtype=np.float)
+bot1 = np.loadtxt(fpth, dtype=float)
 bot2 = np.ones_like(bot1) * 300.0
 botm = [bot1, bot2]
 
 # Create hydraulic conductivity and specific yield
 
 fpth = os.path.join(data_pth, "k11_lay1.txt")
-k11_lay1 = np.loadtxt(fpth, dtype=np.float) * 2.5
+k11_lay1 = np.loadtxt(fpth, dtype=float) * 2.5
 k11_lay2 = np.ones_like(k11_lay1) * 0.35e-2
 k11 = [k11_lay1, k11_lay2]
 k33 = 0.5e-5
 fpth = os.path.join(data_pth, "sy1.txt")
-sy1 = np.loadtxt(fpth, dtype=np.float)
+sy1 = np.loadtxt(fpth, dtype=float)
 sy2 = np.ones_like(sy1) * 0.20
 sy = [sy1, sy2]
 

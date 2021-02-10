@@ -95,14 +95,14 @@ hk = [60.0, 60.0, 520.0, 520.0]
 laytyp = icelltype = 0
 # Starting Heads:
 f = open(os.path.join("..", "data", "ex-gwt-mt3dms-p10", "p10shead.dat"))
-s0 = np.empty((nrow * ncol), dtype=np.float)
+s0 = np.empty((nrow * ncol), dtype=float)
 s0 = read1d(f, s0).reshape((nrow, ncol))
 f.close()
-strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+strt = np.zeros((nlay, nrow, ncol), dtype=float)
 for k in range(nlay):
     strt[k] = s0
 # Active model domain
-ibound = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound = np.ones((nlay, nrow, ncol), dtype=int)
 ibound[:, :, 0] = -1  # left side
 ibound[:, :, -1] = -1  # right side
 ibound[:, 0, :] = -1  # top
@@ -150,10 +150,10 @@ wel_mf6_spd = {0: welspd_mf6}
 # Transport related
 # Starting concentrations:
 f = open(os.path.join("..", "data", "ex-gwt-mt3dms-p10", "p10cinit.dat"))
-c0 = np.empty((nrow * ncol), dtype=np.float)
+c0 = np.empty((nrow * ncol), dtype=float)
 c0 = read1d(f, c0).reshape((nrow, ncol))
 f.close()
-sconc = np.zeros((nlay, nrow, ncol), dtype=np.float)
+sconc = np.zeros((nlay, nrow, ncol), dtype=float)
 sconc[1] = 0.2 * c0
 sconc[2] = c0
 # Dispersion

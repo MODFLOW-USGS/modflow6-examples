@@ -96,13 +96,13 @@ v = 1.0 / 3.0
 prsity = 0.3
 q = v * prsity
 h1 = q * Lx
-strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+strt = np.zeros((nlay, nrow, ncol), dtype=float)
 strt[0, :, 0] = h1
 
-ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=int)
 ibound_mf2k5[0, :, 0] = -1
 ibound_mf2k5[0, :, -1] = -1
-idomain = np.ones((nlay, nrow, ncol), dtype=np.int)
+idomain = np.ones((nlay, nrow, ncol), dtype=int)
 icbund = 1
 c0 = 0.0
 cncspd = [[(0, 0, 0), c0]]
@@ -283,7 +283,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             delc=delc,
             top=top,
             botm=botm,
-            idomain=np.ones((nlay, nrow, ncol), dtype=np.int),
+            idomain=np.ones((nlay, nrow, ncol), dtype=int),
             filename="{}.dis".format(gwfname),
         )
 

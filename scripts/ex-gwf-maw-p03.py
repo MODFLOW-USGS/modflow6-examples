@@ -364,12 +364,12 @@ def build_local(name, simulation):
     if simulation == "multi-aquifer well":
         k11_sim = k11
         k33_sim = k33
-        idomain = np.ones(shape3d, dtype=np.float)
+        idomain = np.ones(shape3d, dtype=float)
         for k in range(maw_lay[0], maw_lay[1] + 1, 1):
             idomain[k, i, j] = 0
     else:
-        k11_sim = np.ones(shape3d, dtype=np.float) * k11
-        k33_sim = np.ones(shape3d, dtype=np.float) * k33
+        k11_sim = np.ones(shape3d, dtype=float) * k11
+        k33_sim = np.ones(shape3d, dtype=float) * k33
         idomain = 1
         for k in range(maw_lay[0], maw_lay[1] + 1, 1):
             k11_sim[k, i, j] = maw_highK

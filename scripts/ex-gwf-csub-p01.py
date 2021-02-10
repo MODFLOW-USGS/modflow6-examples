@@ -70,7 +70,7 @@ cg_theta_str = "0.25, 0.50, 0.30" # Coarse-grained porosity (unitless)
 
 # Create delr from delr0 and delrmac
 
-delr = np.ones(ncol, dtype=np.float) * 0.5
+delr = np.ones(ncol, dtype=float) * 0.5
 xmax = delr[0]
 for idx in range(1, ncol):
     dx = min(delr[idx - 1] * 1.2, 100.)
@@ -306,7 +306,7 @@ def plot_results(sim, silent=True):
 
         # get the observed head
         pth = os.path.join("..", "data", sim_name, "s201_gw_2sec.csv")
-        dtype = [("date", object), ("dz_m", np.float)]
+        dtype = [("date", object), ("dz_m", float)]
         obs_head = np.genfromtxt(pth, names=True, delimiter=",", dtype=dtype)
         obs_date = []
         for s in obs_head["date"]:

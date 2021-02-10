@@ -87,7 +87,7 @@ hclose, rclose, relax = 1e-8, 1e-8, 0.97
 
 
 def get_cstrt(nlay, ncol, length, x1, x2, a1, a2, b, c1, c2, c3):
-    cstrt = c1 * np.ones((nlay, ncol), dtype=np.float)
+    cstrt = c1 * np.ones((nlay, ncol), dtype=float)
     from flopy.utils.gridintersect import GridIntersect
     from shapely.geometry import Polygon
 

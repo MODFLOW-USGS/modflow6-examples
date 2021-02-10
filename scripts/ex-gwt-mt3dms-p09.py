@@ -77,15 +77,15 @@ perlen = 2.0  # Simulation time ($years$)
 
 # Additional model input
 
-hk = k1 * np.ones((nlay, nrow, ncol), dtype=np.float)
+hk = k1 * np.ones((nlay, nrow, ncol), dtype=float)
 hk[:, 5:8, 1:8] = k2
 laytyp = icelltype = 0
 
 # Active model domain
-ibound = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound = np.ones((nlay, nrow, ncol), dtype=int)
 ibound[0, 0, :] = -1
 ibound[0, -1, :] = -1
-idomain = np.ones((nlay, nrow, ncol), dtype=np.int)
+idomain = np.ones((nlay, nrow, ncol), dtype=int)
 icbund = 1
 
 # Boundary conditions
@@ -182,7 +182,7 @@ def build_model(sim_name, mixelm=0, silent=False):
         )
 
         # Instantiate basic package
-        strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+        strt = np.zeros((nlay, nrow, ncol), dtype=float)
         strt[0, 0, :] = 250.0
         xc = mf.modelgrid.xcellcenters
         for j in range(ncol):
@@ -309,7 +309,7 @@ def build_model(sim_name, mixelm=0, silent=False):
         )
 
         # Instantiating MODFLOW 6 initial conditions package for flow model
-        strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+        strt = np.zeros((nlay, nrow, ncol), dtype=float)
         strt[0, 0, :] = 250.0
         xc = mf.modelgrid.xcellcenters
         for j in range(ncol):

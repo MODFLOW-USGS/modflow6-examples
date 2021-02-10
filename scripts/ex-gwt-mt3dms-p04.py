@@ -122,9 +122,9 @@ c = 1
 
 # Active model domain
 
-ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=np.int) * -1
+ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=int) * -1
 ibound_mf2k5[:, 1 : nrow - 1, 1 : ncol - 1] = 1
-idomain = np.ones((nlay, nrow, ncol), dtype=np.int)
+idomain = np.ones((nlay, nrow, ncol), dtype=int)
 icbund = 1
 
 # Boundary conditions

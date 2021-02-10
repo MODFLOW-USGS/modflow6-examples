@@ -123,7 +123,7 @@ def build_model():
             xt3doptions=True,
         )
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        rate = np.zeros((nlay, nrow, ncol), dtype=np.float)
+        rate = np.zeros((nlay, nrow, ncol), dtype=float)
         rate[:, :, 0] = inflow_rate
         rate[:, :, -1] = -inflow_rate
         wellay, welrow, welcol = np.where(rate != 0.0)
