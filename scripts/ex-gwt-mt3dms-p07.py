@@ -90,7 +90,7 @@ k33 = k11  # Vertical hydraulic conductivity ($m/d$)
 icelltype = 0
 mixelm = -1
 # Initial conditions
-strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+strt = np.zeros((nlay, nrow, ncol), dtype=float)
 Lx = (ncol - 1) * delr
 v = 1.0 / 3.0
 prsity = 0.2
@@ -100,10 +100,10 @@ strt[:, :, 0] = h1
 
 # Active model domain
 
-ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=int)
 ibound_mf2k5[:, :, 0] = -1
 ibound_mf2k5[:, :, -1] = -1
-idomain = np.ones((nlay, nrow, ncol), dtype=np.int)
+idomain = np.ones((nlay, nrow, ncol), dtype=int)
 icbund = 1
 
 # Boundary conditions

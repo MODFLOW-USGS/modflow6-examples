@@ -77,10 +77,10 @@ fname = os.path.join(data_ws, "bot1.dat")
 bot0 = np.loadtxt(fname)
 botm = [bot0] + [bot0 - (15.0 * k) for k in range(1, nlay)]
 fname = os.path.join(data_ws, "idomain1.dat")
-idomain0 = np.loadtxt(fname, dtype=np.int)
+idomain0 = np.loadtxt(fname, dtype=int)
 idomain = nlay * [idomain0]
 fname = os.path.join(data_ws, "lakibd.dat")
-lakibd = np.loadtxt(fname, dtype=np.int)
+lakibd = np.loadtxt(fname, dtype=int)
 
 
 # Other model information

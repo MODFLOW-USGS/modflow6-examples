@@ -120,7 +120,7 @@ def build_model(sim_name, angle1, xt3d):
         )
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        ibd = -1 * np.ones((nrow, ncol), dtype=np.int)
+        ibd = -1 * np.ones((nrow, ncol), dtype=int)
         ibd[1:-1, 1:-1] = 1
         chdrow, chdcol = np.where(ibd == -1)
         chd_spd = [[0, i, j, 0.0] for i, j in zip(chdrow, chdcol)]

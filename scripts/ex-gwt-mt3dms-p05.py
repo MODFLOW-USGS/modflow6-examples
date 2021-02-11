@@ -88,13 +88,13 @@ botm = [top - delz]  # Model geometry
 k33 = k11  # Vertical hydraulic conductivity ($m/d$)
 icelltype = 0
 mixelm = -1
-strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+strt = np.zeros((nlay, nrow, ncol), dtype=float)
 
 # Active model domain
 
-ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=np.int) * -1
+ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=int) * -1
 ibound_mf2k5[:, 1 : nrow - 1, 1 : ncol - 1] = 1
-idomain = np.ones((nlay, nrow, ncol), dtype=np.int)
+idomain = np.ones((nlay, nrow, ncol), dtype=int)
 icbund = 1
 
 # Boundary conditions

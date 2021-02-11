@@ -79,7 +79,7 @@ def from_argus_export(fname):
     ncells, nverts = ll[0:2]
     ncells = int(ncells)
     nverts = int(nverts)
-    verts = np.empty((nverts, 2), dtype=np.float)
+    verts = np.empty((nverts, 2), dtype=float)
 
     # read the vertices
     f.readline()
@@ -181,7 +181,7 @@ def build_model(sim_name):
         p = Polygon(outer, holes=[hole])
         ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
         result = ix.intersect(p)
-        ghb_cellids = np.array(result["cellids"], dtype=np.int)
+        ghb_cellids = np.array(result["cellids"], dtype=int)
 
         ghb_spd = []
         ghb_spd += [
@@ -193,7 +193,7 @@ def build_model(sim_name):
         )
 
         ncpl = gridprops["ncpl"]
-        rchcells = np.array(list(range(ncpl)), dtype=np.int)
+        rchcells = np.array(list(range(ncpl)), dtype=int)
         rchcells[ghb_cellids] = -1
         rch_spd = [
             (0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0

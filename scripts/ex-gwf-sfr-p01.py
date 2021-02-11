@@ -77,22 +77,22 @@ shape3d = (nlay, nrow, ncol)
 
 data_pth = os.path.join("..", "data", sim_name)
 fpth = os.path.join(data_pth, "idomain.txt")
-idomain = np.loadtxt(fpth, dtype=np.int)
+idomain = np.loadtxt(fpth, dtype=int)
 fpth = os.path.join(data_pth, "top.txt")
-top = np.loadtxt(fpth, dtype=np.float)
+top = np.loadtxt(fpth, dtype=float)
 fpth = os.path.join(data_pth, "bottom.txt")
-botm = np.loadtxt(fpth, dtype=np.float)
+botm = np.loadtxt(fpth, dtype=float)
 fpth = os.path.join(data_pth, "recharge.txt")
-recharge = np.loadtxt(fpth, dtype=np.float)
+recharge = np.loadtxt(fpth, dtype=float)
 fpth = os.path.join(data_pth, "surf.txt")
-surf = np.loadtxt(fpth, dtype=np.float)
+surf = np.loadtxt(fpth, dtype=float)
 
 # Create hydraulic conductivity and specific yield
 
-k11 = np.zeros(shape2d, dtype=np.float)
+k11 = np.zeros(shape2d, dtype=float)
 k11[idomain == 1] = k11_stream
 k11[idomain == 2] = k11_basin
-sy = np.zeros(shape2d, dtype=np.float)
+sy = np.zeros(shape2d, dtype=float)
 sy[idomain == 1] = sy_stream
 sy[idomain == 2] = sy_basin
 

@@ -116,11 +116,11 @@ Lx = (ncol - 1) * delr
 v = 0.24
 q = v * prsity
 h1 = q * Lx
-strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+strt = np.zeros((nlay, nrow, ncol), dtype=float)
 strt[0, 0, 0] = h1  # Starting head ($m$)
 l = 1000.0  # Needed for plots
 icelltype = 1  # Cell conversion type
-ibound = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound = np.ones((nlay, nrow, ncol), dtype=int)
 ibound[0, 0, 0] = -1
 ibound[0, 0, -1] = -1
 
@@ -129,7 +129,7 @@ ibound[0, 0, -1] = -1
 mixelm = 0  # TVD
 rhob = 0.25
 sp2 = 0.0  # red, but not used in this problem
-sconc = np.zeros((nlay, nrow, ncol), dtype=np.float)
+sconc = np.zeros((nlay, nrow, ncol), dtype=float)
 dmcoef = 0.0  # Molecular diffusion coefficient
 
 # Set solver parameter values (and related)
@@ -221,9 +221,9 @@ def build_model(
         )
 
         c0 = 1.0
-        icbund = np.ones((nlay, nrow, ncol), dtype=np.int)
+        icbund = np.ones((nlay, nrow, ncol), dtype=int)
         icbund[0, 0, 0] = -1
-        sconc = np.zeros((nlay, nrow, ncol), dtype=np.float)
+        sconc = np.zeros((nlay, nrow, ncol), dtype=float)
         sconc[0, 0, 0] = c0
         flopy.mt3d.Mt3dBtn(
             mt,
@@ -333,7 +333,7 @@ def build_model(
             delc=delc,
             top=top,
             botm=botm,
-            idomain=np.ones((nlay, nrow, ncol), dtype=np.int),
+            idomain=np.ones((nlay, nrow, ncol), dtype=int),
             filename="{}.dis".format(gwfname),
         )
 
