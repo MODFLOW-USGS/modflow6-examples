@@ -76,7 +76,7 @@ shape3d = (nlay, nrow, ncol)
 
 # create idomain
 
-idomain = np.ones(shape3d, dtype=np.float)
+idomain = np.ones(shape3d, dtype=float)
 xw, yw = (ncol / 2) * delr, (nrow / 2) * delc
 y = 0.0
 for i in range(nrow):

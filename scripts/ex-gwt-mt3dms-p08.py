@@ -79,17 +79,17 @@ perlen = 20.0  # Simulation time ($years$)
 
 k1 = 5e-4 / 100.0 * 86400  # m/d
 k2 = 1e-2 / 100.0 * 86400  # m/d
-k11 = k1 * np.ones((nlay, nrow, ncol), dtype=np.float)
+k11 = k1 * np.ones((nlay, nrow, ncol), dtype=float)
 k11[11:19, :, 0:24] = k2
 k11[11:19, :, 36:] = k2
 laytyp = 6 * [1] + 21 * [0]
 # Setting starting head information
 f = open(os.path.join("..", "data", "ex-gwt-mt3dms-p08", "p08shead.dat"))
-strt = np.empty((nlay * ncol), dtype=np.float)
+strt = np.empty((nlay * ncol), dtype=float)
 strt = read1d(f, strt).reshape((nlay, nrow, ncol))
 f.close()
 # Active model domain
-ibound = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound = np.ones((nlay, nrow, ncol), dtype=int)
 ibound[5:, :, -1] = -1
 ibound[strt < 0] = 0
 idomain = 1
@@ -127,7 +127,7 @@ for k in np.arange(nlay):
 chdspd = {0: chdspd}
 
 # SSM related input data
-crch1 = np.zeros((nrow, ncol), dtype=np.float)
+crch1 = np.zeros((nrow, ncol), dtype=float)
 crch1[0, 9:18] = 1.0
 cnc0 = [(0, 0, j, 1, -1) for j in range(8, 16)]
 cnc1 = [(0, 0, j, 0.0, -1) for j in range(8, 16)]

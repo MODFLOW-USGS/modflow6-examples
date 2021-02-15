@@ -104,7 +104,7 @@ ib_thick = [float(value) for value in ib_thick_str.split(",")]
 # Load active domain and create idomain array
 
 pth = os.path.join("..", "data", sim_name, "idomain.txt")
-ib = np.loadtxt(pth, dtype=np.int)
+ib = np.loadtxt(pth, dtype=int)
 idomain = np.tile(ib, (nlay, 1))
 
 # Constant head boundary cells

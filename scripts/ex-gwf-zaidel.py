@@ -70,7 +70,7 @@ tdis_ds = ((1.0, 1, 1.0),)
 
 # Build stairway bottom
 
-botm = np.zeros((nlay, nrow, ncol), dtype=np.float)
+botm = np.zeros((nlay, nrow, ncol), dtype=float)
 base = 20.0
 for j in range(ncol):
     botm[0, :, j] = base

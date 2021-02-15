@@ -574,7 +574,7 @@ def get_subdirs(sim):
 
 
 def fill_heads(rec_arr, ndcells):
-    arr = np.zeros((rec_arr.shape[0], ndcells), dtype=np.float)
+    arr = np.zeros((rec_arr.shape[0], ndcells), dtype=float)
     for i in range(100):
         for j in range(ndcells):
             name = "H{:04d}".format(j + 1)

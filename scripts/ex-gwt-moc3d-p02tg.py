@@ -120,17 +120,17 @@ def make_grid():
     # itri 0 means do not split the cell
     # itri 1 means split from upper right to lower left
     # itri 2 means split from upper left to lower right
-    itri = np.zeros((nrow, ncol), dtype=np.int)
+    itri = np.zeros((nrow, ncol), dtype=int)
     itri[:, 1 : ncol - 1] = 2
     itri[source_location0[1], source_location0[2]] = 0
-    delra = delr * np.ones(ncol, dtype=np.float)
-    delca = delc * np.ones(nrow, dtype=np.float)
+    delra = delr * np.ones(ncol, dtype=float)
+    delca = delc * np.ones(nrow, dtype=float)
     verts, iverts = grid_triangulator(itri, delra, delca)
     vertices, cell2d = cvfd_to_cell2d(verts, iverts)
 
     # A grid array that has the cellnumber of the first triangular cell in
     # the original grid
-    itricellnum = np.empty((nrow, ncol), dtype=np.int)
+    itricellnum = np.empty((nrow, ncol), dtype=int)
     icell = 0
     for i in range(nrow):
         for j in range(ncol):

@@ -125,16 +125,16 @@ shape3d = (nlay, nrow, ncol)
 
 data_pth = os.path.join("..", "data", sim_name)
 fpth = os.path.join(data_pth, "idomain-01.txt")
-idomain0 = np.loadtxt(fpth, dtype=np.int)
+idomain0 = np.loadtxt(fpth, dtype=int)
 fpth = os.path.join(data_pth, "idomain-02.txt")
-idomain1 = np.loadtxt(fpth, dtype=np.int)
+idomain1 = np.loadtxt(fpth, dtype=int)
 idomain = [idomain0, idomain1, 1, 1, 1]
 
 # create linearly varying evapotranspiration surface
 
 xlen = delr.sum() - 0.5 * (delr[0] + delr[-1])
 x = 0.
-s1d = H1 * np.ones(ncol, dtype=np.float)
+s1d = H1 * np.ones(ncol, dtype=float)
 for idx in range(1, ncol):
     x += 0.5 * (delr[idx - 1] + delr[idx])
     frac = x / xlen
@@ -568,10 +568,10 @@ def plot_lak_results(gwf, silent=True):
     gwf_results = np.genfromtxt(fpth, delimiter=",", names=True)
 
     dtype = [
-        ("time", np.float),
-        ("STAGE", np.float),
-        ("A", np.float),
-        ("B", np.float),
+        ("time", float),
+        ("STAGE", float),
+        ("A", float),
+        ("B", float),
     ]
 
     results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)

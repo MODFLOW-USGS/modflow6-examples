@@ -79,7 +79,7 @@ tdis_ds = list(zip(perlen, nstp, tsmult))
 
 fname = os.path.join(data_ws, "top.dat")
 top = np.loadtxt(fname)
-ikzone = np.empty((nlay, nrow, ncol), dtype=np.float)
+ikzone = np.empty((nlay, nrow, ncol), dtype=float)
 for k in range(nlay):
     fname = os.path.join(data_ws, "ikzone{}.dat".format(k + 1))
     ikzone[k, :, :] = np.loadtxt(fname)
@@ -103,7 +103,7 @@ riv_spd = [
 botm = [30 - k * delv for k in range(nlay)]
 botm = np.array(botm)
 k11_values = [float(value) for value in k11_str.split(",")]
-k11 = np.zeros((nlay, nrow, ncol), dtype=np.float)
+k11 = np.zeros((nlay, nrow, ncol), dtype=float)
 for i, kval in enumerate(k11_values):
     k11 = np.where(ikzone == i + 1, kval, k11)
 
@@ -141,7 +141,7 @@ def coarsen_shape(icoarsen, nrow, ncol):
 
 def create_resampling_labels(a, icoarsen):
     nrow, ncol = a.shape
-    labels = np.zeros((nrow, ncol), dtype=np.int)
+    labels = np.zeros((nrow, ncol), dtype=int)
     nodec = 0
     for ic in range(0, nrow, icoarsen):
         for jc in range(0, ncol, icoarsen):
@@ -170,10 +170,10 @@ def array_resampler(a, icoarsen, method):
 
 
 def riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan):
-    stage_grid = np.zeros((nrow, ncol), dtype=np.float)
-    cond_grid = np.zeros((nrow, ncol), dtype=np.float)
-    rbot_grid = np.zeros((nrow, ncol), dtype=np.float)
-    count_grid = np.zeros((nrow, ncol), dtype=np.int)
+    stage_grid = np.zeros((nrow, ncol), dtype=float)
+    cond_grid = np.zeros((nrow, ncol), dtype=float)
+    rbot_grid = np.zeros((nrow, ncol), dtype=float)
+    count_grid = np.zeros((nrow, ncol), dtype=int)
     for k, i, j, stage, cond, rbot in rivdat:
         stage_grid[i, j] = stage
         cond_grid[i, j] = cond
@@ -286,7 +286,7 @@ def build_parent_model(sim, sim_name, icoarsen, ncppl):
     jstop = int((xmaxc - xminp) / delrp)
     nrowp, ncolp = coarsen_shape(icoarsen, nrow, ncol)
     nlayp = len(ncppl)
-    idomain = np.ones((nlayp, nrowp, ncolp), dtype=np.int)
+    idomain = np.ones((nlayp, nrowp, ncolp), dtype=int)
     idomain[:, istart:istop, jstart:jstop] = 0
     sim = build_model(
         sim_name,

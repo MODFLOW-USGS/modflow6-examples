@@ -77,7 +77,7 @@ x = np.arange(0, 10000.0, delr) + delr / 2.0
 plotaspect = 1.0
 
 # Fill hydraulic conductivity array
-hydraulic_conductivity = np.ones((nlay, nrow, ncol), dtype=np.float) * hka
+hydraulic_conductivity = np.ones((nlay, nrow, ncol), dtype=float) * hka
 for k in range(nlay):
     if 1000.0 <= botm[k] < 1100.0:
         for j in range(ncol):

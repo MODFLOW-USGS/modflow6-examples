@@ -167,16 +167,16 @@ tsmult = [1.0]
 laytyp = icelltype = 1
 iconvert = 1
 # Hydraulic Conductivity
-hk = k1 * np.ones((nlay, nrow, ncol), dtype=np.float)
-hk33 = vk * np.ones((nlay, nrow, ncol), dtype=np.float)
+hk = k1 * np.ones((nlay, nrow, ncol), dtype=float)
+hk33 = vk * np.ones((nlay, nrow, ncol), dtype=float)
 # Starting Heads:
-s0 = np.empty((nrow * ncol), dtype=np.float)
-strt = np.zeros((nlay, nrow, ncol), dtype=np.float)
+s0 = np.empty((nrow * ncol), dtype=float)
+strt = np.zeros((nlay, nrow, ncol), dtype=float)
 for k in range(nlay):
     strt[k] = s0
 
 # Active model domain
-ibound = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound = np.ones((nlay, nrow, ncol), dtype=int)
 ibound_mf2k5 = ibound.copy()
 ibound_mf2k5[0:15, 0, 0] = 0
 ibound_mf2k5[0:15, 0, -1] = 0
@@ -186,7 +186,7 @@ ibound_mf2k5[13:20, 0, 0] = -1
 ibound_mf2k5[13:20, 0, -1] = -1
 idomain = np.ones_like(ibound)
 idomain[0:13, 0, 0] = idomain[0:13, 0, -1] = 0
-strt = np.ones((nlay, nrow, ncol), dtype=np.float) * 1.625
+strt = np.ones((nlay, nrow, ncol), dtype=float) * 1.625
 sconc = 0.0
 
 # UZF related boundary conditions
@@ -198,7 +198,7 @@ iuzfcb1 = 0
 iuzfcb2 = 0
 ntrail2 = 25
 nsets2 = 80
-iuzfbnd = np.ones((nrow, ncol), dtype=np.int)
+iuzfbnd = np.ones((nrow, ncol), dtype=int)
 iuzfbnd[0, 0] = iuzfbnd[0, ncol - 1] = 0
 # Fixed properties
 surfdep = 0.00001
@@ -208,7 +208,7 @@ thts = 0.45
 thti = 0.105
 eps = 4.0
 # UZF boundary stresses
-finf_mfnwt = np.ones((nrow, ncol), dtype=np.float) * finf
+finf_mfnwt = np.ones((nrow, ncol), dtype=float) * finf
 finf_mfnwt[0, 0] = finf_mfnwt[0, ncol - 1] = 0  # Shut off the outer cells
 pet = 0.0
 extdp = 0.0
@@ -450,7 +450,7 @@ def build_model(
         flopy.mt3d.Mt3dSsm(mt, mxss=mxss, stress_period_data=ssmspd)
 
         # Instantiate unsaturated zone tranport package
-        cuzinf = np.zeros((nrow, ncol), dtype=np.int)
+        cuzinf = np.zeros((nrow, ncol), dtype=int)
         cuzinf[0, 15:25] = 1.0
         uzt = flopy.mt3d.Mt3dUzt(mt, iuzfbnd=iuzfbnd, iet=0, cuzinf=cuzinf)
 
