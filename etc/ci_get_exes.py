@@ -24,8 +24,7 @@ flopy.mf6.utils.generate_classes(branch="develop", backup=False)
 bin_pth = os.path.join("..", "bin")
 if not os.path.isdir(bin_pth):
     os.makedirs(bin_pth)
-pymake.getmfexes(bin_pth, verbose=True)
+pymake.getmfexes(pth=bin_pth, verbose=True)
 
 # Replace MODFLOW 6 executables with the latest versions
-url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")["linux.zip"]
-pymake.download_and_unzip(url, bin_pth, verbose=True)
+pymake.getmfnightly(pth=bin_pth, exes=["mf6", "libmf6"], verbose=True)
