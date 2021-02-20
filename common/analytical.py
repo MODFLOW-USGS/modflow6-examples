@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.special import erfc
+from scipy.special import erf
 
 
 def diffusion(x, t, v, R, D):
@@ -331,3 +332,188 @@ class BakkerRotatingInterface:
             qxg += qx1 + qx2
             qyg += qy1 + qy2
         return qxg, qyg
+
+
+def diffusion(x, t, v, R, D):
+    """
+    Calculate the analytical solution for one-dimension advection and
+    dispersion using the solution of Lapidus and Amundson (1952) and
+    Ogata and Banks (1961)
+
+    Parameters
+    ----------
+    x : float or ndarray
+        x position
+    t : float or ndarray
+        time
+    v : float or ndarray
+        velocity
+    R : float or ndarray
+        retardation factor, a value of one indicates there is no adsorption
+    D : float or ndarray
+        diffusion coefficient in length squared per time
+
+    Returns
+    -------
+    result : float or ndarray
+        normalized concentration value
+
+    """
+    denom = 2.0 * np.sqrt(D * R * t)
+    t1 = 0.5 * erfc((R * x - v * t) / denom)
+    t2 = 0.5 * np.exp(v * x / D)
+    t3 = erfc((R * x + v * t) / denom)
+    return t1 + t2 * t3
+
+
+def hechtMendez_SS_3d(
+    x_pos, To, Y3d, Z3d, ath, atv, Fplanar, va, n, rhow, cw, thermdiff
+):
+    """
+    Calculate the analytical solution for changes in temperature three-
+    dimensional changes in temperature using transient solution provided in
+    the appendix of Hecht-Mendez et al. (2010) as equation A5.  Note that for
+    SS conditions, the erfc term reduces to 1 as t -> infinity and the To/2
+    term becomes T.
+
+    Parameters
+    ----------
+    x_pos : float or ndarray
+        x position
+    To : float or ndarray
+         initial temperature of the ground, degrees K
+    Y3d : float or ndarray
+          dimension of source in y direction for 3D test problem
+    Z3d : float or ndarray
+          dimension of source in z direction for 3D test problem
+    ath : float or ndarray
+          transverse horizontal dispersivity
+    atv : float or ndarray
+          transverse vertical dispersivity
+    Fplanar : float or ndarray
+              energy extraction (point source)
+    va : float or ndarray
+         seepage velocity
+    n : float or ndarray
+        porosity
+    rhow : float or ndarray
+           desity of water
+    cw : float or ndarray
+         specific heat capacity of water
+    thermdiff : float or ndarray
+                molecular diffusion coefficient, or in this case thermal
+                diffusivity
+    """
+
+    # calculate transverse horizontal heat dispersion
+    Dy = ath * (va ** 2 / abs(va)) + thermdiff
+    t2 = erf(Y3d / (4 * np.sqrt(Dy * (x_pos / va))))
+
+    Dz = atv * (va ** 2 / abs(va)) + thermdiff
+    t3 = erf(Z3d / (4 * np.sqrt(Dz * (x_pos / va))))
+
+    # initial temperature at the source
+    To_planar = Fplanar / (abs(va) * n * rhow * cw)
+
+    sln = To + (To_planar * t2 * t3)
+    return sln
+
+
+def hechtMendezSS(x_pos, y, a, F0, va, n, rhow, cw, thermdiff):
+    """
+    Calculate the analytical solution for changes in temperature three-
+    dimensional changes in temperature for a steady state solution provided in
+    the appendix of Hecht-Mendez et al. (2010) as equation A4
+
+    Parameters
+    ----------
+    x : float or ndarray
+        x position
+    y : float or ndarray
+        y position
+    a : float or ndarray
+        longitudinal dispersivity
+    F0 : float or ndarray
+         energy extraction (point source)
+    va : float or ndarray
+         seepage velocity
+    n : float or ndarray
+        porosity
+    rhow : float or ndarray
+           desity of water
+    cw : float or ndarray
+         specific heat capacity of water
+    thermdiff : float or ndarray
+                molecular diffusion coefficient, or in this case thermal
+                diffusivity
+    """
+
+    # calculate transverse horizontal heat dispersion
+    Dth = a * (va ** 2 / abs(va)) + thermdiff
+
+    t1 = F0 / (
+        va * n * rhow * cw * ((4 * np.pi * Dth * (x_pos / va)) ** (0.5))
+    )
+    t2 = np.exp((-1 * va * y ** 2) / (4 * Dth * x_pos))
+    sln = t1 * t2
+    return sln
+
+
+def hechtMendez3d(
+    x_pos, t, Y, Z, al, ath, atv, thermdiff, va, n, R, Fplanar, cw, rhow
+):
+    """
+    Calculate the analytical solution for three-dimensional changes in
+    temperature based on the solution provided in the appendix of Hecht-Mendez
+    et al. (2010) as equation A5
+
+    Parameters
+    ----------
+    x : float or ndarray
+        x position
+    t : float or ndarray
+        time
+    Y : float or ndarray
+        dimension of the source in the y direction
+    Z : float or ndarray
+        dimension of the source in the z direction
+    al : float or ndarray
+         longitudinal dispersivity
+    ath : float or ndarray
+          transverse horizontal dispersivity
+    atv : float or ndarray
+          transverse vertical dispersivity
+    thermdiff : float or ndarray
+                molecular diffusion coefficient, or in this case thermal
+                diffusivity
+    va : float or ndarray
+         seepage velocity
+    n : float or ndarray
+        porosity
+    R : float or ndarray
+        retardation coefficient
+    Fplanar : float or ndarray
+              energy extraction (point source)
+    cw : float or ndarray
+         specific heat capacity of water
+    rhow : float or ndarray
+           desity of water
+
+    """
+    To_planar = Fplanar / (va * n * rhow * cw)
+
+    Dl = al * (va ** 2 / abs(va)) + thermdiff
+    numer = R * x_pos - va * t
+    denom = 2 * np.sqrt(Dl * R * t)
+
+    t1 = (To_planar / 2) * erfc(numer / denom)
+
+    Dth = ath * (va ** 2 / abs(va)) + thermdiff
+    t2 = erf(Y / (4 * np.sqrt(Dth * (x_pos / va))))
+
+    Dtv = atv * (va ** 2 / abs(va)) + thermdiff
+    t3 = erf(Z / (4 * np.sqrt(Dtv * (x_pos / va))))
+
+    sln = t1 * t2 * t3
+    return sln
+
