@@ -323,12 +323,12 @@ cobs = [
 nouter, ninner = 100, 300
 hclose, rclose, relax = 5e-5, 1e-8, 1.0
 
-# ### Functions to build, write, and run models and plot MT3DMS Example 9
+# ### Functions to build, write, and run models published in Hecht-Mendez 2010
 #
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_flow_models(
+def build_mf2k5_flow_model(
     sim_name,
     peclet=0.0,
     gradient=0,
@@ -394,8 +394,22 @@ def build_flow_models(
         }
         oc = flopy.modflow.ModflowOc(mf, stress_period_data=spd)
 
-        # MODFLOW 6
+        return mf
+    return None
 
+
+# MODFLOW 6
+
+
+def build_mf6_flow_model(
+    sim_name,
+    peclet=0.0,
+    gradient=0,
+    seepagevelocity=0,
+    constantheadright=14,
+    silent=False,
+):
+    if config.buildModel:
         print("Building mf6gwf model...{}".format(sim_name))
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name, "mf6gwf")
@@ -452,6 +466,7 @@ def build_flow_models(
         )
 
         # Instantiating MODFLOW 6 initial conditions package for flow model
+        strt[:, :, -1] = constantheadright
         flopy.mf6.ModflowGwfic(
             gwf, strt=strt, filename="{}.ic".format(gwfname)
         )
@@ -515,11 +530,11 @@ def build_flow_models(
                 ("BUDGET", "LAST"),
             ],
         )
-        return mf, sim
+        return sim
     return None
 
 
-def build_transport_models(
+def build_mt3d_transport_model(
     mf,
     sim_name,
     peclet=0.0,
@@ -590,6 +605,16 @@ def build_transport_models(
             mt, mxiter=100, iter1=50, isolve=1, ncrs=1, cclose=1e-7
         )
 
+
+def build_mf6_transport_model(
+    sim_name,
+    peclet=0.0,
+    gradient=0,
+    seepagevelocity=0,
+    constantheadright=14,
+    silent=False,
+):
+    if config.buildModel:
         # Instantiating MODFLOW 6 groundwater transport package
         print("Building mf6gwt model...{}".format(sim_name))
         gwtname = "gwt-" + name
@@ -734,17 +759,21 @@ def build_transport_models(
             filename="{}.oc".format(gwtname),
         )
 
-        return mt, sim
+        return sim
     return None
 
 
 # Function to write model files
 
 
-def write_model(mf2k5, mt3d, sim_mf6gwf, sim_mf6gwt, silent=True):
+def write_mf2k5_models(mf2k5, mt3d, silent=True):
     if config.writeModel:
         mf2k5.write_input()
         mt3d.write_input()
+
+
+def write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=True):
+    if config.writeModel:
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
 
@@ -752,11 +781,15 @@ def write_model(mf2k5, mt3d, sim_mf6gwf, sim_mf6gwt, silent=True):
 # Function to run the model. True is returned if the model runs successfully.
 
 
-def run_model(mf2k5, mt3d, sim_mf6gwf, sim_mf6gwt, silent=True):
+def run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=None, mt3d=None, silent=True):
     success = True
     if config.runModel:
-        success, buff = mf2k5.run_model(silent=silent)
-        success, buff = mt3d.run_model(silent=silent)
+        if mf2k5 is not None:
+            success, buff = mf2k5.run_model(silent=silent)
+
+        if mt3d is not None:
+            success, buff = mt3d.run_model(silent=silent)
+
         success, buff = sim_mf6gwf.run_simulation(silent=silent)
         success, buff = sim_mf6gwt.run_simulation(silent=silent)
         if not success:
@@ -768,11 +801,11 @@ def run_model(mf2k5, mt3d, sim_mf6gwf, sim_mf6gwt, silent=True):
 
 
 def plot_results(
-    mf2k5,
-    mt3d,
     sim_mf6gwf,
     sim_mf6gwt,
     idx,
+    mf2k5=None,
+    mt3d=None,
     ax=None,
     peclet=0.0,
     gradient=0,
@@ -781,15 +814,16 @@ def plot_results(
 ):
     if config.plotModel:
         print("Plotting model results...")
-        mt3d_out_path = mt3d.model_ws
-        mf6_out_path = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        # sim_mf6gwt.simulation_data.mfpath.get_sim_path()
+        if mt3d is not None:
+            mt3d_out_path = mt3d.model_ws
 
-        # Get the MT3DMS concentration output
-        fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
-        ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
-        times_mt3d = ucnobj_mt3d.get_times()
-        conc_mt3d = ucnobj_mt3d.get_alldata()
+            # Get the MT3DMS concentration output
+            fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
+            ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
+            times_mt3d = ucnobj_mt3d.get_times()
+            conc_mt3d = ucnobj_mt3d.get_alldata()
+
+        mf6_out_path = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
 
         # Get the MF6 concentration output
         fname_mf6 = os.path.join(
@@ -891,8 +925,10 @@ def plot_results(
         y_tr_anly_sln = [285.15 + val for val in tr_sln]
 
         # fill variables containing the simulated solutions
-        y_10_mt_sln = conc_mt3d[0, 6, (42 - 1), 22:]
-        y_150_mt_sln = conc_mt3d[-1, 6, (42 - 1), 22:]
+        if mt3d is not None:
+            y_10_mt_sln = conc_mt3d[0, 6, (42 - 1), 22:]
+            y_150_mt_sln = conc_mt3d[-1, 6, (42 - 1), 22:]
+
         y_10_mf6_sln = conc_mf6[0, 6, (42 - 1), 22:]
         y_150_mf6_sln = conc_mf6[-1, 6, (42 - 1), 22:]
 
@@ -922,10 +958,14 @@ def plot_results(
             x_pos, y_tr_anly_sln, "b-", label="Transient analytical solution"
         )
 
-        mt_ss_ln = ax.plot(
-            x_pos, y_150_mt_sln, "r+", label="Steady state MT3DMS, TVD"
-        )
-        mt_tr_ln = ax.plot(x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS")
+        if mt3d is not None:
+            mt_ss_ln = ax.plot(
+                x_pos, y_150_mt_sln, "r+", label="Steady state MT3DMS, TVD"
+            )
+            mt_tr_ln = ax.plot(
+                x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS"
+            )
+
         mf6_ss_ln = ax.plot(
             x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
         )
@@ -964,17 +1004,41 @@ def plot_results(
 # 4. plot_results.
 
 
-def scenario(idx, silent=True):
+def scenario(idx, runMT3D=False, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    mf2k5, sim_mf6gwf = build_flow_models(key, **parameter_dict)
-    mt3d, sim_mf6gwt = build_transport_models(mf2k5, key, **parameter_dict)
 
-    write_model(mf2k5, mt3d, sim_mf6gwf, sim_mf6gwt, silent=silent)
-    success = run_model(mf2k5, mt3d, sim_mf6gwf, sim_mf6gwt, silent=silent)
+    if runMT3D:
+        mf2k5 = build_mf2k5_flow_model(key, **parameter_dict)
+    else:
+        mf2k5 = None
+
+    sim_mf6gwf = build_mf6_flow_model(key, **parameter_dict)
+
+    if runMT3D:
+        mt3d = build_mt3d_transport_model(mf2k5, key, **parameter_dict)
+    else:
+        mt3d = None
+
+    sim_mf6gwt = build_mf6_transport_model(key, **parameter_dict)
+
+    if runMT3D:
+        write_mf2k5_models(mf2k5, mt3d, silent=silent)
+
+    write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=silent)
+
+    success = run_model(
+        sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent
+    )
+
     if success:
         plot_results(
-            mf2k5, mt3d, sim_mf6gwf, sim_mf6gwt, idx, **parameter_dict
+            sim_mf6gwf,
+            sim_mf6gwt,
+            idx,
+            mf2k5=mf2k5,
+            mt3d=mt3d,
+            **parameter_dict
         )
 
 
@@ -984,11 +1048,11 @@ def scenario(idx, silent=True):
 
 
 def test_02():
-    scenario(1, silent=False)
+    scenario(1, runMT3D=False, silent=False)
 
 
 def test_03():
-    scenario(2, silent=False)
+    scenario(2, runMT3D=False, silent=False)
 
 
 # nosetest end
