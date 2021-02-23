@@ -625,7 +625,10 @@ def build_mf6_transport_model(
 
         # MF6 time discretization is a bit different than corresponding flow simulation
         tdis_rc = []
-        transport_stp_len = 5.5735e4
+        if peclet == 1.0:
+            transport_stp_len = 57000
+        elif peclet == 10.0:
+            transport_stp_len = 1.296e5 * 3
         nstp_transport = perlen / transport_stp_len
         tdis_rc.append((perlen, nstp_transport, 1.0))
         flopy.mf6.ModflowTdis(
@@ -970,7 +973,11 @@ def plot_results(
             x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
         )
         mf6_tr_ln = ax.plot(
-            x_pos, y_10_mf6_sln, "bx", label="Transient MF6-GWT"
+            x_pos,
+            y_10_mf6_sln,
+            "bo",
+            markerfacecolor="none",
+            label="Transient MF6-GWT",
         )
         ax.set_xlim(1, 100)
         ax.set_ylim(285.15 - 2.1, 285.15 + 0.5)
