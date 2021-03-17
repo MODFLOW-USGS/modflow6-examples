@@ -831,6 +831,7 @@ def simulation(idx, silent=True):
     interbed_kv = parameters[key]["kv"]
     params = parameters[key].copy()
 
+    success = False
     if len(interbed_thickness) == 1:
         params["bed_thickness"] = interbed_thickness[0]
         params["kv"] = interbed_kv[0]
@@ -839,30 +840,33 @@ def simulation(idx, silent=True):
 
         write_model(sim, silent=silent)
 
-        success = run_model(sim, silent=silent)
-    else:
         if config.runModel:
-            for b, kv in zip(interbed_thickness, interbed_kv):
-                for head_based in (
-                    True,
-                    False,
-                ):
-                    if head_based:
-                        subdir_name = "hb-"
-                    else:
-                        subdir_name = "es-"
-                    subdir_name += "{:03d}".format(int(b))
-                    params["head_based"] = head_based
-                    params["bed_thickness"] = b
-                    params["kv"] = kv
+            success = run_model(sim, silent=silent)
 
-                    sim = build_model(key, subdir_name=subdir_name, **params)
+    else:
+        for b, kv in zip(interbed_thickness, interbed_kv):
+            for head_based in (
+                True,
+                False,
+            ):
+                if head_based:
+                    subdir_name = "hb-"
+                else:
+                    subdir_name = "es-"
+                subdir_name += "{:03d}".format(int(b))
+                params["head_based"] = head_based
+                params["bed_thickness"] = b
+                params["kv"] = kv
 
-                    write_model(sim, silent=silent)
+                sim = build_model(key, subdir_name=subdir_name, **params)
 
+                write_model(sim, silent=silent)
+
+                if config.runModel:
                     success = run_model(sim, silent=silent)
 
-    if success:
+
+    if config.plotModel and success:
         plot_results(sim, silent=silent)
 
 

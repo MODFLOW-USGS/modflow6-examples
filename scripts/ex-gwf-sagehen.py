@@ -22,13 +22,11 @@ import config
 import matplotlib.pyplot as plt
 import flopy.utils.binaryfile as bf
 from figspecs import USGSFigure
-from datetime import datetime
 
 sys.path.append(os.path.join("..", "data", "ex-gwf-sagehen"))
 import sfr_static as sfrDat
 
 mf6exe = os.path.abspath(config.mf6_exe)
-assert os.path.isfile(mf6exe)
 exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 
