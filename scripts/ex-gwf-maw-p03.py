@@ -317,8 +317,11 @@ def build_local(name, simulation):
     # get regional heads for constant head boundaries
     pth = list(parameters.keys())[0]
     fpth = os.path.join(ws, pth, "{}.hds".format(sim_name))
-    hobj = flopy.utils.HeadFile(fpth)
-    h = hobj.get_data()
+    try:
+        hobj = flopy.utils.HeadFile(fpth)
+        h = hobj.get_data()
+    except:
+        h = np.ones((nlay_r, nrow_r, ncol_r), dtype=float) * strt
 
     # calculate factor for constant heads
     f1 = 0.5 * (delr_r + delr[0]) / delc_r

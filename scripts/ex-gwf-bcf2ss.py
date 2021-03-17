@@ -514,29 +514,29 @@ def plot_results(silent=True):
             )
             fig.savefig(fpth)
 
-    # plot simulated rewetting results
-    plot_simulated_results(2, gwf, hobj, cobj)
+        # plot simulated rewetting results
+        plot_simulated_results(2, gwf, hobj, cobj)
 
-    # plot simulated newton results
-    name = list(parameters.keys())[1]
-    sim_ws = os.path.join(ws, name)
-    sim = flopy.mf6.MFSimulation.load(
-        sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
-    )
-    gwf = sim.get_model(sim_name)
+        # plot simulated newton results
+        name = list(parameters.keys())[1]
+        sim_ws = os.path.join(ws, name)
+        sim = flopy.mf6.MFSimulation.load(
+            sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
+        )
+        gwf = sim.get_model(sim_name)
 
-    # create MODFLOW 6 head object
-    file_name = gwf.oc.head_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    hobj = flopy.utils.HeadFile(fpth)
+        # create MODFLOW 6 head object
+        file_name = gwf.oc.head_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
+        hobj = flopy.utils.HeadFile(fpth)
 
-    # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        # create MODFLOW 6 cell-by-cell budget object
+        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
+        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
 
-    # plot the newton results
-    plot_simulated_results(3, gwf, hobj, cobj)
+        # plot the newton results
+        plot_simulated_results(3, gwf, hobj, cobj)
 
 
 # Function that wraps all of the steps for the TWRI model

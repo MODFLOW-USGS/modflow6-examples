@@ -38,8 +38,6 @@ from figspecs import USGSFigure
 from flopy.utils.util_array import read1d
 
 mf6exe = os.path.abspath(config.mf6_exe)
-assert os.path.isfile(mf6exe)
-print(mf6exe)
 exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dusgs_exe
 

@@ -37,8 +37,6 @@ import config
 from figspecs import USGSFigure
 
 mf6exe = os.path.abspath(config.mf6_exe)
-assert os.path.isfile(mf6exe)
-print(mf6exe)
 exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 
