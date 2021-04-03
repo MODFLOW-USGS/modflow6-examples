@@ -1,0 +1,110 @@
+\section{Hecht-Mendez 3D Borehole Heat Exchanger Problem}
+
+% Describe source of problem
+The models presented in \cite{hechtMendez2010} apply MT3DMS \citep{zheng1999mt3dms} as a heat transport simulator.  Both 2-dimensional and 3-dimensional demonstration problems are presented that explore the use of a ``borehole heat exchanger'' (BHE), a ``closed'' geothermal system that uses a heat pump for cycling water and anti-freeze fluids in pipes for mining heat from an aquifer \citep{diao2004}.  Figure~\ref{fig:hechtMendezBHE} depicts the kind of system modeled in this example.
+
+Among the examples presented in \cite{hechtMendez2010}, this work recreates the 3D example that simulates heat exchange between a BHE and the aquifer it is placed in.  Among the suite of examples included in the MODFLOW6-examples.git repo, this is the first one demonstrating the suitability of the GWT model within \mf for simulating saturated zone heat transport.  To verify the applicability of \mf6 as a groundwater heat transport simulator, we compare the \mf solution to established analytical solutions.  The analytical solutions are described in more detail below.
+
+% a figure
+\begin{StandardFigure}{
+                                     Example of a closed ground source heat pump extracting heat beneath a private residence.  Image taken from \cite{hecht2008}.
+                                     }{fig:hechtMendezBHE}{../images/hechtMendezBHE.png}
+\end{StandardFigure}
+
+\subsection{Example description}
+
+Through appropriate substitution of heat-related transport terms into the groundwater solute transport equation, \mf (as is the case with MT3DMS and MT3D-USGS) may be used as a heat simulator for the saturated zone by observing that the heat transport equation,
+
+\begin{equation}
+	\theta \rho_w C_w \frac{\partial T}{\partial t} + \left( 1 - \theta \right) \rho_s C_s \frac{\partial  T_s}{\partial t} = div \left( \left( k_{T_m} + \theta \rho_w C_w \alpha_h \upsilon_a \right) grad T\right) - div \left( \theta \rho_w C_w \upsilon_a T \right) + q_h,
+	\label{eq:hm1}
+\end{equation}
+
+has a similar form as the groundwater solute transport equation,
+
+\begin{equation}
+	\left[ 1 + \frac{\rho_b K_d}{\theta} \right] \theta \frac{\partial  C}{\partial t} = div \left[ \theta \left( D_m + \alpha \upsilon_a \right) grad C \right] - div \left( \upsilon_a \theta C \right) + q_s C_s - \lambda \theta C,
+	\label{eq:hm2}
+\end{equation}
+
+Originally, \cite{hechtMendez2010} included three sub-scenarios for the 3D test model.  The first sub-scenario used a Peclet number of 0, indicating no velocity and therefore explored a purely conductive environment.  Owing to the fact that \citep{hechtMendez2010} did not publish results for this particular sub-scenario and because a 3D analytical solution for a purely conductive problem is not available, neither is this sub-scenario explored here.  The two remaining sub-scenarios investigate the effect of groundwater velocity on the heat profile down-gradient of the BHE.  To accomplish this goal, Peclet numbers of 1.0 and 10.0 are explored. A Peclet number of 1.0 indicates an approximate balance between convective (i.e., advective) and conductive heat transport.  Meanwhile, a Peclet number of 10.0 represents a convection-dominated transport environment.  The parameters used in each of the two scenarios presented are listed in table~\ref{tab:ex-gwt-hecht-mendez-scenario}.
+
+% add scenario summary parameter table(s)
+\input{../tables/ex-gwt-hecht-mendez-scenario}
+
+The model grid consists of 83 row, 247 columns, and 13 layers.  The flow model solves a steady, confined, uniform flow field moving from left to right, as shown in figure~\ref{fig:hechtMendezSetup}. No flow boundaries exist along the north, south, top, and bottom planes of the model domain.  The velocity of the groundwater is varied in each of the two modeled scenarios (recall that scenario A is omitted) by varying the fixed head along the east (right) edge of the simulation domain.  Cell lengths and widths vary across the model domain, beginning with 0.5 x 0.5 $m$ grid cells along the perimeter of the model domain, the grid cell resolution is refined to 0.1 x 0.1 $m$ in the vicinity of the BHE.  All layers are set to an equal thickness of 1 $m$.  Additional flow related parameter values are listed in table~\ref{tab:ex-gwt-hecht-mendez-01}.
+
+% add static parameter table(s)
+\input{../tables/ex-gwt-hecht-mendez-01}
+
+Because the model is 3D, vertical heat transfer among the layers is considered.  The BHE is vertically centered within the model grid, located in layers 6, 7, and 8 and is represented by a constant mass loading boundary condition.  A negative mass (i.e., heat) loading rate of -60 $W/m$ is constant throughout the simulation period and acts as a heat sink within the aquifer.  Justification for the selected heat removal rate is given in \cite{hechtMendez2010}.  Initially, the entire model domain starts out with a constant temperature of 285.15 $^{\circ}K$ (12 $^{\circ}C$).  Additionally, groundwater enters the west boundary of the model at 285.15 $^{\circ}K$ and leaves at the calculated temperature of the groundwater along the east boundary.  Heat exchange does not occur with the no-flow boundaries to facilitate comparison with analytical solutions.
+
+% a figure
+\begin{StandardFigure}{
+                                     Model setup.  Image taken from \cite{hechtMendez2010}.
+                                     }{fig:hechtMendezSetup}{../images/hechtMendezSetup.png}
+\end{StandardFigure}
+
+\subsection{Analytical solutions}
+
+For each of the two scenarios simulated here, two points in time are compared to analytical solutions: 10 and 150 days from the start of the simulation representing transient and steady-state conditions.  Although simulated results continue to change after 150 days, the magnitude of the change is relatively minor.  Thus, 150 days was selected as ``close enough'' in order to help keep total simulation times to a minimum for obtaining the steady-state solution.  Owing to numerical dispersion concerns, the total variation diminishing (TVD) schemes is activated in \mf.
+
+The analytical solution for a 3D planar source (or sink) is given in \citep{domenico1985} as,
+
+\begin{equation}
+	T \left( x, y, z, t \right) = \frac{T_o}{8} \cdot erfc \left[ \frac{Rx - \upsilon_a t}{2 \sqrt{D_x R t}} \right] \cdot \Bigg\{ erf \left[ \frac{ \left( y + \frac{Y}{2} \right)}{2 \sqrt{D_y \frac{x}{v_a}}} \right] -  erf \left[ \frac{ \left( y - \frac{Y}{2} \right)}{2 \sqrt{D_y \frac{x}{v_a}}} \right] \Bigg\} \cdot \Bigg\{ erf \left[ \frac{ \left( z + \frac{Z}{2} \right)}{2 \sqrt{D_z \frac{x}{v_a}}} \right] -  erf \left[ \frac{ \left( z - \frac{Z}{2} \right)}{2 \sqrt{D_z \frac{x}{v_a}}} \right] \Bigg\},
+	\label{eq:hm3}
+\end{equation}
+
+Y and Z are the dimensions of the sink; $D_x$, $D_y$, and $D_z$ are the dispersion coefficients for dispersivities in the x, y, and z directions, corresponding to $\alpha_x$, $\alpha_y$, and $\alpha_z$; and $T_o$ is the starting temperature where the BHE is located and is given by,
+
+\begin{equation}
+	T_o = \frac{F}{\upsilon_a \theta \rho_w C_w},
+	\label{eq:hm4}
+\end{equation}
+
+
+where F is the energy extraction per area of the source ($W/m^2$).  Along the centerline of the plume, depicted in figure~\ref{fig:hechtMendezAnalytical}, the analytical solution under transient conditions reduces to the following,
+
+% a figure
+\begin{StandardFigure}{
+                                     (A) Depiction of a heat plume spreading down gradient of a planar source (or sink) for which \citep{domenico1985} gives an analytical solution for (B) two spreading directions in both y and z and finally (C) two spreading directions in y and one spreading direction in z.  Image originally published in \cite{hecht2008}.
+                                     }{fig:hechtMendezAnalytical}{../images/hechtMendezAnalytical.png}
+\end{StandardFigure}
+
+\begin{equation}
+	T \left( x, t \right) = \frac{T_o}{2} \cdot erfc \left[ \frac{Rx - \upsilon_a t}{2 \sqrt{D_x R t}} \right] \cdot erf \left[ \frac{ Y }{4 \sqrt{D_y \frac{x}{v_a}}} \right] \cdot  erf \left[ \frac{ Z }{4 \sqrt{D_z \frac{x}{v_a}}} \right],
+	\label{eq:hm5}
+\end{equation}
+
+For steady-state conditions, the complementary error function ($erfc$) term may be neglected while the $\frac {T_o}{2}$ term reduces to $T_o$, leaving,
+
+\begin{equation}
+	T \left( x \right) = T_o erf \left[ \frac{ Y }{4 \sqrt{D_y \frac{x}{v_a}}} \right] \cdot  erf \left[ \frac{ Z }{4 \sqrt{D_z \frac{x}{v_a}}} \right],
+	\label{eq:hm6}
+\end{equation}
+
+Model results are compared to these analytical solutions.
+
+% results
+\subsection{Example results}
+
+Simulated temperature profiles downstream of the BHE are compared to steady-state and transient (10 days after the start of the simulation) analytical solutions in figures~\ref{fig:ex-gwt-hecht-mendez-B} (Peclet = 1.0) and~\ref{fig:ex-gwt-hecht-mendez-C} (Peclet = 10.0).  In each scenario, simulated results compare well to the expected (i.e., analytical) temperature profiles, with some undersimulation of the temperature down gradient of the BHE shown in figure~\ref{fig:ex-gwt-hecht-mendez-B} (Peclet number equal to 1.0).  Discrepancies between the simulated and analytical results are smaller in the scenario with a Pectlet number of 10.0.  Moreover, under highly convective flow regimes, the transient solution is approximately equal to the steady state solution after 10 days, as shown in figure~\ref{fig:ex-gwt-hecht-mendez-C}.  These results confirm that \mf may be used as a heat transport simulator in the saturated zone.
+
+% a figure
+\begin{StandardFigure}{
+                                     \mf simulated temperatures are compared to analytical solutions in a steady flow model with a Peclet number equal to 1.0. For this scenario, thermal transport is roughly split between convective and conductive processes.  Temperature profiles are calculated along the centerline down gradient of a planar heat sink as shown in figure~\ref{fig:hechtMendezAnalytical}
+                                     }{fig:ex-gwt-hecht-mendez-B}{../figures/ex-gwt-hecht-mendez-B.png}
+\end{StandardFigure}
+
+% a figure
+\begin{StandardFigure}{
+                                     \mf simulated temperatures are compared to analytical solutions in a steady flow model with a Peclet number equal to 10.0. For this scenario, thermal transport is dominated by convective transport.  Temperature profiles are calculated along the centerline down gradient of a planar heat sink as shown in figure~\ref{fig:hechtMendezAnalytical}
+                                     }{fig:ex-gwt-hecht-mendez-C}{../figures/ex-gwt-hecht-mendez-C.png}
+\end{StandardFigure}
+
+\subsection{Final notes}
+
+Within the script that generates and runs the \mf model, a user seeking to compare \mf results with MT3D-USGS may do so by setting the parameter ``runMT3D'' equal to ``True'' on (or near) line 1039 of ex-gwt-hecht-mendez.py.  The correct line of script to adjust will look similar to ``scenario(1, runMT3D=False, silent=False)''.
+
+For the first simulated scenario with a Peclet value of 1.0, simulated fits to the analytical solution are improved by refining the temporal resolution of the simulation.  For the first simulated scenario with a Peclet value of 1.0, simulated fits to the analytical solution are improved by refining the temporal resolution of the simulation.  For example, changing the value on (or near) line 629 of the ``ex-gwt-hecht-mendez.py'' script to a value close to 30,000 (i.e., ``transport\_stp\_len = 30000'') will yield simulated results that closely match the analytical solution.  Because simulation run times on the repo typically exceed 5 minutes with transport time steps finer than roughly 57,000 $sec$ for the Peclet=1.0 scenario, we have chosen to sacrifice some of the goodness-of-fit for shorter runtimes.  Users are encouraged to explore the effect of different transport time step lengths have on the fit to the analytical solutions.
