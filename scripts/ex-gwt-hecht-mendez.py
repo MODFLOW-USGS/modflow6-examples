@@ -31,8 +31,6 @@ from flopy.utils.util_array import read1d
 import analytical
 
 mf6exe = os.path.abspath(config.mf6_exe)
-assert os.path.isfile(mf6exe)
-print(mf6exe)
 exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dusgs_exe
 
@@ -161,12 +159,13 @@ sconc = T0
 # Dispersion
 ath1 = al * trpt
 atv = al * trpv
-dmcoef_arr = np.ones((nlay, nrow, ncol)) * 1.84e-6  # m^2/s
+dmcoef_arr = 1.84e-6  # m^2/s
 # From the Hecht-Mendez manuscript:
 # "The 3D analytical solutions A4 and A5 consider a semi-infinite medium and
 # therefore they neglect upgradient spreading.  Accordingly, for consistency,
 # thermal conductivity and dispersivity are set to zero in the area upgradient
 # from the source in MT3DMS"
+# dmcoef_arr = np.ones((nlay, nrow, ncol)) * 1.84e-6  # m^2/s
 # dmcoef_arr[:, 0:82, 0:21] = 0.0
 
 # Time variables
@@ -624,13 +623,14 @@ def build_mf6_transport_model(
         )
 
         # MF6 time discretization is a bit different than corresponding flow simulation
-        tdis_rc = []
+        tdis_rc = None
         if peclet == 1.0:
-            transport_stp_len = 57000
+            # use tsmult to and hardwired number of steps to make it run fast
+            tdis_rc = [(perlen, 25, 1.3)]
         elif peclet == 10.0:
             transport_stp_len = 1.296e5 * 3
-        nstp_transport = perlen / transport_stp_len
-        tdis_rc.append((perlen, nstp_transport, 1.0))
+            nstp_transport = perlen / transport_stp_len
+            tdis_rc = [(perlen, nstp_transport, 1.0)]
         flopy.mf6.ModflowTdis(
             sim, nper=len(tdis_rc), perioddata=tdis_rc, time_units=time_units
         )
@@ -982,16 +982,14 @@ def plot_results(
         ax.set_xlim(1, 100)
         ax.set_ylim(285.15 - 2.1, 285.15 + 0.5)
         ax.set_xscale("log")
+        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("temperature, in Kelvins")
         ax.legend()
-
-        title = "Temperature down-gradient of BHE"
-        letter = chr(ord("@") + idx + 1)
-        fs.heading(letter=letter, heading=title)
-
         plt.tight_layout()
 
         # save figure
         if config.plotSave:
+            letter = chr(ord("@") + idx + 1)
             fpth = os.path.join(
                 "..",
                 "figures",
