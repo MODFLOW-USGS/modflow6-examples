@@ -7,7 +7,7 @@ Among the examples presented in \cite{hechtMendez2010}, this work recreates the 
 
 % a figure
 \begin{StandardFigure}{
-                                     Example of a closed ground source heat pump extracting heat beneath a private residence.  Image taken from \cite{hecht2008}.
+                                     Example of a closed ground source heat pump extracting heat beneath a private residence, from \cite{hecht2008}.
                                      }{fig:hechtMendezBHE}{../images/hechtMendezBHE.png}
 \end{StandardFigure}
 
@@ -41,7 +41,7 @@ Because the model is 3D, vertical heat transfer among the layers is considered. 
 
 % a figure
 \begin{StandardFigure}{
-                                     Model setup.  Image taken from \cite{hechtMendez2010}.
+                                     Model setup, from \cite{hechtMendez2010}.
                                      }{fig:hechtMendezSetup}{../images/hechtMendezSetup.png}
 \end{StandardFigure}
 
@@ -68,7 +68,7 @@ where F is the energy extraction per area of the source ($W/m^2$).  Along the ce
 
 % a figure
 \begin{StandardFigure}{
-                                     (A) Depiction of a heat plume spreading down gradient of a planar source (or sink) for which \citep{domenico1985} gives an analytical solution for (B) two spreading directions in both y and z and finally (C) two spreading directions in y and one spreading direction in z.  Image originally published in \cite{hecht2008}.
+                                     (A) Depiction of a heat plume spreading down gradient of a planar source (or sink) for which \citep{domenico1985} gives an analytical solution for (B) two spreading directions in both y and z and finally (C) two spreading directions in y and one spreading direction in z, from \cite{hecht2008}.
                                      }{fig:hechtMendezAnalytical}{../images/hechtMendezAnalytical.png}
 \end{StandardFigure}
 
@@ -103,8 +103,3 @@ Simulated temperature profiles downstream of the BHE are compared to steady-stat
                                      }{fig:ex-gwt-hecht-mendez-C}{../figures/ex-gwt-hecht-mendez-C.png}
 \end{StandardFigure}
 
-\subsection{Final notes}
-
-Within the script that generates and runs the \mf model, a user seeking to compare \mf results with MT3D-USGS may do so by setting the parameter ``runMT3D'' equal to ``True'' on (or near) line 1039 of ex-gwt-hecht-mendez.py.  The correct line of script to adjust will look similar to ``scenario(1, runMT3D=False, silent=False)''.
-
-For the first simulated scenario with a Peclet value of 1.0, simulated fits to the analytical solution are improved by refining the temporal resolution of the simulation.  For the first simulated scenario with a Peclet value of 1.0, simulated fits to the analytical solution are improved by refining the temporal resolution of the simulation.  For example, changing the value on (or near) line 629 of the ``ex-gwt-hecht-mendez.py'' script to a value close to 30,000 (i.e., ``transport\_stp\_len = 30000'') will yield simulated results that closely match the analytical solution.  Because simulation run times on the repo typically exceed 5 minutes with transport time steps finer than roughly 57,000 $sec$ for the Peclet=1.0 scenario, we have chosen to sacrifice some of the goodness-of-fit for shorter runtimes.  Users are encouraged to explore the effect of different transport time step lengths have on the fit to the analytical solutions.

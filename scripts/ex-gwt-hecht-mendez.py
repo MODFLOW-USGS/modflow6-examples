@@ -10,6 +10,15 @@
 #       boundary conditions are achieved using the specified head option
 #       within the .bas package (specifies -1 for ibound which locks in the
 #       starting heads and constant heads)
+#
+# Within the script that generates and runs the model, a user seeking to
+# compare MODFLOW results with MT3D-USGS may do so by setting the parameter
+# runMT3D equal to True on (or near). The correct line of script to adjust
+# will look similar to scenario(1, runMT3D=False, silent=False).
+#
+# For the first simulated scenario with a Peclet value of 1.0, simulated fits
+# to the analytical solution can be improved by refining the temporal
+# resolution of the simulation.
 
 # ### MODFLOW 6 GWT MT3DMS Heat Transport Problem Setup
 
@@ -142,10 +151,10 @@ delc = (
 botm = [top - delz * k for k in range(1, nlay + 1)]
 laytyp = icelltype = 0
 # Starting Heads:
-strt = np.ones((nlay, nrow, ncol), dtype=np.float) * 14.0
+strt = np.ones((nlay, nrow, ncol), dtype=float) * 14.0
 
 # Active model domain
-ibound = np.ones((nlay, nrow, ncol), dtype=np.int)
+ibound = np.ones((nlay, nrow, ncol), dtype=int)
 ibound[:, :, 0] = -1  # left side
 ibound[:, :, -1] = -1  # right side
 
@@ -172,9 +181,11 @@ dmcoef_arr = 1.84e-6  # m^2/s
 nstp = 1
 transport_stp_len = 60000  # seconds simulated per transport step (16.66 hr)
 ttsmult = 1.0
+
 # Advection
 mixelm = -1
 percel = 1.0
+
 # Boundary condition (BHE: "Borehole Heat Exchanger")
 # Note: The manuscript is a bit different than the actual model input file. In
 #       the manuscript, it states, "The BHE for the 3D scenarios is
@@ -185,137 +196,15 @@ percel = 1.0
 #       layers 6 and 8 as stated in the text.
 ssm_bhe = [[7 - 1, 42 - 1, 22 - 1, -1.434e-5, 15]]
 mf6_bhe = [[(7 - 1, 42 - 1, 22 - 1), -1.434e-5]]
+
 # Reactive transport related terms
 isothm = 1  # sorption type; 1=linear isotherm (equilibrium controlled)
 sp2 = 2.0  # w/ isothm = 1 this is read but not used
 rhob = 1.7  # g/cm^3
 sp1 = 0.176  # cm^3/g  (Kd: "Distribution coefficient")
+
 # Transport observations
-cobs = [
-    [7 - 1, 42 - 1, 22 - 1],
-    [7 - 1, 42 - 1, 23 - 1],
-    [7 - 1, 42 - 1, 24 - 1],
-    [7 - 1, 42 - 1, 25 - 1],
-    [7 - 1, 42 - 1, 26 - 1],
-    [7 - 1, 42 - 1, 27 - 1],
-    [7 - 1, 42 - 1, 28 - 1],
-    [7 - 1, 42 - 1, 29 - 1],
-    [7 - 1, 42 - 1, 30 - 1],
-    [7 - 1, 42 - 1, 31 - 1],
-    [7 - 1, 42 - 1, 32 - 1],
-    [7 - 1, 42 - 1, 33 - 1],
-    [7 - 1, 42 - 1, 34 - 1],
-    [7 - 1, 42 - 1, 35 - 1],
-    [7 - 1, 42 - 1, 36 - 1],
-    [7 - 1, 42 - 1, 37 - 1],
-    [7 - 1, 42 - 1, 38 - 1],
-    [7 - 1, 42 - 1, 39 - 1],
-    [7 - 1, 42 - 1, 40 - 1],
-    [7 - 1, 42 - 1, 41 - 1],
-    [7 - 1, 42 - 1, 42 - 1],
-    [7 - 1, 42 - 1, 43 - 1],
-    [7 - 1, 42 - 1, 44 - 1],
-    [7 - 1, 42 - 1, 45 - 1],
-    [7 - 1, 42 - 1, 46 - 1],
-    [7 - 1, 42 - 1, 47 - 1],
-    [7 - 1, 42 - 1, 48 - 1],
-    [7 - 1, 42 - 1, 49 - 1],
-    [7 - 1, 42 - 1, 50 - 1],
-    [7 - 1, 42 - 1, 51 - 1],
-    [7 - 1, 42 - 1, 52 - 1],
-    [7 - 1, 42 - 1, 53 - 1],
-    [7 - 1, 42 - 1, 54 - 1],
-    [7 - 1, 42 - 1, 55 - 1],
-    [7 - 1, 42 - 1, 56 - 1],
-    [7 - 1, 42 - 1, 57 - 1],
-    [7 - 1, 42 - 1, 58 - 1],
-    [7 - 1, 42 - 1, 59 - 1],
-    [7 - 1, 42 - 1, 60 - 1],
-    [7 - 1, 42 - 1, 61 - 1],
-    [7 - 1, 42 - 1, 62 - 1],
-    [7 - 1, 42 - 1, 63 - 1],
-    [7 - 1, 42 - 1, 64 - 1],
-    [7 - 1, 42 - 1, 65 - 1],
-    [7 - 1, 42 - 1, 66 - 1],
-    [7 - 1, 42 - 1, 68 - 1],
-    [7 - 1, 42 - 1, 70 - 1],
-    [7 - 1, 42 - 1, 72 - 1],
-    [7 - 1, 42 - 1, 74 - 1],
-    [7 - 1, 42 - 1, 76 - 1],
-    [7 - 1, 42 - 1, 78 - 1],
-    [7 - 1, 42 - 1, 80 - 1],
-    [7 - 1, 42 - 1, 82 - 1],
-    [7 - 1, 42 - 1, 84 - 1],
-    [7 - 1, 42 - 1, 86 - 1],
-    [7 - 1, 42 - 1, 88 - 1],
-    [7 - 1, 42 - 1, 90 - 1],
-    [7 - 1, 42 - 1, 92 - 1],
-    [7 - 1, 42 - 1, 94 - 1],
-    [7 - 1, 42 - 1, 96 - 1],
-    [7 - 1, 42 - 1, 98 - 1],
-    [7 - 1, 42 - 1, 100 - 1],
-    [7 - 1, 42 - 1, 102 - 1],
-    [7 - 1, 42 - 1, 104 - 1],
-    [7 - 1, 42 - 1, 106 - 1],
-    [7 - 1, 42 - 1, 108 - 1],
-    [7 - 1, 42 - 1, 110 - 1],
-    [7 - 1, 42 - 1, 112 - 1],
-    [7 - 1, 42 - 1, 114 - 1],
-    [7 - 1, 42 - 1, 116 - 1],
-    [7 - 1, 42 - 1, 118 - 1],
-    [7 - 1, 42 - 1, 120 - 1],
-    [7 - 1, 42 - 1, 122 - 1],
-    [7 - 1, 42 - 1, 124 - 1],
-    [7 - 1, 42 - 1, 126 - 1],
-    [7 - 1, 42 - 1, 128 - 1],
-    [7 - 1, 42 - 1, 130 - 1],
-    [7 - 1, 42 - 1, 132 - 1],
-    [7 - 1, 42 - 1, 134 - 1],
-    [7 - 1, 42 - 1, 136 - 1],
-    [7 - 1, 42 - 1, 138 - 1],
-    [7 - 1, 42 - 1, 140 - 1],
-    [7 - 1, 42 - 1, 142 - 1],
-    [7 - 1, 42 - 1, 144 - 1],
-    [7 - 1, 42 - 1, 146 - 1],
-    [7 - 1, 42 - 1, 148 - 1],
-    [7 - 1, 42 - 1, 150 - 1],
-    [7 - 1, 42 - 1, 152 - 1],
-    [7 - 1, 42 - 1, 154 - 1],
-    [7 - 1, 42 - 1, 156 - 1],
-    [7 - 1, 42 - 1, 158 - 1],
-    [7 - 1, 42 - 1, 160 - 1],
-    [7 - 1, 42 - 1, 162 - 1],
-    [7 - 1, 42 - 1, 164 - 1],
-    [7 - 1, 42 - 1, 166 - 1],
-    [7 - 1, 42 - 1, 168 - 1],
-    [7 - 1, 42 - 1, 170 - 1],
-    [7 - 1, 42 - 1, 172 - 1],
-    [7 - 1, 42 - 1, 174 - 1],
-    [7 - 1, 42 - 1, 176 - 1],
-    [7 - 1, 42 - 1, 178 - 1],
-    [7 - 1, 42 - 1, 180 - 1],
-    [7 - 1, 42 - 1, 182 - 1],
-    [7 - 1, 42 - 1, 184 - 1],
-    [7 - 1, 42 - 1, 186 - 1],
-    [7 - 1, 42 - 1, 188 - 1],
-    [7 - 1, 42 - 1, 190 - 1],
-    [7 - 1, 42 - 1, 192 - 1],
-    [7 - 1, 42 - 1, 194 - 1],
-    [7 - 1, 42 - 1, 196 - 1],
-    [7 - 1, 42 - 1, 198 - 1],
-    [7 - 1, 42 - 1, 200 - 1],
-    [7 - 1, 42 - 1, 202 - 1],
-    [7 - 1, 42 - 1, 204 - 1],
-    [7 - 1, 42 - 1, 206 - 1],
-    [7 - 1, 42 - 1, 208 - 1],
-    [7 - 1, 42 - 1, 210 - 1],
-    [7 - 1, 42 - 1, 212 - 1],
-    [7 - 1, 42 - 1, 214 - 1],
-    [7 - 1, 42 - 1, 216 - 1],
-    [7 - 1, 42 - 1, 218 - 1],
-    [7 - 1, 42 - 1, 220 - 1],
-    [7 - 1, 42 - 1, 222 - 1],
-]
+cobs = [(7 - 1, 42 - 1, k - 1) for k in range(22, 224, 2)]
 
 # Solver settings
 
@@ -492,8 +381,8 @@ def build_mf6_flow_model(
         # MF6 constant head boundaries:
         chdspd = []
         # Loop through the left & right sides for all layers.
-        for k in np.arange(nlay):
-            for i in np.arange(nrow):
+        for k in range(nlay):
+            for i in range(nrow):
                 # left-most column:
                 #              (l, r,      c),               head, conc
                 chdspd.append([(k, i, 0), strt[k, i, 0], T0])  # left
@@ -901,27 +790,7 @@ def plot_results(
         )
 
         # list of where to draw vertical lines
-        avlines = [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            20,
-            30,
-            40,
-            50,
-            60,
-            70,
-            80,
-            90,
-            100,
-        ]
+        avlines = list(range(10)) + list(range(10, 110, 10))
 
         # fill variables with analytical solutions
         y_ss_anly_sln = ss_sln
@@ -942,11 +811,7 @@ def plot_results(
 
         if ax is None:
             fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
-            ax = fig.add_subplot(
-                1,
-                1,
-                1,
-            )
+            ax = fig.add_subplot(1, 1, 1)
 
         for xc in avlines:
             ax.axvline(x=xc, color="k", linestyle=":", alpha=0.1)
