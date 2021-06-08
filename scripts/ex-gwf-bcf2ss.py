@@ -59,7 +59,7 @@ parameters = {
         "iwetit": 1,
         "ihdwet": 0,
         "linear_acceleration": "cg",
-        "newton": False,
+        "newton": None,
     },
     "ex-gwf-bcf2ss-p02a": {
         "rewet": False,
@@ -67,7 +67,7 @@ parameters = {
         "iwetit": None,
         "ihdwet": None,
         "linear_acceleration": "bicgstab",
-        "newton": True,
+        "newton": "NEWTON",
     },
 }
 
@@ -147,7 +147,7 @@ def build_model(
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
             relaxation_factor=relax,
         )
         gwf = flopy.mf6.ModflowGwf(

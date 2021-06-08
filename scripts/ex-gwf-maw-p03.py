@@ -276,7 +276,7 @@ def build_regional(name):
         outer_dvclose=hclose,
         inner_maximum=ninner,
         inner_dvclose=hclose,
-        rcloserecord=[rclose, "strict"],
+        rcloserecord="{} strict".format(rclose),
     )
     botm = np.arange(-5, aq_bottom - 10.0, -10.0)
     icelltype = [1] + [0 for k in range(1, nlay_r)]
@@ -357,7 +357,7 @@ def build_local(name, simulation):
         outer_dvclose=hclose,
         inner_maximum=ninner,
         inner_dvclose=hclose,
-        rcloserecord=[rclose, "strict"],
+        rcloserecord="{} strict".format(rclose),
     )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
 

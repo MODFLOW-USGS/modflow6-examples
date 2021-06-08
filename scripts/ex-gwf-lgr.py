@@ -554,7 +554,7 @@ def build_model(sim_name, silent=False):
             sim,
             modelname=gwfname,
             save_flows=True,
-            newtonoptions=True,
+            newtonoptions="newton",
             model_nam_file="{}.nam".format(gwfname),
         )
 
@@ -706,7 +706,7 @@ def build_model(sim_name, silent=False):
             sim,
             modelname=gwfnamec,
             save_flows=True,
-            newtonoptions=True,
+            newtonoptions="newton",
             model_nam_file="{}.nam".format(gwfnamec),
         )
 

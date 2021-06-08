@@ -142,7 +142,7 @@ def build_model(name, rate=0.0):
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(

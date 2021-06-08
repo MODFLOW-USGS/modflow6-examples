@@ -152,7 +152,7 @@ def build_model(
         gwf = flopy.mf6.ModflowGwf(
             sim,
             modelname=sim_name,
-            newtonoptions="under_relaxation",
+            newtonoptions="newton under_relaxation",
         )
         flopy.mf6.ModflowGwfdis(
             gwf,
