@@ -44,7 +44,7 @@ time_units = "days"
 
 parameters = {
     "ex-gwf-bump-p01a": {
-        "newton": True,
+        "newton": "newton",
     },
     "ex-gwf-bump-p01b": {
         "rewet": True,
@@ -54,7 +54,7 @@ parameters = {
         "wetdry": 2.0,
     },
     "ex-gwf-bump-p01c": {
-        "newton": True,
+        "newton": "newton",
         "cylindrical": True,
     },
 }
@@ -140,7 +140,7 @@ def build_model(
         )
         if newton:
             linear_acceleration = "bicgstab"
-            newtonoptions = "under_relaxation"
+            newtonoptions = "newton under_relaxation"
         else:
             linear_acceleration = "cg"
             newtonoptions = None

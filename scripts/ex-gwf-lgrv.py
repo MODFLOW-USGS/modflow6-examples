@@ -221,7 +221,7 @@ def build_lgr_model(sim_name):
         outer_dvclose=hclose,
         inner_maximum=ninner,
         inner_dvclose=hclose,
-        rcloserecord=[rclose, "strict"],
+        rcloserecord="{} strict".format(rclose),
     )
 
     # parent model with coarse grid
@@ -347,7 +347,7 @@ def build_model(
                 outer_dvclose=hclose,
                 inner_maximum=ninner,
                 inner_dvclose=hclose,
-                rcloserecord=[rclose, "strict"],
+                rcloserecord="{} strict".format(rclose),
             )
         if modelname is None:
             modelname = sim_name

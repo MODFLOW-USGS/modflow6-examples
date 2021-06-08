@@ -147,10 +147,10 @@ def build_model():
             inner_maximum=ninner,
             inner_dvclose=hclose,
             relaxation_factor=relax,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True,
-                                   newtonoptions="")
+                                   newtonoptions="newton")
         flopy.mf6.ModflowGwfdis(
             gwf,
             length_units=length_units,

@@ -111,9 +111,9 @@ def build_model(H2=1.0):
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="")
+        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
         flopy.mf6.ModflowGwfdis(
             gwf,
             length_units=length_units,

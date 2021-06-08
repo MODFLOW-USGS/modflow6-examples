@@ -44,7 +44,7 @@ time_units = "days"
 
 parameters = {
     "ex-gwf-nwt-p02a": {
-        "newton": True,
+        "newton": "newton",
     },
     "ex-gwf-nwt-p02b": {
         "rewet": True,
@@ -139,7 +139,7 @@ def build_model(
             sim, nper=nper, perioddata=tdis_ds, time_units=time_units
         )
         if newton:
-            newtonoptions = " "
+            newtonoptions="newton"
             no_ptc = "ALL"
             complexity = "complex"
         else:

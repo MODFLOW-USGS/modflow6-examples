@@ -347,7 +347,7 @@ def build_model(sim_name, silent=False):
             sim,
             modelname=gwfname,
             save_flows=True,
-            newtonoptions=True,
+            newtonoptions="newton",
             model_nam_file="{}.nam".format(gwfname),
         )
 
@@ -364,7 +364,7 @@ def build_model(sim_name, silent=False):
             under_relaxation_gamma=0.05,
             under_relaxation_momentum=0.0,
             inner_dvclose=hclose,
-            rcloserecord=[1000.0, "strict"],
+            rcloserecord="1000.0 strict",
             inner_maximum=ninner,
             relaxation_factor=relax,
             number_orthogonalizations=2,
