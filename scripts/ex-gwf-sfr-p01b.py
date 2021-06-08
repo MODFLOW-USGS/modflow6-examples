@@ -3776,7 +3776,7 @@ def build_model():
             backtracking_reduction_factor=0.2,
             backtracking_residual_limit=5.0e-4,
             inner_dvclose=1.0e-5,
-            rcloserecord=[0.0001, "relative_rclose"],
+            rcloserecord="0.0001 relative_rclose",
             inner_maximum=100,
             relaxation_factor=0.0,
             number_orthogonalizations=2,
@@ -3784,7 +3784,7 @@ def build_model():
             preconditioner_drop_tolerance=0.001,
         )
         gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="", save_flows=True
+            sim, modelname=sim_name, newtonoptions="NEWTON", save_flows=True
         )
         flopy.mf6.ModflowGwfdis(
             gwf,

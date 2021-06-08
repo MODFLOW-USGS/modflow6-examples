@@ -52,7 +52,9 @@ top = 500.0  # Top of the model ($ft$)
 botm_str = "107., 97., 87., 77., 67."  # Bottom elevations ($ft$)
 strt = 115.0  # Starting head ($ft$)
 k11 = 30.0  # Horizontal hydraulic conductivity ($ft/d$)
-k33_str = "1179., 30., 30., 30., 30."  # Vertical hydraulic conductivity ($ft/d$)
+k33_str = (
+    "1179., 30., 30., 30., 30."  # Vertical hydraulic conductivity ($ft/d$)
+)
 ss = 3e-4  # Specific storage ($1/d$)
 sy = 0.2  # Specific yield (unitless)
 H1 = 160.0  # Constant head on left side of model ($ft$)
@@ -133,7 +135,7 @@ idomain = [idomain0, idomain1, 1, 1, 1]
 # create linearly varying evapotranspiration surface
 
 xlen = delr.sum() - 0.5 * (delr[0] + delr[-1])
-x = 0.
+x = 0.0
 s1d = H1 * np.ones(ncol, dtype=float)
 for idx in range(1, ncol):
     x += 0.5 * (delr[idx - 1] + delr[idx])
@@ -252,10 +254,10 @@ def build_model():
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
         gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="", save_flows=True
+            sim, modelname=sim_name, newtonoptions="NEWTON", save_flows=True
         )
         flopy.mf6.ModflowGwfdis(
             gwf,

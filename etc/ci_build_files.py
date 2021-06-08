@@ -19,8 +19,11 @@ os.makedirs(pth, exist_ok=True)
 
 # run all of the scripts
 pth = os.path.join("..", "scripts")
-scripts = [file_name for file_name in sorted(os.listdir(pth)) if
-           file_name.endswith(".py") and file_name.startswith("ex-")]
+scripts = [
+    file_name
+    for file_name in sorted(os.listdir(pth))
+    if file_name.endswith(".py") and file_name.startswith("ex-")
+]
 for s in scripts:
     args = ["python", s]
     if not run:

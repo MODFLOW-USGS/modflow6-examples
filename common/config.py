@@ -37,7 +37,7 @@ def is_notebook():
 
 # common figure settings
 figure_ext = ".png"
-plt.rcParams['image.cmap'] = "jet_r"
+plt.rcParams["image.cmap"] = "jet_r"
 
 # parse command line arguments
 if is_notebook():
@@ -58,7 +58,9 @@ else:
                 extension = sys.argv[idx + 1]
                 if not extension.startswith("."):
                     extension = "." + extension
-                figure_exts = tuple(plt.gcf().canvas.get_supported_filetypes().keys())
+                figure_exts = tuple(
+                    plt.gcf().canvas.get_supported_filetypes().keys()
+                )
                 if extension.lower() in figure_exts:
                     figure_ext = extension
 
@@ -85,4 +87,4 @@ mf2005_exe = os.path.abspath(os.path.join("..", "bin", "mf2005" + eext))
 mf2005dbl_exe = os.path.abspath(os.path.join("..", "bin", "mf2005dbl" + eext))
 mfnwt_exe = os.path.abspath(os.path.join("..", "bin", "mfnwt" + eext))
 mt3dms_exe = os.path.abspath(os.path.join("..", "bin", "mt3dms" + eext))
-mt3dusgs_exe = os.path.abspath(os.path.join("..", "bin", "mt3dusgs" + eext))   
+mt3dusgs_exe = os.path.abspath(os.path.join("..", "bin", "mt3dusgs" + eext))

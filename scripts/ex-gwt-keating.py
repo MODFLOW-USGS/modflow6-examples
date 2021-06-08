@@ -133,7 +133,7 @@ def build_mf6gwf(sim_folder):
         backtracking_reduction_factor=0.2,
         backtracking_residual_limit=5.0e-4,
         inner_dvclose=1.0e-5,
-        rcloserecord=[0.0001, "relative_rclose"],
+        rcloserecord="0.0001 relative_rclose",
         inner_maximum=100,
         relaxation_factor=0.0,
         number_orthogonalizations=2,
@@ -141,7 +141,10 @@ def build_mf6gwf(sim_folder):
         preconditioner_drop_tolerance=0.001,
     )
     gwf = flopy.mf6.ModflowGwf(
-        sim, modelname=name, save_flows=True, newtonoptions=["newton"]
+        sim,
+        modelname=name,
+        save_flows=True,
+        newtonoptions="newton",
     )
     flopy.mf6.ModflowGwfdis(
         gwf,
@@ -211,7 +214,7 @@ def build_mf6gwt(sim_folder):
         outer_maximum=100,
         under_relaxation="none",
         linear_acceleration="BICGSTAB",
-        rcloserecord=[1000.0, "strict"],
+        rcloserecord="1000.0 strict",
         inner_maximum=20,
         inner_dvclose=1.0e-4,
         relaxation_factor=0.0,

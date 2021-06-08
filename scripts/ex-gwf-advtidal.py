@@ -85,13 +85,31 @@ icelltype = [int(value) for value in icelltype_str.split(",")]
 # shapely is used to construct recharge zones
 #
 recharge_zone_1 = Polygon(
-    shell=[(0, 0), (3000, 0), (3000, 5500), (1000, 7500), (0, 7500), (0, 0),],
+    shell=[
+        (0, 0),
+        (3000, 0),
+        (3000, 5500),
+        (1000, 7500),
+        (0, 7500),
+        (0, 0),
+    ],
 )
 recharge_zone_2 = Polygon(
-    shell=[(1000, 7500), (3000, 5500), (5000, 7500), (1000, 7500),],
+    shell=[
+        (1000, 7500),
+        (3000, 5500),
+        (5000, 7500),
+        (1000, 7500),
+    ],
 )
 recharge_zone_3 = Polygon(
-    shell=[(3000, 0), (5000, 0), (5000, 7500), (3000, 5500), (3000, 0),],
+    shell=[
+        (3000, 0),
+        (5000, 0),
+        (5000, 7500),
+        (3000, 5500),
+        (3000, 0),
+    ],
 )
 
 # Solver parameters
@@ -135,7 +153,7 @@ def build_model():
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
@@ -248,7 +266,9 @@ def build_model():
         )
         fname = os.path.join(config.data_ws, sim_name, "riverstage.csv")
         tsdict = get_timeseries(
-            fname, ["river_stage_1", "river_stage_2"], ["linear", "stepwise"],
+            fname,
+            ["river_stage_1", "river_stage_2"],
+            ["linear", "stepwise"],
         )
         flopy.mf6.ModflowGwfriv(
             gwf,

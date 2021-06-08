@@ -39,8 +39,12 @@ ws = config.base_ws
 # Scenario parameters - make sure there is at least one blank line before next item
 
 parameters = {
-    "ex-gwt-henry-a": {"inflow": 5.7024,},
-    "ex-gwt-henry-b": {"inflow": 2.851,},
+    "ex-gwt-henry-a": {
+        "inflow": 5.7024,
+    },
+    "ex-gwt-henry-b": {
+        "inflow": 2.851,
+    },
 }
 
 # Scenario parameter units - make sure there is at least one blank line before next item

@@ -139,7 +139,7 @@ def build_model(
             sim, nper=nper, perioddata=tdis_ds, time_units=time_units
         )
         if newton:
-            newtonoptions = " "
+            newtonoptions = "NEWTON"
             no_ptc = "ALL"
             complexity = "complex"
         else:

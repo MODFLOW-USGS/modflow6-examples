@@ -70,9 +70,15 @@ k33_str = "0.4, 0.4, 0.01, 0.4"  # Vertical hydraulic conductivity ($m/d$)
 sy_str = "0.3, 0.3, 0.4, 0.3"  # Specific yield (unitless)
 gammaw = 9806.65  # Compressibility of water (Newtons/($m^3$)
 beta = 4.6612e-10  # Specific gravity of water (1/$Pa$)
-sgm_str = "1.77, 1.77, 1.60, 1.77"  # Specific gravity of moist soils (unitless)
-sgs_str = "2.06, 2.05, 1.94, 2.06"  # Specific gravity of saturated soils (unitless)
-cg_theta_str = "0.32, 0.32, 0.45, 0.32"  # Coarse-grained material porosity (unitless)
+sgm_str = (
+    "1.77, 1.77, 1.60, 1.77"  # Specific gravity of moist soils (unitless)
+)
+sgs_str = (
+    "2.06, 2.05, 1.94, 2.06"  # Specific gravity of saturated soils (unitless)
+)
+cg_theta_str = (
+    "0.32, 0.32, 0.45, 0.32"  # Coarse-grained material porosity (unitless)
+)
 cg_ske_str = "0.005, 0.005, 0.01, 0.005"  # Elastic specific storage ($1/m$)
 ib_thick_str = "45., 70., 50., 90."  # Interbed thickness ($m$)
 ib_theta = 0.45  # Interbed initial porosity (unitless)
@@ -201,10 +207,13 @@ def build_model():
             inner_maximum=ninner,
             inner_dvclose=hclose,
             relaxation_factor=relax,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
         gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, save_flows=True, newtonoptions=""
+            sim,
+            modelname=sim_name,
+            save_flows=True,
+            newtonoptions="NEWTON",
         )
         flopy.mf6.ModflowGwfdis(
             gwf,
@@ -368,6 +377,7 @@ def run_model(sim, silent=True):
 
 
 # Function to get csub observations
+
 
 def get_csub_observations(sim):
     name = sim.name
@@ -894,6 +904,8 @@ def simulation(silent=True):
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     simulation()
+
+
 # nosetest end
 
 if __name__ == "__main__":

@@ -72,6 +72,7 @@ botm = [float(value) for value in botm_str.split(",")]
 
 # create the disv grid
 
+
 def from_argus_export(fname):
     f = open(fname, "r")
     line = f.readline()
@@ -148,7 +149,7 @@ def build_model(sim_name):
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdisv(
@@ -189,7 +190,9 @@ def build_model(sim_name):
         ]
         ghb_spd = {0: ghb_spd}
         flopy.mf6.ModflowGwfghb(
-            gwf, stress_period_data=ghb_spd, pname="GHB",
+            gwf,
+            stress_period_data=ghb_spd,
+            pname="GHB",
         )
 
         ncpl = gridprops["ncpl"]
@@ -284,7 +287,9 @@ def plot_head(idx, sim):
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
     cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
     pmv.plot_specific_discharge(
-        spdis, normalize=False, color="0.75",
+        spdis,
+        normalize=False,
+        color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")
@@ -296,7 +301,9 @@ def plot_head(idx, sim):
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
     cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
     pmv.plot_specific_discharge(
-        spdis, normalize=False, color="0.75",
+        spdis,
+        normalize=False,
+        color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")

@@ -6,8 +6,11 @@ import matplotlib.pyplot as plt
 
 class USGSFigure:
     def __init__(
-            self, figure_type="map", family="Arial Narrow", font_path=None,
-            verbose=False
+        self,
+        figure_type="map",
+        family="Arial Narrow",
+        font_path=None,
+        verbose=False,
     ):
         """Create a USGSFigure object
 
@@ -121,7 +124,9 @@ class USGSFigure:
         leg.set_title(title, prop=font)
         return leg
 
-    def heading(self, ax=None, letter=None, heading=None, x=0.00, y=1.01, idx=None):
+    def heading(
+        self, ax=None, letter=None, heading=None, x=0.00, y=1.01, idx=None
+    ):
         """Add a USGS-style heading to a matplotlib axis object
 
         Parameters
@@ -192,18 +197,18 @@ class USGSFigure:
         return text
 
     def add_text(
-            self,
-            ax=None,
-            text="",
-            x=0.0,
-            y=0.0,
-            transform=True,
-            bold=True,
-            italic=True,
-            fontsize=9,
-            ha="left",
-            va="bottom",
-            **kwargs
+        self,
+        ax=None,
+        text="",
+        x=0.0,
+        y=0.0,
+        transform=True,
+        bold=True,
+        italic=True,
+        fontsize=9,
+        ha="left",
+        va="bottom",
+        **kwargs
     ):
         """Add USGS-style text to a axis object
 
@@ -251,22 +256,29 @@ class USGSFigure:
         font = self._set_fontspec(bold=bold, italic=italic, fontsize=fontsize)
 
         text_obj = ax.text(
-            x, y, text, va=va, ha=ha, fontdict=font, transform=transform, **kwargs
+            x,
+            y,
+            text,
+            va=va,
+            ha=ha,
+            fontdict=font,
+            transform=transform,
+            **kwargs
         )
         return text_obj
 
     def add_annotation(
-            self,
-            ax=None,
-            text="",
-            xy=None,
-            xytext=None,
-            bold=True,
-            italic=True,
-            fontsize=9,
-            ha="left",
-            va="bottom",
-            **kwargs
+        self,
+        ax=None,
+        text="",
+        xy=None,
+        xytext=None,
+        bold=True,
+        italic=True,
+        fontsize=9,
+        ha="left",
+        va="bottom",
+        **kwargs
     ):
         """Add an annotation to a axis object
 

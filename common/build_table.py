@@ -1,5 +1,6 @@
 import os
 
+
 def build_table(caption, fpth, arr, headings=None, col_widths=None):
     if headings is None:
         headings = arr.dtype.names
@@ -29,7 +30,10 @@ def build_table(caption, fpth, arr, headings=None, col_widths=None):
 
     return
 
-def get_header(caption, label, headings, col_widths=None, center=True, firsthead=False):
+
+def get_header(
+    caption, label, headings, col_widths=None, center=True, firsthead=False
+):
     ncol = len(headings)
     if col_widths is None:
         dx = 0.8 / float(ncol)
@@ -42,39 +46,43 @@ def get_header(caption, label, headings, col_widths=None, center=True, firsthead
     header = "\\small\n"
     header += "\\begin{longtable}[!htbp]{\n"
     for col_width in col_widths:
-        header += 38 * " " + \
-                  "{}".format(align) + \
-                  "{{{}\\linewidth-2\\arraycolsep}}\n".format(col_width)
+        header += (
+            38 * " "
+            + "{}".format(align)
+            + "{{{}\\linewidth-2\\arraycolsep}}\n".format(col_width)
+        )
     header += 38 * " " + "}\n"
     header += "\t\\caption{{{}}} \\label{{{}}} \\\\\n\n".format(caption, label)
 
     if firsthead:
         header += "\t\\hline \\hline\n"
-        header +=  "\t\\rowcolor{Gray}\n"
+        header += "\t\\rowcolor{Gray}\n"
         header += "\t"
         for idx, s in enumerate(headings):
             header += "\\textbf{{{}}}".format(s)
             if idx < len(headings) - 1:
                 header += " & "
         header += "  \\\\\n"
-        header +=  "\t\\hline\n"
-        header +=  "\t\\endfirsthead\n\n"
+        header += "\t\\hline\n"
+        header += "\t\\endfirsthead\n\n"
 
     header += "\t\\hline \\hline\n"
-    header +=  "\t\\rowcolor{Gray}\n"
+    header += "\t\\rowcolor{Gray}\n"
     header += "\t"
     for idx, s in enumerate(headings):
         header += "\\textbf{{{}}}".format(s)
         if idx < len(headings) - 1:
             header += " & "
     header += "  \\\\\n"
-    header +=  "\t\\hline\n"
-    header +=  "\t\\endhead\n\n"
+    header += "\t\\hline\n"
+    header += "\t\\endhead\n\n"
 
     return header
 
+
 def get_footer():
     return "\t\\hline \\hline\n\\end{longtable}\n\\normalsize\n\n"
+
 
 def exp_format(v):
     s = "{:.2e}".format(v)
@@ -83,8 +91,10 @@ def exp_format(v):
     # s = s.replace("e", " \\times 10^{") + "}$"
     return s
 
+
 def float_format(v, fmt="{:.2f}"):
     return fmt.format(v)
+
 
 def int_format(v):
     return "{:d}".format(v)

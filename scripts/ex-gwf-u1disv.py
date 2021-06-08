@@ -42,8 +42,12 @@ time_units = "days"
 # Scenario parameters
 
 parameters = {
-    "ex-gwf-u1disv": {"xt3d": False,},
-    "ex-gwf-u1disv-x": {"xt3d": True,},
+    "ex-gwf-u1disv": {
+        "xt3d": False,
+    },
+    "ex-gwf-u1disv-x": {
+        "xt3d": True,
+    },
 }
 
 # Table USG1DISV Model Parameters
@@ -129,7 +133,7 @@ def build_model(sim_name, xt3d):
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord=[rclose, "strict"],
+            rcloserecord="{} strict".format(rclose),
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdisv(
@@ -280,7 +284,9 @@ def plot_head(idx, sim):
     pmv.plot_grid()
     cb = pmv.plot_array(head, cmap="jet")
     pmv.plot_specific_discharge(
-        spdis, normalize=False, color="0.75",
+        spdis,
+        normalize=False,
+        color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")

@@ -140,7 +140,7 @@ def build_model(
         )
         if newton:
             linear_acceleration = "bicgstab"
-            newtonoptions = "under_relaxation"
+            newtonoptions = "newton under_relaxation"
         else:
             linear_acceleration = "cg"
             newtonoptions = None
