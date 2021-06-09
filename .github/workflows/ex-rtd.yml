@@ -61,10 +61,14 @@ jobs:
 
       - name: Install Python 3.8 packages
         run: |
-          python -m pip install --upgrade pip
-          pip install wheel
-          pip install -r etc/requirements.pip.txt
-          pip install -r etc/requirements.usgs.txt
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.pip.txt
+          pip install -r requirements.usgs.txt
+        working-directory: ${{env.etc-directory}}
+
+      - name: Install ipython and ipython kernel
+        run: |
+          pip install ipython ipykernel
 
       - name: Run get_exes script
         run: |

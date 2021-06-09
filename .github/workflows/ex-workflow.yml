@@ -17,6 +17,9 @@ jobs:
     env:
       script-directory: scripts
       etc-directory: etc
+    defaults:
+      run:
+        shell: bash -l {0}
 
     steps:
       - name: Checkout MODFLOW6 examples repo
@@ -37,7 +40,6 @@ jobs:
           sudo ln -fs /usr/bin/g++-10 /usr/local/bin/g++
 
       - name: Install TeX Live and additional TrueType fonts
-        shell: bash
         run: |
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
@@ -47,37 +49,31 @@ jobs:
           python-version: 3.8
 
       - name: Print python version
-        shell: bash
         run: |
           python --version
 
       - name: Install Python 3.8 packages
-        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          pip install wheel
-          pip install -r etc/requirements.pip.txt
-          pip install -r etc/requirements.usgs.txt
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.pip.txt
+          pip install -r requirements.usgs.txt
+        working-directory: ${{env.etc-directory}}
 
       - name: Run get_exes script
-        shell: bash
         run: |
           python ci_get_exes.py
         working-directory: ${{env.etc-directory}}
 
       - name: List executables
-        shell: bash
         run: |
           ls -l ./bin/
 
       - name: Run scripts without model runs and zip input files
-        shell: bash
         run: |
           python ci_build_files.py --zip
         working-directory: ${{env.etc-directory}}
 
       - name: Run scripts plus processing script
-        shell: bash
         run: |
           nosetests -v --with-id --with-timer ex-*
           python process-scripts.py
@@ -114,7 +110,6 @@ jobs:
                       print(stderr)
 
       - name: Rename and move the LaTeX document
-        shell: bash
         run: |
           ls -l ./doc/
           mv ./doc/mf6examples.pdf mf6examples.pdf
@@ -166,13 +161,11 @@ jobs:
           path: ./current/
 
       - name: List files in the artifact directory
-        shell: bash
         run: |
           pwd
           ls -l ./current/
 
       - name: create bodyFile
-        shell: bash
         run: |
           echo "MODFLOW 6 examples: built "${F_TIME} > bodyFile
           cat bodyFile
