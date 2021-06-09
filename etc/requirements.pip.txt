@@ -15,5 +15,6 @@ fiona
 descartes
 pyproj
 shapely
+ipykernel
 jupyter
 jupytext
