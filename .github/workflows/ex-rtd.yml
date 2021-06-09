@@ -50,25 +50,20 @@ jobs:
           sudo tar xvzf pandoc-2.11.2-linux-amd64.tar.gz --strip-components=1 -C /usr/local
           pandoc --version
 
-      - name: Setup Python 3.8
-        uses: actions/setup-python@v2.2.2
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2.1.1
         with:
           python-version: 3.8
+          mamba-version: "*"
+          auto-update-conda: true
+          activate-environment: mf6ex
+          use-only-tar-bz2: true
 
-      - name: Print python version
+      - name: Add packages to mf6ex environment using mamba and pip
         run: |
-          python --version
-
-      - name: Install Python 3.8 packages
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install -r requirements.pip.txt
+          mamba env update --name mf6ex --file dependencies.yml
           pip install -r requirements.usgs.txt
         working-directory: ${{env.etc-directory}}
-
-      - name: Install ipython and ipython kernel
-        run: |
-          pip install ipython ipykernel
 
       - name: Run get_exes script
         run: |
