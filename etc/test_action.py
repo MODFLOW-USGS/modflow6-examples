@@ -9,28 +9,13 @@ starting_dir = os.getcwd()
 os.chdir("..")
 
 # Get executables
-pth = os.path.join("bin")
-if not os.path.isdir(pth):
-    os.makedirs(pth)
-pymake.getmfexes(pth, verbose=True)
-
-# Replace MODFLOW 6 executables with the latest versions
-osname = sys.platform.lower()
-if osname == "win32":
-    key = "win64.zip"
-elif osname == "darwin":
-    key = "mac.zip"
-elif osname == "linux":
-    key = "linux.zip"
-url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")[key]
-pymake.download_and_unzip(url, "bin", verbose=True)
-# local copy (put your own path here)
-pth = "/Users/jdhughes/Documents/Development/modflow6_git/modflow6_fork/bin/"
-files = [file_name for file_name in os.listdir(pth) if not file_name.endswith(".exe")]
-for f in files:
-    src = os.path.join(pth, f)
-    dst = os.path.join("bin", f)
-    shutil.copyfile(src, dst)
+args = ("python", "etc/ci_get_exes.py")
+proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=".")
+stdout, stderr = proc.communicate()
+if stdout:
+    print(stdout.decode("utf-8"))
+if stderr:
+    print("Errors:\n{}".format(stderr.decode("utf-8")))
 
 # clean up examples directory - just for local runs
 expth = os.path.join("examples")
