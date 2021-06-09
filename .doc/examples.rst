@@ -39,10 +39,8 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-moc3d-p01.rst
    _examples/ex-gwt-moc3d-p02.rst
    _examples/ex-gwt-moc3d-p02tg.rst
-   _examples/ex-gwt-mt3dsupp631.rst
-   _examples/ex-gwt-mt3dsupp632.rst
-   _examples/ex-gwt-mt3dsupp82.rst
    _examples/ex-gwt-mt3dms-p01.rst
+   _examples/ex-gwt-mt3dms-p02.rst
    _examples/ex-gwt-mt3dms-p03.rst
    _examples/ex-gwt-mt3dms-p04.rst
    _examples/ex-gwt-mt3dms-p05.rst
@@ -51,8 +49,12 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-mt3dms-p08.rst
    _examples/ex-gwt-mt3dms-p09.rst
    _examples/ex-gwt-mt3dms-p10.rst
+   _examples/ex-gwt-mt3dsupp631.rst
+   _examples/ex-gwt-mt3dsupp632.rst
+   _examples/ex-gwt-mt3dsupp82.rst
    _examples/ex-gwt-prudic2004t2.rst
    _examples/ex-gwt-uzt-2d.rst
    _examples/ex-gwt-henry.rst
    _examples/ex-gwt-saltlake.rst
    _examples/ex-gwt-rotate.rst
+   _examples/ex-gwt-hecht-mendez.rst
