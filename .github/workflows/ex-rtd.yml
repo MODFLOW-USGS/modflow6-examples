@@ -11,9 +11,12 @@ on:
 jobs:
   rtd_build:
     name: rtd-build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+    env:
+      script-directory: scripts
+      etc-directory: etc
 
     if: github.repository_owner == 'MODFLOW-USGS'
     steps:
@@ -46,85 +49,57 @@ jobs:
           sudo tar xvzf pandoc-2.11.2-linux-amd64.tar.gz --strip-components=1 -C /usr/local
           pandoc --version
 
-      - name: Cache Miniconda
-        uses: actions/cache@v2.1.3
-        env:
-          # Increase this value to reset cache if dependencies.yml has changed
-          CACHE_NUMBER: 0
+      - name: Setup Python 3.8
+        uses: actions/setup-python@v2.2.2
         with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-${{ matrix.python-version }}-${{ matrix.run-type }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('etc/dependencies.yml') }}
-
-      # Standard python fails on windows without GDAL installation
-      # Using custom bash shell ("shell: bash -l {0}") with Miniconda
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2.0.0
-        with:
-          python-version: ${{ matrix.python-version }}
-          mamba-version: "*"
-          channels: conda-forge
-          auto-update-conda: true
-          activate-environment: mf6ex
-          use-only-tar-bz2: true
+          python-version: 3.8
 
       - name: Print python version
-        shell: bash -l {0}
         run: |
           python --version
 
-      - name: Add packages to mf6ex environment using mamba and pip
-        shell: bash -l {0}
+      - name: Install Python 3.8 packages
+        shell: bash
         run: |
-          mamba env update --name mf6ex --file etc/dependencies.yml
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install -r etc/requirements.pip.txt
           pip install -r etc/requirements.usgs.txt
 
       - name: Run get_exes script
-        shell: bash -l {0}
         run: |
-          cd ./etc/
           python ci_get_exes.py
-          cd ..
+        working-directory: ${{env.etc-directory}}
 
       - name: Run scripts to build model files
-        shell: bash -l {0}
         run: |
-          cd ./etc/
           python ci_build_files.py
-          cd ..
+        working-directory: ${{env.etc-directory}}
 
       - name: Run processing script
-        shell: bash -l {0}
         run: |
-          cd ./scripts/
           python process-scripts.py
-          cd ..
+        working-directory: ${{env.script-directory}}
 
       - name: Run notebooks with jupytext for ReadtheDocs
-        shell: bash -l {0}
         run: |
-          cd ./etc/
           python ci_run_notebooks.py
-          cd ..
+        working-directory: ${{env.etc-directory}}
 
       - name: Create package tables and examples.rst for ReadtheDocs
-        shell: bash -l {0}
         run: |
-          cd ./etc/
           python ci_create_examples_rst.py
-          cd ..
+        working-directory: ${{env.etc-directory}}
 
       - name: List example rst files for ReadtheDocs
-        shell: bash
         run: |
           ls -l .doc/_examples/
 
       - name: List example image files for ReadtheDocs
-        shell: bash
         run: |
           ls -l .doc/_images/
 
       - name: List example notebook files for ReadtheDocs
-        shell: bash
         run: |
           ls -l .doc/_notebooks/
 
@@ -144,7 +119,7 @@ jobs:
   rtd_trigger:
     name: rtd-trigger
     needs: rtd_build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
