@@ -22,3 +22,8 @@ Online documentation for creating these examples with python and flopy is automa
 * [MODFLOW 6 binary executables for Windows, Mac, and Linux](https://github.com/MODFLOW-USGS/modflow6-nightly-build/releases)
 * [MODFLOW 6 Repository](https://github.com/MODFLOW-USGS/modflow6)
 * [Binary executables for MODFLOW and other related programs that may be required to run these examples](https://github.com/MODFLOW-USGS/executables)
+
+# Issues
+
+Any issues with the MODFLOW 6 example problems should be posted on the main [MODFLOW 6 GitHub repo](https://github.com/MODFLOW-USGS/modflow6) and flagged with the [examples](https://github.com/MODFLOW-USGS/modflow6/labels/examples) label.
+
