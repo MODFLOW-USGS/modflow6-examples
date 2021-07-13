@@ -1,0 +1,115 @@
+\section{Capture Fraction Analysis}
+
+All groundwater pumped is balanced by removal of water somewhere, initially from storage in the aquifer and later from capture in the form of increase in recharge and decrease in discharge \citep{leake2010new}. Capture that results in a loss of water in streams, rivers, and wetlands now is a concern in many parts of the United States. Hydrologists commonly use analytical and numerical approaches to study temporal variations in sources of water to wells for select points of interest. Much can be learned about coupled surface/groundwater systems, however, by looking at the spatial distribution of theoretical capture for select times of interest. Development of maps of capture requires (1) a reasonably well-constructed transient or steady state model of an aquifer with head-dependent flow boundaries representing surface water features or evapotranspiration and (2) an automated procedure to run the model repeatedly and extract results, each time with a well in a different cell to evaluate the effect of a flux in a cell on an external boundary condition.
+
+% Describe source of problem
+This example presents a streamflow capture analysis of the hypothetical aquifer system of \cite{freyberg1988exercise} and based on the model datasets presented in \cite{hunt2020revisiting}. The original problem of \cite{freyberg1988exercise} documented an exercise where graduate students calibrated a groundwater model and then used it to make forecasts.
+
+
+\subsection{Example Description}
+
+% spatial discretization  and temporal discretization
+A single-layer was used to simulate a shallow, water-table aquifer. The aquifer is surrounded by no-flow boundaries on the bottom and north-east-west sides (fig.~\ref{fig:ex-gwf-capture-01}). There is an outcrop area within the grid, where the water-table aquifer is missing. The aquifer is discretized using 40 rows and 20 columns (250 m on a side). A single steady-state stress period, with a single time step, was simulated. An arbitrary simulation period of 1 day was simulated. Model parameters for the example are summarized in table~\ref{tab:ex-gwf-capture-01}. 
+
+The top of the model was set at an arbitrary elevation of 200 $m$ (table~\ref{tab:ex-gwf-capture-01}). The bottom elevations were not uniform; the aquifer was relatively flat on the east side and sloped gently to the south and west sides \citep[see][fig.~1b]{hunt2020revisiting}. In the western area, and southeastern and southwestern corners of the aquifer, the impermeable bottom elevation was higher making for no-flow outcrop areas within the grid. 
+
+
+\begin{StandardFigure}{
+                                     Diagram showing the model domain and the simulated streamflow capture fraction. The location of river cells, constant head cells, and wells are also shown.
+                                     }{fig:ex-gwf-capture-01}{../figures/ex-gwf-capture-01.png}
+\end{StandardFigure}                                 
+
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-capture-01}
+
+
+% material properties
+Hydraulic conductivity (K) consisted of six zones  \citep[see][fig.~1c]{hunt2020revisiting} with relatively small changes among them; areas of higher values of K were along the north, east and west boundaries, and adjacent to the western outcrop; K was lower in the south.
+
+% initial conditions and boundary conditions
+An initial head of 45 $m$ is specified in each model cell. Flow into the system is from infiltration from precipitation and was represented using the recharge (RCH) package. A constant recharge rate of $1 \times 10^{-9}$ $m/s$ was specified for every active cell in the aquifer. A stream represented by river (RIV) package cells in column 15 in every row in the model and have river stages ranging from 20.1 $m$ in row 1 to 11.25 $m$ in row 40, a conductance of 0.05 $m^2/s$, and bottom elevations ranging from 20 $m$ in row 1 to 10.25 $m$ in row 40 (fig.~\ref{fig:ex-gwf-capture-01}). River cells discharge groundwater from the model in every cells except river cells in row 9 and 10, which are a source of water for the model. Additional discharge of groundwater out of the model is from discharging wells represented by well (WEL) package cells and specified head cells. There are six pumping wells (fig.~\ref{fig:ex-gwf-capture-01}) with a total withdrawal rate of 22.05 $m^3/s$. Heads are specified to be constant on the southern boundary in all active cells in row 40 and range from 16.9 $m$ in column 6 to 11.4 $m$ in column 15.
+
+The Newton-Raphson formulation and Newton-Raphson under-relaxation were used to improve model convergence.
+
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The capture fraction analysis was performed using the \MF Application Program Interface (API). The \mfapi is used because the capture fraction for each cell can be calculated without regenerating the input files and running the model for each cell perturbed with an additional flux term. The \mfapi also allows the capture fraction analysis to be performed without ever running or the model to completion (finalizing the time step), which writes output to the listing file. The capture fraction perturbation flux is added to the model using the API package, which adds a specified flux directly to the right-hand side of the system of equations.
+
+The python function that adds the specified flux to each active cell in the model is listed below.
+
+\begin{python}
+def calculate_capture_fraction(mobj, inode, q):
+  # update the api package with the well
+  update_well(mobj, inode, q=q)
+
+  # solve with the updated well
+  solve_current(mobj)
+
+  # calculate the total streamflow
+  rivcf = get_streamflow(mobj)
+
+  # process the results
+  cf = (rivcf - qbase) / abs(cfq)
+	
+  return cf
+\end{python}
+
+\noindent The blah 
+
+\begin{python}
+def solve_current(mobj):
+    max_iter = mobj.get_value(mobj.get_var_address("MXITER", "SLN_1"))
+
+    # convergence loop
+    kiter = 0
+    mobj.prepare_solve()
+
+    while kiter < max_iter:
+        has_converged = mobj.solve()
+        kiter += 1
+        if has_converged:
+            break
+
+    mobj.finalize_solve()
+\end{python}
+
+blah 
+
+\begin{python}
+\end{python}
+
+
+blah 
+
+\begin{python}
+def update_well(mobj, node, q=-1e-3):
+    tag = mobj.get_var_address("NBOUND", sim_name, "CF-1")
+    nbound = mobj.get_value(tag)
+    if nbound[0] < 1:
+        nbound[0] = 1
+        mobj.set_value(tag, nbound)
+    tag = mobj.get_var_address("NODELIST", sim_name, "CF-1")
+    nodelist = mobj.get_value(tag)
+    nodelist[0] = node + 1 # convert from zero-based to one-based node number
+    mobj.set_value(tag, nodelist)
+    tag = mobj.get_var_address("RHS", sim_name, "CF-1")
+    rhs = mobj.get_value(tag)
+    rhs[:] = -q
+    mobj.set_value(tag, rhs)
+    return
+\end{python}
+
+blah
+
+\begin{python}
+def get_streamflow(mobj):
+    tag = mobj.get_var_address("SIMVALS", sim_name, "RIV-1")
+    return mobj.get_value(tag).sum()
+\end{python}
+
+The simulated streamflow capture fraction results are shown in figure~\ref{fig:ex-gwf-capture-01}. The stream captures all of the inflow to the model except west of the river in the vicinity close to the constant head boundaries. Cells close to the western-most constant head boundary cells do not contribute any groundwater to the stream.
+
+

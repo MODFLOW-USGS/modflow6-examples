@@ -272,6 +272,7 @@ def write_model(sim, mf, silent=True):
 #
 
 
+@config.timeit
 def run_model(sim, mf, silent=True):
     success = True
     if config.runModel:

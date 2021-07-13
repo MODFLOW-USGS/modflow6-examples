@@ -224,6 +224,7 @@ def write_model(sim, silent=True):
 # True is returned if the model runs successfully
 
 
+@config.timeit
 def run_model(sim, silent=True):
     success = True
     if config.runModel:

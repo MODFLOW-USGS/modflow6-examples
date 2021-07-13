@@ -387,6 +387,7 @@ def write_model(sims, silent=True):
 # True is returned if the model runs successfully
 
 
+@config.timeit
 def run_model(sims, silent=True):
     success = True
     report = True

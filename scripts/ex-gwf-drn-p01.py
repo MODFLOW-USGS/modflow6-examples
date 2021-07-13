@@ -1094,6 +1094,7 @@ def write_model(sim, silent=True):
 #
 
 
+@config.timeit
 def run_model(sim, silent=True):
     success = True
     if config.runModel:

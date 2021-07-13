@@ -124,7 +124,10 @@ def build_model():
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
+            sim_name=sim_name,
+            sim_ws=sim_ws,
+            exe_name=config.mf6_exe,
+            verbosity_level=0,
         )
         flopy.mf6.ModflowTdis(
             sim, nper=nper, perioddata=tdis_ds, time_units=time_units
@@ -348,6 +351,7 @@ def write_model(sim, silent=True):
 #
 
 
+@config.timeit
 def run_model(sim, silent=False):
     success = True
     if config.runModel:

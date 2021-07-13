@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import matplotlib.pyplot as plt
 from IPython import get_ipython
 
@@ -34,6 +35,18 @@ def is_notebook():
     except NameError:
         return False
 
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if "log_time" in kw:
+            name = kw.get("log_name", method.__name__.upper())
+            kw["log_time"][name] = int((te - ts) * 1000)
+        else:
+            print ("{}  {:,.2f} ms".format(method.__name__, (te - ts) * 1000))
+        return result
+    return timed
 
 # common figure settings
 figure_ext = ".png"
@@ -76,13 +89,16 @@ data_ws = os.path.join("..", "data")
 
 # set executable extension
 eext = ""
+soext = ".so"
 if sys.platform.lower() == "win32":
     eext = ".exe"
+    soext = ".dll"
 
 # paths to executables
 mf6_exe = os.path.abspath(os.path.join("..", "bin", "mf6" + eext))
+libmf6_exe = os.path.abspath(os.path.join("..", "bin", "libmf6" + soext))
 mf2005_exe = os.path.abspath(os.path.join("..", "bin", "mf2005" + eext))
 mf2005dbl_exe = os.path.abspath(os.path.join("..", "bin", "mf2005dbl" + eext))
 mfnwt_exe = os.path.abspath(os.path.join("..", "bin", "mfnwt" + eext))
 mt3dms_exe = os.path.abspath(os.path.join("..", "bin", "mt3dms" + eext))
-mt3dusgs_exe = os.path.abspath(os.path.join("..", "bin", "mt3dusgs" + eext))   
+mt3dusgs_exe = os.path.abspath(os.path.join("..", "bin", "mt3dusgs" + eext))
