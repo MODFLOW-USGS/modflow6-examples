@@ -486,6 +486,7 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 # Function to run the model. True is returned if the model runs successfully.
 
 
+@config.timeit
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
     if config.runModel:

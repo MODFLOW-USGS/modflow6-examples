@@ -51,26 +51,35 @@
 % set up the listings package for highlighting block definitions and input files
 \usepackage{listings}
 \usepackage{xcolor}
-\lstset{
-  basicstyle=\footnotesize\ttfamily\color{black},
-  numbers=none,
-  columns=flexible,
-  backgroundcolor=\color{yellow!10},
-%  frame=tlbr,
-  moredelim=**[is][\color{red}]{@}{@},
+
+% Python style for highlighting
+\newcommand\pythonstyle{\lstset{
+language=Python,
+basicstyle=\ttm,
+tabsize=4,
+morekeywords={self},              % Add keywords here
+basicstyle=\small \ttfamily,
+numberstyle=\color{gray},
+stringstyle=\color[HTML]{933797},
+showstringspaces=false,
+commentstyle=\color[HTML]{228B22}\sffamily,
+emph={[2]from,import,pass,return}, emphstyle={[2]\color[HTML]{DD52F0}},
+emph={[3]range}, emphstyle={[3]\color[HTML]{D17032}},
+emph={[4]for,in,def}, emphstyle={[4]\color{blue}},
+breaklines=false,
+breakatwhitespace=true,
+literate={\_}{}{0\discretionary{\_}{}{\_}},
+showstringspaces=false
+xleftmargin=.1in
+}}
+
+% Python environment
+\lstnewenvironment{python}[1][]
+{
+\pythonstyle
+\lstset{#1}
 }
-\lstdefinestyle{blockdefinition}{
-  moredelim=**[is][\color{blue}]{@}{@},
-}
-%usage: \lstinputlisting[style=blockdefinition]{./mf6ivar/tex/gwf-chd-dimensions.dat}
-\lstdefinestyle{inputfile}{
-  morecomment=[l]\#,
-  backgroundcolor=\color{gray!10},
-}
-%usage: \lstinputlisting[style=modeloutput]{file.dat}
-\lstdefinestyle{modeloutput}{
-  backgroundcolor=\color{blue!20},
-}
+{}
 
 \usepackage[hidelinks]{hyperref}
 \hypersetup{

@@ -673,6 +673,7 @@ def write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=True):
 # Function to run the model. True is returned if the model runs successfully.
 
 
+@config.timeit
 def run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=None, mt3d=None, silent=True):
     success = True
     if config.runModel:

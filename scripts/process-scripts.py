@@ -10,11 +10,13 @@ import build_table as bt
 ex_pth = os.path.join("..", "examples")
 
 # only process python files starting with ex_
-files = [
-    file
-    for file in os.listdir()
-    if file.endswith(".py") and file.startswith("ex-")
-]
+files = sorted(
+    [
+        file
+        for file in os.listdir()
+        if file.endswith(".py") and file.startswith("ex-")
+    ]
+)
 
 
 def _replace_quotes(proc_str):
