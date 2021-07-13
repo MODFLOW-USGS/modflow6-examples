@@ -213,6 +213,19 @@ def write_model(sim, silent=True):
 
 # Function to solve the system of equations to convergence
 
+def calculate_capture_fraction(mobj, inode, qbase, q):
+    # update the api package node number in NODELIST
+    tag = mobj.get_var_address("NODELIST", sim_name, "CF-1")
+    nodelist = mobj.get_value(tag)
+    nodelist[0] = inode + 1  # convert from zero-based to one-based node number
+    mobj.set_value(tag, nodelist)
+
+    # solve with the updated well
+    solve_current(mobj)
+
+    return (get_streamflow(mobj) - qbase) / abs(q)
+
+
 def solve_current(mobj):
     max_iter = mobj.get_value(mobj.get_var_address("MXITER", "SLN_1"))
 
@@ -235,25 +248,6 @@ def get_streamflow(mobj):
     tag = mobj.get_var_address("SIMVALS", sim_name, "RIV-1")
     return mobj.get_value(tag).sum()
 
-
-# Function to update the API package
-
-def update_well(mobj, node, q=-1e-3):
-    tag = mobj.get_var_address("NBOUND", sim_name, "CF-1")
-    nbound = mobj.get_value(tag)
-    if nbound[0] < 1:
-        nbound[0] = 1
-        mobj.set_value(tag, nbound)
-    tag = mobj.get_var_address("NODELIST", sim_name, "CF-1")
-    nodelist = mobj.get_value(tag)
-    nodelist[0] = node + 1 # convert from zero-based to one-based node number
-    mobj.set_value(tag, nodelist)
-    tag = mobj.get_var_address("RHS", sim_name, "CF-1")
-    rhs = mobj.get_value(tag)
-    rhs[:] = -q
-    mobj.set_value(tag, rhs)
-    return
-
 # Function to run the Capture Fraction model.
 # True is returned if the model runs successfully
 #
@@ -274,6 +268,19 @@ def run_model():
         qbase = get_streamflow(mf6)
         # create capture fraction array
         capture = np.zeros((nrow, ncol), dtype=float)
+
+        # modify API package data after running base simulation
+        # set NBOUND to 1
+        tag = mf6.get_var_address("NBOUND", sim_name, "CF-1")
+        nbound = mf6.get_value(tag)
+        nbound[0] = 1
+        mf6.set_value(tag, nbound)
+        # set RHS to cf_q
+        tag = mf6.get_var_address("RHS", sim_name, "CF-1")
+        rhs = mf6.get_value(tag)
+        rhs[:] = -cf_q
+        mf6.set_value(tag, rhs)
+
         # iterate through each active cell
         ireduced_node = -1
         for irow in range(nrow):
@@ -283,20 +290,11 @@ def run_model():
                 if imap[irow, jcol] < 1:
                     continue
 
-                # increment node number
+                # increment reduced node number
                 ireduced_node += 1
 
-                # update the api package with the well
-                update_well(mf6, ireduced_node, q=cf_q)
-
-                # solve with the updated well
-                solve_current(mf6)
-
-                # calculate the total streamflow
-                rivcf = get_streamflow(mf6)
-
-                # process the results
-                cf = (rivcf - qbase) / abs(cf_q)
+                # calculate the capture fraction for the cell
+                cf = calculate_capture_fraction(mf6, ireduced_node, qbase, cf_q)
 
                 # add the value to the capture array
                 capture[irow, jcol] = cf
