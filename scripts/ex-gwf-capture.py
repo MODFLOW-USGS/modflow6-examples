@@ -213,34 +213,38 @@ def write_model(sim, silent=True):
 
 # Function to solve the system of equations to convergence
 
-def calculate_capture_fraction(mobj, inode, qbase, q):
-    # update the api package node number in NODELIST
+def capture_fraction_iteration(mobj, q, inode=None):
+    mobj.initialize()
+    # time loop
+    current_time = mobj.get_current_time()
+    end_time = mobj.get_end_time()
+    if inode is not None:
+        update_api_pak(mobj, inode, q)
+    while current_time < end_time:
+        mobj.update()
+        current_time = mobj.get_current_time()
+    qriv = get_streamflow(mobj)
+    mobj.finalize()
+    return qriv
+
+# Function to update the API Package
+
+def update_api_pak(mobj, inode, q):
+    # set nodelist to inode
     tag = mobj.get_var_address("NODELIST", sim_name, "CF-1")
     nodelist = mobj.get_value(tag)
     nodelist[0] = inode + 1  # convert from zero-based to one-based node number
     mobj.set_value(tag, nodelist)
-
-    # solve with the updated well
-    solve_current(mobj)
-
-    return (get_streamflow(mobj) - qbase) / abs(q)
-
-
-def solve_current(mobj):
-    max_iter = mobj.get_value(mobj.get_var_address("MXITER", "SLN_1"))
-
-    # convergence loop
-    kiter = 0
-    mobj.prepare_solve()
-
-    while kiter < max_iter:
-        has_converged = mobj.solve()
-        kiter += 1
-        if has_converged:
-            break
-
-    mobj.finalize_solve()
-
+    # set nbound to 1
+    tag = mobj.get_var_address("NBOUND", sim_name, "CF-1")
+    nbound = mobj.get_value(tag)
+    nbound[0] = 1
+    mobj.set_value(tag, nbound)
+    # set rhs to q
+    tag = mobj.get_var_address("RHS", sim_name, "CF-1")
+    rhs = mobj.get_value(tag)
+    rhs[:] = -q
+    mobj.set_value(tag, rhs)
 
 # Function to get the streamflow from memory
 
@@ -258,28 +262,10 @@ def run_model():
     if config.runModel:
         sim_ws = os.path.join(ws, sim_name)
         mf6 = modflowapi.ModflowApi(config.libmf6_exe, working_directory=sim_ws)
-        mf6.initialize()
-        # get dt and prepare for non-linear iterations
-        dt = mf6.get_time_step()
-        mf6.prepare_time_step(dt)
-        # run the base simulation
-        solve_current(mf6)
-        # get the base streamflow term
-        qbase = get_streamflow(mf6)
+        qbase = capture_fraction_iteration(mf6, cf_q)
+
         # create capture fraction array
         capture = np.zeros((nrow, ncol), dtype=float)
-
-        # modify API package data after running base simulation
-        # set NBOUND to 1
-        tag = mf6.get_var_address("NBOUND", sim_name, "CF-1")
-        nbound = mf6.get_value(tag)
-        nbound[0] = 1
-        mf6.set_value(tag, nbound)
-        # set RHS to cf_q
-        tag = mf6.get_var_address("RHS", sim_name, "CF-1")
-        rhs = mf6.get_value(tag)
-        rhs[:] = -cf_q
-        mf6.set_value(tag, rhs)
 
         # iterate through each active cell
         ireduced_node = -1
@@ -293,14 +279,11 @@ def run_model():
                 # increment reduced node number
                 ireduced_node += 1
 
-                # calculate the capture fraction for the cell
-                cf = calculate_capture_fraction(mf6, ireduced_node, qbase, cf_q)
+                # calculate the perturbed river flow
+                qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
 
                 # add the value to the capture array
-                capture[irow, jcol] = cf
-
-        # finalize libmf6
-        mf6.finalize()
+                capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
 
         # save the capture fraction array
         fpth = os.path.join(sim_ws, "capture.npz")

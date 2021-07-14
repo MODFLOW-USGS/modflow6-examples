@@ -36,7 +36,7 @@ The Newton-Raphson formulation and Newton-Raphson under-relaxation were used to 
 % for examples without scenarios
 \subsection{Example Results}
 
-The capture fraction analysis was performed using the \MF Application Program Interface (API). The \mfapi is used because the capture fraction for each cell can be calculated without regenerating the input files and running the model for each cell perturbed with an additional flux term. The \mfapi also allows the capture fraction analysis to be performed without ever running or the model to completion (finalizing the time step), which writes output to the listing file. The capture fraction perturbation flux is added to the model using the API Package, which adds a specified flux directly to the right-hand side of the system of equations for a group of cells. In this example, the streamflow capture fraction for a cell is calculated as
+The capture fraction analysis was performed using the \MF Application Program Interface (API). The \mfapi is used because the capture fraction for each cell can be calculated without regenerating the input files and running the model for each cell perturbed with an additional flux term. The capture fraction perturbation flux is added to the model using the API Package, which adds a specified flux directly to the right-hand side of the system of equations for a group of cells. In this example, the streamflow capture fraction for a cell is calculated as
 
 \begin{equation}
 	\label{eq:capture-fraction}
@@ -45,78 +45,75 @@ The capture fraction analysis was performed using the \MF Application Program In
 
 \noindent where $c_{k,i,j}$ is the streamflow capture fraction for a active cell (unitless), $Q_{RIV}^{+}$ is the streamflow the simulation with the perturbed flow in cell $(i,j,k)$ ($L^3/T$), $Q_{{RIV}_{\text{base}}}$ is the streamflow in the base simulation ($L^3/T$), and $Q^{+}$ is the flow that is incrementally added to each active cell  ($L^3/T$).
 
-
 Use of the \mfapi function requires replacement of the time step loop in \MF with an equivalent time step loop in the programming language used to access in API. In this example, python is used to control \MF. In addition to defining a replacement time step loop, use of the \mfapi requires accessing program data in memory to control other programs being executed or to change \MF data from the values defined in the \MF input files. 
 
-In this example, the right-hand side variable in the API Package is set to the specified perturbation flux rate (table~\ref{tab:ex-gwf-capture-01}) and the node number is modified when evaluating the capture fraction for each active cell. The python function that calculates the capture fraction for a cell is listed below.
+When calculating the streamflow capture fraction, the right-hand side variable in the API Package is set to the specified perturbation flux rate (table~\ref{tab:ex-gwf-capture-01}) and the node number is modified when evaluating the capture fraction for each active cell. The main loop that iterates over all of the active cells and adds the streamflow capture fraction  to the appropriate location in the array used to store the values is listed below.
 
-\begin{python}
-def calculate_capture_fraction(mobj, inode, qbase, q):
-  # update the api package with the reduced node number
-  tag = mobj.get_var_address("NODELIST", sim_name, "CF-1")
-  nodelist = mobj.get_value(tag)
-  nodelist[0] = inode + 1  # convert from zero-based to one-based node number
-  mobj.set_value(tag, nodelist)
+\begin{lstlisting}
+ireduced_node = -1
+for irow in range(nrow):
+    for jcol in range(ncol):
 
-  # solve with the updated extraction location
-  solve_current(mobj)
+        # skip inactive cells
+        if idomain[irow, jcol] < 1:
+            continue
 
-  return (get_streamflow(mobj) - qbase) / abs(q)
-\end{python}
+        # increment reduced node number
+        ireduced_node += 1
 
+        # calculate the perturbed river flow
+        qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
 
-\noindent The \texttt{solve\_current()} function is listed below and solves the system of equations, with the updated extraction location, to convergence but does not finalize the time step. 
+        # add the value to the capture array
+        capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
+\end{lstlisting}
 
-\begin{python}
-def solve_current(mobj):
-    max_iter = mobj.get_value(mobj.get_var_address("MXITER", "SLN_1"))
+\noindent The \texttt{idomain} array is a mapping array the identified inactive cells that have been removed from the simulation. The \texttt{capture\_fraction\_iteration()} function is listed below and returns the net stream flow ($Q_{RIV}^{+}$) after initializing the simulation (\texttt{mobj.initialize()}), addition of the perturbation flux rate in active cell $(k, i, j)$, running each time step in the simulation (\texttt{mobj.update()}) and finalizing the simulation (\texttt{mobj.finalize()}).
 
-    # convergence loop
-    kiter = 0
-    mobj.prepare_solve()
+\begin{lstlisting}
+def capture_fraction_iteration(mobj, q, inode=None):
+    mobj.initialize()
+    # time loop
+    current_time = mobj.get_current_time()
+    end_time = mobj.get_end_time()
+    if inode is not None:
+        update_api_pak(mobj, inode, q)
+    while current_time < end_time:
+        mobj.update()
+        current_time = mobj.get_current_time()
+    qriv = get_streamflow(mobj)
+    mobj.finalize()
+    return qriv
+\end{lstlisting}
 
-    while kiter < max_iter:
-        has_converged = mobj.solve()
-        kiter += 1
-        if has_converged:
-            break
+\noindent The \texttt{update\_api\_pak()} function is listed below and sets the number of API Package boundaries (\texttt{nbound}) to one, sets the perturbation location (\texttt{nodelist}) to the reduced node number, and set the right-hand side value (\texttt{rhs}) to the perturbation flux value.
 
-    mobj.finalize_solve()
-\end{python}
+\begin{lstlisting}
+def update_api_pak(mobj, inode, q):
+    # set nbound to 1
+    tag = mobj.get_var_address("NBOUND", sim_name, "CF-1")
+    nbound = mobj.get_value(tag)
+    nbound[0] = 1
+    mobj.set_value(tag, nbound)
+    # set nodelist to inode
+    tag = mobj.get_var_address("NODELIST", sim_name, "CF-1")
+    nodelist = mobj.get_value(tag)
+    nodelist[0] = inode + 1  # convert from zero-based to one-based node number
+    mobj.set_value(tag, nodelist)
+    # set rhs to q
+    tag = mobj.get_var_address("RHS", sim_name, "CF-1")
+    rhs = mobj.get_value(tag)
+    rhs[:] = -q
+    mobj.set_value(tag, rhs)
+\end{lstlisting}
 
 \noindent The \texttt{get\_streamflow()} function gets the calculated flow between \MF and the RIV Package and uses \texttt{numpy} to sum all of the values into a net stream flow ($Q_{RIV}^{+}$). 
 
-\begin{python}
+\begin{lstlisting}
 def get_streamflow(mobj):
     tag = mobj.get_var_address("SIMVALS", sim_name, "RIV-1")
     return mobj.get_value(tag).sum()
-\end{python}
-
-\noindent All of these functions are tied together in the loop listed below that iterates over all of active cells and adds the calculate capture fraction to the appropriate location in the array used to store the values.
-
-\begin{python}
-ireduced_node = -1
-for irow in range(nrow):
-  for jcol in range(ncol):
-
-    # skip inactive cells
-    if idomain[irow, jcol] < 1:
-        continue
-
-    # increment reduced node number
-    ireduced_node += 1
-
-    # calculate the capture fraction for the cell
-    cf = calculate_capture_fraction(mf6, ireduced_node, qbase, cf_q)
-
-    # add the value to the capture array
-    capture[irow, jcol] = cf
-
-# finalize the MODFLOW 6 simulation
-mf6.finalize()
-\end{python} 
-
-\noindent the \texttt{mf6.finalize()} method terminates the \MF simulation. The \texttt{idomain} array is a mapping array that identifies inactive cells that have been removed from the simulation.
+\end{lstlisting}
 
 The simulated streamflow capture fraction results are shown in figure~\ref{fig:ex-gwf-capture-01}. The stream captures all of the inflow to the model except west of the river in the vicinity close to the constant head boundaries. Cells close to the western-most constant head boundary cells do not contribute any groundwater to the stream.
 
