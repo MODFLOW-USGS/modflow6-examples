@@ -58,3 +58,4 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-saltlake.rst
    _examples/ex-gwt-rotate.rst
    _examples/ex-gwt-hecht-mendez.rst
+   _examples/ex-gwf-capture.rst

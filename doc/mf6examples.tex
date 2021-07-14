@@ -53,7 +53,7 @@
 \usepackage{xcolor}
 
 % Python style for highlighting
-\newcommand\pythonstyle{\lstset{
+\lstset{
 language=Python,
 basicstyle=\ttm,
 tabsize=4,
@@ -71,15 +71,7 @@ breakatwhitespace=true,
 literate={\_}{}{0\discretionary{\_}{}{\_}},
 showstringspaces=false
 xleftmargin=.1in
-}}
-
-% Python environment
-\lstnewenvironment{python}[1][]
-{
-\pythonstyle
-\lstset{#1}
 }
-{}
 
 \usepackage[hidelinks]{hyperref}
 \hypersetup{
