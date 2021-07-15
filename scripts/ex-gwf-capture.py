@@ -3,11 +3,9 @@
 # This problem is an example of a capture fraction analysis based on
 # Leake and others (2010) using the model developed by Freyberg (1988) and
 # the MODFLOW API. The MODFLOW API is used because the capture fraction
-# for each cell can be calculated without regenerating the input files or
-# running the model to completion (finalizing the time step), which writes
-# output to the listing file. The capture fraction perturbation flux is
-# added to the model using the API package, which adds the specified flux to
-# the right-hand side of the system of equations.
+# for each cell can be calculated without regenerating the input files.
+# The capture fraction perturbation flux is added to the second well (WEL)
+# package model.
 #
 
 # ### Capture Fraction Problem Setup
@@ -186,13 +184,14 @@ def build_model():
         )
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
         flopy.mf6.ModflowGwfriv(gwf, stress_period_data=riv_spd, pname="RIV-1")
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
+        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, pname="WEL-1")
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
-        flopy.mf6.ModflowGwfapi(
+        flopy.mf6.ModflowGwfwel(
             gwf,
             maxbound=1,
             pname="CF-1",
+            filename="{}.cf.wel".format(sim_name),
         )
         flopy.mf6.ModflowGwfoc(
             gwf,
@@ -219,7 +218,7 @@ def capture_fraction_iteration(mobj, q, inode=None):
     current_time = mobj.get_current_time()
     end_time = mobj.get_end_time()
     if inode is not None:
-        update_api_pak(mobj, inode, q)
+        update_wel_pak(mobj, inode, q)
     while current_time < end_time:
         mobj.update()
         current_time = mobj.get_current_time()
@@ -227,9 +226,9 @@ def capture_fraction_iteration(mobj, q, inode=None):
     mobj.finalize()
     return qriv
 
-# Function to update the API Package
+# Function to update the Capture Fraction Package
 
-def update_api_pak(mobj, inode, q):
+def update_wel_pak(mobj, inode, q):
     # set nodelist to inode
     tag = mobj.get_var_address("NODELIST", sim_name, "CF-1")
     nodelist = mobj.get_value(tag)
@@ -240,11 +239,11 @@ def update_api_pak(mobj, inode, q):
     nbound = mobj.get_value(tag)
     nbound[0] = 1
     mobj.set_value(tag, nbound)
-    # set rhs to q
-    tag = mobj.get_var_address("RHS", sim_name, "CF-1")
-    rhs = mobj.get_value(tag)
-    rhs[:] = -q
-    mobj.set_value(tag, rhs)
+    # set bound to q
+    tag = mobj.get_var_address("BOUND", sim_name, "CF-1")
+    bound = mobj.get_value(tag)
+    bound[:, 0] = q
+    mobj.set_value(tag, bound)
 
 # Function to get the streamflow from memory
 
@@ -310,6 +309,7 @@ def plot_results(silent=True):
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
         gwf = sim.get_model(sim_name)
+        wel = gwf.get_package("WEL-1")
 
         # load the capture fraction data
         fpth = os.path.join(sim_ws, "capture.npz")
@@ -328,12 +328,10 @@ def plot_results(silent=True):
         ax = fig.add_subplot(gs[:, 0])
         ax.set_aspect("equal")
 
-        # ax = fig.add_subplot(1, 1, 1)
-        # ax.set_aspect("equal")
         mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
         cf = mm.plot_array(capture, vmin=0, vmax=1)
         mm.plot_grid(lw=0.5, color="0.5")
-        mm.plot_bc('WEL')
+        mm.plot_bc(package=wel)
         ax.axvline(x=14.5 * delc, lw=1.25, color="cyan")
         mm.plot_bc('CHD', color="green")
         mm.plot_ibound()
@@ -405,7 +403,7 @@ def plot_results(silent=True):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the TWRI model
+# Function that wraps all of the steps for the Streamflow Capture model
 #
 # 1. build_model,
 # 2. write_model, and
