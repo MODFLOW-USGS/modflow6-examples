@@ -91,98 +91,6 @@ lakibd = np.loadtxt(fname, dtype=int)
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 #
 
-
-def get_lake_connection_data(lakibd, idomain):
-    lakeconnectiondata = []
-    nlakecon = [0, 0]
-    lak_leakance = lakebed_leakance
-    for i in range(nrow):
-        for j in range(ncol):
-            if lakibd[i, j] == 0:
-                continue
-            else:
-                ilak = lakibd[i, j] - 1
-                # back
-                if i > 0:
-                    if lakibd[i - 1, j] == 0 and idomain[0, i - 1, j]:
-                        h = [
-                            ilak,
-                            nlakecon[ilak],
-                            (0, i - 1, j),
-                            "horizontal",
-                            lak_leakance,
-                            0.0,
-                            0.0,
-                            delc / 2.0,
-                            delr,
-                        ]
-                        nlakecon[ilak] += 1
-                        lakeconnectiondata.append(h)
-                # left
-                if j > 0:
-                    if lakibd[i, j - 1] and idomain[0, i, j - 1] == 0:
-                        h = [
-                            ilak,
-                            nlakecon[ilak],
-                            (0, i, j - 1),
-                            "horizontal",
-                            lak_leakance,
-                            0.0,
-                            0.0,
-                            delr / 2.0,
-                            delc,
-                        ]
-                        nlakecon[ilak] += 1
-                        lakeconnectiondata.append(h)
-                # right
-                if j < ncol - 1:
-                    if lakibd[i, j + 1] == 0 and idomain[0, i, j + 1]:
-                        h = [
-                            ilak,
-                            nlakecon[ilak],
-                            (0, i, j + 1),
-                            "horizontal",
-                            lak_leakance,
-                            0.0,
-                            0.0,
-                            delr / 2.0,
-                            delc,
-                        ]
-                        nlakecon[ilak] += 1
-                        lakeconnectiondata.append(h)
-                # front
-                if i < nrow - 1:
-                    if lakibd[i + 1, j] == 0 and idomain[0, i + 1, j]:
-                        h = [
-                            ilak,
-                            nlakecon[ilak],
-                            (0, i + 1, j),
-                            "horizontal",
-                            lak_leakance,
-                            0.0,
-                            0.0,
-                            delc / 2.0,
-                            delr,
-                        ]
-                        nlakecon[ilak] += 1
-                        lakeconnectiondata.append(h)
-                # vertical
-                v = [
-                    ilak,
-                    nlakecon[ilak],
-                    (1, i, j),
-                    "vertical",
-                    lak_leakance,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                ]
-                nlakecon[ilak] += 1
-                lakeconnectiondata.append(v)
-    return lakeconnectiondata, nlakecon
-
-
 def get_stream_data():
     fname = os.path.join(data_ws, "stream.csv")
     dt = 5 * [int] + [float]
@@ -325,13 +233,23 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chdlist, pname="CHD-1")
 
     idomain = dis.idomain.array
-    lakeconnectiondata, nlakecon = get_lake_connection_data(lakibd, idomain)
-    i, j = np.where(lakibd > 0)
-    idomain[0, i, j] = 0
+    lake_map = np.ones((nlay, nrow, ncol), dtype=np.int32) * -1
+    lake_map[0, :, :] = lakibd[:, :] - 1
+    (
+        idomain,
+        lakepakdata_dict,
+        lakeconnectiondata,
+    ) = flopy.mf6.utils.get_lak_connections(
+        gwf.modelgrid,
+        lake_map,
+        idomain=idomain,
+        bedleak=lakebed_leakance,
+    )
+
     gwf.dis.idomain.set_data(idomain[0], layer=0, multiplier=[1])
     lakpackagedata = [
-        [0, 44.0, nlakecon[0], "lake1"],
-        [1, 35.2, nlakecon[1], "lake2"],
+        [0, 44.0, lakepakdata_dict[0], "lake1"],
+        [1, 35.2, lakepakdata_dict[1], "lake2"],
     ]
     # <outletno> <lakein> <lakeout> <couttype> <invert> <width> <rough> <slope>
     outlets = [[0, 0, -1, "MANNING", 44.5, 5.000000, 0.03, 0.2187500e-02]]
@@ -634,13 +552,9 @@ def plot_gwf_results(sims):
 
         sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
 
-        fname = os.path.join(sim_ws, "flow.hds")
-        head = flopy.utils.HeadFile(fname, text="head", precision="double")
-        head = head.get_data()
+        head = gwf.output.head().get_data()
+        stage = gwf.lak.output.stage().get_data().flatten()
 
-        fname = os.path.join(sim_ws, "flow.lak.bin")
-        stage = flopy.utils.HeadFile(fname, text="stage", precision="double")
-        stage = stage.get_data().flatten()
         il, jl = np.where(lakibd > 0)
         for i, j in zip(il, jl):
             ilak = lakibd[i, j] - 1
@@ -686,17 +600,9 @@ def plot_gwt_results(sims):
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
 
-        fname = os.path.join(sim_ws, "trans.ucn")
-        conc = flopy.utils.HeadFile(
-            fname, text="concentration", precision="double"
-        )
-        conc = conc.get_data()
+        conc = gwt.output.concentration().get_data()
+        lakconc = gwt.lak.output.concentration().get_data().flatten()
 
-        fname = os.path.join(sim_ws, "trans.lkt.bin")
-        lakconc = flopy.utils.HeadFile(
-            fname, text="concentration", precision="double"
-        )
-        lakconc = lakconc.get_data().flatten()
         il, jl = np.where(lakibd > 0)
         for i, j in zip(il, jl):
             ilak = lakibd[i, j] - 1
@@ -737,7 +643,6 @@ def plot_gwt_results(sims):
             title = "Model Layer {}".format(ilay + 1)
             letter = chr(ord("@") + iplot + 1)
             fs.heading(letter=letter, heading=title, ax=ax)
-        # axs[1, 1].set_axis_off()
 
         # save figure
         if config.plotSave:
@@ -747,22 +652,10 @@ def plot_gwt_results(sims):
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
-        fname = "trans.lkt.bin"
-        fname = os.path.join(sim_ws, fname)
-        bobj = flopy.utils.HeadFile(
-            fname, precision="double", text="concentration"
-        )
-        lkaconc = bobj.get_alldata()[:, 0, 0, :]
-        bobj.file.close()
-
-        fname = "trans.sft.bin"
-        fname = os.path.join(sim_ws, fname)
-        bobj = flopy.utils.HeadFile(
-            fname, precision="double", text="concentration"
-        )
+        lkaconc = gwt.lak.output.concentration().get_alldata()[:, 0, 0, :]
+        bobj = gwt.sfr.output.concentration()
         sfaconc = bobj.get_alldata()[:, 0, 0, :]
         times = bobj.times
-        bobj.file.close()
 
         fs = USGSFigure(figure_type="graph", verbose=False)
         fig, axs = plt.subplots(

@@ -35,6 +35,7 @@ MODFLOW 6 – Example problems
    _examples/ex-gwf-csub-p04.rst
    _examples/ex-gwf-drn-p01.rst
    _examples/ex-gwf-sagehen.rst
+   _examples/ex-gwf-capture.rst
    _examples/ex-gwt-keating.rst
    _examples/ex-gwt-moc3d-p01.rst
    _examples/ex-gwt-moc3d-p02.rst
@@ -58,4 +59,3 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-saltlake.rst
    _examples/ex-gwt-rotate.rst
    _examples/ex-gwt-hecht-mendez.rst
-   _examples/ex-gwf-capture.rst
