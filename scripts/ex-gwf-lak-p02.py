@@ -919,19 +919,18 @@ def plot_grid(gwf, silent=True):
     lak_results = np.genfromtxt(fpth, delimiter=",", names=True)
 
     # create MODFLOW 6 head object
-    file_name = gwf.oc.head_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    hobj = flopy.utils.HeadFile(fpth)
+    hobj = gwf.output.head()
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+    cobj = gwf.output.budget()
 
     kstpkper = hobj.get_kstpkper()
 
     head = hobj.get_data(kstpkper=kstpkper[0])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+        gwf,
+    )
 
     # add lake stage to heads
     head[ilake == 1] = lak_results["LAKE1"][-1]
@@ -997,7 +996,7 @@ def plot_grid(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     ax.plot(p1[0], p1[1], marker="o", mfc="red", mec="black", ms=4)
     ax.plot(p2[0], p2[1], marker="o", mfc="red", mec="black", ms=4)
     ax.plot(p3[0], p3[1], marker="o", mfc="red", mec="black", ms=4)

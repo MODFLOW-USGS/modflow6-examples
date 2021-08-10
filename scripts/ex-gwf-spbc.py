@@ -193,16 +193,13 @@ def plot_grid(sim):
     fig.tight_layout()
 
     # create MODFLOW 6 head object
-    file_name = gwf.oc.head_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    hobj = flopy.utils.HeadFile(fpth)
-    head = hobj.get_data()
+    head = gwf.output.head().get_data()
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
-    spdis = cobj.get_data(text="DATA-SPDIS", totim=1.0)
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+        gwf,
+    )
 
     ax = fig.add_subplot(1, 1, 1, aspect="equal")
     pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
@@ -213,7 +210,7 @@ def plot_grid(sim):
     cs = pxs.contour_array(
         head, levels=levels, colors="k", linewidths=1.0, linestyles="-"
     )
-    pxs.plot_specific_discharge(spdis, normalize=False, kstep=5, hstep=5)
+    pxs.plot_vector(qx, qy, qz, normalize=False, kstep=5, hstep=5)
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("z position (m)")
     ax.set_ylim(-3, 0)

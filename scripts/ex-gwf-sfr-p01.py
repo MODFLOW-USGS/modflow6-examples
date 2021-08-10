@@ -1080,14 +1080,10 @@ def plot_head_results(gwf, silent=True):
     sim_ws = os.path.join(ws, sim_name)
 
     # create MODFLOW 6 head object
-    file_name = gwf.oc.head_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    hobj = flopy.utils.HeadFile(fpth)
+    hobj = gwf.output.head()
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+    cobj = gwf.output.budget()
 
     kstpkper = hobj.get_kstpkper()
 
@@ -1124,7 +1120,10 @@ def plot_head_results(gwf, silent=True):
 
     # extract heads and specific discharge for first stress period
     head = hobj.get_data(kstpkper=kstpkper[0])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+        gwf,
+    )
 
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
@@ -1140,7 +1139,7 @@ def plot_head_results(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     mm.plot_inactive(color_noflow="0.5")
     mm.plot_grid(lw=0.5, color="black")
     ax.set_xlabel("x-coordinate, in feet")
@@ -1150,15 +1149,16 @@ def plot_head_results(gwf, silent=True):
 
     # extract heads and specific discharge for second stress period
     head = hobj.get_data(kstpkper=kstpkper[1])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
+        gwf,
+    )
 
     ax = axes[1]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
     head_coll = mm.plot_array(
         head, vmin=900, vmax=1120, masked_values=masked_values
     )
-    # mm.plot_bc("GHB", color="purple")
-    # mm.plot_bc("WEL", color="red", kper=1)
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -1168,7 +1168,7 @@ def plot_head_results(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     mm.plot_inactive(color_noflow="0.5")
     mm.plot_grid(lw=0.5, color="black")
     ax.set_xlabel("x-coordinate, in feet")

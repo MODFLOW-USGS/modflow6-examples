@@ -356,20 +356,19 @@ def plot_results(idx, sim, silent=True):
             plot_grid(gwf, silent=silent)
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
+        hobj = gwf.output.head()
 
         # create MODFLOW 6 cell-by-cell budget object
-        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        cobj = gwf.output.budget()
 
         # extract heads and specific discharge
         head = hobj.get_data(totim=1.0)
         imask = (head > -1e30) & (head <= bot)
         head[imask] = -1e30  # botm[imask]
-        spdis = cobj.get_data(text="DATA-SPDIS", totim=1.0)
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
+        )
 
         # Create figure for simulation
         fig, axes = create_figure()
@@ -400,8 +399,7 @@ def plot_results(idx, sim, silent=True):
         )
         plt.clabel(cv, fmt="%1.0f", zorder=10)
         mm.plot_bc("CHD", color="cyan", zorder=11)
-        mm.plot_specific_discharge(
-            spdis, normalize=True, color="0.75", zorder=11
+        mm.plot_vector(qx, qy, normalize=True, color="0.75", zorder=11
         )
         ax.set_xlabel("x-coordinate, in meters")
         ax.set_ylabel("y-coordinate, in meters")

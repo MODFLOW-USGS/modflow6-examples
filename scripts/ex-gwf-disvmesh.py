@@ -271,21 +271,19 @@ def plot_head(idx, sim):
     fig = plt.figure(figsize=(7.5, 5))
     fig.tight_layout()
 
-    fname = os.path.join(sim_ws, "{}.hds".format(sim_name))
-    hdobj = flopy.utils.HeadFile(fname)
-    head = hdobj.get_data()[:, 0, :]
+    head = gwf.output.head().get_data()[:, 0, :]
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
-    spdis = cobj.get_data(text="DATA-SPDIS", totim=1.0)
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+        gwf,
+    )
 
     ax = fig.add_subplot(1, 2, 1, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
     cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_specific_discharge(
-        spdis, normalize=False, color="0.75",
+    pmv.plot_vector(
+        qx, qy, normalize=False, color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")
@@ -296,8 +294,8 @@ def plot_head(idx, sim):
     ax = fig.add_subplot(1, 2, 2, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
     cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_specific_discharge(
-        spdis, normalize=False, color="0.75",
+    pmv.plot_vector(
+        qx, qy, normalize=False, color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")

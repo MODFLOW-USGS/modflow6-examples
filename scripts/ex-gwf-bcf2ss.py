@@ -266,7 +266,10 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
     ):
         head = ho.get_data(totim=totim)
         head[head < botm_arr] = -1e30
-        spdis = co.get_data(text="DATA-SPDIS", kstpkper=(0, totim - 1))
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            co.get_data(text="DATA-SPDIS", kstpkper=(0, totim - 1))[0],
+            gwf,
+        )
 
         for k in range(nlay):
             ax = axes[plot_number]
@@ -278,7 +281,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
             )
             mm.plot_bc(ftype="WEL", kper=totim - 1)
             mm.plot_bc(ftype="RIV", color="green", kper=0)
-            mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+            mm.plot_vector(qx, qy, normalize=True, color="0.75")
             cn = mm.contour_array(
                 head,
                 masked_values=masked_values,
@@ -399,14 +402,10 @@ def plot_results(silent=True):
         gwf = sim.get_model(sim_name)
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
+        hobj = gwf.output.head()
 
         # create MODFLOW 6 cell-by-cell budget object
-        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        cobj = gwf.output.budget()
 
         # extract heads
         head = hobj.get_data(totim=1)

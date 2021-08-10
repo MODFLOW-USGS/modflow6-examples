@@ -62,6 +62,7 @@ etvrate = 0.0141  # Maximum evapotranspiration rate ($ft/d$)
 etvdepth = 15.0  # Evapotranspiration extinction depth ($ft$)
 lak_strt = 110.0  # Starting lake stage ($ft$)
 lak_etrate = 0.0103  # Lake evaporation rate ($ft/d$)
+lak_bedleak = 0.1  # Lakebed leakance ($1/d$)
 
 # parse parameter strings into tuples
 
@@ -121,14 +122,12 @@ extents = (0.0, delr.sum(), 0.0, delc.sum())
 shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
-# Load the idomain arrays
+# Create the array defining the lake location
 
-data_pth = os.path.join("..", "data", sim_name)
-fpth = os.path.join(data_pth, "idomain-01.txt")
-idomain0 = np.loadtxt(fpth, dtype=int)
-fpth = os.path.join(data_pth, "idomain-02.txt")
-idomain1 = np.loadtxt(fpth, dtype=int)
-idomain = [idomain0, idomain1, 1, 1, 1]
+lake_map = np.ones(shape3d, dtype=np.int32) * -1
+lake_map[0, 6:11, 6:11] = 0
+lake_map[1, 7:10, 7:10] = 0
+lake_map = np.ma.masked_where(lake_map < 0, lake_map)
 
 # create linearly varying evapotranspiration surface
 
@@ -140,8 +139,8 @@ for idx in range(1, ncol):
     frac = x / xlen
     s1d[idx] = H1 + (H2 - H1) * frac
 surf = np.tile(s1d, (nrow, 1))
-surf[idomain0 == 0] = botm[0] - 2
-surf[idomain1 == 0] = botm[1] - 2
+surf[lake_map[0] == 0] = botm[0] - 2
+surf[lake_map[1] == 0] = botm[1] - 2
 
 # ### Create LAK Package Problem 1 Model Boundary Conditions
 #
@@ -154,68 +153,6 @@ for k in range(nlay):
     chd_spd += [[k, i, ncol - 1, H2] for i in range(nrow)]
 
 # LAK Package
-
-lak_conn = [
-    [0, 0, 0, 6, 5, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 1, 0, 7, 5, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 2, 0, 8, 5, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 3, 0, 9, 5, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 4, 0, 10, 5, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 5, 0, 5, 6, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 6, 1, 6, 6, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 7, 1, 7, 6, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 8, 1, 7, 6, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 9, 1, 8, 6, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 10, 1, 8, 6, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 11, 1, 9, 6, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 12, 1, 9, 6, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 13, 1, 10, 6, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 14, 0, 11, 6, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 15, 0, 5, 7, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 16, 1, 6, 7, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 17, 1, 6, 7, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 18, 2, 7, 7, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 19, 2, 8, 7, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 20, 2, 9, 7, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 21, 1, 10, 7, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 22, 1, 10, 7, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 23, 0, 11, 7, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 24, 0, 5, 8, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 25, 1, 6, 8, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 26, 1, 6, 8, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 27, 2, 7, 8, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 28, 2, 8, 8, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 29, 2, 9, 8, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 30, 1, 10, 8, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 31, 1, 10, 8, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 32, 0, 11, 8, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 33, 0, 5, 9, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 34, 1, 6, 9, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 35, 1, 6, 9, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 36, 2, 7, 9, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 37, 2, 8, 9, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 38, 2, 9, 9, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 39, 1, 10, 9, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 40, 1, 10, 9, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 41, 0, 11, 9, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 42, 0, 5, 10, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 43, 1, 6, 10, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 44, 1, 7, 10, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 45, 1, 7, 10, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 46, 1, 8, 10, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 47, 1, 8, 10, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 48, 1, 9, 10, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 49, 1, 9, 10, "HORIZONTAL", 0.1, 0, 0, 250, 500],
-    [0, 50, 1, 10, 10, "VERTICAL", 0.1, 0, 0, 0, 0],
-    [0, 51, 0, 11, 10, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 52, 0, 6, 11, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 53, 0, 7, 11, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 54, 0, 8, 11, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 55, 0, 9, 11, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-    [0, 56, 0, 10, 11, "HORIZONTAL", 0.1, 0, 0, 500, 500],
-]
-
-lak_packagedata = [[0, lak_strt, len(lak_conn)]]
 
 lak_spd = [
     [0, "rainfall", recharge],
@@ -265,7 +202,7 @@ def build_model():
             ncol=ncol,
             delr=delr,
             delc=delc,
-            idomain=idomain,
+            idomain=np.ones(shape3d, dtype=int),
             top=top,
             botm=botm,
         )
@@ -299,6 +236,16 @@ def build_model():
         flopy.mf6.ModflowGwfevta(
             gwf, surface=surf, rate=etvrate, depth=etvdepth
         )
+        (
+            idomain_wlakes,
+            pakdata_dict,
+            lak_conn,
+        ) = flopy.mf6.utils.get_lak_connections(
+            gwf.modelgrid,
+            lake_map,
+            bedleak=lak_bedleak,
+        )
+        lak_packagedata = [[0, lak_strt, pakdata_dict[0]]]
         lak = flopy.mf6.ModflowGwflak(
             gwf,
             print_stage=True,
@@ -318,6 +265,7 @@ def build_model():
         lak.obs.initialize(
             filename=obs_file, digits=10, print_input=True, continuous=obs_dict
         )
+        gwf.dis.idomain = idomain_wlakes
 
         head_filerecord = "{}.hds".format(sim_name)
         budget_filerecord = "{}.cbc".format(sim_name)
@@ -365,19 +313,18 @@ def plot_grid(gwf, silent=True):
     lak_results = np.genfromtxt(fpth, delimiter=",", names=True)
 
     # create MODFLOW 6 head object
-    file_name = gwf.oc.head_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    hobj = flopy.utils.HeadFile(fpth)
+    hobj = gwf.output.head()
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+    cobj = gwf.output.budget()
 
     kstpkper = hobj.get_kstpkper()
 
     head = hobj.get_data(kstpkper=kstpkper[0])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+        gwf,
+    )
 
     # add lake stage to heads
     head[head == 1e30] = lak_results["STAGE"][-1]
@@ -436,7 +383,7 @@ def plot_grid(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     ax.plot(p1[0], p1[1], marker="o", mfc="red", mec="black", ms=4)
     ax.plot(p2[0], p2[1], marker="o", mfc="red", mec="black", ms=4)
     ax.set_xlabel("x-coordinate, in feet")

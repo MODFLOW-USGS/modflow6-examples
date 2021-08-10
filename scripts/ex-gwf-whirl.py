@@ -185,15 +185,15 @@ def plot_spdis(sim):
     fig.tight_layout()
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
-    spdis = cobj.get_data(text="DATA-SPDIS", totim=1.0)
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+        gwf,
+    )
 
     ax = fig.add_subplot(1, 1, 1)
     pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"column": 0})
     pxs.plot_grid(linewidth=0.5)
-    pxs.plot_specific_discharge(spdis, normalize=True)
+    pxs.plot_vector(qx, qy, qz, normalize=True)
     ax.set_xlabel("y position (m)")
     ax.set_ylabel("z position (m)")
 
