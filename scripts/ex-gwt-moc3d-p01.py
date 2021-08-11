@@ -394,11 +394,7 @@ def plot_results_cd(
         sim_mf6gwf, sim_mf6gwt = sims
         fs = USGSFigure(figure_type="graph", verbose=False)
 
-        sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        fname = os.path.join(sim_ws, "trans.ucn")
-        ucnobj_mf6 = flopy.utils.HeadFile(
-            fname, precision="double", text="CONCENTRATION"
-        )
+        ucnobj_mf6 = sim_mf6gwt.trans.output.concentration()
 
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
@@ -452,6 +448,7 @@ def plot_results_cd(
 
         # save figure
         if config.plotSave:
+            sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = "{}-cd{}".format(sim_folder, config.figure_ext)

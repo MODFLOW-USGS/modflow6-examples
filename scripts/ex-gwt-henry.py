@@ -248,10 +248,8 @@ def plot_conc(sim, idx):
     fig = plt.figure(figsize=figure_size)
     fig.tight_layout()
 
-    # create MODFLOW 6 head object
-    fpth = os.path.join(sim_ws, "trans.ucn")
-    cobj = flopy.utils.HeadFile(fpth, text="concentration")
-    conc = cobj.get_data()
+    # get MODFLOW 6 concentration
+    conc = gwt.output.concentration().get_data()
 
     ax = fig.add_subplot(1, 1, 1, aspect="equal")
     pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})

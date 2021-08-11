@@ -526,14 +526,10 @@ def plot_results(silent=True):
         gwf = sim.get_model(sim_name)
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
+        hobj = gwf.output.head()
 
         # create MODFLOW 6 cell-by-cell budget object
-        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        cobj = gwf.output.budget()
 
         # plot the newton results
         plot_simulated_results(3, gwf, hobj, cobj)

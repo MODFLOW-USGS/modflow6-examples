@@ -566,20 +566,14 @@ def plot_heads(sim):
 
     print("  Loading heads...")
     layer = 0
-    fname = os.path.join(sim_ws, "{}.hds".format(modelname))
-    hdobj = flopy.utils.HeadFile(fname)
-    head = hdobj.get_data()
+    head = gwf.output.head().get_data()
     head = np.ma.masked_where(head > 1e29, head)
     vmin = head[layer].min()
     vmax = head[layer].max()
-    hdobj.file.close()
     if gwfc is not None:
-        fname = os.path.join(sim_ws, "{}.hds".format("child"))
-        hdobj = flopy.utils.HeadFile(fname)
-        headc = hdobj.get_data()
+        headc = gwfc.output.head().get_data()
         vmin = min(vmin, headc.min())
         vmax = max(vmax, headc.max())
-        hdobj.file.close()
 
     print("  Making figure...")
     ax = fig.add_subplot(1, 1, 1, aspect="equal")

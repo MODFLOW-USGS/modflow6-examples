@@ -838,19 +838,10 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         times_mt3d = ucnobj_mt3d.get_times()
         conc_mt3d = ucnobj_mt3d.get_alldata()
 
-        fname = "gwt-uzt-2d-mf6.uzt.bin"
-        fname = os.path.join(mf6_out_path, fname)
-        ucobj_mf6 = flopy.utils.binaryfile.HeadFile(
-            fname, precision="double", text="CONCENTRATION"
-        )
-        uzconc_mf6 = ucobj_mf6.get_alldata()
-        # Now get the concentrations of the saturated zone in MF6
-        fname = "gwt-uzt-2d-mf6.ucn"
-        fname = os.path.join(mf6_out_path, fname)
-        satconcobj_mf6 = flopy.utils.binaryfile.HeadFile(
-            fname, precision="double", text="CONCENTRATION"
-        )
-        mf6_satconc = satconcobj_mf6.get_alldata()
+        # get the MODFLOW 6 results from the UZF package and the GWT model
+        gwt = mf6.get_model("gwt-uzt-2d-mf6")
+        uzconc_mf6 = gwt.uzf.output.concentration().get_alldata()
+        mf6_satconc = gwt.output.concentration().get_alldata()
 
         uzconc_mf6_shpd = []
         for i in np.arange(0, uzconc_mf6.shape[0]):

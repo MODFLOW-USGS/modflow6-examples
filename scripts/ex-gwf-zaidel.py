@@ -181,9 +181,7 @@ def plot_results(idx, sim, silent=True):
         zedge = np.array([botm[0, 0, 0]] + botm.flatten().tolist())
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
+        hobj = gwf.output.head()
 
         # extract heads
         head = hobj.get_data()

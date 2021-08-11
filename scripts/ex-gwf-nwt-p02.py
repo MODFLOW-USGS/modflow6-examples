@@ -271,9 +271,7 @@ def plot_results(silent=True):
         xnode = gwf.modelgrid.xcellcenters[0, :]
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
+        hobj = gwf.output.head()
 
         # get a list of times
         times = hobj.get_times()
@@ -281,11 +279,13 @@ def plot_results(silent=True):
         # load rewet model
         name = list(parameters.keys())[1]
         sim_ws = os.path.join(ws, name)
+        sim1 = flopy.mf6.MFSimulation.load(
+            sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
+        )
+        gwf1 = sim1.get_model(sim_name)
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj1 = flopy.utils.HeadFile(fpth)
+        hobj1 = gwf1.output.head()
 
         # Create figure for simulation
         fig, axes = plt.subplots(

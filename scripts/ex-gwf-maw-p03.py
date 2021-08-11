@@ -318,8 +318,7 @@ def build_local(name, simulation):
     pth = list(parameters.keys())[0]
     fpth = os.path.join(ws, pth, "{}.hds".format(sim_name))
     try:
-        hobj = flopy.utils.HeadFile(fpth)
-        h = hobj.get_data()
+        h = flopy.utils.HeadFile(fpth).get_data()
     except:
         h = np.ones((nlay_r, nrow_r, ncol_r), dtype=float) * strt
 
@@ -741,9 +740,7 @@ def plot_local_grid(silent=True):
     )
 
     # get regional heads for constant head boundaries
-    fpth = os.path.join(ws, name, "{}.hds".format(sim_name))
-    hobj = flopy.utils.HeadFile(fpth)
-    h = hobj.get_data()
+    h = gwf.output.head().get_data()
 
     fs = USGSFigure(figure_type="map", verbose=False)
     fig = plt.figure(

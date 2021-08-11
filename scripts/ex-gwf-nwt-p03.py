@@ -433,9 +433,7 @@ def plot_results(idx, sim, silent=True):
             plot_recharge(gwf, silent=silent)
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
+        hobj = gwf.output.head()
 
         # get times
         times = hobj.get_times()
