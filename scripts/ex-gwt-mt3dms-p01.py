@@ -543,18 +543,11 @@ def plot_results(mt3d, mf6, idx, ax=None):
         # Get the MT3DMS concentration output
         fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
         ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
-        times_mt3d = ucnobj_mt3d.get_times()
         conc_mt3d = ucnobj_mt3d.get_alldata()
 
         # Get the MF6 concentration output
-        fname_mf6 = os.path.join(
-            mf6_out_path, list(mf6.model_names)[1] + ".ucn"
-        )
-        ucnobj_mf6 = flopy.utils.HeadFile(
-            fname_mf6, precision="double", text="CONCENTRATION"
-        )
-
-        times_mf6 = ucnobj_mf6.get_times()
+        gwt = mf6.get_model(list(mf6.model_names)[1])
+        ucnobj_mf6 = gwt.output.concentration()
         conc_mf6 = ucnobj_mf6.get_alldata()
 
         # Create figure for scenario

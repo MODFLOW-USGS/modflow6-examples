@@ -392,10 +392,7 @@ def plot_results(sims, idx):
         gwt = sim_mf6gwt.trans
         fs = USGSFigure(figure_type="map", verbose=False)
 
-        sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        fname = os.path.join(sim_ws, "trans.ucn")
-        cobj = flopy.utils.HeadFile(fname, text="CONCENTRATION")
-        conc = cobj.get_data()
+        conc = gwt.output.concentration().get_data()
 
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.UCN")

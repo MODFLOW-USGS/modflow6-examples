@@ -564,19 +564,11 @@ def plot_results(mf6, idx):
             fig.savefig(fpth)
 
         # Start by retrieving some output
-        mf6_out_pth = mf6.simulation_data.mfpath.get_sim_path()
-        mod_bud_file = list(mf6.model_names)[0] + ".bud"
-        sfr_bud_file = list(mf6.model_names)[0] + ".sfr.bud"
-        uzf_bud_file = list(mf6.model_names)[0] + ".uzf.bud"
-        hed_file = list(mf6.model_names)[0] + ".hds"
-        mod_out = os.path.join(mf6_out_pth, mod_bud_file)
-        sfr_out = os.path.join(mf6_out_pth, sfr_bud_file)
-        uzf_out = os.path.join(mf6_out_pth, uzf_bud_file)
-        hds_out = os.path.join(mf6_out_pth, hed_file)
-        modobj = bf.CellBudgetFile(mod_out, precision="double")
-        sfrobj = bf.CellBudgetFile(sfr_out, precision="double")
-        uzfobj = bf.CellBudgetFile(uzf_out, precision="double")
-        hdsobj = bf.HeadFile(hds_out)
+        gwf = mf6.get_model(list(mf6.model_names)[0])
+        hdsobj = gwf.output.head()
+        modobj = gwf.output.budget()
+        sfrobj = gwf.sfr.output.budget()
+        uzfobj = gwf.uzf.output.budget()
 
         ckstpkper = modobj.get_kstpkper()
 

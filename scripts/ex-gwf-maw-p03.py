@@ -601,9 +601,7 @@ def plot_regional_grid(silent=True):
     gwf = sim.get_model(sim_name)
 
     # get regional heads for constant head boundaries
-    fpth = os.path.join(ws, name, "{}.hds".format(sim_name))
-    hobj = flopy.utils.HeadFile(fpth)
-    h = hobj.get_data()
+    h = gwf.output.head().get_data()
 
     fs = USGSFigure(figure_type="map", verbose=False)
     fig = plt.figure(
