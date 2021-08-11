@@ -1218,11 +1218,13 @@ def plot_sfr_results(gwf, silent=True):
     fs = USGSFigure(figure_type="graph", verbose=False)
 
     # load the observations
-    fpth = os.path.join(ws, sim_name, "{}.sfr.obs.csv".format(sim_name))
-    results = np.genfromtxt(fpth, delimiter=",", names=True)
+    sim_ws = os.path.join(ws, sim_name)
+    s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+    g = s.get_model(sim_name)
+    results = g.sfr.output.obs().data
 
     # modify the time
-    results["time"] /= 365.25 * 86400.0
+    results["totim"] /= 365.25 * 86400.0
 
     rnos = (
         3,
@@ -1263,7 +1265,7 @@ def plot_sfr_results(gwf, silent=True):
                 color = "red"
 
             ax.plot(
-                results["time"],
+                results["totim"],
                 scale * results[tag] - offset,
                 lw=0.5,
                 color=color,
