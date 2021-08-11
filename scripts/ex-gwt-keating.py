@@ -353,9 +353,7 @@ def plot_head_results(sims, idx):
     # gwt = sim_mf6gwt.trans
     fs = USGSFigure(figure_type="map", verbose=False)
     sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
-    fname = os.path.join(sim_ws, "flow.hds")
-    hobj = flopy.utils.HeadFile(fname)
-    head = hobj.get_data()
+    head = gwf.output.head().get_data()
     head = np.where(head > botm, head, np.nan)
     fig, ax = plt.subplots(
         1, 1, figsize=figure_size, dpi=300, tight_layout=True
@@ -389,14 +387,10 @@ def plot_conc_results(sims, idx):
     gwt = sim_mf6gwt.trans
     botm = gwf.dis.botm.array
     fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
-    fname = os.path.join(sim_ws, "flow.hds")
-    hobj = flopy.utils.HeadFile(fname)
-    head = hobj.get_data()
+    head = gwf.output.head().get_data()
     head = np.where(head > botm, head, np.nan)
     sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-    fname = os.path.join(sim_ws, "trans.ucn")
-    cobj = flopy.utils.HeadFile(fname, text="concentration")
+    cobj = gwt.output.concentration()
     conc_times = cobj.get_times()
     conc_times = np.array(conc_times)
     fig, axes = plt.subplots(
@@ -464,16 +458,11 @@ def make_animated_gif(sims, idx):
 
     # load head
     fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
-    fname = os.path.join(sim_ws, "flow.hds")
-    hobj = flopy.utils.HeadFile(fname)
-    head = hobj.get_data()
+    head = gwf.output.head().get_data()
     head = np.where(head > botm, head, np.nan)
 
     # load concentration
-    sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-    fname = os.path.join(sim_ws, "trans.ucn")
-    cobj = flopy.utils.HeadFile(fname, text="concentration")
+    cobj = gwt.output.concentration()
     conc_times = cobj.get_times()
     conc_times = np.array(conc_times)
     conc = cobj.get_alldata()

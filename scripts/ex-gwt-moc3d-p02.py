@@ -266,12 +266,7 @@ def plot_results(sims):
         sim_mf6gwf, sim_mf6gwt = sims
         fs = USGSFigure(figure_type="map", verbose=False)
 
-        sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        fname = os.path.join(sim_ws, "trans.ucn")
-        conc = flopy.utils.HeadFile(
-            fname, text="concentration", precision="double"
-        )
-        conc = conc.get_data()
+        conc = sim_mf6gwt.trans.output.concentration().get_data()
 
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
@@ -279,8 +274,6 @@ def plot_results(sims):
 
         gwt = sim_mf6gwt.trans
         pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
-        # pmv.plot_array(conc, alpha=0.5)
-        # pmv.plot_grid()
         levels = [1, 3, 10, 30, 100, 300]
         cs1 = plot_analytical(axs, levels)
         cs2 = pmv.contour_array(
@@ -296,6 +289,7 @@ def plot_results(sims):
 
         # save figure
         if config.plotSave:
+            sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = "{}-map{}".format(sim_folder, config.figure_ext)

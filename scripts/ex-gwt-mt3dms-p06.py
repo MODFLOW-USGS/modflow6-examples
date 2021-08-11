@@ -513,20 +513,6 @@ def plot_results(mt3d, mf6, idx, ax=None):
         mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
         mf6.simulation_data.mfpath.get_sim_path()
 
-        # Get the MT3DMS concentration output
-        fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
-        ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
-        times_mt3d = ucnobj_mt3d.get_times()
-        conc_mt3d = ucnobj_mt3d.get_alldata()
-
-        # Get the MF6 concentration output
-        fname_mf6 = os.path.join(
-            mf6_out_path, list(mf6.model_names)[1] + ".ucn"
-        )
-        ucnobj_mf6 = flopy.utils.HeadFile(
-            fname_mf6, precision="double", text="CONCENTRATION"
-        )
-
         # Get the MT3DMS observation output file
         fname = os.path.join(mt3d_out_path, "MT3D001.OBS")
         if os.path.isfile(fname):
@@ -539,9 +525,6 @@ def plot_results(mt3d, mf6, idx, ax=None):
             mf6_out_path, list(mf6.model_names)[1] + ".obs.csv"
         )
         mf6cobs = np.genfromtxt(fname, delimiter=",", names=True)
-
-        times_mf6 = ucnobj_mf6.get_times()
-        conc_mf6 = ucnobj_mf6.get_alldata()
 
         # Create figure for scenario
         fs = USGSFigure(figure_type="graph", verbose=False)

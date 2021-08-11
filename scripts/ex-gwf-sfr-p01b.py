@@ -57,7 +57,8 @@ delc = 5000.0  # Row width ($ft$)
 strt = "varies"  # Starting head ($ft$)
 k11_stream = 0.002  # Hydraulic conductivity near the stream ($ft/s$)
 k11_basin = "varies"  # Hydraulic conductivity in the basin ($ft/s$)
-ss = 0.1e-5  # Specific storage ($1/s)$
+lake_leakance = 2e-9 # Lakebed leakance ($1/s$)
+ss = 0.1e-5  # Specific storage ($1/s$)
 sy_stream = 0.2  # Specific yield near the stream (unitless)
 sy_basin = 0.1  # Specific yield in the basin (unitless)
 evap_rate = 9.5e-8  # Evapotranspiration rate ($ft/s$)
@@ -97,18 +98,20 @@ extents = (0.0, delr * ncol, 0.0, delc * nrow)
 shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
-# Load the idomain, top, bottom, and evapotranspiration surface arrays
+# Load the idomain, lake locations, top, bottom, and evapotranspiration surface arrays
 
 data_pth = os.path.join("..", "data", sim_name)
 fpth = os.path.join(data_pth, "strt1.txt")
 strt1 = np.loadtxt(fpth, dtype=float)
 strt2 = strt1
 strt = [strt1, strt2]
-fpth = os.path.join(data_pth, "idomain1.txt")
+fpth = os.path.join(data_pth, "idomain.txt")
 idomain1 = np.loadtxt(fpth, dtype=int)
-fpth = os.path.join(data_pth, "idomain2.txt")
-idomain2 = np.loadtxt(fpth, dtype=int)
-idomain = [idomain1, idomain2]
+idomain = [idomain1, idomain1]
+lake_map = np.ones(shape3d, dtype=int) * -1
+fpth = os.path.join(data_pth, "lakes.txt")
+lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
+lake_map = np.ma.masked_where(lake_map < 0, lake_map)
 fpth = os.path.join(data_pth, "top1.txt")
 top = np.loadtxt(fpth, dtype=float)
 fpth = os.path.join(data_pth, "bot1.txt")
@@ -3553,48 +3556,54 @@ for tm in range(len(tdis_ds)):
 
 # LAK Package
 
-lak_pakdata = [[0, 1040.0, 12], [1, 1010.0, 26]]
+#
+# lak_pakdata = [[0, 1040.0, 12], [1, 1010.0, 26]]
+#
+# lak_conn = [
+#     [0, 0, (0, 8, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 1, (0, 8, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 2, (0, 9, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 3, (0, 9, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 5, (0, 10, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 6, (0, 11, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 7, (0, 11, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [0, 8, (1, 9, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [0, 9, (1, 9, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [0, 10, (1, 10, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [0, 11, (1, 10, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 0, (0, 9, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 1, (0, 9, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 2, (0, 9, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 3, (0, 10, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 5, (0, 11, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 6, (0, 11, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 7, (0, 12, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 8, (0, 12, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 9, (0, 13, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 10, (0, 13, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 11, (0, 14, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 12, (0, 14, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 13, (0, 14, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
+#     [1, 14, (1, 10, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 15, (1, 10, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 16, (1, 10, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 17, (1, 11, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 18, (1, 11, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 19, (1, 11, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 20, (1, 12, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 21, (1, 12, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 22, (1, 12, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 23, (1, 13, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 24, (1, 13, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+#     [1, 25, (1, 13, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
+# ]
 
-lak_conn = [
-    [0, 0, (0, 8, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 1, (0, 8, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 2, (0, 9, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 3, (0, 9, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 5, (0, 10, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 6, (0, 11, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 7, (0, 11, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [0, 8, (1, 9, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [0, 9, (1, 9, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [0, 10, (1, 10, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [0, 11, (1, 10, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 0, (0, 9, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 1, (0, 9, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 2, (0, 9, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 3, (0, 10, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 5, (0, 11, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 6, (0, 11, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 7, (0, 12, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 8, (0, 12, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 9, (0, 13, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 10, (0, 13, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 11, (0, 14, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 12, (0, 14, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 13, (0, 14, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-    [1, 14, (1, 10, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 15, (1, 10, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 16, (1, 10, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 17, (1, 11, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 18, (1, 11, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 19, (1, 11, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 20, (1, 12, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 21, (1, 12, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 22, (1, 12, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 23, (1, 13, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 24, (1, 13, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-    [1, 25, (1, 13, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-]
+lak_stage = (
+    1040.0,
+    1010.0,
+)
 
 lak_outlets = [
     [0, 0, -1, "MANNING", 1040.0004, 12.0, 0.29999999e-01, 0.14285709e-02],
@@ -3903,6 +3912,20 @@ def build_model():
             print_input=True,
             continuous=sfr_obs_dict,
         )
+
+        (
+            idomain_wlakes,
+            lakepakdata_dict,
+            lakeconnectiondata,
+        ) = flopy.mf6.utils.get_lak_connections(
+            gwf.modelgrid,
+            lake_map,
+            idomain=gwf.dis.idomain.array,
+            bedleak=lake_leakance,
+        )
+        lak_pakdata = []
+        for key in lakepakdata_dict.keys():
+            lak_pakdata.append([key, lak_stage[key], lakepakdata_dict[key]])
         lak = flopy.mf6.ModflowGwflak(
             gwf,
             print_stage=True,
@@ -3917,7 +3940,7 @@ def build_model():
             noutlets=len(lak_outlets),
             outlets=lak_outlets,
             packagedata=lak_pakdata,
-            connectiondata=lak_conn,
+            connectiondata=lakeconnectiondata,
             perioddata=lk_spd,
             filename="{}.lak".format(sim_name),
         )
@@ -4002,6 +4025,9 @@ def build_model():
             filename="{}.mvr".format(sim_name),
         )
 
+        # rest idomain with lake adjustments
+        gwf.dis.idomain = idomain_wlakes
+
         head_filerecord = "{}.hds".format(sim_name)
         budget_filerecord = "{}.cbc".format(sim_name)
         flopy.mf6.ModflowGwfoc(
@@ -4054,8 +4080,6 @@ def plot_grid(gwf, silent=True):
         ax.set_xlim(extents[:2])
         ax.set_ylim(extents[2:])
         ax.set_aspect("equal")
-        # ax.set_xticks(ticklabels)
-        # ax.set_yticks(ticklabels)
 
     # legend axis
     axes.append(fig.add_subplot(gs[6:, :]))
@@ -4109,13 +4133,13 @@ def plot_grid(gwf, silent=True):
     ax = axes[1]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
     bot_coll = mm.plot_array(
-        botm, vmin=500, vmax=1000, masked_values=masked_values, alpha=0.5
+        botm, vmin=950, vmax=1100, masked_values=masked_values, alpha=0.5
     )
     mm.plot_bc("GHB", color="purple")
     mm.plot_bc("WEL", color="red", kper=1)
     cv = mm.contour_array(
         botm,
-        levels=np.arange(600, 1000, 100),
+        levels=np.arange(950, 1100, 20),
         linewidths=0.5,
         linestyles=":",
         colors="black",
@@ -4220,14 +4244,10 @@ def plot_head_results(gwf, silent=True):
     sim_ws = os.path.join(ws, sim_name)
 
     # create MODFLOW 6 head object
-    file_name = gwf.oc.head_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    hobj = flopy.utils.HeadFile(fpth)
+    hobj = gwf.output.head()
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+    cobj = gwf.output.budget()
 
     kstpkper = hobj.get_kstpkper()
 
@@ -4264,7 +4284,10 @@ def plot_head_results(gwf, silent=True):
 
     # extract heads and specific discharge for first stress period
     head = hobj.get_data(kstpkper=kstpkper[0])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+        gwf,
+    )
 
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
@@ -4280,7 +4303,7 @@ def plot_head_results(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     mm.plot_inactive(color_noflow="0.5")
     mm.plot_grid(lw=0.5, color="black")
     ax.set_xlabel("x-coordinate, in feet")
@@ -4290,15 +4313,16 @@ def plot_head_results(gwf, silent=True):
 
     # extract heads and specific discharge for second stress period
     head = hobj.get_data(kstpkper=kstpkper[1])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
+        gwf,
+    )
 
     ax = axes[1]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
     head_coll = mm.plot_array(
         head, vmin=900, vmax=1120, masked_values=masked_values
     )
-    # mm.plot_bc("GHB", color="purple")
-    # mm.plot_bc("WEL", color="red", kper=1)
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -4308,7 +4332,7 @@ def plot_head_results(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     mm.plot_inactive(color_noflow="0.5")
     mm.plot_grid(lw=0.5, color="black")
     ax.set_xlabel("x-coordinate, in feet")
@@ -4359,8 +4383,8 @@ def plot_mvr_results(idx, gwf, silent=True):
     sim_ws = os.path.join(ws, sim_name)
 
     # load the observations
-    file_name = os.path.join(sim_ws, "{}.mvr.bud".format(sim_name))
-    mvr_Q = bf.CellBudgetFile(file_name, verbose=False, precision="double")
+    mvr = gwf.get_package("MVR-1")
+    mvr_Q = mvr.output.budget()
     # This retrieves all of the MOVER fluxes:
     mvr_all = mvr_Q.get_data(text="      MOVER-FLOW")
 

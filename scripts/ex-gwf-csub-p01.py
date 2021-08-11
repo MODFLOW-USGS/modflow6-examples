@@ -299,11 +299,10 @@ def plot_results(sim, silent=True):
             fig.savefig(fpth)
 
         # get the simulated heads
-        pth = os.path.join(sim_ws, "gwf_calib_obs.csv")
-        sim_obs = np.genfromtxt(pth, names=True, delimiter=",")
+        sim_obs = gwf.obs.output.obs().data
         h0 = sim_obs["W3_1_1"][0]
         sim_obs["W3_1_1"] -= h0
-        sim_date = [dstart + datetime.timedelta(seconds=x) for x in sim_obs["time"]]
+        sim_date = [dstart + datetime.timedelta(seconds=x) for x in sim_obs["totim"]]
 
         # get the observed head
         pth = os.path.join("..", "data", sim_name, "s201_gw_2sec.csv")

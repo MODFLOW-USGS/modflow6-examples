@@ -435,8 +435,7 @@ def plot_grid(sim, silent=True):
     extents = gwf.modelgrid.extent
 
     # read simulated heads
-    pth = os.path.join(ws, name, "{}.hds".format(name))
-    hobj = flopy.utils.HeadFile(pth)
+    hobj = gwf.output.head()
     h0 = hobj.get_data(kstpkper=(0, 0))
     h1 = hobj.get_data(kstpkper=(59, 1))
     hsxs0 = h0[0, 8, :]

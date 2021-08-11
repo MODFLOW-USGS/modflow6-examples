@@ -719,12 +719,8 @@ def plot_results(
         mf6_out_path = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
 
         # Get the MF6 concentration output
-        fname_mf6 = os.path.join(
-            mf6_out_path, list(sim_mf6gwt.model_names)[0] + ".ucn"
-        )
-        ucnobj_mf6 = flopy.utils.HeadFile(
-            fname_mf6, precision="double", text="CONCENTRATION"
-        )
+        gwt = sim_mf6gwt.get_model("gwt-" + name)
+        ucnobj_mf6 = gwt.output.concentration()
 
         times_mf6 = ucnobj_mf6.get_times()
         conc_mf6 = ucnobj_mf6.get_alldata()

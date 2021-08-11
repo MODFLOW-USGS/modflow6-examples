@@ -298,26 +298,25 @@ def plot_results(sim, mf, silent=True):
         gwf = sim.get_model(sim_name)
 
         # create MODFLOW 6 head object
-        file_name = gwf.oc.head_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        hobj = flopy.utils.HeadFile(fpth)
+        hobj = gwf.output.head()
 
         # create MODFLOW-2005 head object
+        file_name = gwf.oc.head_filerecord.get_data()[0][0]
         fpth = os.path.join(sim_ws, "mf2005", file_name)
         hobj0 = flopy.utils.HeadFile(fpth)
 
         # create MODFLOW 6 cell-by-cell budget object
-        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-        fpth = os.path.join(sim_ws, file_name)
-        cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        cobj = gwf.output.budget()
 
         # create MODFLOW-2005 cell-by-cell budget object
+        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
         fpth = os.path.join(sim_ws, "mf2005", file_name)
         cobj0 = flopy.utils.CellBudgetFile(fpth, precision="double")
 
         # extract heads
         head = hobj.get_data()
         head0 = hobj0.get_data()
+        print(head0.shape)
         vmin, vmax = -25, 100
 
         # check that the results are comparable
@@ -337,10 +336,15 @@ def plot_results(sim, mf, silent=True):
                 print(msg)
 
         # extract specific discharge
-        spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=(0, 0))
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", kstpkper=(0, 0))[0],
+            gwf,
+        )
         frf = cobj0.get_data(text="FLOW RIGHT FACE", kstpkper=(0, 0))[0]
         fff = cobj0.get_data(text="FLOW FRONT FACE", kstpkper=(0, 0))[0]
         flf = cobj0.get_data(text="FLOW LOWER FACE", kstpkper=(0, 0))[0]
+        # sqx, sqy, sqz = flopy.utils.postprocessing.get_specific_discharge(
+        #     (frf, fff, flf), mf)
 
         # modflow 6 layers to extract
         layers_mf6 = [0, 2, 4]
@@ -378,7 +382,7 @@ def plot_results(sim, mf, silent=True):
                 colors="black",
             )
             plt.clabel(cv, fmt="%1.0f")
-            fmp.plot_specific_discharge(spdis, normalize=True, color="0.75")
+            fmp.plot_vector(qx, qy, normalize=True, color="0.75")
             title = titles[idx]
             letter = chr(ord("@") + idx + 1)
             fs.heading(letter=letter, heading=title, ax=ax)
@@ -399,8 +403,11 @@ def plot_results(sim, mf, silent=True):
             )
             plt.clabel(cv, fmt="%1.0f")
             fmp.plot_discharge(
-                frf, fff, flf, head=head0, normalize=True, color="0.75"
+                frf, fff, flf, head=head0, normalize=True, color="0.75",
             )
+            # fmp.plot_vector(
+            #     sqx, sqy, normalize=True, color="0.75"
+            # )
             title = titles[idx]
             letter = chr(ord("@") + idx + 4)
             fs.heading(letter=letter, heading=title, ax=ax)

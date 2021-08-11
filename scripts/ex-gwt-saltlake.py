@@ -277,8 +277,7 @@ def plot_conc(sim, idx):
     fig.tight_layout()
 
     # create MODFLOW 6 head object
-    fpth = os.path.join(sim_ws, "trans.ucn")
-    cobj = flopy.utils.HeadFile(fpth, text="concentration")
+    cobj = gwt.output.concentration()
     times = cobj.get_times()
     times = np.array(times)
 
@@ -330,8 +329,7 @@ def make_animated_gif(sim, idx):
     gwf = sim.get_model("flow")
     gwt = sim.get_model("trans")
 
-    fpth = os.path.join(sim_ws, "trans.ucn")
-    cobj = flopy.utils.HeadFile(fpth, text="concentration")
+    cobj = gwt.output.concentration()
     times = cobj.get_times()
     times = np.array(times)
     conc = cobj.get_alldata()

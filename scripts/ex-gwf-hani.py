@@ -207,9 +207,7 @@ def plot_head(idx, sim):
     fig = plt.figure(figsize=figure_size)
     fig.tight_layout()
 
-    fname = os.path.join(sim_ws, "{}.hds".format(sim_name))
-    hdobj = flopy.utils.HeadFile(fname)
-    head = hdobj.get_data()
+    head = gwf.output.head().get_data()
 
     ax = fig.add_subplot(1, 1, 1, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)

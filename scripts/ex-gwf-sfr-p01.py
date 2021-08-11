@@ -1080,14 +1080,10 @@ def plot_head_results(gwf, silent=True):
     sim_ws = os.path.join(ws, sim_name)
 
     # create MODFLOW 6 head object
-    file_name = gwf.oc.head_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    hobj = flopy.utils.HeadFile(fpth)
+    hobj = gwf.output.head()
 
     # create MODFLOW 6 cell-by-cell budget object
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    cobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+    cobj = gwf.output.budget()
 
     kstpkper = hobj.get_kstpkper()
 
@@ -1124,7 +1120,10 @@ def plot_head_results(gwf, silent=True):
 
     # extract heads and specific discharge for first stress period
     head = hobj.get_data(kstpkper=kstpkper[0])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+        gwf,
+    )
 
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
@@ -1140,7 +1139,7 @@ def plot_head_results(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     mm.plot_inactive(color_noflow="0.5")
     mm.plot_grid(lw=0.5, color="black")
     ax.set_xlabel("x-coordinate, in feet")
@@ -1150,15 +1149,16 @@ def plot_head_results(gwf, silent=True):
 
     # extract heads and specific discharge for second stress period
     head = hobj.get_data(kstpkper=kstpkper[1])
-    spdis = cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])
+    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
+        gwf,
+    )
 
     ax = axes[1]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
     head_coll = mm.plot_array(
         head, vmin=900, vmax=1120, masked_values=masked_values
     )
-    # mm.plot_bc("GHB", color="purple")
-    # mm.plot_bc("WEL", color="red", kper=1)
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -1168,7 +1168,7 @@ def plot_head_results(gwf, silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.0f")
-    mm.plot_specific_discharge(spdis, normalize=True, color="0.75")
+    mm.plot_vector(qx, qy, normalize=True, color="0.75")
     mm.plot_inactive(color_noflow="0.5")
     mm.plot_grid(lw=0.5, color="black")
     ax.set_xlabel("x-coordinate, in feet")
@@ -1218,11 +1218,13 @@ def plot_sfr_results(gwf, silent=True):
     fs = USGSFigure(figure_type="graph", verbose=False)
 
     # load the observations
-    fpth = os.path.join(ws, sim_name, "{}.sfr.obs.csv".format(sim_name))
-    results = np.genfromtxt(fpth, delimiter=",", names=True)
+    sim_ws = os.path.join(ws, sim_name)
+    s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+    g = s.get_model(sim_name)
+    results = g.sfr.output.obs().data
 
     # modify the time
-    results["time"] /= 365.25 * 86400.0
+    results["totim"] /= 365.25 * 86400.0
 
     rnos = (
         3,
@@ -1263,7 +1265,7 @@ def plot_sfr_results(gwf, silent=True):
                 color = "red"
 
             ax.plot(
-                results["time"],
+                results["totim"],
                 scale * results[tag] - offset,
                 lw=0.5,
                 color=color,

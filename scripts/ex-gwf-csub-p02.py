@@ -380,13 +380,11 @@ def plot_head_based(sim, silent=True):
     fs = USGSFigure(figure_type="graph", verbose=verbose)
     name = sim.name
 
-    # get head observations
-    pth = os.path.join(ws, name, "gwf_obs.csv")
-    hobs = np.genfromtxt(pth, names=True, delimiter=",")
-
     # get csub observations
-    pth = os.path.join(ws, name, "{}.csub.obs.csv".format(name))
-    cobs = np.genfromtxt(pth, names=True, delimiter=",")
+    ws = sim.simulation_data.mfpath.get_sim_path()
+    s = flopy.mf6.MFSimulation().load(sim_ws=ws, verbosity_level=0)
+    gwf = s.get_model(name)
+    cobs = gwf.csub.output.obs().data
 
     # calculate the compaction analytically
     ac = []
@@ -396,7 +394,7 @@ def plot_head_based(sim, silent=True):
     dhalf = thick * 0.5
     az = np.linspace(-dhalf, dhalf, num=nz)
     dz = az[1] - az[0]
-    for tt in cobs["time"]:
+    for tt in cobs["totim"]:
         c = 0.0
         for jdx, zz in enumerate(az):
             f = 1.0
@@ -408,7 +406,7 @@ def plot_head_based(sim, silent=True):
     ac = np.array(ac)
 
     # calculate normalized simulation time
-    tpct = cobs["time"] * 100 / tau0
+    tpct = cobs["totim"] * 100 / tau0
 
     # plot the results
     fig = plt.figure(figsize=figure_size)
@@ -477,16 +475,20 @@ def plot_effstress(sim, silent=True):
     name = sim.name
 
     # get effective stress csub observations
-    pth = os.path.join(ws, name, "{}.csub.obs.csv".format(name))
-    cobs = np.genfromtxt(pth, names=True, delimiter=",")
+    sim_ws = os.path.join(ws, name)
+    s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+    gwf = s.get_model(name)
+    cobs = gwf.csub.output.obs().data
 
     # get head-based csub observations
     name0 = name.replace("-p02b", "-p02a")
-    pth = os.path.join(ws, name0, "{}.csub.obs.csv".format(name0))
-    cobs0 = np.genfromtxt(pth, names=True, delimiter=",")
+    ws0 = os.path.join(ws, name0)
+    sim0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+    gwf0 = sim0.get_model(name0)
+    cobs0 = gwf0.csub.output.obs().data
 
     # calculate normalized simulation time
-    tpct = cobs["time"] * 100 / tau0
+    tpct = cobs["totim"] * 100 / tau0
 
     # plot the results
     fig = plt.figure(figsize=figure_size)
@@ -628,14 +630,18 @@ def plot_comp_q_comparison(sim, silent=True):
         axes.append(ax)
 
     for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-        pth = os.path.join(ws, name, hb_dir, "{}.csub.obs.csv".format(name))
-        hb_obs = np.genfromtxt(pth, names=True, delimiter=",")
+        sim_ws = os.path.join(ws, name, hb_dir)
+        s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+        g = s.get_model(name)
+        hb_obs = g.csub.output.obs().data
 
-        pth = os.path.join(ws, name, es_dir, "{}.csub.obs.csv".format(name))
-        es_obs = np.genfromtxt(pth, names=True, delimiter=",")
+        ws0 = os.path.join(ws, name, es_dir)
+        s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+        g0 = s0.get_model(name)
+        es_obs = g0.csub.output.obs().data
 
         # calculate normalized simulation time
-        tpct = hb_obs["time"] * 100 / tau0
+        tpct = hb_obs["totim"] * 100 / tau0
 
         thickness = thicknesses[idx]
         if idx == 0:
@@ -741,16 +747,28 @@ def plot_head_comparison(sim, silent=True):
         axes.append(ax)
 
     for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-        pth = os.path.join(ws, name, hb_dir, "{}.csub.obs.csv".format(name))
-        hb_obs = np.genfromtxt(pth, names=True, delimiter=",")
+        sim_ws = os.path.join(ws, name, hb_dir)
+        s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+        g = s.get_model(name)
+        hb_obs = g.csub.output.obs().data
         hb_arr = fill_heads(hb_obs, ndcells)
 
-        pth = os.path.join(ws, name, es_dir, "{}.csub.obs.csv".format(name))
-        es_obs = np.genfromtxt(pth, names=True, delimiter=",")
+        ws0 = os.path.join(ws, name, es_dir)
+        s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+        g0 = s0.get_model(name)
+        es_obs = g0.csub.output.obs().data
         es_arr = fill_heads(es_obs, ndcells)
+        #
+        # pth = os.path.join(ws, name, hb_dir, "{}.csub.obs.csv".format(name))
+        # hb_obs = np.genfromtxt(pth, names=True, delimiter=",")
+        # hb_arr = fill_heads(hb_obs, ndcells)
+        #
+        # pth = os.path.join(ws, name, es_dir, "{}.csub.obs.csv".format(name))
+        # es_obs = np.genfromtxt(pth, names=True, delimiter=",")
+        # es_arr = fill_heads(es_obs, ndcells)
 
         # calculate normalized simulation time
-        tpct = hb_obs["time"] * 100 / tau0
+        tpct = hb_obs["totim"] * 100 / tau0
 
         # calculate location closest to 1, 5, 10, 50, and 100 percent of time constant
         locs = {}
