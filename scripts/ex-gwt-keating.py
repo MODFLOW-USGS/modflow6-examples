@@ -507,9 +507,8 @@ def plot_cvt_results(sims, idx):
     botm = gwf.dis.botm.array
     fs = USGSFigure(figure_type="map", verbose=False)
     sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-    fname = os.path.join(sim_ws, "trans.obs.csv")
-    mf6gwt_ra = np.genfromtxt(fname, names=True, delimiter=",", deletechars="")
-    dt = [("time", "f8"), ("obs", "f8")]
+    mf6gwt_ra = gwt.obs.output.obs().data
+    dt = [("totim", "f8"), ("obs", "f8")]
     fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs1.csv")
     obs1ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
     fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs2.csv")
@@ -517,14 +516,14 @@ def plot_cvt_results(sims, idx):
     fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
     ax = axes[0]
     ax.plot(
-        mf6gwt_ra["time"],
+        mf6gwt_ra["totim"],
         mf6gwt_ra["OBS1"],
         "b-",
         alpha=1.0,
         label="MODFLOW 6",
     )
     ax.plot(
-        obs1ra["time"],
+        obs1ra["totim"],
         obs1ra["obs"],
         markerfacecolor="None",
         markeredgecolor="k",
@@ -540,14 +539,14 @@ def plot_cvt_results(sims, idx):
     fs.graph_legend(ax)
     ax = axes[1]
     ax.plot(
-        mf6gwt_ra["time"],
+        mf6gwt_ra["totim"],
         mf6gwt_ra["OBS2"],
         "b-",
         alpha=1.0,
         label="MODFLOW 6",
     )
     ax.plot(
-        obs2ra["time"],
+        obs2ra["totim"],
         obs2ra["obs"],
         markerfacecolor="None",
         markeredgecolor="k",

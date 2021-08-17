@@ -467,10 +467,10 @@ def plot_maw_results(silent=True):
     # load the observations
     name = list(parameters.keys())[1]
     fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
-    maw = np.genfromtxt(fpth, delimiter=",", names=True)
+    maw = flopy.utils.Mf6Obs(fpth).data
     name = list(parameters.keys())[2]
     fpth = os.path.join(ws, name, "{}.gwf.obs.csv".format(sim_name))
-    gwf = np.genfromtxt(fpth, delimiter=",", names=True)
+    gwf = flopy.utils.Mf6Obs(fpth).data
 
     # process heads
     hgwf = 0.0

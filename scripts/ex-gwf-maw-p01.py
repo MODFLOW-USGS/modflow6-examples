@@ -233,12 +233,12 @@ def plot_maw_results(silent=True):
     # load the observations
     name = list(parameters.keys())[0]
     fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
-    maw0 = np.genfromtxt(fpth, delimiter=",", names=True)
+    maw0 = flopy.utils.Mf6Obs(fpth).data
     name = list(parameters.keys())[1]
     fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
-    maw1 = np.genfromtxt(fpth, delimiter=",", names=True)
+    maw1 = flopy.utils.Mf6Obs(fpth).data
 
-    time = maw0["time"] * 86400.0
+    time = maw0["totim"] * 86400.0
 
     tmin = time[0]
     tmax = time[-1]

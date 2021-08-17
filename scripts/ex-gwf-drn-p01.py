@@ -1140,12 +1140,12 @@ def plot_gwseep_results(silent=True):
     # load the observations
     name = list(parameters.keys())[0]
     fpth = os.path.join(ws, name, "{}.surfrate.obs.csv".format(sim_name))
-    drn = np.genfromtxt(fpth, delimiter=",", names=True)
+    drn = flopy.utils.Mf6Obs(fpth).data
     name = list(parameters.keys())[1]
     fpth = os.path.join(ws, name, "{}.surfrate.obs.csv".format(sim_name))
-    uzf = np.genfromtxt(fpth, delimiter=",", names=True)
+    uzf = flopy.utils.Mf6Obs(fpth).data
 
-    time = drn["time"] / 86400.0
+    time = drn["totim"] / 86400.0
     q0 = drn["SURFRATE"]
     q1 = uzf["SURFRATE"]
     mean_error = np.mean(q0 - q1)

@@ -804,8 +804,7 @@ def plot_grid(gwf, silent=True):
     sfr = shp.Reader(shape_pth)
 
     # load the observations
-    fpth = os.path.join(ws, sim_name, "{}.lak.obs.csv".format(sim_name))
-    lak_results = np.genfromtxt(fpth, delimiter=",", names=True)
+    lak_results = gwf.lak.output.obs().data
 
     # create MODFLOW 6 head object
     hobj = gwf.output.head()
@@ -1029,10 +1028,8 @@ def plot_lak_results(gwf, silent=True):
     fs = USGSFigure(figure_type="graph", verbose=False)
 
     # load the observations
-    fpth = os.path.join(ws, sim_name, "{}.lak.obs.csv".format(sim_name))
-    lak_results = np.genfromtxt(fpth, delimiter=",", names=True)
-    fpth = os.path.join(ws, sim_name, "{}.gwf.obs.csv".format(sim_name))
-    gwf_results = np.genfromtxt(fpth, delimiter=",", names=True)
+    lak_results = gwf.lak.output.obs().data
+    gwf_results = gwf.obs[0].output.obs().data
 
     dtype = [
         ("time", float),
@@ -1044,7 +1041,7 @@ def plot_lak_results(gwf, silent=True):
     ]
 
     results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)
-    results["time"][1:] = lak_results["time"]
+    results["time"][1:] = lak_results["totim"]
     results["LAKE1"][0] = lak_strt
     results["LAKE1"][1:] = lak_results["LAKE1"]
     results["LAKE2"][0] = lak_strt

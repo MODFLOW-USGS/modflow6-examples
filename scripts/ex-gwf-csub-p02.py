@@ -475,9 +475,7 @@ def plot_effstress(sim, silent=True):
     name = sim.name
 
     # get effective stress csub observations
-    sim_ws = os.path.join(ws, name)
-    s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
-    gwf = s.get_model(name)
+    gwf = sim.get_model(name)
     cobs = gwf.csub.output.obs().data
 
     # get head-based csub observations

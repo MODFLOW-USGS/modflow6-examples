@@ -412,11 +412,9 @@ def plot_results():
             sim_ws = os.path.join(ws, sim_name)
 
             fname = os.path.join(sim_ws, "mf6gwt", "trans.obs.csv")
-            mf6gwt_ra = np.genfromtxt(
-                fname, names=True, delimiter=",", deletechars=""
-            )
+            mf6gwt_ra = flopy.utils.Mf6Obs(fname).data
             axs.plot(
-                mf6gwt_ra["time"],
+                mf6gwt_ra["totim"],
                 mf6gwt_ra["MYOBS"],
                 markerfacecolor="None",
                 markeredgecolor="k",
@@ -453,16 +451,12 @@ def plot_scenario_results(sims, idx):
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         fs = USGSFigure(figure_type="graph", verbose=False)
 
-        sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        fname = os.path.join(sim_ws, "trans.obs.csv")
-        mf6gwt_ra = np.genfromtxt(
-            fname, names=True, delimiter=",", deletechars=""
-        )
+        mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
         axs.plot(
-            mf6gwt_ra["time"],
+            mf6gwt_ra["totim"],
             mf6gwt_ra["MYOBS"],
             markerfacecolor="None",
             markeredgecolor="b",

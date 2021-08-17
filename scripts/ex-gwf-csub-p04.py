@@ -372,10 +372,9 @@ def run_model(sim, silent=True):
 
 def get_csub_observations(sim):
     name = sim.name
-    pth = os.path.join(ws, name, "{}.csub.obs.csv".format(name))
-
-    csub_obs = np.genfromtxt(pth, delimiter=",", names=True)
-    csub_obs["time"] /= 365.25
+    gwf = sim.get_model(sim_name)
+    csub_obs = gwf.csub.output.obs().data
+    csub_obs["totim"] /= 365.25
 
     # set initial preconsolidation stress to stress period 1 value
     slist = [name for name in csub_obs.dtype.names if "PC" in name]
@@ -421,7 +420,7 @@ def plot_compaction_values(ax, sim, tagbase="W1L"):
         fc = colors[k]
         tag = "{}{}".format(tagbase, k + 1)
         label = "Model layer {}".format(k + 1)
-        ax.fill_between(obs["time"], obs[tag], y2=0, color=fc, label=label)
+        ax.fill_between(obs["totim"], obs[tag], y2=0, color=fc, label=label)
 
 
 # Function to plot the model grid
@@ -704,7 +703,7 @@ def plot_stresses(sim, silent=True):
     name = sim.name
 
     cd = get_csub_observations(sim)
-    tmax = cd["time"][-1]
+    tmax = cd["totim"][-1]
 
     fig, axes = plt.subplots(
         ncols=1,
@@ -719,28 +718,28 @@ def plot_stresses(sim, silent=True):
     ax.set_xlim(0, tmax)
     ax.set_ylim(110, 150)
     ax.plot(
-        cd["time"],
+        cd["totim"],
         cd["PC1"],
         color="blue",
         lw=1,
         label="Preconsolidation stress",
     )
-    ax.plot(cd["time"], cd["ES1"], color="red", lw=1, label="Effective stress")
+    ax.plot(cd["totim"], cd["ES1"], color="red", lw=1, label="Effective stress")
     fs.heading(ax, letter="A", heading="Model layer 1, row 9, column 10")
     fs.remove_edge_ticks(ax)
 
     idx += 1
     ax = axes[idx]
     ax.set_ylim(185, 205)
-    ax.plot(cd["time"], cd["GS1"], color="black", lw=1)
+    ax.plot(cd["totim"], cd["GS1"], color="black", lw=1)
     fs.heading(ax, letter="B", heading="Model layer 1, row 9, column 10")
     fs.remove_edge_ticks(ax)
 
     idx += 1
     ax = axes[idx]
     ax.set_ylim(270, 310)
-    ax.plot(cd["time"], cd["PC2"], color="blue", lw=1)
-    ax.plot(cd["time"], cd["ES2"], color="red", lw=1)
+    ax.plot(cd["totim"], cd["PC2"], color="blue", lw=1)
+    ax.plot(cd["totim"], cd["ES2"], color="red", lw=1)
     fs.heading(ax, letter="C", heading="Model layer 2, row 9, column 10")
     fs.remove_edge_ticks(ax)
 
@@ -758,7 +757,7 @@ def plot_stresses(sim, silent=True):
         [-100, -50], [-100, -100], color="red", lw=1, label="Effective stress"
     )
     ax.plot(
-        cd["time"], cd["GS2"], color="black", lw=1, label="Geostatic stress"
+        cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress"
     )
     fs.graph_legend(ax, ncol=3, loc="upper center")
     fs.heading(ax, letter="D", heading="Model layer 2, row 9, column 10")

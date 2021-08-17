@@ -652,6 +652,7 @@ def plot_gwt_results(sims):
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
+        # create concentration timeseries plot
         lkaconc = gwt.lak.output.concentration().get_alldata()[:, 0, 0, :]
         bobj = gwt.sfr.output.concentration()
         sfaconc = bobj.get_alldata()[:, 0, 0, :]
