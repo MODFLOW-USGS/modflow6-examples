@@ -878,9 +878,9 @@ def dataframe_interp(df_in, new_index):
 
 
 def process_csub_obs(fpth):
-    tdata = np.genfromtxt(fpth, names=True, delimiter=",")
+    tdata = flopy.utils.Mf6Obs(fpth).data
     dtype = [
-        ("time", float),
+        ("totim", float),
         ("CUNIT", float),
         ("AQUITARD", float),
         ("NODELAY", float),
@@ -891,9 +891,9 @@ def process_csub_obs(fpth):
 
     # create structured array and fill time
     v = np.zeros(tdata.shape[0], dtype=dtype)
-    v["time"] = tdata["time"]
-    v["time"] /= 365.25
-    v["time"] += 1908.353182752
+    v["totim"] = tdata["totim"]
+    v["totim"] /= 365.25
+    v["totim"] += 1908.353182752
 
     # transfer data from temporary storage
     for key in pcomp:
@@ -1157,9 +1157,9 @@ def plot_boundary_heads(silent=True):
     fs = USGSFigure(figure_type="graph", verbose=verbose)
 
     def process_dtw_obs(fpth):
-        v = np.genfromtxt(fpth, names=True, delimiter=",")
-        v["time"] /= 365.25
-        v["time"] += 1908.353182752
+        v = flopy.utils.Mf6Obs(fpth).data
+        v["totim"] /= 365.25
+        v["totim"] += 1908.353182752
         for key in v.dtype.names[1:]:
             v[key] *= -1.0
         return v
@@ -1182,7 +1182,7 @@ def plot_boundary_heads(silent=True):
     ax.plot([1907, 2007], [0, 0], lw=0.5, color="0.5")
     for idx, key in enumerate(pheads):
         ax.plot(
-            hdata["time"],
+            hdata["totim"],
             hdata[key],
             lw=0.75,
             color=hcolors[idx],
@@ -1241,9 +1241,9 @@ def plot_head_es_comparison(silent=True):
             stext = "Effective stress-based"
             otext = "Head-based"
         mtext = "mean error = {:7.4f} {}".format(me[key], length_units)
-        ax.plot(hb["time"], hb[key], color="#238A8DFF", lw=1.25, label=otext)
+        ax.plot(hb["totim"], hb[key], color="#238A8DFF", lw=1.25, label=otext)
         ax.plot(
-            es["time"],
+            es["totim"],
             es[key],
             color="black",
             lw=0.75,

@@ -223,9 +223,9 @@ def plot_maw_results(silent=True):
 
     # load the observations
     fpth = os.path.join(ws, sim_name, "{}.maw.obs.csv".format(sim_name))
-    maw = np.genfromtxt(fpth, delimiter=",", names=True)
+    maw = flopy.utils.Mf6Obs(fpth).data
 
-    time = maw["time"] * 86400.0
+    time = maw["totim"] * 86400.0
 
     tmin = time[0]
     tmax = time[-1]

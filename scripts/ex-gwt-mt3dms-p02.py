@@ -425,10 +425,7 @@ def plot_results_ct(sims, idx, **kwargs):
         fs = USGSFigure(figure_type="graph", verbose=False)
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        fname = os.path.join(sim_ws, "trans.obs.csv")
-        mf6gwt_ra = np.genfromtxt(
-            fname, names=True, delimiter=",", deletechars=""
-        )
+        mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
@@ -444,7 +441,7 @@ def plot_results_ct(sims, idx, **kwargs):
         )
 
         axs.plot(
-            mf6gwt_ra["time"],
+            mf6gwt_ra["totim"],
             mf6gwt_ra["X008"] / source_concentration,
             ls="--",
             color="blue",
@@ -489,13 +486,11 @@ def plot_results():
             beta = parameters[sim_name]["beta"]
 
             fname = os.path.join(sim_ws, "mf6gwt", "trans.obs.csv")
-            mf6gwt_ra = np.genfromtxt(
-                fname, names=True, delimiter=",", deletechars=""
-            )
+            mf6gwt_ra = flopy.utils.Mf6Obs(fname).data
             mf6conc = mf6gwt_ra["X008"] / source_concentration
             iskip = 20
             axs.plot(
-                mf6gwt_ra["time"][::iskip],
+                mf6gwt_ra["totim"][::iskip],
                 mf6conc[::iskip],
                 markerfacecolor="None",
                 markeredgecolor="k",

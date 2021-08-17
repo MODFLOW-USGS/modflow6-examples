@@ -524,7 +524,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         fname = os.path.join(
             mf6_out_path, list(mf6.model_names)[1] + ".obs.csv"
         )
-        mf6cobs = np.genfromtxt(fname, delimiter=",", names=True)
+        mf6cobs = flopy.utils.Mf6Obs(fname).data
 
         # Create figure for scenario
         fs = USGSFigure(figure_type="graph", verbose=False)
@@ -542,7 +542,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         ax.plot(x_pare, y_pare, label="Upstream FD", marker="^")
 
         # Add MF6 output
-        x_mf6 = mf6cobs["time"] / 365.0
+        x_mf6 = mf6cobs["totim"] / 365.0
         y_mf6 = mf6cobs["BCKGRND_CN"]
         x_mf6_pare = x_mf6[::20]
         y_mf6_pare = y_mf6[::20]

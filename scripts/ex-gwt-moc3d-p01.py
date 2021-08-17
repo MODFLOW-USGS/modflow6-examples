@@ -319,10 +319,7 @@ def plot_results_ct(
         fs = USGSFigure(figure_type="graph", verbose=False)
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        fname = os.path.join(sim_ws, "trans.obs.csv")
-        mf6gwt_ra = np.genfromtxt(
-            fname, names=True, delimiter=",", deletechars=""
-        )
+        mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
         fig, axs = plt.subplots(
             1, 1, figsize=figure_size, dpi=300, tight_layout=True
         )
@@ -331,7 +328,7 @@ def plot_results_ct(
         iskip = 5
         atimes = np.arange(0, total_time, 0.1)
         obsnames = ["X005", "X405", "X1105"]
-        simtimes = mf6gwt_ra["time"]
+        simtimes = mf6gwt_ra["totim"]
         dispersion_coefficient = (
             longitudinal_dispersivity * specific_discharge / retardation_factor
         )

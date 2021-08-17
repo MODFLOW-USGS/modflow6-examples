@@ -1218,10 +1218,7 @@ def plot_sfr_results(gwf, silent=True):
     fs = USGSFigure(figure_type="graph", verbose=False)
 
     # load the observations
-    sim_ws = os.path.join(ws, sim_name)
-    s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
-    g = s.get_model(sim_name)
-    results = g.sfr.output.obs().data
+    results = gwf.sfr.output.obs().data
 
     # modify the time
     results["totim"] /= 365.25 * 86400.0

@@ -441,14 +441,20 @@ def plot_ts(sim):
     fs = USGSFigure(figure_type="graph", verbose=False)
     sim_ws = os.path.join(ws, sim_name)
     gwf = sim.get_model(sim_name)
-    ylabel = ["head (m)", "flow ($m^3/d$", "flow ($m^3/d$"]
-    for iplot, obstype in enumerate(["obs.head", "obs.flow", "ghb.obs"]):
+    obsnames = gwf.obs[1].output.obs_names
+    obs_list = [
+        gwf.obs[1].output.obs(f=obsnames[0]),
+        gwf.obs[1].output.obs(f=obsnames[1]),
+        gwf.ghb.output.obs(),
+    ]
+    ylabel = ("head (m)", "flow ($m^3/d$)", "flow ($m^3/d$)")
+    obs_fig = ("obs-head", "obs-flow", "ghb-obs")
+    for iplot, obstype in enumerate(obs_list):
         fig = plt.figure(figsize=(6, 3))
         ax = fig.add_subplot()
-        fname = os.path.join(sim_ws, "{}.{}.csv".format(sim_name, obstype))
-        tsdata = np.genfromtxt(fname, names=True, delimiter=",")
+        tsdata = obstype.data
         for name in tsdata.dtype.names[1:]:
-            ax.plot(tsdata["time"], tsdata[name], label=name)
+            ax.plot(tsdata["totim"], tsdata[name], label=name)
         ax.set_xlabel("time (d)")
         ax.set_ylabel(ylabel[iplot])
         fs.graph_legend(ax)
@@ -457,7 +463,7 @@ def plot_ts(sim):
                 "..",
                 "figures",
                 "{}-{}{}".format(
-                    sim_name, obstype.replace(".", "-"), config.figure_ext
+                    sim_name, obs_fig[iplot], config.figure_ext
                 ),
             )
             fig.savefig(fpth)
