@@ -42,6 +42,7 @@ jobs:
 
       - name: Install TeX Live and additional TrueType fonts
         run: |
+          sudo apt-get update
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
       - name: Install pandoc
