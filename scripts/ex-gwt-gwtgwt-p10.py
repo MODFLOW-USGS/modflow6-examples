@@ -169,6 +169,7 @@ obs = [
 # Solver settings
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-6, 1e-6, 1.0
+hclose_gwt, rclose_gwt = 1e-6, 1e-6
 percel = 1.0  # HMOC parameters
 itrack = 2
 wd = 0.5
@@ -514,12 +515,12 @@ def add_transport(sim):
     imsgwt = flopy.mf6.ModflowIms(
         sim,
         print_option="SUMMARY",
-        outer_dvclose=hclose,
+        outer_dvclose=hclose_gwt,
         outer_maximum=nouter,
         under_relaxation="NONE",
         inner_maximum=ninner,
-        inner_dvclose=hclose,
-        rcloserecord=rclose,
+        inner_dvclose=hclose_gwt,
+        rcloserecord=rclose_gwt,
         linear_acceleration="BICGSTAB",
         scaling_method="NONE",
         reordering_method="NONE",
@@ -747,8 +748,8 @@ def run_model(sim):
             print(buff)
     return success
 
-# Load MODFLOW 6 reference (GWT MT3DMS p10)
-def get_reference_data():
+# Load MODFLOW 6 reference for the concentrations (GWT MT3DMS p10)
+def get_reference_data_conc():
     fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_1days.txt"))
     conc1 = np.loadtxt(fpath)
     fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_500days.txt"))
@@ -759,6 +760,19 @@ def get_reference_data():
     conc1000 = np.loadtxt(fpath)
 
     return [conc1, conc500, conc750, conc1000]
+
+# Load MODFLOW 6 reference for heads (GWT MT3DMS p10)
+def get_reference_data_heads():
+    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1days.txt"))
+    head1 = np.loadtxt(fpath)
+    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_500days.txt"))
+    head500 = np.loadtxt(fpath)
+    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_750days.txt"))
+    head750 = np.loadtxt(fpath)
+    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1000days.txt"))
+    head1000 = np.loadtxt(fpath)
+
+    return [head1, head500, head750, head1000]
 
 # Plot the inner and outer grid
 def plot_grids(sim):
@@ -777,14 +791,14 @@ def plot_grids(sim):
         [ymin, ymin, ymax, ymax, ymin],
         "r--",
     )
-    fpath = os.path.join("..", "figures", "ex-gwtgwt-mt3d-p10-modelgrid.png")
+    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-modelgrid.png")
     fig.savefig(fpath)
 
 # Plot the difference in concentration after 1,500,750,1000 days
 # between this coupled model setup using a GWT-GWT exchange and the
 # single model reference
-def plot_difference(sim):
-    conc_singlemodel_lay3 = get_reference_data()
+def plot_difference_conc(sim):
+    conc_singlemodel_lay3 = get_reference_data_conc()
 
     # Get the concentration output
     gwt_outer = sim.get_model(gwtname_out)
@@ -884,7 +898,115 @@ def plot_difference(sim):
     title = "Difference Layer 3 Time = 1000 days"
     fs.heading(letter='D', heading=title)
 
-    fpath = os.path.join("..", "figures", "ex-gwtgwt-mt3d-p10-difference.png")
+    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffconc.png")
+    fig.savefig(fpath)
+
+    return
+
+# Plot the difference in head after 1,500,750,1000 days
+# between this coupled model and the single model reference
+def plot_difference_heads(sim):
+    head_singlemodel_lay3 = get_reference_data_heads()
+
+    # Get the concentration output
+    gwf_outer = sim.get_model(gwfname_out)
+    gwf = sim.get_model(gwfname_inn)
+
+    hobj_mf6 = gwf.output.head()
+    head_mf6 = hobj_mf6.get_alldata()
+    hobj_mf6_outer = gwf_outer.output.head()
+    head_mf6_outer = hobj_mf6_outer.get_alldata()
+
+    # Create figure for scenario
+    fs = USGSFigure(figure_type="graph", verbose=False)
+    plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
+    fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
+
+    # Difference in heads @ 1 day
+    ax = fig.add_subplot(2, 2, 1, aspect="equal")
+    mm = flopy.plot.PlotMapView(model=gwf_outer)
+    mm.plot_grid(color=".5", alpha=0.2)
+    istep = 0
+    ilayer = 2
+    h_1day = head_mf6_outer[istep]
+    h_1day[:, 8:53, 6:34] = head_mf6[istep]
+    h_1day_singlemodel_lay3 = head_singlemodel_lay3[istep]
+    pa = mm.plot_array(h_1day[ilayer] - h_1day_singlemodel_lay3)
+    xc, yc = gwf.modelgrid.xycenters
+    plt.xlim(5100, 5100 + 28 * 50)
+    plt.ylim(9100, 9100 + 45 * 50)
+    plt.xlabel("Distance Along X-Axis, in meters")
+    plt.ylabel("Distance Along Y-Axis, in meters")
+    plt.colorbar(pa)
+
+    # Plot the wells as well
+    for cid, f, c in welspd_mf6:
+        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+    title = "Difference Layer 3 Time = 1 day"
+    fs.heading(letter='A', heading=title)
+
+    # Difference in heads @ 500 days
+    ax = fig.add_subplot(2, 2, 2, aspect="equal")
+    mm = flopy.plot.PlotMapView(model=gwf_outer)
+    mm.plot_grid(color=".5", alpha=0.2)
+    istep = 1
+    ilayer = 2
+    h_500days = head_mf6_outer[istep]
+    h_500days[:, 8:53, 6:34] = head_mf6[istep]
+    h_500days_singlemodel_lay3 = head_singlemodel_lay3[istep]
+    pa = mm.plot_array(h_500days[ilayer] - h_500days_singlemodel_lay3)
+    plt.xlim(5100, 5100 + 28 * 50)
+    plt.ylim(9100, 9100 + 45 * 50)
+    plt.xlabel("Distance Along X-Axis, in meters")
+    plt.ylabel("Distance Along Y-Axis, in meters")
+    plt.colorbar(pa)
+    for cid, f, c in welspd_mf6:
+        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+    title = "Difference Layer 3 Time = 500 days"
+    fs.heading(letter='B', heading=title)
+
+    # Difference in heads @ 750 days
+    ax = fig.add_subplot(2, 2, 3, aspect="equal")
+    mm = flopy.plot.PlotMapView(model=gwf_outer)
+    mm.plot_grid(color=".5", alpha=0.2)
+    istep = 2
+    ilayer = 2
+    h_750days = head_mf6_outer[istep]
+    h_750days[:, 8:53, 6:34] = head_mf6[istep]
+    h_750days_singlemodel_lay3 = head_singlemodel_lay3[istep]
+    pa = mm.plot_array(h_750days[ilayer] - h_750days_singlemodel_lay3)
+    plt.xlim(5100, 5100 + 28 * 50)
+    plt.ylim(9100, 9100 + 45 * 50)
+    plt.xlabel("Distance Along X-Axis, in meters")
+    plt.ylabel("Distance Along Y-Axis, in meters")
+    plt.colorbar(pa)
+    for cid, f, c in welspd_mf6:
+        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+    title = "Difference Layer 3 Time = 750 days"
+    fs.heading(letter='C', heading=title)
+
+    # Difference in heads @ 1000 days
+    ax = fig.add_subplot(2, 2, 4, aspect="equal")
+    mm = flopy.plot.PlotMapView(model=gwf_outer)
+    mm.plot_grid(color=".5", alpha=0.2)
+    istep = 3
+    ilayer = 2
+    h_1000days = head_mf6_outer[istep]
+    h_1000days[:, 8:53, 6:34] = head_mf6[istep]
+    h_1000days_singlemodel_lay3 = head_singlemodel_lay3[istep]
+    pa = mm.plot_array(h_1000days[ilayer] - h_1000days_singlemodel_lay3)
+    plt.xlim(5100, 5100 + 28 * 50)
+    plt.ylim(9100, 9100 + 45 * 50)
+    plt.xlabel("Distance Along X-Axis, in meters")
+    plt.ylabel("Distance Along Y-Axis, in meters")
+    plt.colorbar(pa)
+
+    for cid, f, c in welspd_mf6:
+        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+    title = "Difference Layer 3 Time = 1000 days"
+    fs.heading(letter='D', heading=title)
+
+    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffhead.png")
     fig.savefig(fpath)
 
     return
@@ -973,7 +1095,7 @@ def plot_concentration(sim):
     title = "Layer 3 Time = 1000 days"
     fs.heading(letter='D', heading=title)
 
-    fpath = os.path.join("..", "figures", "ex-gwtgwt-mt3d-p10-concentrations.png")
+    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-concentration.png")
     fig.savefig(fpath)
 
     return
@@ -984,10 +1106,11 @@ def plot_results(sim):
         print("Plotting model results...")
         plot_grids(sim)
         plot_concentration(sim)
-        plot_difference(sim)
+        plot_difference_conc(sim)
+        plot_difference_heads(sim)
 
 # Main
 if __name__ == "__main__":
-    sim = build_model("gwt-spill")
+    sim = build_model(example_name)
     run_model(sim)
     plot_results(sim)

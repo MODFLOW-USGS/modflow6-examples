@@ -1,57 +1,23 @@
 \section{Example}
 
-% Describe source of problem
+This example is based on problem 10 from the MT3DMS manual \citep{zheng1999mt3dms}. The goal in this example is not to compare the final results to the MT3DMS data presented there, but to show how to create an equivalent setup of that problem using a multi-model approach with the GWF-GWF and GWT-GWT Model Exchanges. To validate its outcome, we can compare the simulated concentration in the study area to the \mf results from the original example.
 
 \subsection{Example description}
 
-% spatial discretization 
+The simulated processes and configuration data for this example are identical to those in \mf  MT3DMS problem 10 elsewhere in these examples. However, for this example the study site has been modeled as a separate GWF model and a coupled GWT model, embedded in in a coarser, surrounding system. Figure~\ref{fig:ex-gwtgwt-grid} shows the decomposition of the original grid for the current multi-model approach. By design, this alternative model setup should yield equivalent results.
 
-% temporal discretization
-
-% material properties
-
-% initial conditions
-
-% boundary conditions
-
-% add static parameter table(s)
-%\input{../tables/ex-gwf-twri01-01}
-
-% for examples without scenarios
 \subsection{Example Results}
 
-Describe the scenarios
+(Explain how the figures prove that the results are identical within the solver’s tolerance)
 
-% for examples with scenarios
-\subsection{Example Scenarios}
+\begin{StandardFigure}{The model grid for the studied problem. The red dashed rectangle shows where the GWF and GWT Model Exchange connects the inner to the outer models.}{fig:ex-gwtgwt-grid}{../figures/ex-gwtgwt-p10-modelgrid.png}
+\end{StandardFigure}
 
-Describe the scenarios
+\begin{StandardFigure}{(A) Initial and simulated contaminant plume concentrations in model layer 3 as calculated by MODFLOW 6 with the multi-model setup after (B) 500 days, (C) 750 days, and (D) 1,000 days.}{fig:ex-gwtgwt-grid}{../figures/ex-gwtgwt-p10-concentration.png}
+\end{StandardFigure}
 
-% add scenario table
-%\input{../tables/ex-gwf-twri-scenario}
+\begin{StandardFigure}{Difference in simulated head in model layer 3 with the multi-model setup with respect to the results from a setup containing a coupling between a single GWF and a single GWT model after (A) 1 day, (B) 500 days, (C) 750 days, and (D) 1,000 days.}{fig:ex-gwtgwt-grid}{../figures/ex-gwtgwt-p10-diffhead.png}
+\end{StandardFigure}
 
-
-\subsubsection{Scenario 1 Results}
-
-Some results...
-
-% a figure
-%\begin{StandardFigure}{
-%                                     A figure caption that describes the figure. 
-%                                     \textit{A}. Plot shows some good stuff.
-%                                     \textit{B}. Plot shows more good stuff.
-%                                     }{fig:ex-gwf-01}{../figures/ex-gwf-twri-01.png}
-%\end{StandardFigure}                                 
-
-\subsubsection{Scenario 2 Results}
-
-
-Some more results...
-
-% a figure
-%\begin{StandardFigure}{
-%                                     A figure caption that describes the figure. 
-%                                     \textit{A}. Plot shows some good stuff.
-%                                     \textit{B}. Plot shows more good stuff.
-%                                     }{fig:ex-gwf-02}{../figures/ex-gwf-twri-02.png}
-%\end{StandardFigure}                 
+\begin{StandardFigure}{Difference in simulated concentrations in model layer 3 with the multi-model setup when compared to the results with a single GWF and single GWT model after (A) 1 day, (B) 500 days, (C) 750 days, and (D) 1,000 days.}{fig:ex-gwtgwt-grid}{../figures/ex-gwtgwt-p10-diffconc.png}
+\end{StandardFigure}
