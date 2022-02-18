@@ -301,6 +301,17 @@ def add_flow(sim):
         dev_interfacemodel_on=True,
     )
 
+    # Observe flow for exchange 439
+    gwfgwfobs = {}
+    gwfgwfobs["gwfgwf.output.obs.csv"] = [
+        ["exchange439", "FLOW-JA-FACE", (439 - 1, )],
+    ]
+    fname = "gwfgwf.input.obs"
+    gwfgwf.obs.initialize(
+        filename=fname, digits=25, print_input=True, continuous=gwfgwfobs
+    )
+
+
 # Create the outer GWF model
 def add_outer_gwfmodel(sim):
     mname = gwfname_out
@@ -548,12 +559,24 @@ def add_transport(sim):
     gwtgwt = flopy.mf6.ModflowGwtgwt(
         sim,
         exgtype="GWT6-GWT6",
+        gwfmodelname1=gwfname_out,
+        gwfmodelname2=gwfname_inn,
         advscheme=scheme,
         nexg=len(exgdata),
         exgmnamea=gwt_outer.name,
         exgmnameb=gwt_inner.name,
         exchangedata=exgdata,
         auxiliary=["ANGLDEGX", "CDIST"],
+    )
+
+    # Observe mass flow for exchange 439
+    gwtgwtobs = {}
+    gwtgwtobs["gwtgwt.output.obs.csv"] = [
+        ["exchange439", "FLOW-JA-FACE", (439 - 1, )],
+    ]
+    fname = "gwtgwt.input.obs"
+    gwtgwt.obs.initialize(
+        filename=fname, digits=25, print_input=True, continuous=gwtgwtobs
     )
 
     return sim
