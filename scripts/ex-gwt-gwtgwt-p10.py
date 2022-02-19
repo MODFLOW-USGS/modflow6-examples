@@ -298,7 +298,7 @@ def add_flow(sim):
         xt3d=False,
         print_flows=True,
         auxiliary=["ANGLDEGX", "CDIST"],
-        dev_interfacemodel_on=True,
+        #dev_interfacemodel_on=True,
     )
 
     # Observe flow for exchange 439
@@ -307,9 +307,10 @@ def add_flow(sim):
         ["exchange439", "FLOW-JA-FACE", (439 - 1, )],
     ]
     fname = "gwfgwf.input.obs"
-    gwfgwf.obs.initialize(
-        filename=fname, digits=25, print_input=True, continuous=gwfgwfobs
-    )
+    # cdl -- turn off for now as it causes a flopy load fail
+    #gwfgwf.obs.initialize(
+    #    filename=fname, digits=25, print_input=True, continuous=gwfgwfobs
+    #)
 
 
 # Create the outer GWF model
@@ -575,9 +576,10 @@ def add_transport(sim):
         ["exchange439", "FLOW-JA-FACE", (439 - 1, )],
     ]
     fname = "gwtgwt.input.obs"
-    gwtgwt.obs.initialize(
-        filename=fname, digits=25, print_input=True, continuous=gwtgwtobs
-    )
+    # cdl -- turn off for now as it causes a flopy load fail
+    #gwtgwt.obs.initialize(
+    #    filename=fname, digits=25, print_input=True, continuous=gwtgwtobs
+    #)
 
     return sim
 

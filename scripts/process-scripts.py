@@ -319,6 +319,7 @@ def get_examples_dict(verbose=False):
                             + "name file: {}".format(file_name)
                         )
                         print(msg)
+                    print(f"Using flopy to load {dirName}")
                     sim = flopy.mf6.MFSimulation.load(
                         sim_ws=dirName, verbosity_level=0
                     )
