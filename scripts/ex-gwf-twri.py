@@ -55,9 +55,7 @@ nrow = 15  # Number of rows
 delr = 5000.0  # Column width ($ft$)
 delc = 5000.0  # Row width ($ft$)
 top = 200.0  # Top of the model ($ft$)
-botm_str = (
-    "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations ($ft$)
-)
+botm_str = "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations ($ft$)
 strt = 0.0  # Starting head ($ft$)
 icelltype_str = "1, 0, 0, 0, 0"  # Cell conversion type
 k11_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
