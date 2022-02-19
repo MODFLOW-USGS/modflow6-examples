@@ -55,7 +55,9 @@ nrow = 15  # Number of rows
 delr = 5000.0  # Column width ($ft$)
 delc = 5000.0  # Row width ($ft$)
 top = 200.0  # Top of the model ($ft$)
-botm_str = "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations ($ft$)
+botm_str = (
+    "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations ($ft$)
+)
 strt = 0.0  # Starting head ($ft$)
 icelltype_str = "1, 0, 0, 0, 0"  # Cell conversion type
 k11_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
@@ -343,8 +345,9 @@ def plot_results(sim, mf, silent=True):
         frf = cobj0.get_data(text="FLOW RIGHT FACE", kstpkper=(0, 0))[0]
         fff = cobj0.get_data(text="FLOW FRONT FACE", kstpkper=(0, 0))[0]
         flf = cobj0.get_data(text="FLOW LOWER FACE", kstpkper=(0, 0))[0]
-        # sqx, sqy, sqz = flopy.utils.postprocessing.get_specific_discharge(
-        #     (frf, fff, flf), mf)
+        sqx, sqy, sqz = flopy.utils.postprocessing.get_specific_discharge(
+            (frf, fff, flf), mf, head0
+        )
 
         # modflow 6 layers to extract
         layers_mf6 = [0, 2, 4]
@@ -402,12 +405,10 @@ def plot_results(sim, mf, silent=True):
                 colors="black",
             )
             plt.clabel(cv, fmt="%1.0f")
-            fmp.plot_discharge(
-                frf, fff, flf, head=head0, normalize=True, color="0.75",
-            )
-            # fmp.plot_vector(
-            #     sqx, sqy, normalize=True, color="0.75"
+            # fmp.plot_discharge(
+            #    frf, fff, flf, head=head0, normalize=True, color="0.75",
             # )
+            fmp.plot_vector(sqx, sqy, normalize=True, color="0.75")
             title = titles[idx]
             letter = chr(ord("@") + idx + 4)
             fs.heading(letter=letter, heading=title, ax=ax)
