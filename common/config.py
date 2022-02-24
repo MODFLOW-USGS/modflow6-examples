@@ -93,6 +93,8 @@ soext = ".so"
 if sys.platform.lower() == "win32":
     eext = ".exe"
     soext = ".dll"
+if sys.platform.lower() == "darwin":
+    soext = ".dylib"
 
 # paths to executables
 mf6_exe = os.path.abspath(os.path.join("..", "bin", "mf6" + eext))
