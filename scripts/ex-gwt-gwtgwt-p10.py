@@ -854,7 +854,7 @@ def plot_difference_conc(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
 
     # Plot the wells as well
     for cid, f, c in welspd_mf6:
@@ -876,7 +876,7 @@ def plot_difference_conc(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 500 days"
@@ -896,7 +896,7 @@ def plot_difference_conc(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 750 days"
@@ -916,7 +916,7 @@ def plot_difference_conc(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
 
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
@@ -962,7 +962,7 @@ def plot_difference_heads(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
 
     # Plot the wells as well
     for cid, f, c in welspd_mf6:
@@ -984,7 +984,7 @@ def plot_difference_heads(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 500 days"
@@ -1004,7 +1004,7 @@ def plot_difference_heads(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 750 days"
@@ -1024,7 +1024,7 @@ def plot_difference_heads(sim):
     plt.ylim(9100, 9100 + 45 * 50)
     plt.xlabel("Distance Along X-Axis, in meters")
     plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa)
+    plt.colorbar(pa, shrink=0.5)
 
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
