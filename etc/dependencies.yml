@@ -1,6 +1,6 @@
 dependencies:
-  - nose
-  - nose-timer
+  - pytest
+  - pytest-xdist
   - appdirs
   - requests
   - numpy
