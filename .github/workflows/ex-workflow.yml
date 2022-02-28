@@ -59,8 +59,6 @@ jobs:
         shell: python
 
       - name: Upload build artifacts for current release
-        if:
-          github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: zip_files
@@ -92,10 +90,6 @@ jobs:
         uses: actions/setup-python@v2.2.2
         with:
           python-version: 3.9
-
-      - name: Print python version
-        run: |
-          python --version
 
       - name: Install Python packages
         run: |
@@ -179,7 +173,6 @@ jobs:
     needs: [ zip_files, build ]
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2

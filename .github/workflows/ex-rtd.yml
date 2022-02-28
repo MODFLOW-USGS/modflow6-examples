@@ -19,7 +19,7 @@ jobs:
       etc-directory: etc
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
 
     if: github.repository_owner == 'MODFLOW-USGS'
     steps:
@@ -34,12 +34,6 @@ jobs:
           echo ${{ github.event_name }}
           echo ${{ github.sha }}
 
-      - name: Setup symbolic link to gfortran
-        run: |
-          sudo ln -fs /usr/bin/gfortran-10 /usr/local/bin/gfortran
-          sudo ln -fs /usr/bin/gcc-10 /usr/local/bin/gcc
-          sudo ln -fs /usr/bin/g++-10 /usr/local/bin/g++
-
       - name: Install TeX Live and additional TrueType fonts
         run: |
           sudo apt-get update
@@ -51,18 +45,15 @@ jobs:
           sudo tar xvzf pandoc-2.11.2-linux-amd64.tar.gz --strip-components=1 -C /usr/local
           pandoc --version
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
         with:
           python-version: 3.9
-          mamba-version: "*"
-          channels: conda-forge,defaults
-          channel-priority: true
-          activate-environment: mf6ex
-          environment-file: etc/dependencies.yml
 
-      - name: Add packages to mf6ex environment using pip
+      - name: Install Python packages
         run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
         working-directory: ${{env.etc-directory}}
 
@@ -110,7 +101,6 @@ jobs:
           ls -l .doc/_notebooks/
 
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
-        if: github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: rtd-files-for-${{ github.sha }}
