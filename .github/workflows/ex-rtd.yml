@@ -73,7 +73,7 @@ jobs:
 
       - name: Run scripts to build model files
         run: |
-          python ci_build_files.py
+          pytest -v -n=auto ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: Run processing script

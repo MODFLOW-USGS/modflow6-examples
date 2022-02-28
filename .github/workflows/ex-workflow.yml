@@ -9,6 +9,58 @@ on:
     branches: [ master ]
 
 jobs:
+  zip_files:
+    name: zip input files
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      script-directory: scripts
+      etc-directory: etc
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - name: Checkout MODFLOW6 examples repo
+        uses: actions/checkout@v2.3.4
+
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.9
+
+      - name: Print python version
+        run: |
+          python --version
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.pip.txt
+          pip install -r requirements.usgs.txt
+        working-directory: ${{env.etc-directory}}
+
+      - name: Run scripts without model runs
+        run: |
+          pytest -v -n=auto ci_build_files.py
+        working-directory: ${{env.etc-directory}}
+
+      - name: zip input files
+        run: |
+          import shutil
+          shutil.make_archive("modflow6-examples", "zip", "examples")
+        shell: python
+
+      - name: Upload build artifacts for current release
+        if:
+          github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        uses: actions/upload-artifact@v2
+        with:
+          name: zip_files
+          path: |
+            ./modflow6-examples.zip
+
   build:
     name: current-build
     runs-on: ubuntu-latest
@@ -24,20 +76,6 @@ jobs:
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2.3.4
-
-      - name: Output repo information
-        run: |
-          echo ${{ github.repository_owner }}
-          echo ${{ github.repository }}
-          echo ${{ github.ref }}
-          echo ${{ github.event_name }}
-          echo ${{ github.sha }}
-
-      - name: Setup symbolic link to gfortran
-        run: |
-          sudo ln -fs /usr/bin/gfortran-10 /usr/local/bin/gfortran
-          sudo ln -fs /usr/bin/gcc-10 /usr/local/bin/gcc
-          sudo ln -fs /usr/bin/g++-10 /usr/local/bin/g++
 
       - name: Install TeX Live and additional TrueType fonts
         run: |
@@ -68,17 +106,6 @@ jobs:
       - name: List executables
         run: |
           ls -l ./bin/
-
-      - name: Run scripts without model runs and zip input files
-        run: |
-          pytest -v -n=auto ci_build_files.py
-        working-directory: ${{env.etc-directory}}
-
-      - name: zip input files
-        run: |
-          import shutils
-          shutil.make_archive("modflow6-examples", "zip", "examples")
-        shell: python
 
       - name: Run scripts plus processing script
         run: |
@@ -130,13 +157,12 @@ jobs:
           name: current
           path: |
             ./mf6examples.pdf
-            ./modflow6-examples.zip
 
 
   # make the release if the "build" job was successful
   release:
     name: Make the release
-    needs: build
+    needs: [zip_files, build]
     runs-on: ubuntu-latest
 
     if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
@@ -162,9 +188,15 @@ jobs:
           echo "MODFLOW 6 examples: built at ${F_TIME}"
 
       - name: Download a Build Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v2.1.0
         with:
           name: current
+          path: ./current/
+
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v2.1.0
+        with:
+          name: zip_files
           path: ./current/
 
       - name: List files in the artifact directory
@@ -201,6 +233,11 @@ jobs:
           tag: current
           overwrite: true
           file_glob: true
+
+      - name: Delete Artifact
+        uses: GeekyEggo/delete-artifact@v1.0.0
+        with:
+          name: zip_files
 
       - name: Delete Artifact
         uses: GeekyEggo/delete-artifact@v1.0.0
