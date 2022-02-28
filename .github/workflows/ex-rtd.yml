@@ -80,7 +80,7 @@ jobs:
 
       - name: Run notebooks with jupytext for ReadtheDocs
         run: |
-          python ci_run_notebooks.py
+          pytest -v -n=auto ci_run_notebooks.py
         working-directory: ${{env.etc-directory}}
 
       - name: Create package tables and examples.rst for ReadtheDocs
@@ -90,15 +90,15 @@ jobs:
 
       - name: List example rst files for ReadtheDocs
         run: |
-          ls -l .doc/_examples/
+          ls -R .doc/_examples/
 
       - name: List example image files for ReadtheDocs
         run: |
-          ls -l .doc/_images/
+          ls -R .doc/_images/
 
       - name: List example notebook files for ReadtheDocs
         run: |
-          ls -l .doc/_notebooks/
+          ls -R .doc/_notebooks/
 
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
         uses: actions/upload-artifact@v2

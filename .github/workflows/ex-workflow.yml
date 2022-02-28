@@ -19,7 +19,7 @@ jobs:
       etc-directory: etc
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
 
     steps:
       - name: Checkout MODFLOW6 examples repo
@@ -75,7 +75,7 @@ jobs:
       etc-directory: etc
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
 
     steps:
       - name: Checkout MODFLOW6 examples repo
@@ -194,15 +194,22 @@ jobs:
           echo $F_TIME
           echo "MODFLOW 6 examples: built at ${F_TIME}"
 
-      - name: Download all Build Artifacts
+      - name: Download mf6examples.pdf build artifact
         uses: actions/download-artifact@v2.1.0
         with:
+          name: current
+          path: ./current/
+
+      - name: Download zip_file build artifact
+        uses: actions/download-artifact@v2.1.0
+        with:
+          name: zip_file
           path: ./current/
 
       - name: List files in the artifact directory
         run: |
           pwd
-          ls -l ./current/
+          ls -R ./current/
 
       - name: create bodyFile
         run: |

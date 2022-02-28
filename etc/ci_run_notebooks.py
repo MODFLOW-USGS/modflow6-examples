@@ -1,9 +1,11 @@
 import os
 import sys
 import shutil
+import pytest
 
 # path to notebooks
 src_pth = os.path.join("..", "notebooks")
+rtd_pth = os.path.join("..", ".doc", "_notebooks")
 
 # parse command line arguments for notebook to create
 nb_files = None
@@ -26,12 +28,22 @@ if nb_files is None:
 
 # create temporary directory
 dst_pth = os.path.join("..", ".nb")
-if os.path.isdir(dst_pth):
-    shutil.rmtree(dst_pth)
-os.makedirs(dst_pth, exist_ok=True)
 
-# run the notebooks
-for file_name in nb_files:
+
+def clean_files():
+    if os.path.isdir(dst_pth):
+        shutil.rmtree(dst_pth)
+
+@pytest.mark.parametrize(
+    "file_name",
+    nb_files,
+)
+def test_run_notebooks(file_name):
+    # make paths if they do not exist
+    dir_paths = (dst_pth, rtd_pth,)
+    for dir_path in dir_paths:
+        os.makedirs(dir_path, exist_ok=True)
+
     src = os.path.join(src_pth, file_name)
     dst = os.path.join(dst_pth, file_name)
     arg = ("jupytext",
@@ -44,26 +56,25 @@ for file_name in nb_files:
     print(" ".join(arg))
     os.system(" ".join(arg))
 
-# clean up ReadtheDocs path
-rtd_pth = os.path.join("..", ".doc", "_notebooks")
-if clean_sphinx:
-    if os.path.isdir(rtd_pth):
-        print("deleting...'{}'".format(rtd_pth))
-        shutil.rmtree(rtd_pth)
+    rtd = os.path.join(rtd_pth, file_name)
+    if os.path.isfile(rtd):
+        print(f"removing '{rtd}'")
+        os.remove(rtd)
+    print(f"copying '{dst}' -> '{rtd}'")
+    shutil.copyfile(src, dst)
 
-# copy the files
-if clean_sphinx:
-    print("copying '{}' -> '{}'".format(dst_pth, rtd_pth))
-    shutil.copytree(dst_pth, rtd_pth)
-else:
+if __name__ == "__main__":
+    clean_files()
+
+    # clean up ReadtheDocs path
+    if clean_sphinx:
+        if os.path.isdir(rtd_pth):
+            print(f"deleting...'{rtd_pth}'")
+            shutil.rmtree(rtd_pth)
+
     for file_name in nb_files:
-        src = os.path.join(dst_pth, file_name)
-        dst = os.path.join(rtd_pth, file_name)
-        print("copying '{}' -> '{}'".format(src, dst))
-        if os.path.isfile(dst):
-            os.remove(dst)
-        shutil.copyfile(src, dst)
+        test_run_notebooks(file_name)
 
-# clean up temporary files
-print("cleaning up...'{}'".format(dst_pth))
-shutil.rmtree(dst_pth)
+    # clean up temporary files
+    print(f"cleaning up...'{dst_pth}'")
+    shutil.rmtree(dst_pth)
