@@ -66,6 +66,12 @@ jobs:
           pip install -r requirements.usgs.txt
         working-directory: ${{env.etc-directory}}
 
+      - name: Update flopy MODFLOW 6 classes
+        run: |
+          import flopy
+          flopy.mf6.utils.generate_classes(branch=develop, backup=False)
+        shell: python
+
       - name: Run get_exes script
         run: |
           python ci_get_exes.py

@@ -41,6 +41,12 @@ jobs:
           pip install -r requirements.usgs.txt
         working-directory: ${{env.etc-directory}}
 
+      - name: Update flopy MODFLOW 6 classes
+        run: |
+          import flopy
+          flopy.mf6.utils.generate_classes(branch=develop, backup=False)
+        shell: python
+
       - name: Run scripts without model runs
         run: |
           pytest -v -n=auto ci_build_files.py
@@ -97,6 +103,12 @@ jobs:
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
         working-directory: ${{env.etc-directory}}
+
+      - name: Update flopy MODFLOW 6 classes
+        run: |
+          import flopy
+          flopy.mf6.utils.generate_classes(branch=develop, backup=False)
+        shell: python
 
       - name: Run get_exes script
         run: |
@@ -162,7 +174,7 @@ jobs:
   # make the release if the "build" job was successful
   release:
     name: Make the release
-    needs: [zip_files, build]
+    needs: [ zip_files, build ]
     runs-on: ubuntu-latest
 
     if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
