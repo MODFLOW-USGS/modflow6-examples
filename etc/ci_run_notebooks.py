@@ -56,12 +56,13 @@ def test_run_notebooks(file_name):
     print(" ".join(arg))
     os.system(" ".join(arg))
 
+    # copy completed notebook to the rtd_pth
     rtd = os.path.join(rtd_pth, file_name)
     if os.path.isfile(rtd):
         print(f"removing '{rtd}'")
         os.remove(rtd)
     print(f"copying '{dst}' -> '{rtd}'")
-    shutil.copyfile(src, dst)
+    shutil.copyfile(dst, rtd)
 
 if __name__ == "__main__":
     clean_files()
