@@ -71,12 +71,18 @@ jobs:
 
       - name: Run scripts without model runs and zip input files
         run: |
-          python ci_build_files.py --zip
+          pytest -v -n=auto ci_build_files.py
         working-directory: ${{env.etc-directory}}
+
+      - name: zip input files
+        run: |
+          import shutils
+          shutil.make_archive("modflow6-examples", "zip", "examples")
+        shell: python
 
       - name: Run scripts plus processing script
         run: |
-          pytest -v -n=auto ex-*
+          pytest -v -n=auto --run=True ci_build_files.py
           python process-scripts.py
         working-directory: ${{env.script-directory}}
 
