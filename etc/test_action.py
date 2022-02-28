@@ -78,7 +78,7 @@ src_pth = os.path.join("notebooks")
 dst_pth = os.path.join(".notebooks")
 if os.path.isdir(dst_pth):
     shutil.rmtree(dst_pth)
-os.makedirs(dst_pth)
+os.makedirs(dst_pth, exist_ok=True)
 nb_files = [file_name for file_name in os.listdir(src_pth) if
             file_name.endswith(".ipynb") and file_name.startswith("ex-")]
 for file_name in nb_files:

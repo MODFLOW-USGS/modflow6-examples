@@ -119,11 +119,15 @@ jobs:
         run: |
           ls -l ./bin/
 
-      - name: Run scripts plus processing script
+      - name: Run scripts
         run: |
           pytest -v -n=auto --run=True ci_build_files.py
-          python process-scripts.py
         working-directory: ${{env.etc-directory}}
+
+      - name: Run processing script
+        run: |
+          python process-scripts.py
+        working-directory: ${{env.script-directory}}
 
       - name: Build mf6examples LaTeX document
         shell: python

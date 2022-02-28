@@ -63,7 +63,7 @@ dst = os.path.join("..", ".doc", "_examples")
 print("cleaning and creating...'{}'".format(dst))
 if os.path.isdir(dst):
     shutil.rmtree(dst)
-os.makedirs(dst)
+os.makedirs(dst, exist_ok=True)
 
 # read base latex file
 pth = os.path.join("..", "doc", "mf6examples.tex")
@@ -315,7 +315,7 @@ dst = os.path.join("..", ".doc", "_images")
 print("cleaning and creating...'{}'".format(dst))
 if os.path.isdir(dst):
     shutil.rmtree(dst)
-os.makedirs(dst)
+os.makedirs(dst, exist_ok=True)
 
 # copy figures to rtd directory
 src_dirs = (os.path.join("..", "figures"),

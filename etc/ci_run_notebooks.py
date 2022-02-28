@@ -28,7 +28,7 @@ if nb_files is None:
 dst_pth = os.path.join("..", ".nb")
 if os.path.isdir(dst_pth):
     shutil.rmtree(dst_pth)
-os.makedirs(dst_pth)
+os.makedirs(dst_pth, exist_ok=True)
 
 # run the notebooks
 for file_name in nb_files:

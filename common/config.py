@@ -12,7 +12,7 @@ work_directories = (
 )
 for work_dir in work_directories:
     if not os.path.isdir(work_dir):
-        os.makedirs(work_dir)
+        os.makedirs(work_dir, exist_ok=True)
 
 # run settings
 buildModel = True
