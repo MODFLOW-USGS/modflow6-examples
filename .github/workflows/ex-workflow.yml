@@ -203,7 +203,7 @@ jobs:
       - name: Download zip_file build artifact
         uses: actions/download-artifact@v2.1.0
         with:
-          name: zip_file
+          name: zip_files
           path: ./current/
 
       - name: List files in the artifact directory
