@@ -123,7 +123,7 @@ jobs:
         run: |
           pytest -v -n=auto --run=True ci_build_files.py
           python process-scripts.py
-        working-directory: ${{env.script-directory}}
+        working-directory: ${{env.etc-directory}}
 
       - name: Build mf6examples LaTeX document
         shell: python
@@ -162,8 +162,6 @@ jobs:
           ls -l ./
 
       - name: Upload build artifacts for current release
-        if:
-          github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: current
@@ -199,16 +197,9 @@ jobs:
           echo $F_TIME
           echo "MODFLOW 6 examples: built at ${F_TIME}"
 
-      - name: Download a Build Artifact
+      - name: Download all Build Artifacts
         uses: actions/download-artifact@v2.1.0
         with:
-          name: current
-          path: ./current/
-
-      - name: Download a Build Artifact
-        uses: actions/download-artifact@v2.1.0
-        with:
-          name: zip_files
           path: ./current/
 
       - name: List files in the artifact directory
@@ -223,11 +214,13 @@ jobs:
           ls -l .
 
       - name: Delete the latest release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: ame-yu/action-delete-latest-release@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create/Update the current release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: ncipollo/release-action@v1
         with:
           tag: current
@@ -238,6 +231,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload MODFLOW 6 examples to the current GitHub release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: svenstaro/upload-release-action@2.2.1
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -246,12 +240,10 @@ jobs:
           overwrite: true
           file_glob: true
 
-      - name: Delete Artifact
+      - name: Delete all Artifacts
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: GeekyEggo/delete-artifact@v1.0.0
         with:
-          name: zip_files
-
-      - name: Delete Artifact
-        uses: GeekyEggo/delete-artifact@v1.0.0
-        with:
-          name: current
+          name: |
+            zip_files
+            current
