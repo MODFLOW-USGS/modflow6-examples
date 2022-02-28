@@ -69,7 +69,7 @@ jobs:
       - name: Update flopy MODFLOW 6 classes
         run: |
           import flopy
-          flopy.mf6.utils.generate_classes(branch=develop, backup=False)
+          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
         shell: python
 
       - name: Run get_exes script
