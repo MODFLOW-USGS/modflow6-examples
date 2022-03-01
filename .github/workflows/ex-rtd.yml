@@ -68,6 +68,11 @@ jobs:
           python ci_get_exes.py
         working-directory: ${{env.etc-directory}}
 
+      - name: Run scripts without model runs
+        run: |
+          pytest -v -n=auto ci_build_files.py
+        working-directory: ${{env.etc-directory}}
+
       - name: Run processing script
         run: |
           python process-scripts.py
