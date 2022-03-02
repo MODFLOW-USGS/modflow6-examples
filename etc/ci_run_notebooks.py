@@ -5,6 +5,7 @@ import pytest
 
 # path to notebooks
 src_pth = os.path.join("..", "notebooks")
+dst_pth = os.path.join("..", ".nb")
 rtd_pth = os.path.join("..", ".doc", "_notebooks")
 
 # parse command line arguments for notebook to create
@@ -25,9 +26,6 @@ if nb_files is None:
     nb_files = [file_name
                 for file_name in sorted(os.listdir(src_pth))
                 if file_name.endswith(".ipynb")]
-
-# create temporary directory
-dst_pth = os.path.join("..", ".nb")
 
 
 def clean_files():
