@@ -42,8 +42,16 @@ def test_run_notebooks(file_name):
     for dir_path in dir_paths:
         os.makedirs(dir_path, exist_ok=True)
 
+    # set src, dst, and rtd paths
     src = os.path.join(src_pth, file_name)
     dst = os.path.join(dst_pth, file_name)
+    rtd = os.path.join(rtd_pth, file_name)
+
+    # remove dst if it exists
+    if os.path.isfile(dst):
+        print(f"removing '{dst}'")
+        os.remove(dst)
+
     arg = ("jupytext",
            "--to ipynb",
            "--from ipynb",
@@ -54,11 +62,12 @@ def test_run_notebooks(file_name):
     print(" ".join(arg))
     os.system(" ".join(arg))
 
-    # copy completed notebook to the rtd_pth
-    rtd = os.path.join(rtd_pth, file_name)
+    # remove rtd if it exists
     if os.path.isfile(rtd):
         print(f"removing '{rtd}'")
         os.remove(rtd)
+
+    # copy dst to rtd
     print(f"copying '{dst}' -> '{rtd}'")
     shutil.copyfile(dst, rtd)
 
