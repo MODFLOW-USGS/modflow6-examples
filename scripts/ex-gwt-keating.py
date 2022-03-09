@@ -492,7 +492,7 @@ def make_animated_gif(sims, idx):
     def update(i):
         a = np.where(head > botm, conc[i], nodata)
         a = np.ma.masked_where(a < 0, a)
-        a = a[a.mask is False]
+        a = a[~a.mask]
         pc.set_array(a.flatten())
         ax.set_title("Time = {} days".format(conc_times[i]))
 
