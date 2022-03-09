@@ -1,8 +1,6 @@
 import os
 import sys
 import time
-import matplotlib as mpl
-mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 from IPython import get_ipython
 

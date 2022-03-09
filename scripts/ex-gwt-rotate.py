@@ -11,8 +11,6 @@
 
 import os
 import sys
-import matplotlib as mpl
-mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 import flopy
 import numpy as np
