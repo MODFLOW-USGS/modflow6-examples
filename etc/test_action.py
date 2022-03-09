@@ -19,15 +19,21 @@ if stderr:
 
 # clean up examples directory - just for local runs
 expth = os.path.join("examples")
-examples = [os.path.join(expth, d) for d in os.listdir(expth) if
-            os.path.isdir(os.path.join(expth, d))]
+examples = [
+    os.path.join(expth, d)
+    for d in os.listdir(expth)
+    if os.path.isdir(os.path.join(expth, d))
+]
 for e in examples:
     shutil.rmtree(e)
 
 # run scripts without model runs
 pth = os.path.join("scripts")
-scripts = [file_name for file_name in os.listdir(pth) if
-           file_name.endswith(".py") and file_name.startswith("ex-")]
+scripts = [
+    file_name
+    for file_name in os.listdir(pth)
+    if file_name.endswith(".py") and file_name.startswith("ex-")
+]
 for s in scripts:
     args = ("python", s, "--no_run", "--no_plot")
     proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=pth)
@@ -40,12 +46,15 @@ for s in scripts:
 # zip up model input files
 expth = os.path.join("examples")
 zpth = "modflow6-examples"
-shutil.make_archive("modflow6-examples", 'zip', expth)
+shutil.make_archive("modflow6-examples", "zip", expth)
 
 # run scripts plus processing script
 pth = os.path.join("scripts")
-scripts = [file_name for file_name in os.listdir(pth) if
-           file_name.endswith(".py") and file_name.startswith("ex-")]
+scripts = [
+    file_name
+    for file_name in os.listdir(pth)
+    if file_name.endswith(".py") and file_name.startswith("ex-")
+]
 scripts.append("process-scripts.py")
 for s in scripts:
     args = ("python", s)
@@ -61,12 +70,12 @@ ws = "doc"
 bibnam = "mf6examples"
 texnam = bibnam + ".tex"
 args = (
-        ("latexmk", "-c", texnam),
-        ("pdflatex", texnam),
-        ("bibtex", bibnam),
-        ("pdflatex", texnam),
-        ("pdflatex", texnam),
-       )
+    ("latexmk", "-c", texnam),
+    ("pdflatex", texnam),
+    ("bibtex", bibnam),
+    ("pdflatex", texnam),
+    ("pdflatex", texnam),
+)
 os.chdir(ws)
 for arg in args:
     print("running command...'{}'".format(" ".join(arg)))
@@ -78,9 +87,12 @@ src_pth = os.path.join("notebooks")
 dst_pth = os.path.join(".notebooks")
 if os.path.isdir(dst_pth):
     shutil.rmtree(dst_pth)
-os.makedirs(dst_pth)
-nb_files = [file_name for file_name in os.listdir(src_pth) if
-            file_name.endswith(".ipynb") and file_name.startswith("ex-")]
+os.makedirs(dst_pth, exist_ok=True)
+nb_files = [
+    file_name
+    for file_name in os.listdir(src_pth)
+    if file_name.endswith(".ipynb") and file_name.startswith("ex-")
+]
 for file_name in nb_files:
     src = os.path.join(src_pth, file_name)
     dst = os.path.join(dst_pth, file_name)

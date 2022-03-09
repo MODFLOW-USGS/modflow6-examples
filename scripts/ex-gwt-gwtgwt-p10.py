@@ -27,7 +27,7 @@ figure_size = (6, 8)
 
 # Base simulation and model name and workspace
 ws = config.base_ws
-example_name = "ex-gwtgwt-mt3dms-p10"
+example_name = "ex-gwt-gwtgwt-mt3dms-p10"
 
 # Model units
 length_units = "feet"

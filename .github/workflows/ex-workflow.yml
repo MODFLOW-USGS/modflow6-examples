@@ -9,6 +9,62 @@ on:
     branches: [ master ]
 
 jobs:
+  zip_files:
+    name: zip input files
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    env:
+      script-directory: scripts
+      etc-directory: etc
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout MODFLOW6 examples repo
+        uses: actions/checkout@v2.3.4
+
+      - name: Setup Python
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.9
+
+      - name: Print python version
+        run: |
+          python --version
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.pip.txt
+          pip install -r requirements.usgs.txt
+        working-directory: ${{env.etc-directory}}
+
+      - name: Update flopy MODFLOW 6 classes
+        run: |
+          import flopy
+          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
+        shell: python
+
+      - name: Run scripts without model runs
+        run: |
+          pytest -v -n=auto ci_build_files.py
+        working-directory: ${{env.etc-directory}}
+
+      - name: zip input files
+        run: |
+          import shutil
+          shutil.make_archive("modflow6-examples", "zip", "examples")
+        shell: python
+
+      - name: Upload build artifacts for current release
+        uses: actions/upload-artifact@v2
+        with:
+          name: zip_files
+          path: |
+            ./modflow6-examples.zip
+
   build:
     name: current-build
     runs-on: ubuntu-latest
@@ -19,46 +75,34 @@ jobs:
       etc-directory: etc
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
 
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2.3.4
-
-      - name: Output repo information
-        run: |
-          echo ${{ github.repository_owner }}
-          echo ${{ github.repository }}
-          echo ${{ github.ref }}
-          echo ${{ github.event_name }}
-          echo ${{ github.sha }}
-
-      - name: Setup symbolic link to gfortran
-        run: |
-          sudo ln -fs /usr/bin/gfortran-10 /usr/local/bin/gfortran
-          sudo ln -fs /usr/bin/gcc-10 /usr/local/bin/gcc
-          sudo ln -fs /usr/bin/g++-10 /usr/local/bin/g++
 
       - name: Install TeX Live and additional TrueType fonts
         run: |
           sudo apt-get update
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
-      - name: Setup Python 3.8
+      - name: Setup Python
         uses: actions/setup-python@v2.2.2
         with:
-          python-version: 3.8
+          python-version: 3.9
 
-      - name: Print python version
-        run: |
-          python --version
-
-      - name: Install Python 3.8 packages
+      - name: Install Python packages
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
         working-directory: ${{env.etc-directory}}
+
+      - name: Update flopy MODFLOW 6 classes
+        run: |
+          import flopy
+          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
+        shell: python
 
       - name: Run get_exes script
         run: |
@@ -69,14 +113,13 @@ jobs:
         run: |
           ls -l ./bin/
 
-      - name: Run scripts without model runs and zip input files
+      - name: Run scripts
         run: |
-          python ci_build_files.py --zip
+          pytest -v -n=auto --run=True ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
-      - name: Run scripts plus processing script
+      - name: Run processing script
         run: |
-          nosetests -v --with-id --with-timer ex-*
           python process-scripts.py
         working-directory: ${{env.script-directory}}
 
@@ -117,23 +160,19 @@ jobs:
           ls -l ./
 
       - name: Upload build artifacts for current release
-        if:
-          github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: actions/upload-artifact@v2
         with:
           name: current
           path: |
             ./mf6examples.pdf
-            ./modflow6-examples.zip
 
 
   # make the release if the "build" job was successful
   release:
     name: Make the release
-    needs: build
+    needs: [ zip_files, build ]
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v2
@@ -155,16 +194,22 @@ jobs:
           echo $F_TIME
           echo "MODFLOW 6 examples: built at ${F_TIME}"
 
-      - name: Download a Build Artifact
-        uses: actions/download-artifact@v2
+      - name: Download mf6examples.pdf build artifact
+        uses: actions/download-artifact@v2.1.0
         with:
           name: current
+          path: ./current/
+
+      - name: Download zip_file build artifact
+        uses: actions/download-artifact@v2.1.0
+        with:
+          name: zip_files
           path: ./current/
 
       - name: List files in the artifact directory
         run: |
           pwd
-          ls -l ./current/
+          ls -R ./current/
 
       - name: create bodyFile
         run: |
@@ -173,11 +218,13 @@ jobs:
           ls -l .
 
       - name: Delete the latest release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: ame-yu/action-delete-latest-release@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create/Update the current release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: ncipollo/release-action@v1
         with:
           tag: current
@@ -188,6 +235,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload MODFLOW 6 examples to the current GitHub release
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: svenstaro/upload-release-action@2.2.1
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -196,7 +244,10 @@ jobs:
           overwrite: true
           file_glob: true
 
-      - name: Delete Artifact
+      - name: Delete all Artifacts
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
         uses: GeekyEggo/delete-artifact@v1.0.0
         with:
-          name: current
+          name: |
+            zip_files
+            current

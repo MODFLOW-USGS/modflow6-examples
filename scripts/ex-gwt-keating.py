@@ -340,8 +340,8 @@ def plot_results(sims, idx):
         plot_head_results(sims, idx)
         plot_conc_results(sims, idx)
         plot_cvt_results(sims, idx)
-        if config.plotSave:
-            make_animated_gif(sims, idx)
+        if config.plotSave and config.createGif:
+           make_animated_gif(sims, idx)
     return
 
 
@@ -470,7 +470,12 @@ def make_animated_gif(sims, idx):
     # set up the figure
     fig = plt.figure(figsize=(7.5, 3))
     ax = fig.add_subplot(1, 1, 1)
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+    pxs = flopy.plot.PlotCrossSection(
+        model=gwf,
+        ax=ax,
+        line={"row": 0},
+        extent=(0, 10000, 0, 2000),
+    )
 
     cmap = copy.copy(mpl.cm.get_cmap("jet"))
     cmap.set_bad("white")
@@ -487,6 +492,7 @@ def make_animated_gif(sims, idx):
     def update(i):
         a = np.where(head > botm, conc[i], nodata)
         a = np.ma.masked_where(a < 0, a)
+        a = a[a.mask is False]
         pc.set_array(a.flatten())
         ax.set_title("Time = {} days".format(conc_times[i]))
 
