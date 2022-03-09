@@ -11,6 +11,8 @@
 
 import os
 import sys
+import matplotlib as mpl
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 import flopy
 import numpy as np
@@ -426,7 +428,7 @@ def plot_results(sim, idx):
     if config.plotModel:
         plot_conc(sim, idx)
         plot_velocity_profile(sim, idx)
-        if config.plotSave:
+        if config.plotSave and config.createGif:
             make_animated_gif(sim, idx)
     return
 

@@ -112,7 +112,7 @@ for ex in ex_list:
 
     # read restructured text file as a string
     print("reading...'{}'".format(dst))
-    with open(dst, 'r') as file:
+    with open(dst, "r") as file:
         lines = file.read()
 
     # find equation labels in lines
@@ -135,7 +135,6 @@ for ex in ex_list:
         for tag in ex_tag.findall(tag0):
             if tag0 not in list(fig_tab_refs.keys()):
                 fig_tab_refs[tag0] = ":numref:`{}`".format(tag)
-
 
     # read restructured text file for example
     print("reading...'{}'".format(dst))
@@ -269,8 +268,10 @@ for ex in ex_list:
     # write Jupyter Notebook section
     line = "\n\nJupyter Notebook\n"
     line += "----------------\n\n"
-    line += "The Jupyter notebook used to create the MODFLOW 6 input files\n" + \
-            "for this example and post-process the results is:\n\n"
+    line += (
+        "The Jupyter notebook used to create the MODFLOW 6 input files\n"
+        + "for this example and post-process the results is:\n\n"
+    )
     line += "* `{0} <../_notebooks/{0}.html>`_\n".format(ex_root)
     line += "\n"
 
@@ -305,7 +306,6 @@ for ex in ex_list:
     #     f.write(stdout.decode("utf-8"))
     #     f.close()
 
-
     # clean up temporary latex file
     if os.path.isfile(src):
         os.remove(src)
@@ -318,11 +318,14 @@ if os.path.isdir(dst):
 os.makedirs(dst, exist_ok=True)
 
 # copy figures to rtd directory
-src_dirs = (os.path.join("..", "figures"),
-            os.path.join("..", "images"))
+src_dirs = (os.path.join("..", "figures"), os.path.join("..", "images"))
 for src_dir in src_dirs:
-    file_names = [file_name for file_name in os.listdir(src_dir) if os.path.isfile(
-        os.path.join(src_dir, file_name)) and (file_name.endswith(".png") or file_name.endswith(".gif"))]
+    file_names = [
+        file_name
+        for file_name in os.listdir(src_dir)
+        if os.path.isfile(os.path.join(src_dir, file_name))
+        and (file_name.endswith(".png") or file_name.endswith(".gif"))
+    ]
     for file_name in file_names:
         src = os.path.join(src_dir, file_name)
         print("copy '{}' -> '{}' directory".format(src, dst))

@@ -23,14 +23,17 @@ for idx, arg in enumerate(sys.argv):
 
 # get list of notebooks
 if nb_files is None:
-    nb_files = [file_name
-                for file_name in sorted(os.listdir(src_pth))
-                if file_name.endswith(".ipynb")]
+    nb_files = [
+        file_name
+        for file_name in sorted(os.listdir(src_pth))
+        if file_name.endswith(".ipynb")
+    ]
 
 
 def clean_files():
     if os.path.isdir(dst_pth):
         shutil.rmtree(dst_pth)
+
 
 @pytest.mark.parametrize(
     "file_name",
@@ -38,8 +41,10 @@ def clean_files():
 )
 def test_run_notebooks(file_name):
     # make paths if they do not exist
-    dir_paths = (dst_pth, rtd_pth,)
-    for dir_path in dir_paths:
+    for dir_path in (
+        dst_pth,
+        rtd_pth,
+    ):
         os.makedirs(dir_path, exist_ok=True)
 
     # set src, dst, and rtd paths
@@ -52,13 +57,15 @@ def test_run_notebooks(file_name):
         print(f"removing '{dst}'")
         os.remove(dst)
 
-    arg = ("jupytext",
-           "--to ipynb",
-           "--from ipynb",
-           "--execute",
-           "-o",
-           dst,
-           src)
+    arg = (
+        "jupytext",
+        "--to ipynb",
+        "--from ipynb",
+        "--execute",
+        "-o",
+        dst,
+        src,
+    )
     print(" ".join(arg))
     os.system(" ".join(arg))
 
@@ -70,6 +77,7 @@ def test_run_notebooks(file_name):
     # copy dst to rtd
     print(f"copying '{dst}' -> '{rtd}'")
     shutil.copyfile(dst, rtd)
+
 
 if __name__ == "__main__":
     clean_files()

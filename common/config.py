@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import matplotlib as mpl
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 from IPython import get_ipython
 
@@ -20,6 +22,7 @@ writeModel = True
 runModel = True
 plotModel = True
 plotSave = True
+createGif = True
 
 
 # Test if being run as a script
@@ -66,6 +69,8 @@ else:
             writeModel = False
         elif arg in ("-np", "--no_plot"):
             plotModel = False
+        elif arg in ("-ng", "--no_gif"):
+            createGif = False
         elif arg in ("-fe", "--figure_extension"):
             if idx + 1 < len(sys.argv):
                 extension = sys.argv[idx + 1]
