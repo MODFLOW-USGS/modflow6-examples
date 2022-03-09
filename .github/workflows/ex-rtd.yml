@@ -55,6 +55,7 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
+          python -m ipykernel install --name python_kernel --user
         working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
@@ -80,7 +81,7 @@ jobs:
 
       - name: Run notebooks with jupytext for ReadtheDocs
         run: |
-          python ci_run_notebooks.py
+          pytest -v -n=auto ci_run_notebooks.py
         working-directory: ${{env.etc-directory}}
 
       - name: Create package tables and examples.rst for ReadtheDocs
