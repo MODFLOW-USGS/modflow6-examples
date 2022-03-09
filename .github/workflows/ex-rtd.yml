@@ -80,7 +80,7 @@ jobs:
 
       - name: Run notebooks with jupytext for ReadtheDocs
         run: |
-          pytest -v -n=auto ci_run_notebooks.py
+          pytest -v ci_run_notebooks.py
         working-directory: ${{env.etc-directory}}
 
       - name: Create package tables and examples.rst for ReadtheDocs
