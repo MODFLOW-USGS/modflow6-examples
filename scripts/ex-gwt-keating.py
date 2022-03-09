@@ -493,7 +493,7 @@ def make_animated_gif(sims, idx):
         a = np.where(head > botm, conc[i], nodata)
         a = np.ma.masked_where(a < 0, a)
         a = a[a.mask is False]
-        pc.set_array(array=a.flatten())
+        pc.set_array(a.flatten())
         ax.set_title("Time = {} days".format(conc_times[i]))
 
     # Stop the animation at 18,000 days
