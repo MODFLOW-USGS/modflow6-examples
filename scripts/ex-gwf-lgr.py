@@ -833,7 +833,7 @@ def build_model(sim_name, silent=False):
         mvrspd = {0: static_mvrperioddata}
         maxmvr = 2
         mvr = flopy.mf6.ModflowMvr(
-            sim,
+            gwfgwf,
             modelnames=True,
             maxmvr=maxmvr,
             print_flows=True,
