@@ -21,6 +21,7 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import flopy
 from flopy.utils.lgrutil import Lgr
 
@@ -343,6 +344,114 @@ def plot_grid(idx, sim):
     return
 
 
+def plot_stencils(idx, sim):
+    fs = USGSFigure(figure_type="map", verbose=False)
+    sim_name = list(parameters.keys())[idx]
+    gwf_outer = sim.get_model(gwfname_outer)
+    gwf_inner = sim.get_model(gwfname_inner)
+
+    fig = plt.figure(figsize=(15, 10))
+    fig.tight_layout()
+
+    # left plot, with stencils at the interface
+    ax = fig.add_subplot(1, 2, 1, aspect="equal")
+    pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
+    pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0, extent=pmv.extent)
+    pmv.plot_grid()
+    pmv_inner.plot_grid()
+
+    stencil = np.zeros(pmv.mg.shape, dtype=int)
+    stencil_inner = np.zeros(pmv_inner.mg.shape, dtype=int)
+
+    # stencil 1
+    stencil[0, 0, 3] = 1
+    stencil[0, 1, 2] = 1
+    stencil[0, 1, 3] = 1
+    stencil[0, 1, 4] = 1
+    stencil_inner[0, 0, 3] = 1
+    stencil_inner[0, 0, 4] = 1
+    stencil_inner[0, 0, 5] = 1
+    stencil_inner[0, 1, 4] = 1
+
+    # stencil 2
+    stencil[0, 4, 1] = 1
+    stencil[0, 5, 1] = 1
+    stencil[0, 5, 2] = 1
+    stencil[0, 5, 3] = 1
+    stencil[0, 6, 2] = 1
+    stencil_inner[0, 7, 0] = 1
+    stencil_inner[0, 8, 0] = 1
+    stencil_inner[0, 8, 1] = 1
+
+    # markers
+    x = [350., 216.666]
+    y = [500., 200.]
+
+    stencil = np.ma.masked_equal(stencil, 0)
+    stencil_inner = np.ma.masked_equal(stencil_inner, 0)
+    cmap = ListedColormap(["dodgerblue"])
+    pmv.plot_array(stencil, cmap=cmap)
+    pmv_inner.plot_array(stencil_inner, cmap=cmap)
+    plt.scatter(x, y, facecolors='r')
+
+    ax.set_xlabel("x position (m)")
+    ax.set_ylabel("y position (m)")
+
+    # right plot, with stencils '1 connection away from the interface'
+    ax = fig.add_subplot(1, 2, 2, aspect="equal")
+    pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
+    pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0, extent=pmv.extent)
+    pmv.plot_grid()
+    pmv_inner.plot_grid()
+
+    stencil = np.zeros(pmv.mg.shape, dtype=int)
+    stencil_inner = np.zeros(pmv_inner.mg.shape, dtype=int)
+
+    # stencil 1
+    stencil[0, 0, 1] = 1
+    stencil[0, 1, 1] = 1
+    stencil[0, 1, 2] = 1
+    stencil[0, 1, 0] = 1
+    stencil[0, 2, 1] = 1
+    stencil[0, 2, 0] = 1
+    stencil[0, 3, 1] = 1
+    stencil_inner[0, 0, 0] = 1
+    stencil_inner[0, 1, 0] = 1
+    stencil_inner[0, 2, 0] = 1
+
+    # stencil 2
+    stencil_inner[0, 6, 7] = 1
+    stencil_inner[0, 7, 6] = 1
+    stencil_inner[0, 7, 7] = 1
+    stencil_inner[0, 7, 8] = 1
+    stencil_inner[0, 8, 6] = 1
+    stencil_inner[0, 8, 7] = 1
+    stencil_inner[0, 8, 8] = 1
+    stencil[0, 5, 4] = 1
+
+    # markers
+    x = [150., 450.]
+    y = [500., 233.333]
+
+    stencil = np.ma.masked_equal(stencil, 0)
+    stencil_inner = np.ma.masked_equal(stencil_inner, 0)
+    cmap = ListedColormap(["dodgerblue"])
+    pmv.plot_array(stencil, cmap=cmap)
+    pmv_inner.plot_array(stencil_inner, cmap=cmap)
+    plt.scatter(x, y, facecolors='r')
+
+    ax.set_xlabel("x position (m)")
+    ax.set_ylabel("y position (m)")
+
+    # save figure
+    if config.plotSave:
+        fpth = os.path.join(
+            "..", "figures", "{}-stencils{}".format(sim_name, config.figure_ext)
+        )
+        fig.savefig(fpth)
+    return
+
+
 def plot_head(idx, sim):
     fs = USGSFigure(figure_type="map", verbose=False)
     sim_name = list(parameters.keys())[idx]
@@ -424,6 +533,7 @@ def plot_results(idx, sim, silent=True):
     if config.plotModel:
         if idx == 0:
             plot_grid(idx, sim)
+            plot_stencils(idx, sim)
         plot_head(idx, sim)
     return
 
