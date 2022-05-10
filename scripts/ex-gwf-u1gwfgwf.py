@@ -36,7 +36,8 @@ from figspecs import USGSFigure
 
 # Set default figure properties
 
-figure_size = (6, 6)
+figure_size = (5, 5)
+figure_size_double = (7, 3)
 
 # Base simulation and model name and workspace
 
@@ -50,10 +51,10 @@ time_units = "days"
 # Scenario parameters
 
 parameters = {
-    "ex-gwf-u1gwfgwf-s1": {"xt3d": "none", },
-    "ex-gwf-u1gwfgwf-s2": {"xt3d": "models", },
-    "ex-gwf-u1gwfgwf-s3": {"xt3d": "models_exchange", },
-    "ex-gwf-u1gwfgwf-s4": {"xt3d": "exchange", },
+    "ex-gwf-u1gwfgwf-s1": {"xt3d": False, "xt3d_exchange": False, },
+    "ex-gwf-u1gwfgwf-s2": {"xt3d": True, "xt3d_exchange": False, },
+    "ex-gwf-u1gwfgwf-s3": {"xt3d": True, "xt3d_exchange": True, },
+    "ex-gwf-u1gwfgwf-s4": {"xt3d": False, "xt3d_exchange": True, },
 }
 
 # Table with Model Parameters
@@ -113,9 +114,7 @@ rclose = 1e-6
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(sim_name, xt3d):
-    xt3d_global = (xt3d == "models") or (xt3d == "models_exchange")
-    xt3d_exg = (xt3d == "models_exchange") or (xt3d == "exchange")
+def build_model(sim_name, xt3d, xt3d_exchange):
 
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
@@ -153,13 +152,9 @@ def build_model(sim_name, xt3d):
             icelltype=icelltype,
             k=k11,
             save_specific_discharge=True,
-            xt3doptions=xt3d_global,
+            xt3doptions=xt3d,
         )
         flopy.mf6.ModflowGwfic(gwf_outer, strt=strt)
-
-        chd_spd = []
-        chd_spd += [[0, i, 1.0] for i in [0, 7, 14, 18, 22, 26, 33]]
-        chd_spd = {0: chd_spd}
 
         # constant head boundary LEFT
         left_chd = [
@@ -217,7 +212,7 @@ def build_model(sim_name, xt3d):
         flopy.mf6.ModflowGwfnpf(
             gwf_inner,
             save_specific_discharge=True,
-            xt3doptions=xt3d_global,
+            xt3doptions=xt3d,
             save_flows=True,
             icelltype=icelltype,
             k=k11,
@@ -278,7 +273,7 @@ def build_model(sim_name, xt3d):
             exgmnamea=gwfname_outer,
             exgmnameb=gwfname_inner,
             exchangedata=exgdata,
-            xt3d=xt3d_exg,
+            xt3d=xt3d_exchange,
             print_input=True,
             print_flows=True,
             save_flows=True,
@@ -332,6 +327,14 @@ def plot_grid(idx, sim):
 
     pmv.plot_bc(name="CHD-LEFT", alpha=0.75)
     pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
+
+    ax.plot(
+        [200, 500, 500, 200, 200],
+        [200, 200, 500, 500, 200],
+        "r--",
+        linewidth=2.0
+    )
+
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
 
@@ -350,7 +353,7 @@ def plot_stencils(idx, sim):
     gwf_outer = sim.get_model(gwfname_outer)
     gwf_inner = sim.get_model(gwfname_inner)
 
-    fig = plt.figure(figsize=(15, 10))
+    fig = plt.figure(figsize=figure_size_double)
     fig.tight_layout()
 
     # left plot, with stencils at the interface
@@ -458,7 +461,7 @@ def plot_head(idx, sim):
     gwf_outer = sim.get_model(gwfname_outer)
     gwf_inner = sim.get_model(gwfname_inner)
 
-    fig = plt.figure(figsize=(15, 10))
+    fig = plt.figure(figsize=figure_size_double)
     fig.tight_layout()
 
     head = gwf_outer.output.head().get_data()[0]
