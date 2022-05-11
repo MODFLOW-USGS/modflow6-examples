@@ -1,7 +1,7 @@
 \section{Nested Grid Problem - Two Domains}
 
 % Describe source of problem
-This example reproduces the nested grid problem described in the MODFLOW-USG documentation \citep{modflowusg}. Instead of using a single model with a grid based on the Discretization by Vertices (DISV) input as presented elsewhere in these examples, the problem is set up using two individual GWF models with a regular grid (DIS) that are coupled through a GWF Exchange. A plan view of the combined grid for the two models is shown in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-grid}. The XT3D option in the NPF package can be applied to avoid inaccuracies near the model boundary \citep{modflow6xt3d}. However, for this coupled model system it is not sufficient to enable XT3D for both models independently: the correct flow calculation near the model interface relies on information from both models. 
+This example reproduces the nested grid problem described in the MODFLOW-USG documentation \citep{modflowusg}. A single model setup with a grid based on the Discretization by Vertices (DISV) input is presented elsewhere in these examples. This problem is set up using two individual GWF models with a regular grid (DIS) that are coupled through a GWF Exchange. A plan view of the combined grid for the two models is shown in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-grid}. The XT3D option in the NPF package can be applied to avoid inaccuracies at the cell refinement interface \citep{modflow6xt3d}, which is the model boundary in this example. However, for this coupled system it is not sufficient to enable XT3D for the models independently: the correct flow calculation around the model interface relies on information from both models.
 
 \begin{StandardFigure}{A top view of the grids of the outer and inner model used in this example. The dashed red line indicates the interface between the two. The blue shaded areas are the cells with a constant head boundary condition.}{fig:ex-gwf-u1gwfgwf-s1-grid}{../figures/ex-gwf-u1gwfgwf-s1-grid.png}
 \end{StandardFigure}
@@ -9,16 +9,17 @@ This example reproduces the nested grid problem described in the MODFLOW-USG doc
 \begin{StandardFigure}{Flow calculation stencils for XT3D for the coupled model system. Details in the text.}{fig:ex-gwf-u1gwfgwf-s1-stencils}{../figures/ex-gwf-u1gwfgwf-s1-stencils.png}
 \end{StandardFigure} 
 
-This is illustrated in more detail in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-stencils}. The red dots show (examples of) cell connections where the flow relies on data from both models. The cells which are involved in the flow calculation are colored blue. In the left panel this is the case for flows that cross the model boundary. On the right it is shown how interior connections can still be dependent on cell data from the neighboring model. With the release of the generalized coupling mechanism in \mf (as of version 6.3.0) it is now possible to activate XT3D not just for the internal model connections, but also for connections between models. Additionally, it will correctly calculate the XT3D fluxes near the model boundary using data from both models (c.f. the right panel in the figure). In this example problem we study how these options affect the accuracy of the simulation results. 
+This is illustrated in more detail in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-stencils}. The red dots show (examples of) cell connections where the flow relies on data from both models. The cells which are involved in the flow calculation are colored blue. In the left panel this is the case for flows that cross the model boundary. On the right it is shown how interior connections can still be dependent on cell data from the neighboring model. With the release of the generalized coupling framework in \mf (as of version 6.3.0) it is now possible to activate XT3D not just for the internal model connections, but also for connections between models. Additionally, it will correctly calculate the XT3D fluxes near the model boundary using data from both models (c.f. the right panel in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-stencils}). In this example problem we study how these options affect the accuracy of the simulation results.
 
 
 \subsection{Example Description}
 % spatial discretization  and temporal discretization
-It is a typical Local Grid Refinement (LGR) example with the coarse outer cells ($100 m \times 100 m$) being part of one model and the refined inner cells part of the other. Some essential and uniform parameters are given in table~\ref{tab:ex-gwf-u1gwfgwf-01}. The two models are connected by a GWF Exchange which enables groundwater flow through the grid faces marked by the dashed red square. The blue cells indicate where a constant head boundary condition is imposed which is set to 1$m$ for the cells on the left and to 0$m$ for the right. The analytical solution of the problem is trivial and given by the expression
+This is a typical Local Grid Refinement (LGR) example with the coarse outer cells ($100 m \times 100 m$) being part of one model and the refined inner cells part of the other. Some essential and uniform parameters are given in table~\ref{tab:ex-gwf-u1gwfgwf-01}. The two models are connected by a GWF Exchange which enables groundwater flow through the grid faces marked by the dashed red square. The blue cells indicate where a constant head boundary condition is imposed. The condition is set to 1$m$ for the cells on the left and to 0$m$ for the right. As a result, the analytical solution of the problem is trivial and given by the expression
 \begin{equation}
-	h = 1.0 - \frac{x - 50.0}{600.0} m
+	h = 1.0 - \frac{x - 50.0}{600.0} m	
+\label{ex-gwf-u1gwfgwf-eq1}
 \end{equation}
-for the head $h$ and $x \in (50.0,650.0)$. This will be used to test the accuracy of the results in the simulation described below.
+for the head $h$ and $x \in (50.0,650.0)$. This formula will be used to test the accuracy of the simulated results presented below.
                                
 
 % add static parameter table(s)
@@ -27,44 +28,31 @@ for the head $h$ and $x \in (50.0,650.0)$. This will be used to test the accurac
 % for examples without scenarios
 \subsection{Scenario Results}
 
-The nested grid problem was run for 4 different scenarios as indicated by the parameter configuration in table~\ref{tab:ex-gwf-u1gwfgwf-scenario}.  
+The nested grid problem was run for 4 different scenarios using the parameter configuration listed in table~\ref{tab:ex-gwf-u1gwfgwf-scenario}. 
 
 % scenario table
 \input{../tables/ex-gwf-u1gwfgwf-scenario.tex}
 
+Model results for the simulation of these scenarios are shown in figures~\ref{fig:ex-gwf-u1gwfgwf-s1-head}, \ref{fig:ex-gwf-u1gwfgwf-s2-head}, \ref{fig:ex-gwf-u1gwfgwf-s3-head}, \ref{fig:ex-gwf-u1gwfgwf-s4-head}. Flow is from left to right and should be perfectly one-dimensional. The head surface should represent a flat plane with a value of 1.0 on the left and zero on the right, following the analytical expression given in equation~\ref{ex-gwf-u1gwfgwf-eq1}. 
 
-The following sections discuss the results for each of the four scenarios.
-
-
-\subsubsection{Scenario 1: no XT3D}
-
-Model results for the simulation with the standard groundwater flow formulation are shown in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-head}. Flow is from left to right and should be perfectly one dimensional. The head surface should represent a flat plane with a value of 1.0 on the left and zero on the right, following the analytical expression given above. Because the configuration of a nested grid violates the control-volume finite-difference assumptions, there are errors in the simulated heads as shown in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-head}B.  Note that the head errors are larger than the solution tolerance ($h_\textrm{close}=1 \times 10^{-9}$).
+Because the configuration of a nested grid with a refinement violates the control-volume finite-difference assumptions, there are errors in the simulated heads for scenario 1 with the standard NPF flow formulation, as shown in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-head}B. Enabling the XT3D method in both models as done in scenario 2, is insufficient to get rid of these accuracies as can be seen from figure~\ref{fig:ex-gwf-u1gwfgwf-s2-head}B. Scenario 3 applies the advanced XT3D calculation globally on both models \emph{and} at the interface. This setup is now equivalent to what was presented in the “Nested Grid Problem” elsewhere in these examples for the case of a single DISV-based model with XT3D enabled. And as expected, figure~\ref{fig:ex-gwf-u1gwfgwf-s3-head}B illustrates how in this case the deviation from the analytical result is well within the solver tolerance ($h_\textrm{close}=1 \times 10^{-9}$). Scenario 4 is a new capability of the generalized coupling and allows to apply XT3D where it is needed: in the exchange region between the models (c.f. figure~\ref{fig:ex-gwf-u1gwfgwf-s1-stencils}B). Because the XT3D calculation is quite costly, this is an efficient alternative to the setup in scenario 3 which leads to the same level of accuracy. The latter is clearly demonstrated by the error plot in figure~\ref{fig:ex-gwf-u1gwfgwf-s4-head}B.
 
 \begin{StandardFigure}{
-                                     The figure caption.
+                                     Results for scenario 1: simulated head (A) and differences in head with respect to the analytical result (B)  for a system of coupled models without XT3D.
                                      }{fig:ex-gwf-u1gwfgwf-s1-head}{../figures/ex-gwf-u1gwfgwf-s1-head.png}
-\end{StandardFigure}   
-
-
-\subsubsection{Scenario 2: XT3D in both models}
+\end{StandardFigure}  
 
 \begin{StandardFigure}{
-                                     The figure caption.
+                                     Results for scenario 2: simulated head (A) and differences in head with respect to the analytical result (B)  for a system of coupled models with XT3D active in both models but not at the exchange between them.
                                      }{fig:ex-gwf-u1gwfgwf-s2-head}{../figures/ex-gwf-u1gwfgwf-s2-head.png}
 \end{StandardFigure}
 
-
-\subsubsection{Scenario 3: XT3D in both models \emph{and} at the interface}
-
 \begin{StandardFigure}{
-                                     The figure caption.
+                                     Results for scenario 3: simulated head (A) and differences in head with respect to the analytical result (B)  for a system of coupled models with XT3D active in both models and at the exchange between them.
                                      }{fig:ex-gwf-u1gwfgwf-s3-head}{../figures/ex-gwf-u1gwfgwf-s3-head.png}
 \end{StandardFigure}
 
-
-\subsubsection{Scenario 4: XT3D only at the interface}
-
 \begin{StandardFigure}{
-                                     The figure caption.
+                                     Results for scenario 4: simulated head (A) and differences in head with respect to the analytical result (B)  for a system of coupled models without XT3D in the models but with XT3D enabled at the exchange between them.
                                      }{fig:ex-gwf-u1gwfgwf-s4-head}{../figures/ex-gwf-u1gwfgwf-s4-head.png}
 \end{StandardFigure}

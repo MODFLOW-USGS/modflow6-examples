@@ -51,10 +51,10 @@ time_units = "days"
 # Scenario parameters
 
 parameters = {
-    "ex-gwf-u1gwfgwf-s1": {"xt3d": False, "xt3d_exchange": False, },
-    "ex-gwf-u1gwfgwf-s2": {"xt3d": True, "xt3d_exchange": False, },
-    "ex-gwf-u1gwfgwf-s3": {"xt3d": True, "xt3d_exchange": True, },
-    "ex-gwf-u1gwfgwf-s4": {"xt3d": False, "xt3d_exchange": True, },
+    "ex-gwf-u1gwfgwf-s1": {"XT3D in models": False, "XT3D at exchange": False, },
+    "ex-gwf-u1gwfgwf-s2": {"XT3D in models": True, "XT3D at exchange": False, },
+    "ex-gwf-u1gwfgwf-s3": {"XT3D in models": True, "XT3D at exchange": True, },
+    "ex-gwf-u1gwfgwf-s4": {"XT3D in models": False, "XT3D at exchange": True, },
 }
 
 # Table with Model Parameters
