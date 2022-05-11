@@ -51,10 +51,10 @@ time_units = "days"
 # Scenario parameters
 
 parameters = {
-    "ex-gwf-u1gwfgwf-s1": {"XT3D in models": False, "XT3D at exchange": False, },
-    "ex-gwf-u1gwfgwf-s2": {"XT3D in models": True, "XT3D at exchange": False, },
-    "ex-gwf-u1gwfgwf-s3": {"XT3D in models": True, "XT3D at exchange": True, },
-    "ex-gwf-u1gwfgwf-s4": {"XT3D in models": False, "XT3D at exchange": True, },
+    "ex-gwf-u1gwfgwf-s1": {"XT3D_in_models": False, "XT3D_at_exchange": False, },
+    "ex-gwf-u1gwfgwf-s2": {"XT3D_in_models": True, "XT3D_at_exchange": False, },
+    "ex-gwf-u1gwfgwf-s3": {"XT3D_in_models": True, "XT3D_at_exchange": True, },
+    "ex-gwf-u1gwfgwf-s4": {"XT3D_in_models": False, "XT3D_at_exchange": True, },
 }
 
 # Table with Model Parameters
@@ -114,7 +114,7 @@ rclose = 1e-6
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(sim_name, xt3d, xt3d_exchange):
+def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
 
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
@@ -152,7 +152,7 @@ def build_model(sim_name, xt3d, xt3d_exchange):
             icelltype=icelltype,
             k=k11,
             save_specific_discharge=True,
-            xt3doptions=xt3d,
+            xt3doptions=XT3D_in_models,
         )
         flopy.mf6.ModflowGwfic(gwf_outer, strt=strt)
 
@@ -212,7 +212,7 @@ def build_model(sim_name, xt3d, xt3d_exchange):
         flopy.mf6.ModflowGwfnpf(
             gwf_inner,
             save_specific_discharge=True,
-            xt3doptions=xt3d,
+            xt3doptions=XT3D_in_models,
             save_flows=True,
             icelltype=icelltype,
             k=k11,
@@ -273,7 +273,7 @@ def build_model(sim_name, xt3d, xt3d_exchange):
             exgmnamea=gwfname_outer,
             exgmnameb=gwfname_inner,
             exchangedata=exgdata,
-            xt3d=xt3d_exchange,
+            xt3d=XT3D_at_exchange,
             print_input=True,
             print_flows=True,
             save_flows=True,
