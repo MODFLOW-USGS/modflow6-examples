@@ -14,7 +14,7 @@ import os
 import re
 
 # -- set boolean indicating if running on readthedocs server -----------------
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
+on_rtd = os.environ.get("READTHEDOCS") == "True"
 
 # -- setup regular expression for body.tex -----------------------------------
 ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
@@ -36,8 +36,10 @@ f = open("notebook_examples.rst", "w")
 
 lines = "MODFLOW 6 Examples - Jupyter Notebooks\n"
 lines += (len(lines) - 1) * "-" + "\n\n"
-lines += "The Jupyter Notebooks used to create the input files and figures for \n" + \
-         "each of the MODFLOW 6 `examples <examples.html>`_.\n\n"
+lines += (
+    "The Jupyter Notebooks used to create the input files and figures for \n"
+    + "each of the MODFLOW 6 `examples <examples.html>`_.\n\n"
+)
 f.write(lines)
 
 # gwf examples Jupyter Notebooks
@@ -74,9 +76,9 @@ if not on_rtd:
 
 # -- Project information -----------------------------------------------------
 
-project = 'MODFLOW 6 Example Problems'
-copyright = '2020, MODFLOW 6 Development Team'
-author = 'MODFLOW 6 Development Team'
+project = "MODFLOW 6 Example Problems"
+copyright = "2020, MODFLOW 6 Development Team"
+author = "MODFLOW 6 Development Team"
 
 # -- General configuration ---------------------------------------------------
 
@@ -103,8 +105,8 @@ extensions = [
 ]
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".md": "markdown",
 }
 
 # Settings for GitHub actions integration
@@ -116,7 +118,7 @@ if on_rtd:
     rtds_action_github_token = os.environ.get("GITHUB_TOKEN", None)
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -164,25 +166,27 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 html_context = {
+    "github_repo": "https://github.com/MODFLOW-USGS/modflow6-examples",  # assuming an exact match
+    "github_version": "master",
+    "display_github": False,
     "github_user": "modflow6-examples",
     "github_repo": "modflow6-examples",
     "github_version": "master",
     "doc_path": ".doc",
     "css_files": [
         "_static/theme_overrides.css",  # override wide tables in RTD theme
-        "_static/custom.css"
+        "_static/custom.css",
     ],
 }
-
-# html_theme_options = {
-#     "github_url": "https://github.com/MODFLOW-USGS/modflow6-examples",
-#     "use_edit_page_button": False,
-# }
 
 numfig = True
 math_numfig = True
 numfig_secnum_depth = 1
-numfig_format = {"figure": "Figure %s", "table": "Table %s", "code-block": "Listing %s"}
+numfig_format = {
+    "figure": "Figure %s",
+    "table": "Table %s",
+    "code-block": "Listing %s",
+}
 math_eqref_format = "{number}"
 
 autosummary_generate = True

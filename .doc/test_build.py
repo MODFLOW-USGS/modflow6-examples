@@ -7,7 +7,7 @@ import flopy
 import pymake
 
 # -- determine if running on CI or rtd
-is_CI = 'CI' in os.environ or os.environ.get('READTHEDOCS') == 'True'
+is_CI = "CI" in os.environ or os.environ.get("READTHEDOCS") == "True"
 
 # # -- download executables ----------------------------------------------------
 # pth = os.path.join("..", "bin")
@@ -48,8 +48,11 @@ if stderr:
 # -- run the scripts ---------------------------------------------------------
 if not is_CI:
     pth = os.path.join("..", "scripts")
-    py_files = [file_name for file_name in sorted(os.listdir(pth)) if
-                file_name.endswith(".py") and file_name.startswith("ex-")]
+    py_files = [
+        file_name
+        for file_name in sorted(os.listdir(pth))
+        if file_name.endswith(".py") and file_name.startswith("ex-")
+    ]
     for file_name in py_files:
         args = ("python", file_name)
         print(" ".join(args))
@@ -74,8 +77,11 @@ if not is_CI:
 
 # -- get list of notebooks ---------------------------------------------------
 pth = os.path.join("..", "notebooks")
-nb_files = [file_name for file_name in sorted(os.listdir(pth)) if
-            file_name.endswith(".ipynb") and file_name.startswith("ex-")]
+nb_files = [
+    file_name
+    for file_name in sorted(os.listdir(pth))
+    if file_name.endswith(".ipynb") and file_name.startswith("ex-")
+]
 
 # -- run notebooks with jupytext ---------------------------------------------
 src_pth = os.path.join("..", "notebooks")
