@@ -562,7 +562,7 @@ def add_transport(sim):
         exgtype="GWT6-GWT6",
         gwfmodelname1=gwfname_out,
         gwfmodelname2=gwfname_inn,
-        advscheme=scheme,
+        adv_scheme=scheme,
         nexg=len(exgdata),
         exgmnamea=gwt_outer.name,
         exgmnameb=gwt_inner.name,
