@@ -1134,6 +1134,13 @@ def plot_results(sim):
         plot_difference_conc(sim)
         plot_difference_heads(sim)
 
+
+def test_01():
+    sim = build_model(example_name)
+    run_model(sim)
+    plot_results(sim)
+
+
 # Main
 if __name__ == "__main__":
     sim = build_model(example_name)

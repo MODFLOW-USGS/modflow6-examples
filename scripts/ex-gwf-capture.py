@@ -426,9 +426,6 @@ def simulation(silent=True):
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     simulation(silent=False)
-
-
-def test_plot():
     plot_results(silent=False)
 
 

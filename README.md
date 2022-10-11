@@ -16,6 +16,9 @@ Online documentation for creating these examples with python and flopy is automa
 * [Python scripts that use flopy to create, run, and post process the example problems](https://github.com/MODFLOW-USGS/modflow6-examples/tree/master/scripts)
 * [Jupyter notebooks that create, run, and post process the example problems](https://github.com/MODFLOW-USGS/modflow6-examples/tree/master/notebooks)
 
+## Instructions for Creating a New Example
+Instructionsf for creating a new MODFLOW 6 example are listed [here](DEVELOPER.md) in the developer instructions.
+
 # Other Resources
 
 * [U.S. Geological Survey MODFLOW 6 Page](https://www.usgs.gov/software/modflow-6-usgs-modular-hydrologic-model)
