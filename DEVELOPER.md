@@ -27,7 +27,7 @@ flopy.mf6.utils.generate_classes(branch="develop", backup=False)
 Pytest can be used to run all of the examples.  From the `scripts` directory, issue the following command:
 
 ```commandline
-pytest -v ex-*.py 
+pytest -v -n=auto ex-*.py 
 ```
 
 ## Extract Notebooks and Tables from Scripts

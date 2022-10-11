@@ -421,16 +421,10 @@ def simulation(idx, silent=True):
 
 
 # nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
+def test_and_plot():
     simulation(0, silent=False)
-
-
-def test_02():
     simulation(1, silent=False)
-
-
-def test_plot_results(silent=False):
-    plot_results(silent=silent)
+    plot_results(silent=False)
 
 
 # nosetest end
