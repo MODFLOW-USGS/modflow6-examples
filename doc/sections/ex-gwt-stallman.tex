@@ -1,0 +1,46 @@
+\section{Rotating Interface Problem}
+
+% Describe source of problem
+The rotating interface problem was suggested by \cite{bakker2004} as a  benchmark test for variable-density groundwater flow models. The problem consists of a box filled with three immiscible fluids that are separated by sharp interfaces.  The fluid are initially in an unstable configuration that causes them to rotate.  This rotating interface problem was simulated by \cite{langevin2003seawat} using the MODFLOW-based SEAWAT-2000 program.  \cite{bakker2004} also shows simulation results for the SWI Package for MODFLOW, MOCDENS3D, and for SEAWAT.  There are two cases of this problem, one for symmetric rotational flow and one for asymmetric rotational flow.   \cite{bakker2004}  and  \cite{langevin2003seawat} show both the symmetric and asymmetric versions of the rotating interface problem; however, only the symmetric case is shown here.
+
+\subsection{Example description}
+
+ The problem consists of a cross-sectional box filled with three fluids of different densities (fig.~\ref{fig:ex-gwt-rotate-config}). The initial boundaries between the fluids are not horizontal, and thus, the fluids rotate. \cite{bakker2004} and \cite{langevin2003seawat} compared simulated velocities at the onset of rotation with velocities obtained using an analytical solution.  This same comparison with simulated velocities is also shown here for \mf.  
+ 
+ % a figure
+\begin{StandardFigure}{
+                                     Configuration and variable definition for the rotating interface problem.  From \cite{bakker2004} and \cite{langevin2003seawat}.  Note that the constant-head boundary is not needed for the \mf simulation.
+                                     }{fig:ex-gwt-rotate-config}{../images/ex-gwt-rotate-config.png}
+\end{StandardFigure}            
+
+Model parameters used for the \mf simulation of the rotating interface problem are shown in table~\ref{tab:ex-gwt-rotate-01} The model grid and initial conditions used for the \mf simulation are shown in figure~\ref{fig:ex-gwt-rotate-bc}. The model grid consists of 300 columns and 80 layers.  The interfaces between the three fluids are straight and slope down and to the right. The aquifer and fluids are assumed to be incompressible, and the effects of concentration on fluid viscosity are assumed to be negligible. The freshwater hydraulic conductivity is homogeneous and isotropic. Symmetric rotational flow results when the density for the middle fluid (zone 2) is set as the average of the two outer fluids (zone 1 and 3).   Although a constant-head condition can be applied to help with convergence for this problem, it was not required for this \mf simulation.  The \mf model was run for 10,000 days  divided into 1000 timesteps. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwt-rotate-01}
+
+% a figure
+\begin{StandardFigure}{
+                                     Model grid and initial conditions used for the rotating interface problem.  Colors represent three different water types.
+                                     }{fig:ex-gwt-rotate-bc}{../figures/ex-gwt-rotate-bc.png}
+\end{StandardFigure}                                 
+
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The rotating interface problem represents a complex variable-density flow system that results from an unstable initial density configuration.  The analytical solution of \cite{bakker2004} is used here to calculate the horizontal interface velocity as a function of z for the left interface (fig.~\ref{fig:ex-gwt-rotate-vh}).  Also shown on figure~\ref{fig:ex-gwt-rotate-vh} is the horizontal interface velocity as simulated by \mf.  
+
+% a figure
+\begin{StandardFigure}{
+                                     Initial horizontal velocity versus vertical position of the left interface, exact (solid), and \mf~(blue circles).
+                                     }{fig:ex-gwt-rotate-vh}{../figures/ex-gwt-rotate-vh.png}
+\end{StandardFigure}                                 
+
+During the simulation period, the fluid rotate toward a stable position with lighter water overlying denser water.  Although the problem dictates that the fluids are immiscible, the \mf simulation shows some mixing caused by numerical dispersion.
+
+% a figure
+\begin{StandardFigure}{
+                                     Color-shaded plots of concentration simulated by \mf for the \cite{bakker2004} problem involving rotating interfaces.
+                                     }{fig:ex-gwt-rotate-conc}{../figures/ex-gwt-rotate-conc.png}
+\end{StandardFigure}                                 
+
