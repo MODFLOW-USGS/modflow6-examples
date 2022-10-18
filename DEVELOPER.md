@@ -30,6 +30,12 @@ Pytest can be used to run all of the examples.  From the `scripts` directory, is
 pytest -v -n=auto ex-*.py 
 ```
 
+or use the following command, which runs in serial instead of running in parallel:
+
+```commandline
+pytest -v ex-*.py 
+```
+
 ## Extract Notebooks and Tables from Scripts
 
 The example scripts are converted into jupyter notebooks, and latex tables are created from the scripts using jupytext.  To convert all of the scripts, run the following command in the scrips directory:
