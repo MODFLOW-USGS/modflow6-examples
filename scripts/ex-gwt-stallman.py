@@ -1,11 +1,10 @@
-# ## Salt Lake Problem
+# ## Stallman Problem
 #
-# Density driven groundwater flow
-#
+# Periodic heat boundary condition at surface
+# Transient heat transfer problem in vertical
 #
 
-
-# ### Salt Lake Problem Setup
+# ### Stallman Problem Setup
 
 # Imports
 
@@ -23,10 +22,9 @@ sys.path.append(os.path.join("..", "common"))
 
 import config
 from figspecs import USGSFigure
+from analytical import Stallman
 
 mf6exe = os.path.abspath(config.mf6_exe)
-exe_name_mf = config.mf2005_exe
-exe_name_mt = config.mt3dms_exe
 
 # Set figure properties specific to this problem
 
@@ -35,56 +33,73 @@ figure_size = (6, 8)
 # Base simulation and model name and workspace
 
 ws = config.base_ws
-example_name = "ex-gwt-saltlake"
+example_name = "ex-gwt-stallman"
 
 # Model units
 
-length_units = "mm"
+length_units = "m"
 time_units = "seconds"
 
 # Table of model parameters
 
-nper = 1  # Number of periods
-nstp = 400  # Number of time steps
-perlen = 24000  # Simulation time length ($s$)
-nlay = 57  # Number of layers
+nper = 600  # Number of periods
+nstp = 6  # Number of time steps
+perlen = 525600  # Simulation time length ($s$)
+nlay = 120  # Number of layers
 nrow = 1  # Number of rows
-ncol = 135  # Number of columns
-system_length = 150.0  # Length of system ($mm$)
-delr_str = "ranges from 0.75 to 1.5"  # Column width ($mm$)
-delc = 1.5  # Row width ($mm$)
-delv_str = "ranges from 0.75 to 1.5"  # Layer thickness
-top = 75.0  # Top of the model ($mm$)
-hydraulic_conductivity = 3.05  # Hydraulic conductivity ($mm s^{-1}$)
-ss = 3.8e-10  # Specific storage ($mm^{-1}$)
-denseref = 0.001065  # Reference density
-denseslp = 0.646  # Density and concentration slope
-conc_inflow = 8.4e-5  # Initial and inflow concentration ($g L^{-1}$)
-conc_sat = 1.1e-4  # Saturated concentration ($g L^{-1}$)
-porosity = 1.0  # Porosity (unitless)
-evap_rate = 1.03e-3  # Evaporation rate ($mm s^{-1}$)
-alphal = 9.0e-7  # Longitudinal dispersivity ($mm$)
-alphat = 9.0e-7  # Transverse dispersivity ($mm$)
-diffc = 9.0e-4  # Diffusion coefficient ($mm s^{-1}$)
+ncol = 1  # Number of columns
+system_length = 60.0  # Length of system ($m$)
+delr = 1.0  # Column width ($m$)
+delc = 1.0  # Row width ($m$)
+delv_str = "ranges from 0.1 to 1"  # Layer thickness
+top = 60.0  # Top of the model ($m$)
+hydraulic_conductivity = 1.0e-4  # Hydraulic conductivity ($m s^{-1}$)
+porosity = 0.35  # Porosity (unitless)
+alphal = 0.0  # Longitudinal dispersivity ($m$)
+alphat = 0.0  # Transverse dispersivity ($m$)
+diffc = 1.02882E-06  # Diffusion coefficient ($m s^{-1}$)
+T_az = 10  # Ambient temperature ($^o C$)
+dT = 5  # Temperature variation ($^o C$)
+bulk_dens = 2630  # Bulk density ($kg/m^3$)
+kd = 0.000191663  # Distribution coefficient (unitless)
 
-delv = 14 * [0.75] + 43 * [1.5]
-delr = 70 * [0.75] + 65 * [1.5]
+# Stress period input
+per_data = []
+for k in range(nper):
+    per_data.append((perlen, nstp, 1.0))
+per_mf6 = per_data
+
+# Geometry input
 tp = top
 botm = []
-for k in range(nlay):
-    bt = tp - delv[k]
-    botm.append(bt)
-    tp = bt
+for i in range(nlay):
+    if i==0:botm.append(59.9)
+    elif i==119:botm.append(0.0)
+    else: botm.append(60-i*0.5)
+
+# Head input
+chd_data = {}
+for k in range(nper):
+    chd_data[k] = [[(0, 0, 0), 60.000000],[(119, 0, 0), 59.701801]]
+chd_mf6 = chd_data
+
+# Initial temperature input
+strt_conc = T_az* np.ones((nlay, 1, 1), dtype=np.float32)
+
+# Boundary temperature input
+cnc_data = {}
+for k in range(nper):
+    cnc_temp = T_az+dT*np.sin(2*np.pi*k*perlen/365/86400)
+    cnc_data[k] = [[(0, 0, 0), cnc_temp]]
+cnc_mf6 = cnc_data
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
-
 
 # ### Functions to build, write, run, and plot models
 #
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 #
-
 
 def build_model(sim_folder):
     print("Building model...{}".format(sim_folder))
@@ -95,9 +110,8 @@ def build_model(sim_folder):
         sim_ws=sim_ws,
         exe_name=config.mf6_exe,
     )
-    tdis_ds = ((perlen, nstp, 1.0),)
     flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        sim, nper=nper, perioddata=per_mf6, time_units=time_units
     )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
@@ -109,7 +123,7 @@ def build_model(sim_folder):
         inner_maximum=ninner,
         inner_dvclose=hclose,
         rcloserecord=rclose,
-        linear_acceleration="BICGSTAB",
+        linear_acceleration="CG",
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
@@ -133,30 +147,21 @@ def build_model(sim_folder):
         icelltype=0,
         k=hydraulic_conductivity,
     )
-    flopy.mf6.ModflowGwfsto(gwf, ss=ss)
+
     flopy.mf6.ModflowGwfic(gwf, strt=top)
-    pd = [(0, denseslp, 0.0, "trans", "concentration")]
-    flopy.mf6.ModflowGwfbuy(gwf, denseref=denseref, packagedata=pd)
-    chdspd = [[(0, 0, j), top, conc_inflow] for j in range(101, ncol)]
+
     flopy.mf6.ModflowGwfchd(
         gwf,
-        stress_period_data=chdspd,
-        pname="CHD-1",
-        auxiliary="CONCENTRATION",
+        stress_period_data=chd_mf6,
     )
-    rchspd = [[(0, 0, j), -evap_rate] for j in range(0, 67)]
-    flopy.mf6.ModflowGwfrch(
-        gwf,
-        stress_period_data=rchspd,
-        pname="RCH-1",
-    )
+
     head_filerecord = "{}.hds".format(name)
     budget_filerecord = "{}.bud".format(name)
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
         budget_filerecord=budget_filerecord,
-        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
     )
 
     gwt = flopy.mf6.ModflowGwt(sim, modelname="trans")
@@ -187,24 +192,22 @@ def build_model(sim_folder):
         top=top,
         botm=botm,
     )
-    flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
-    flopy.mf6.ModflowGwtic(gwt, strt=conc_inflow)
-    flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
+    flopy.mf6.ModflowGwtmst(
+        gwt,
+        porosity=porosity,
+        sorption="linear",
+        bulk_density=bulk_dens*(1-porosity),
+        distcoef=kd,
+    )
+    flopy.mf6.ModflowGwtic(gwt, strt=strt_conc)
+    flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(
         gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc
     )
-    sourcerecarray = [
-        ("CHD-1", "AUX", "CONCENTRATION"),
-    ]
-    flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
-    conc_rand = (np.random.random(67) - 0.5) * 0.01 * (
-        conc_sat - conc_inflow
-    ) + conc_sat
-    cncspd = [[(0, 0, j), conc_rand[j]] for j in range(0, 67)]
+    flopy.mf6.ModflowGwtssm(gwt, sources=[[]])
     flopy.mf6.ModflowGwtcnc(
         gwt,
-        stress_period_data=cncspd,
-        pname="CNC-1",
+        stress_period_data=cnc_mf6,
     )
     flopy.mf6.ModflowGwtoc(
         gwt,
@@ -213,7 +216,7 @@ def build_model(sim_folder):
         concentrationprintrecord=[
             ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
-        saverecord=[("CONCENTRATION", "ALL")],
+        saverecord=[("CONCENTRATION", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
     flopy.mf6.ModflowGwfgwt(
@@ -237,6 +240,7 @@ def write_model(sim, silent=True):
 
 @config.timeit
 def run_model(sim, silent=True):
+    print("Running model...")
     success = True
     if config.runModel:
         success = False
@@ -248,7 +252,6 @@ def run_model(sim, silent=True):
 
 # Function to plot the model results
 
-
 def plot_conc(sim, idx):
     fs = USGSFigure(figure_type="map", verbose=False)
     sim_name = example_name
@@ -256,60 +259,45 @@ def plot_conc(sim, idx):
     gwf = sim.get_model("flow")
     gwt = sim.get_model("trans")
 
-    # make bc figure
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pxs.plot_grid(linewidth=0.1)
-    pxs.plot_bc("RCH-1", color="red")
-    pxs.plot_bc("CHD-1", color="blue")
-    ax.set_ylabel("z position (m)")
-    ax.set_xlabel("x position (m)")
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-bc{}".format(sim_name, config.figure_ext)
-        )
-        fig.savefig(fpth)
-    plt.close("all")
-
-    # make results plot
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
-
     # create MODFLOW 6 head object
     cobj = gwt.output.concentration()
     times = cobj.get_times()
     times = np.array(times)
 
-    # plot times in the original publication
-    plot_times = [
-        2581.0,
-        15485.0,
-        5162.0,
-        18053.0,
-        10311.0,
-        20634.0,
-        12904.0,
-        23215.0,
-    ]
+    time_in_pub = 284349600.0
+    idx_conc = (np.abs(times - time_in_pub)).argmin()
+    time_this_plot = times[idx_conc]
+    conc = cobj.get_data(totim=time_this_plot)
 
-    nplots = len(plot_times)
-    for iplot in range(nplots):
+    zconc = np.zeros(nlay)
+    zbotm = np.zeros(nlay)
+    for i in range(len(zconc)):
+        zconc[i] = conc[i][0][0]
+        zbotm[i] = -(60-botm[i])
 
-        time_in_pub = plot_times[iplot]
-        idx_conc = (np.abs(times - time_in_pub)).argmin()
-        time_this_plot = times[idx_conc]
-        conc = cobj.get_data(totim=time_this_plot)
+    # Analytical solution - Stallman analysis
+    tau = 365*86400
+    t =  283824000.0
+    c_w = 4174
+    rho_w = 1000
+    c_r = 800
+    rho_r = bulk_dens
+    c_rho = c_r*rho_r*(1-porosity) + c_w*rho_w*porosity
+    darcy_flux = 5.00E-07
+    ko = 1.503
+    zanal = Stallman(T_az,dT,tau,t,c_rho,darcy_flux,ko,c_w,rho_w)
 
-        ax = fig.add_subplot(4, 2, iplot + 1)
-        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-        pxs.plot_array(conc, cmap="jet", vmin=conc_inflow, vmax=conc_sat)
-        ax.set_xlim(0, 75.0)
-        ax.set_ylabel("z position (m)")
-        if iplot in [6, 7]:
-            ax.set_xlabel("x position (m)")
-        ax.set_title("Time = {} seconds".format(time_this_plot))
-    plt.tight_layout()
+    # make conc figure
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.add_subplot(1, 1, 1)
+
+    # configure plot and save
+    ax.plot(zconc, zbotm, "k--", linewidth=0.5)
+    ax.plot(zanal[:,1], zanal[:,0], "bo", mfc="none")
+    ax.set_xlim(T_az-dT, T_az+dT)
+    ax.set_ylim(-top, 0)
+    ax.set_ylabel("Depth (m)")
+    ax.set_xlabel("Temperature (deg C)")
 
     # save figure
     if config.plotSave:
@@ -320,46 +308,10 @@ def plot_conc(sim, idx):
     return
 
 
-def make_animated_gif(sim, idx):
-    from matplotlib.animation import FuncAnimation, PillowWriter
-
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
-
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-    conc = cobj.get_alldata()
-
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pc = pxs.plot_array(conc[0], cmap="jet", vmin=conc_inflow, vmax=conc_sat)
-
-    def init():
-        ax.set_xlim(0, 75.0)
-        ax.set_ylim(0, 75.0)
-        ax.set_title("Time = {} seconds".format(times[0]))
-
-    def update(i):
-        pc.set_array(conc[i].flatten())
-        ax.set_title("Time = {} seconds".format(times[i]))
-
-    ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
-    writer = PillowWriter(fps=50)
-    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
-    ani.save(fpth, writer=writer)
-    return
-
-
 def plot_results(sim, idx):
+    print("Plotting results...")
     if config.plotModel:
         plot_conc(sim, idx)
-        if config.plotSave and config.createGif:
-            make_animated_gif(sim, idx)
     return
 
 

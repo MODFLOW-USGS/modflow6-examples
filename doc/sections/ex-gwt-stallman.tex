@@ -1,46 +1,33 @@
-\section{Rotating Interface Problem}
+\section{Stallman Problem}
 
 % Describe source of problem
-The rotating interface problem was suggested by \cite{bakker2004} as a  benchmark test for variable-density groundwater flow models. The problem consists of a box filled with three immiscible fluids that are separated by sharp interfaces.  The fluid are initially in an unstable configuration that causes them to rotate.  This rotating interface problem was simulated by \cite{langevin2003seawat} using the MODFLOW-based SEAWAT-2000 program.  \cite{bakker2004} also shows simulation results for the SWI Package for MODFLOW, MOCDENS3D, and for SEAWAT.  There are two cases of this problem, one for symmetric rotational flow and one for asymmetric rotational flow.   \cite{bakker2004}  and  \cite{langevin2003seawat} show both the symmetric and asymmetric versions of the rotating interface problem; however, only the symmetric case is shown here.
+The Stallman problem was suggested by \cite{stallman1965steady} as a benchmark test for transient heat transfer in subsurface. The problem models the heat conduction in subsurface with a periodic temperature boundary condition at the surface. The modeling results show the temperature variation in time and vertical space as a 1D transient problem.
+
+The Stallman analysis proposed by \cite{stallman1965steady} shows the analytical solution for a sinusoidal decay of temperature from surface to subsurface. In this example, \mf GWF-GWT is performed to simulate a 1D vertical infiltration with diffusion for groundwater temperature variation.
 
 \subsection{Example description}
 
- The problem consists of a cross-sectional box filled with three fluids of different densities (fig.~\ref{fig:ex-gwt-rotate-config}). The initial boundaries between the fluids are not horizontal, and thus, the fluids rotate. \cite{bakker2004} and \cite{langevin2003seawat} compared simulated velocities at the onset of rotation with velocities obtained using an analytical solution.  This same comparison with simulated velocities is also shown here for \mf.  
- 
- % a figure
-\begin{StandardFigure}{
-                                     Configuration and variable definition for the rotating interface problem.  From \cite{bakker2004} and \cite{langevin2003seawat}.  Note that the constant-head boundary is not needed for the \mf simulation.
-                                     }{fig:ex-gwt-rotate-config}{../images/ex-gwt-rotate-config.png}
-\end{StandardFigure}            
+ The problem consists of a vertical profile from surface (0 m) to subsurface (60 m). The steady-state groundwater flow model is setup with constant head difference (head = 60 m at the top and 59.701801 m at the bottom).
 
-Model parameters used for the \mf simulation of the rotating interface problem are shown in table~\ref{tab:ex-gwt-rotate-01} The model grid and initial conditions used for the \mf simulation are shown in figure~\ref{fig:ex-gwt-rotate-bc}. The model grid consists of 300 columns and 80 layers.  The interfaces between the three fluids are straight and slope down and to the right. The aquifer and fluids are assumed to be incompressible, and the effects of concentration on fluid viscosity are assumed to be negligible. The freshwater hydraulic conductivity is homogeneous and isotropic. Symmetric rotational flow results when the density for the middle fluid (zone 2) is set as the average of the two outer fluids (zone 1 and 3).   Although a constant-head condition can be applied to help with convergence for this problem, it was not required for this \mf simulation.  The \mf model was run for 10,000 days  divided into 1000 timesteps. 
+ The model simulates 10 sinusoidal periods in 10 years (wave length = 1 year) with total 600 stress periods and 6 time steps per period (time step = 1 day).
+
+ For GWT model setup, the ambient temperature at 10 $^o C$ is given as initial condition. The temperature variation at the boundary is 5 $^o C$ with given boundary condition at surface as:
+ $T_{BC} = 10+5sin(2\pi t/T)$, where t is the current time and T is the wave length of one year.
+ The diffusion coefficient is given as 1.02882E-06 ($m^2/s$) and linear sorption is activated with porosity = 0.35, bulk density = 1709.5 ($kg/m^3$) and distribution coefficient = 0.000191663.
+
+Model parameters used for the \mf simulation of the Stallman problem are shown in Table~\ref{tab:ex-gwt-stallman-01}. The model grid consists of 120 layers. The \mf model was run for 10 years divided into 600 stress periods with 6 time steps in each period.
 
 % add static parameter table(s)
-\input{../tables/ex-gwt-rotate-01}
-
-% a figure
-\begin{StandardFigure}{
-                                     Model grid and initial conditions used for the rotating interface problem.  Colors represent three different water types.
-                                     }{fig:ex-gwt-rotate-bc}{../figures/ex-gwt-rotate-bc.png}
-\end{StandardFigure}                                 
-
+\input{../tables/ex-gwt-stallman-01}
 
 % for examples without scenarios
 \subsection{Example Results}
 
-The rotating interface problem represents a complex variable-density flow system that results from an unstable initial density configuration.  The analytical solution of \cite{bakker2004} is used here to calculate the horizontal interface velocity as a function of z for the left interface (fig.~\ref{fig:ex-gwt-rotate-vh}).  Also shown on figure~\ref{fig:ex-gwt-rotate-vh} is the horizontal interface velocity as simulated by \mf.  
+The Stallman problem represents a steady-state temperature profile in depth with periodic variation from given boundary condition at the surface. The analytical solution of \cite{stallman1965steady} is plotted compared with the simulated temperature by \mf.
+The results confirm that \mf may be used as a heat transport simulator in the subsurface zone with periodic temperature variation at the surface.
 
 % a figure
 \begin{StandardFigure}{
-                                     Initial horizontal velocity versus vertical position of the left interface, exact (solid), and \mf~(blue circles).
-                                     }{fig:ex-gwt-rotate-vh}{../figures/ex-gwt-rotate-vh.png}
-\end{StandardFigure}                                 
-
-During the simulation period, the fluid rotate toward a stable position with lighter water overlying denser water.  Although the problem dictates that the fluids are immiscible, the \mf simulation shows some mixing caused by numerical dispersion.
-
-% a figure
-\begin{StandardFigure}{
-                                     Color-shaded plots of concentration simulated by \mf for the \cite{bakker2004} problem involving rotating interfaces.
-                                     }{fig:ex-gwt-rotate-conc}{../figures/ex-gwt-rotate-conc.png}
-\end{StandardFigure}                                 
-
+                                     Temperature versus vertical position, exact (blue circles), and \mf~(dash line).
+                                     }{fig:ex-gwt-stallman-conc}{../figures/ex-gwt-stallman-conc.png}
+\end{StandardFigure}
