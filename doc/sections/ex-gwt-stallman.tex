@@ -1,0 +1,33 @@
+\section{Stallman Problem}
+
+% Describe source of problem
+The Stallman problem was suggested by \cite{stallman1965steady} as a benchmark test for transient heat transfer in subsurface. The problem models the heat conduction in subsurface with a periodic temperature boundary condition at the surface. The modeling results show the temperature variation in time and vertical space as a 1D transient problem.
+
+The Stallman analysis proposed by \cite{stallman1965steady} shows the analytical solution for a sinusoidal decay of temperature from surface to subsurface. In this example, \mf GWF-GWT is performed to simulate a 1D vertical infiltration with diffusion for groundwater temperature variation.
+
+\subsection{Example description}
+
+ The problem consists of a vertical profile from surface (0 m) to subsurface (60 m). The steady-state groundwater flow model is setup with constant head difference (head = 60 m at the top and 59.701801 m at the bottom).
+
+ The model simulates 10 sinusoidal periods in 10 years (wave length = 1 year) with total 600 stress periods and 6 time steps per period (time step = 1 day).
+
+ For GWT model setup, the ambient temperature at 10 $^o C$ is given as initial condition. The temperature variation at the boundary is 5 $^o C$ with given boundary condition at surface as:
+ $T_{BC} = 10+5sin(2\pi t/T)$, where t is the current time and T is the wave length of one year.
+ The diffusion coefficient is given as 1.02882E-06 ($m^2/s$) and linear sorption is activated with porosity = 0.35, bulk density = 1709.5 ($kg/m^3$) and distribution coefficient = 0.000191663.
+
+Model parameters used for the \mf simulation of the Stallman problem are shown in Table~\ref{tab:ex-gwt-stallman-01}. The model grid consists of 120 layers. The \mf model was run for 10 years divided into 600 stress periods with 6 time steps in each period.
+
+% add static parameter table(s)
+\input{../tables/ex-gwt-stallman-01}
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The Stallman problem represents a steady-state temperature profile in depth with periodic variation from given boundary condition at the surface. The analytical solution of \cite{stallman1965steady} is plotted compared with the simulated temperature by \mf.
+The results confirm that \mf may be used as a heat transport simulator in the subsurface zone with periodic temperature variation at the surface.
+
+% a figure
+\begin{StandardFigure}{
+                                     Temperature versus vertical position, exact (blue circles), and \mf~(dash line).
+                                     }{fig:ex-gwt-stallman-conc}{../figures/ex-gwt-stallman-conc.png}
+\end{StandardFigure}
