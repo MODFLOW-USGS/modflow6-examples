@@ -277,7 +277,7 @@ def plot_conc(sim, idx):
 
     # Analytical solution - Stallman analysis
     tau = 365*86400
-    t =  283824000.0
+    t = 283824000.0
     c_w = 4174
     rho_w = 1000
     c_r = 800
