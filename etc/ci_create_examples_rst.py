@@ -72,6 +72,7 @@ with open(pth) as f:
     orig_latex = f.readlines()
 
 latex_tag = "\\input{./body.tex}"
+frontmatter_tag = "\\input{./frontmatter.tex}"
 doc_pth = os.path.join("..", "doc")
 for ex in ex_list:
     print("creating restructured text file for {} example".format(ex))
@@ -81,6 +82,8 @@ for ex in ex_list:
         if latex_tag in line:
             new_tag = "\\input{{sections/{}.tex}}".format(ex)
             line = line.replace(latex_tag, new_tag)
+        elif frontmatter_tag in line:
+            line = line.replace(frontmatter_tag, "")
         f.write(line)
     f.close()
 
