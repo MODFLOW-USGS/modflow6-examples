@@ -256,6 +256,7 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwflak(
         gwf,
         time_conversion=86400.000,
+        length_conversion=3.28081,
         print_stage=True,
         print_flows=True,
         stage_filerecord=name + ".lak.bin",
