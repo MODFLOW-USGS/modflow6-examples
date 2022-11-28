@@ -91,6 +91,7 @@ lakibd = np.loadtxt(fname, dtype=int)
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 #
 
+
 def get_stream_data():
     fname = os.path.join(data_ws, "stream.csv")
     dt = 5 * [int] + [float]
@@ -252,7 +253,9 @@ def build_mf6gwf(sim_folder):
         [1, 35.2, lakepakdata_dict[1], "lake2"],
     ]
     # <outletno> <lakein> <lakeout> <couttype> <invert> <width> <rough> <slope>
-    outlets = [[0, 0, -1, "MANNING", 44.5, 5.000000, 0.03, 0.2187500e-02]]
+    outlets = [
+        [0, 0, -1, "MANNING", 44.5, 3.36493214532915, 0.03, 0.2187500e-02]
+    ]
     flopy.mf6.ModflowGwflak(
         gwf,
         time_conversion=86400.000,
