@@ -273,11 +273,11 @@ def plot_conc(sim, idx):
     zbotm = np.zeros(nlay)
     for i in range(len(zconc)):
         zconc[i] = conc[i][0][0]
-        zbotm[i] = -(60-botm[i])
+        if i != (nlay-1): zbotm[i+1] = -(60-botm[i])
 
     # Analytical solution - Stallman analysis
     tau = 365*86400
-    t = 283824000.0
+    t =  283824000.0
     c_w = 4174
     rho_w = 1000
     c_r = 800
@@ -285,7 +285,7 @@ def plot_conc(sim, idx):
     c_rho = c_r*rho_r*(1-porosity) + c_w*rho_w*porosity
     darcy_flux = 5.00E-07
     ko = 1.503
-    zanal = Stallman(T_az,dT,tau,t,c_rho,darcy_flux,ko,c_w,rho_w)
+    zanal = Stallman(T_az,dT,tau,t,c_rho,darcy_flux,ko,c_w,rho_w,zbotm,nlay)
 
     # make conc figure
     fig = plt.figure(figsize=(6, 4))
