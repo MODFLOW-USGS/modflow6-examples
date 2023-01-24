@@ -13,6 +13,7 @@ import sys
 import matplotlib.pyplot as plt
 import flopy
 import numpy as np
+import matplotlib.animation as animation
 
 # Append to system path to include the common subdirectory
 
@@ -57,7 +58,7 @@ hydraulic_conductivity = 1.0e-4  # Hydraulic conductivity ($m s^{-1}$)
 porosity = 0.35  # Porosity (unitless)
 alphal = 0.0  # Longitudinal dispersivity ($m$)
 alphat = 0.0  # Transverse dispersivity ($m$)
-diffc = 1.02882E-06  # Diffusion coefficient ($m s^{-1}$)
+diffc = 1.02882e-06  # Diffusion coefficient ($m s^{-1}$)
 T_az = 10  # Ambient temperature ($^o C$)
 dT = 5  # Temperature variation ($^o C$)
 bulk_dens = 2630  # Bulk density ($kg/m^3$)
@@ -73,23 +74,26 @@ per_mf6 = per_data
 tp = top
 botm = []
 for i in range(nlay):
-    if i==0:botm.append(59.9)
-    elif i==119:botm.append(0.0)
-    else: botm.append(60-i*0.5)
+    if i == 0:
+        botm.append(59.9)
+    elif i == 119:
+        botm.append(0.0)
+    else:
+        botm.append(60 - i * 0.5)
 
 # Head input
 chd_data = {}
 for k in range(nper):
-    chd_data[k] = [[(0, 0, 0), 60.000000],[(119, 0, 0), 59.701801]]
+    chd_data[k] = [[(0, 0, 0), 60.000000], [(119, 0, 0), 59.701801]]
 chd_mf6 = chd_data
 
 # Initial temperature input
-strt_conc = T_az* np.ones((nlay, 1, 1), dtype=np.float32)
+strt_conc = T_az * np.ones((nlay, 1, 1), dtype=np.float32)
 
 # Boundary temperature input
 cnc_data = {}
 for k in range(nper):
-    cnc_temp = T_az+dT*np.sin(2*np.pi*k*perlen/365/86400)
+    cnc_temp = T_az + dT * np.sin(2 * np.pi * k * perlen / 365 / 86400)
     cnc_data[k] = [[(0, 0, 0), cnc_temp]]
 cnc_mf6 = cnc_data
 
@@ -100,6 +104,7 @@ hclose, rclose, relax = 1e-8, 1e-8, 0.97
 #
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 #
+
 
 def build_model(sim_folder):
     print("Building model...{}".format(sim_folder))
@@ -196,7 +201,7 @@ def build_model(sim_folder):
         gwt,
         porosity=porosity,
         sorption="linear",
-        bulk_density=bulk_dens*(1-porosity),
+        bulk_density=bulk_dens * (1 - porosity),
         distcoef=kd,
     )
     flopy.mf6.ModflowGwtic(gwt, strt=strt_conc)
@@ -252,6 +257,7 @@ def run_model(sim, silent=True):
 
 # Function to plot the model results
 
+
 def plot_conc(sim, idx):
     fs = USGSFigure(figure_type="map", verbose=False)
     sim_name = example_name
@@ -273,31 +279,42 @@ def plot_conc(sim, idx):
     zbotm = np.zeros(nlay)
     for i in range(len(zconc)):
         zconc[i] = conc[i][0][0]
-        if i != (nlay-1): zbotm[i+1] = -(60-botm[i])
+        if i != (nlay - 1):
+            zbotm[i + 1] = -(60 - botm[i])
 
     # Analytical solution - Stallman analysis
-    tau = 365*86400
-    t =  283824000.0
+    tau = 365 * 86400
+    # t =  283824000.0
+    t = 284349600.0
     c_w = 4174
     rho_w = 1000
     c_r = 800
     rho_r = bulk_dens
-    c_rho = c_r*rho_r*(1-porosity) + c_w*rho_w*porosity
-    darcy_flux = 5.00E-07
+    c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
+    darcy_flux = 5.00e-07
     ko = 1.503
-    zanal = Stallman(T_az,dT,tau,t,c_rho,darcy_flux,ko,c_w,rho_w,zbotm,nlay)
+    zanal = Stallman(
+        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
+    )
 
     # make conc figure
     fig = plt.figure(figsize=(6, 4))
     ax = fig.add_subplot(1, 1, 1)
 
     # configure plot and save
-    ax.plot(zconc, zbotm, "k--", linewidth=0.5)
-    ax.plot(zanal[:,1], zanal[:,0], "bo", mfc="none")
-    ax.set_xlim(T_az-dT, T_az+dT)
+    ax.plot(zconc, zbotm, "bo", mfc="none", label="MODFLOW6-GWT")
+    ax.plot(
+        zanal[:, 1],
+        zanal[:, 0],
+        "k--",
+        linewidth=1.0,
+        label="Analytical solution",
+    )
+    ax.set_xlim(T_az - dT, T_az + dT)
     ax.set_ylim(-top, 0)
     ax.set_ylabel("Depth (m)")
     ax.set_xlabel("Temperature (deg C)")
+    ax.legend()
 
     # save figure
     if config.plotSave:
@@ -308,10 +325,80 @@ def plot_conc(sim, idx):
     return
 
 
+# Function to make animation
+
+
+def make_animated_gif(sim, idx):
+
+    sim_name = example_name
+    sim_ws = os.path.join(ws, sim_name)
+    gwf = sim.get_model("flow")
+    gwt = sim.get_model("trans")
+
+    cobj = gwt.output.concentration()
+    times = cobj.get_times()
+    times = np.array(times)
+    conc = cobj.get_alldata()
+
+    zconc = np.zeros(nlay)
+    zbotm = np.zeros(nlay)
+    for i in range(len(zconc)):
+        zconc[i] = conc[0][i][0][0]
+        if i != (nlay - 1):
+            zbotm[i + 1] = -(60 - botm[i])
+
+    # Analytical solution - Stallman analysis
+    tau = 365 * 86400
+    t = times[0]
+    c_w = 4174
+    rho_w = 1000
+    c_r = 800
+    rho_r = bulk_dens
+    c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
+    darcy_flux = 5.00e-07
+    ko = 1.503
+    zanal = Stallman(
+        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
+    )
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.set_ylabel("Depth (m)")
+    ax.set_xlabel("Temperature (deg C)")
+    (l0,) = ax.plot([], [], "bo", mfc="none", label="MODFLOW6-GWT")
+    (l1,) = ax.plot([], [], "k--", linewidth=1.0, label="Analytical solution")
+    line = [l0, l1]
+    ax.legend(loc="lower left")
+    ax.set_xlim(T_az - dT, T_az + dT)
+    ax.set_ylim(-top, 0)
+
+    def init():
+        ax.set_title("Time = {} seconds".format(times[0]))
+
+    def update(j):
+        for i in range(len(zconc)):
+            zconc[i] = conc[j][i][0][0]
+        t = times[j]
+        zanal = Stallman(
+            T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
+        )
+        line[0].set_data(zconc, zbotm)
+        line[1].set_data(zanal[:, 1], zanal[:, 0])
+        ax.set_title("Time = {} seconds".format(times[j]))
+        return line
+
+    ani = animation.FuncAnimation(fig, update, times.shape[0], init_func=init)
+    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+    ani.save(fpth, fps=50)
+    return
+
+
 def plot_results(sim, idx):
     print("Plotting results...")
     if config.plotModel:
         plot_conc(sim, idx)
+        if config.plotSave and config.createGif:
+            print("Making animation...")
+            make_animated_gif(sim, idx)
     return
 
 
