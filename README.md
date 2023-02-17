@@ -1,23 +1,29 @@
 # MODFLOW 6 Example Problems
-![MODFLOW 6 examples](https://github.com/MODFLOW-USGS/modflow6-examples/workflows/MODFLOW%206%20examples/badge.svg) 
+
+[![CI](https://github.com/MODFLOW-USGS/modflow6-examples/actions/workflows/ex-workflow.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow6-examples/actions/workflows/ex-workflow.yml)
 [![Documentation Status](https://readthedocs.org/projects/modflow6-examples/badge/?version=latest)](https://modflow6-examples.readthedocs.io/en/latest/?badge=latest)
 
-This repository contains MODFLOW 6 example problems.  There are several resources associated with this repository.
+This repository contains MODFLOW 6 example problems.
 
-## Release Contents
-With each change the resources for this repository are regenerated and posted as a new release, which can be accessed [here](https://github.com/MODFLOW-USGS/modflow6-examples/releases).  The following resources are included in a release:
-* PDF containing description of the example problems
-* Input files for the example problems
+## Release contents
 
-## Online Documentation
-Online documentation for creating these examples with python and flopy is automatically generated and posted [here](https://modflow6-examples.readthedocs.io/en/latest/index.html).
+When changes reach the `master` branch, this repository's contents are [rebuilt and posted as a new release](https://github.com/MODFLOW-USGS/modflow6-examples/releases). The following resources are included in a release:
 
-## Repository Contents
+* a PDF containing a description of the example problems
+* input files for each of the example problems
+
+## Online documentation
+
+Instructions for creating and running example models with FloPy are automatically generated and posted [here](https://modflow6-examples.readthedocs.io/en/latest/index.html).
+
+## Repository contents
+
 * [Python scripts that use flopy to create, run, and post process the example problems](https://github.com/MODFLOW-USGS/modflow6-examples/tree/master/scripts)
 * [Jupyter notebooks that create, run, and post process the example problems](https://github.com/MODFLOW-USGS/modflow6-examples/tree/master/notebooks)
 
-## Instructions for Creating a New Example
-Instructionsf for creating a new MODFLOW 6 example are listed [here](DEVELOPER.md) in the developer instructions.
+## Creating a new example
+
+Instructions for creating a new MODFLOW 6 example are listed in the [developer docs](DEVELOPER.md).
 
 # Other Resources
 
@@ -29,4 +35,3 @@ Instructionsf for creating a new MODFLOW 6 example are listed [here](DEVELOPER.m
 # Issues
 
 Any issues with the MODFLOW 6 example problems should be posted on the main [MODFLOW 6 GitHub repo](https://github.com/MODFLOW-USGS/modflow6) and flagged with the [examples](https://github.com/MODFLOW-USGS/modflow6/labels/examples) label.
-
