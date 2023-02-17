@@ -18,3 +18,4 @@ pyproj
 shapely
 jupyter
 jupytext
+modflow-devtools
