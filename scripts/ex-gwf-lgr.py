@@ -77,7 +77,7 @@ icelltype = [1, 0, 0]  # Water table resides in layer 1
 # Solver settings
 
 nouter, ninner = 100, 300
-hclose, rclose, relax = 1e-6, 1e-6, 0.97
+hclose, rclose, relax = 1e-7, 1e-6, 0.97
 
 # Prepping input for SFR package for parent model
 # Define the connections
