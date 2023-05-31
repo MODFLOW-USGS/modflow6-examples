@@ -29,10 +29,10 @@ jobs:
 
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
 
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
@@ -85,7 +85,7 @@ jobs:
 
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
 
       - name: Install TeX Live and additional TrueType fonts
         run: |
@@ -93,7 +93,7 @@ jobs:
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
@@ -184,7 +184,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Get Current Time
-        uses: 1466587594/get-current-time@v2.0.0
+        uses: josStorer/get-current-time@v2
         id: current-time
         with:
           format: MM/DD/YYYY HH:mm
@@ -201,13 +201,13 @@ jobs:
           echo "MODFLOW 6 examples: built at ${F_TIME}"
 
       - name: Download mf6examples.pdf build artifact
-        uses: actions/download-artifact@v2.1.0
+        uses: actions/download-artifact@v3
         with:
           name: current
           path: ./current/
 
       - name: Download zip_file build artifact
-        uses: actions/download-artifact@v2.1.0
+        uses: actions/download-artifact@v3
         with:
           name: zip_files
           path: ./current/
@@ -242,7 +242,7 @@ jobs:
 
       - name: Upload MODFLOW 6 examples to the current GitHub release
         if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
-        uses: svenstaro/upload-release-action@2.2.1
+        uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./current/*
@@ -252,7 +252,7 @@ jobs:
 
       - name: Delete all Artifacts
         if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
-        uses: GeekyEggo/delete-artifact@v1.0.0
+        uses: GeekyEggo/delete-artifact@v2
         with:
           name: |
             zip_files

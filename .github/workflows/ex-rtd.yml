@@ -27,7 +27,7 @@ jobs:
     if: github.repository_owner == 'MODFLOW-USGS'
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
 
       - name: Output repo information
         run: |
@@ -49,7 +49,7 @@ jobs:
           pandoc --version
 
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
@@ -124,10 +124,10 @@ jobs:
     if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
 
       - name: Trigger RTDs build on push to repo branches
-        uses: dfm/rtds-action@v1.0.2
+        uses: dfm/rtds-action@v1
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
           webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
