@@ -38,7 +38,7 @@ pytest -v ex-*.py
 
 ## Extract Notebooks and Tables from Scripts
 
-The example scripts are converted into jupyter notebooks, and latex tables are created from the scripts using jupytext.  To convert all of the scripts, run the following command in the scrips directory:
+The example scripts are converted into jupyter notebooks, and latex tables are created from the scripts using jupytext.  To convert all of the scripts, run the following command in the scripts directory:
 
 ```commandline
 python process-scripts.py
