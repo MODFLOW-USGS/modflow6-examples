@@ -1,6 +1,5 @@
 pytest
 pytest-xdist
-nose-timer
 appdirs
 requests
 numpy

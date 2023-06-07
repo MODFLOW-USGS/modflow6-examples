@@ -74,7 +74,7 @@ jobs:
 
       - name: Run scripts without model runs
         run: |
-          pytest -v -n=auto ci_build_files.py
+          pytest -v -n=auto --durations=0 ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: Run processing script
@@ -84,7 +84,7 @@ jobs:
 
       - name: Run notebooks with jupytext for ReadtheDocs
         run: |
-          pytest -v -n=auto ci_run_notebooks.py
+          pytest -v -n=auto --durations=0 ci_run_notebooks.py
         working-directory: ${{env.etc-directory}}
 
       - name: Create package tables and examples.rst for ReadtheDocs

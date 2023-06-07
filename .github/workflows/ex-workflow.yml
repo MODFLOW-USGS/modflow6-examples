@@ -60,7 +60,7 @@ jobs:
 
       - name: Run scripts without model runs
         run: |
-          pytest -v -n=auto ci_build_files.py
+          pytest -v -n=auto --durations=0 ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: zip input files
@@ -97,6 +97,16 @@ jobs:
           sudo apt-get update
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
+      - name: Checkout usgslatex
+        uses: actions/checkout@v3
+        with:
+          repository: MODFLOW-USGS/usgslatex
+          path: usgslatex
+
+      - name: Install USGS LaTeX style files and Univers font
+        working-directory: usgslatex/usgsLaTeX
+        run: sudo ./install.sh --all-users
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -126,7 +136,7 @@ jobs:
 
       - name: Run scripts
         run: |
-          pytest -v -n=auto --run=True ci_build_files.py
+          pytest -v -n=auto --durations=0 --run=True ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: Run processing script
