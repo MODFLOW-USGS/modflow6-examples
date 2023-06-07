@@ -16,6 +16,8 @@ fiona
 descartes
 pyproj
 shapely
+rasterio
+rasterstats
 jupyter
 jupytext
 modflow-devtools
