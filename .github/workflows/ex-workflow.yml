@@ -110,7 +110,7 @@ jobs:
           flopy.mf6.utils.generate_classes(branch="develop", backup=False)
         shell: python
 
-      - name: Run get_exes script
+      - name: Run ci_get_exes script
         run: |
           python ci_get_exes.py
         working-directory: ${{env.etc-directory}}

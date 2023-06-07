@@ -178,6 +178,7 @@ tri = Triangle(
     angle=30,
     nodes=sg_densify,
     model_ws=temp_path,
+    exe_name=config.triangle_exe,
 )
 tri.add_polygon(bp_densify)
 tri.add_polygon(rb_densify)
