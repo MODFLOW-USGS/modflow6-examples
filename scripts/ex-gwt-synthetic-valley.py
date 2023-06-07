@@ -49,12 +49,6 @@ six_panel_figsize = (17.15 / 2.541, 1.4 * 0.8333 * 17.15 / 2.541)
 levels = np.arange(10, 110, 10)
 contour_color = "black"
 contour_style = "--"
-contour_dict = {
-    "levels": levels,
-    "linewidths": 0.5,
-    "colors": contour_color,
-    "linestyles": contour_style,
-}
 sv_contour_dict = {
     "linewidths": 0.5,
     "colors": contour_color,
@@ -123,19 +117,19 @@ time_units = "days"
 pertim = 10957.5  # Simulation length ($d$)
 ntransport_steps = 60  # Number of transport time steps
 nlay = 6  # Number of layers
-rainfall = 0.0025052288916456605  # Rainfall ($m/d$)
-evaporation = 0.0018987993818599675  # Potential evaporation ($m/d$)
-net_rainfall = 0.0011097869123783456  # Net rainfall ($m/d$)
+rainfall = 0.0025  # Rainfall ($m/d$)
+evaporation = 0.0019  # Potential evaporation ($m/d$)
 sfr_length_conversion = 1.0  # SFR package length unit conversion
 sfr_time_conversion = 86400.0  # SFR package time conversion
-sfr_width = 3.0480277736290735  # Stream width ($m$)
-sfr_bedthick = 0.30480277736290734  # Stream bed thickness ($m$)
+sfr_width = 3.048  # Stream width ($m$)
+sfr_bedthick = 0.3048  # Stream bed thickness ($m$)
 sfr_mann = 0.030  # Stream Manning's roughness coefficient
 lake_bedleak = 0.0013  # Lake bed leakance ($1/d$)
 lak_length_conversion = 1.0  # LAK package length unit conversion
 lak_time_conversion = 86400.0  # LAK package time conversion
-drn_kv = 0.030480277736290737  # DRN package vertical hydraulic conductivity ($m/d$)
-drn_depth = 0.30480277736290734  # DRN package depth ($m$)
+drn_kv = 0.03048  # Drain vertical hydraulic conductivity ($m/d$)
+drn_bed_thickness = 0.3048  # Drain bed thickness ($m$)
+drn_depth = 0.3048  # Drain linear scaling depth ($m$)
 alpha_l = 75.0  # Longitudinal dispersivity ($m$)
 alpha_th = 7.5  # Transverse horizontal dispersivity ($m$)
 porosity = 0.2  # Aquifer porosity (unitless)
@@ -394,7 +388,7 @@ for idx in range(voronoi_grid.ncpl):
 drn_spd = []
 for idx, elev in enumerate(top_vg):
     if lake_cells_vg[idx] > 0:
-        cond = drn_kv * areas[idx] / drn_depth
+        cond = drn_kv * areas[idx] / drn_bed_thickness
         drn_spd.append([(0, idx), elev, cond, -drn_depth])
 # -
 
@@ -675,60 +669,6 @@ def plot_lake(ax=None, lw=0.5, color="cyan", marker=None, densify=False):
     return ax
 
 
-def plot_circles(ax=None, radius=1.0, lw=0.5, color="red"):
-    if ax is None:
-        ax = plt.gca()
-    for pt in wp:
-        center = (pt[0], pt[1])
-        pts = circle_function(center=center, radius=radius)
-        ax.plot(pts[:, 0], pts[:, 1], ls=":", color=color, lw=lw)
-    return ax
-
-
-def add_subdomain(ax, xll, xur, yll, yur, lw=0.75, color="black", text="B"):
-    x = [xll, xll, xur, xur, xll]
-    y = [yll, yur, yur, yll, yll]
-    ax.plot(x, y, lw=lw, color=color)
-    styles.add_text(
-        ax=ax,
-        text=text,
-        x=xll,
-        y=yur,
-        color=color,
-        transform=False,
-        ha="right",
-        va="bottom",
-        italic=False,
-    )
-    return
-
-
-def add_nodes(ax, xll, xur, yll, yur, edge=20.0, text_offset=2.0):
-    for idx, (x, y) in enumerate(zip(xcv, ycv)):
-        if x > xll and x < xur and y > yll and y < yur:
-            ax.plot(x, y, marker=".", markersize=4, color="black")
-            if (
-                x > xll + edge
-                and x < xur - edge
-                and y > yll
-                and y < yur - edge
-            ):
-                xt = x + 4 * text_offset
-                yt = y + text_offset
-                styles.add_text(
-                    ax=ax,
-                    x=xt,
-                    y=yt,
-                    text=f"{idx + 1}",
-                    bold=False,
-                    transform=False,
-                    ha="center",
-                    va="bottom",
-                    fontsize=5,
-                )
-    return
-
-
 def set_ticklabels(
     ax,
     fmt="{:.1f}",
@@ -837,7 +777,6 @@ def plot_river_mapping(sims, idx):
 
         ax = ax0
         ax.set_aspect("equal", "box")
-        styles.heading(ax=ax, idx=0)
         mm = flopy.plot.PlotMapView(modelgrid=voronoi_grid, ax=ax)
         mm.plot_array(
             kclay_loc_vg,
@@ -872,17 +811,6 @@ def plot_river_mapping(sims, idx):
         ax.set_axis_off()
 
         # fake data to set up legend
-        ax.plot(
-            xy0,
-            xy0,
-            lw=0.0,
-            marker=".",
-            ms=5,
-            mfc="black",
-            mec="none",
-            mew=0.0,
-            label="Cell centroid",
-        )
         ax.plot(
             xy0,
             xy0,
@@ -1032,7 +960,7 @@ def plot_head_results(sims, idx):
         q = mm.plot_vector(qx, qy, normalize=False)
         qk = plt.quiverkey(
             q,
-            0.08,
+            -0.35,
             -0.31,
             1.0,
             label="Specific discharge vector",

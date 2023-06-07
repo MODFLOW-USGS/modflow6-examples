@@ -1,7 +1,7 @@
 \section{Synthetic Valley Problem}
 
 % Describe source of problem
-This example is based on a flow and transport problem described in \cite{hughes2023flopy} .  The Synthetic Valley examples represents a developed alluvial valley surrounded by low permeability bedrock. The model includes the Blue Lake and Straight River surface water features (figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}). The upper two layers represent an unconfined aquifer, the third layer represents a confining unit, and the lower three layers represent the lower aquifer unit. The confining unit only exists in the northern part of the model domain (figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}).
+This example is based on a flow and transport problem described in \cite{hughes2023flopy}. The Synthetic Valley examples represents a developed alluvial valley surrounded by low permeability bedrock. The model includes the Blue Lake and Straight River surface water features (figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}). The upper two layers represent an unconfined aquifer, the third layer represents a confining unit, and the lower three layers represent the lower aquifer unit. The confining unit only exists in the northern part of the model domain as shown in figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}.
 
 % a figure
 \begin{StandardFigure}{
@@ -11,7 +11,10 @@ This example is based on a flow and transport problem described in \cite{hughes2
 
 \subsection{Example description}
 
-The parameters used for this problem are listed in table~\ref{tab:ex-gwt-synthetic-valley-01}. The 6,096 m x 3,810 m model domain is discretized using a Voronoi grid, with 6,343 active cells per layer, and the discretization by vertices (DISV) package (figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}). The model grid was refined within Blue Lake, around Straight River using a 750 m buffer, and around pumping wells P1, P2, and P3 using a 100 m buffer.
+The 6,096 m x 3,810 m model domain is discretized using a Voronoi grid, with 6,343 active cells per layer, and the discretization by vertices (DISV) package (figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}). The model grid was refined within Blue Lake, around Straight River, and around pumping wells P1, P2, and P3. The parameters used for this problem are listed in table~\ref{tab:ex-gwt-synthetic-valley-01}. 
+
+% add static parameter table(s)
+\input{../tables/ex-gwt-synthetic-valley-01}
 
 In this example, both groundwater flow \citep{modflow6gwf} and solute transport \citep{modflow6gwt} are simulated. To better represent solute transport, the lower aquifer has been discretized into three layers. Confining units have to be explicitly simulated in \mf, therefore, a total of six layers are simulated. The bottom of layers 1, 2, 3, and 4 were set to constant values of -1.53, -15.24, -15.55 and -30.48 m, respectively. Model layer 3 represents the confining unit and is relatively thin (0.3 m). The \texttt{IDOMAIN} concept \citep{modflow6gwf} was used to eliminate cells in model layer 3 (by setting \texttt{IDOMAIN=-1}) where the confining unit does not exist. In these areas, the thickness of layer 3 was set to zero and \texttt{IDOMAIN} was set to -1, which marks these cells in layer 3 as ``vertical pass through cells'' and results in cells in layer 2 being directly connected to cells in layer 4.  
 
@@ -21,18 +24,15 @@ The horizontal hydraulic conductivity was discretized into five zones with value
 
 For the groundwater transport model, the porosity, longitudinal dispersivity, and transverse dispersivity were set to values specified in table~\ref{tab:ex-gwt-synthetic-valley-01}. For the transport model, the Total Variation Diminishing scheme available in the GWT model \citep{modflow6gwt} was used to simulate advection. Molecular diffusion was not represented.
 
-% add static parameter table(s)
-\input{../tables/ex-gwt-synthetic-valley-01}
+Straight River is simulated using the streamflow routing (SFR) package, and Blue Lake is simulated using the LAK package (figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}). Straight River was discretized into 108 SFR reaches. The bed thickness and width of each SFR reach were set to values specified in table~\ref{tab:ex-gwt-synthetic-valley-01}. The leakance for each SFR reach was calculated using the bed thickness, reach width, and reach length in each cell and based on a total Straight River conductance of 50,971.72 m$^2$/d. Specified rainfall and potential evaporation rates specified in table~\ref{tab:ex-gwt-synthetic-valley-01} were defined for each Straight River reach.
 
-Straight River is simulated using the streamflow routing (SFR) package, and Blue Lake is simulated using the LAK package (figure~\ref{fig:ex-gwt-synthetic-valley-river-discretization}). Straight River was discretized into 108 SFR reaches. The bed thickness and width of each SFR reach were set to values specified in table~\ref{tab:ex-gwt-synthetic-valley-01. The leakance for each SFR reach was calculated using the bed thickness, reach width, and reach length in each cell and based on a total Straight River conductance of 50,971.72 m$^2$/d. Specified rainfall and potential evaporation rates specified in table~\ref{tab:ex-gwt-synthetic-valley-01 were defined for each Straight River reach.
+Blue Lake was simulated as a lake on top of the model grid and only had vertical connections to 1,406 cells in the underlying upper aquifer (model layer 1). A bed leakance of 0.0013 1/d was specified for each cell connected to Blue Lake. Specified rainfall and potential evaporation rates specified in table~\ref{tab:ex-gwt-synthetic-valley-01} were defined for Blue Lake.
 
-Blue Lake was simulated as a lake on top of the model grid and only had vertical connections to 1,406 cells in the underlying upper aquifer (model layer 1). A bed leakance of 0.0013 1/d was specified for each cell connected to Blue Lake. A specified rainfall rate of 0.0025 m/d and a potential evaporation rate of 0.0019 m/d were defined for Blue Lake.
+Drain (DRN) cells were specified in each cell in model layer 1 that was not connected to Blue Lake to prevent water levels from exceeding the top of the model. The conductance of each DRN cell was based on the horizontal cell area and the drain bed thickness and vertical hydraulic conductivity specified in table~\ref{tab:ex-gwt-synthetic-valley-01}. Linear scaling of the drainage conductance was applied to improve model convergence and ranged from 0 m$^2$/d when groundwater levels were greater than or equal to 0.3048 m below the top of the model to the specified conductance when groundwater water levels were greater than or equal to the top of the model.
 
-Drain (DRN) cells were specified in each cell in model layer 1 that was not connected to Blue Lake to prevent water levels from exceeding the top of the model. The conductance of each DRN cell was based on the horizontal cell area, a thickness of 0.3048 m, and a vertical hydraulic conductivity of 0.03048 m/d. Linear scaling of the drainage conductance was applied to improve model convergence and ranged from 0 m$^2$/d when groundwater levels were greater than or equal to 1 m below the top of the model to the specified conductance when groundwater water levels were greater than or equal to the top of the model.
+Uniform recharge and potential evapotranspiration rates were specified using the recharge (RCH) and evapotranspiration (EVT) packages, respectively, and were equal to the rates specified in the SFR and LAK packages. The EVT surface was specified to be the top of the model and the EVT extinction depth was specified to be 1 m.
 
-Uniform recharge and potential evapotranspiration rates were specified using the recharge (RCH) and evapotranspiration (EVT) packages, respectively, and were equal to the rates specified in the SFR and LAK packages (0.0025 and 0.0019 m/d). The EVT surface was specified to be the top of the model and the EVT extinction depth was specified to be 1 m.
-
-Pumping rates for wells P1, P2, and P3 were -7,600, -7,600, and -1,900 m$^3$/d were, respectively.
+Pumping rates for wells P1, P2, and P3 were -7,600, -7,600, and -1,900 m$^3$/d, respectively. All groundwater pumpage was extracted from model layer 6.
 
 Transport was not simulated in the LAK and SFR packages. Instead, a specified concentration condition with a concentration of 1.0 mg/L was specified for Blue Lake. All other stress packages were assumed to have a concentration of 0 mg/L.
 
@@ -42,7 +42,11 @@ An initial head of 11 m was specified for every cell. An initial stage of 3.44 m
 % for examples without scenarios
 \subsection{Example Results}
 
-Simulated heads from \mf are shown in figure~\ref{fig:ex-gwt-synthetic-valley-head}.  Cells with a calculated head beneath the cell bottom are considered ``dry'' and are not shown with a color.   The zone of recharge is shown in red on the top of the plot.  
+The groundwater flow model used the Newton-Raphson Formulation with Newton under-relaxation to improve convergence. The groundwater flow and transport models used the Bi-conjugate Stabilized linear accelerator and simple solver settings.
+ 
+The groundwater flow and transport models were run for a total of 30 years. The groundwater flow model used a single steady-state time step and groundwater flow results were used to run the transport model with a total of 60 time steps with a constant length of 182.625 days.
+ 
+Simulated heads and vectors of specific discharge in model layer 1 are shown in figure~\ref{fig:ex-gwt-synthetic-valley-head}B. Specific discharge is greatest on the east side of Blue Lake and in the vicinity of the three pumping wells and Straight River. 
 
 % a figure
 \begin{StandardFigure}{
@@ -50,15 +54,11 @@ Simulated heads from \mf are shown in figure~\ref{fig:ex-gwt-synthetic-valley-he
                                      }{fig:ex-gwt-synthetic-valley-head}{../figures/ex-gwt-synthetic-valley-head.png}
 \end{StandardFigure}                                 
 
-Simulated concentrations from \mf are shown in figure~\ref{fig:ex-gwt-synthetic-valley-conc} for three different times.  These plots show the development of the solute plume in the perched aquifer, and then shows flushing of the perched aquifer when the recharge concentration becomes zero.  In the underlying water table aquifer, two solute plumes are formed as groundwater flows over the edges of the low permeability lens.  These plumes then flow toward the right, and eventually exit through the constant head cells.  Plots of concentration versus time for the two yellow points shown in figure~\ref{fig:ex-gwt-keating-conc} are shown in figure~\ref{fig:ex-gwt-keating-cvt}.  Results from \mf are shown with the results presented by \cite{keating2009stable} and are in good agreement considering the complexity of the problem.  Similar plots for this problem are also presented by \cite{mt3dusgs}.
+
+Simulated concentrations at the end of 30-years in all six model layers are shown in figure~\ref{fig:ex-gwt-synthetic-valley-conc}. Simulated concentrations are highest beneath Blue Lake in model layer 1 and do not vary much in model layers 1 and 2. Simulated concentrations in model layer 3 are limited to the extent of the confining unit because the remaining cells in the layer are defined to be ``vertical pass through cells''. The lateral extent of the solute plume does not vary much south of Blue Lake because of the lack of confinement in these areas.
 
 % a figure
 \begin{StandardFigure}{
-                                     Color shaded plots of concentrations simulated by \mf for the \cite{keating2009stable} problem involving groundwater flow and transport through an unsaturated zone.  This plot can be compared to figure 11 in \cite{mt3dusgs}, which shows similar plots for MT3D-USGS results.  Plots of concentration versus time are shown in figure~\ref{fig:ex-gwt-keating-cvt} for the two points shown in yellow.
-                                     }{fig:ex-gwt-keating-conc}{../figures/ex-gwt-keating-conc.png}
-\end{StandardFigure}                                  
-
-\begin{StandardFigure}{
-                                     Concentrations versus time for two observation points as simulated by \mf and by \cite{keating2009stable} for a problem involving groundwater flow and transport through an unsaturated zone.  This plot can be compared to figure 12 in \cite{mt3dusgs}, which shows a similar plot for MT3D-USGS results.
+                                     Contours of concentrations at the end of 30 years in model layer (A) 1, (B) 2, (C) 3, (D) 4, (E) 5, and (F) 6. The extent of the confining unit in model layer 3 is also shown on (C).
                                      }{fig:ex-gwt-synthetic-valley-conc}{../figures/ex-gwt-synthetic-valley-conc.png}
 \end{StandardFigure}                                  
