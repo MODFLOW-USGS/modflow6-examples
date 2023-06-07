@@ -53,6 +53,11 @@ jobs:
           flopy.mf6.utils.generate_classes(branch="develop", backup=False)
         shell: python
 
+      - name: Run ci_get_exes script
+        run: |
+          python ci_get_exes.py
+        working-directory: ${{env.etc-directory}}
+
       - name: Run scripts without model runs
         run: |
           pytest -v -n=auto ci_build_files.py

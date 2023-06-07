@@ -1,2 +1,2 @@
-git+https://github.com/modflowpy/flopy.git@develop
+"flopy[optional] @ git+https://github.com/modflowpy/flopy.git@develop"
 git+https://github.com/MODFLOW-USGS/modflowapi.git@develop
