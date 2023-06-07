@@ -1,7 +1,6 @@
 import os
 import sys
 import shutil
-import pymake
 from subprocess import Popen, PIPE
 
 # change to root directory - local run only

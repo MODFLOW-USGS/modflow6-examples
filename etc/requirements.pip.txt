@@ -1,6 +1,5 @@
 pytest
 pytest-xdist
-nose-timer
 appdirs
 requests
 numpy
@@ -16,6 +15,8 @@ fiona
 descartes
 pyproj
 shapely
+rasterio
+rasterstats
 jupyter
 jupytext
 modflow-devtools

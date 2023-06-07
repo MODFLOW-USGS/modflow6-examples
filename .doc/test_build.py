@@ -4,32 +4,9 @@ import sys
 import shutil
 from subprocess import Popen, PIPE
 import flopy
-import pymake
 
 # -- determine if running on CI or rtd
 is_CI = "CI" in os.environ or os.environ.get("READTHEDOCS") == "True"
-
-# # -- download executables ----------------------------------------------------
-# pth = os.path.join("..", "bin")
-# if not os.path.isdir(pth):
-#     os.makedirs(pth)
-# targets = pymake.usgs_program_data.get_keys(current=True)
-# targets.remove("mf6")
-# targets.remove("libmf6")
-# targets.remove("zbud6")
-# pymake.getmfexes(pth, verbose=True, exes=targets)
-#
-# # -- update mf6 executables with latest nightly build ------------------------
-# if is_CI:
-#     osname = sys.platform.lower()
-#     if osname == "win32":
-#         key = "win64.zip"
-#     elif osname == "darwin":
-#         key = "mac.zip"
-#     elif osname == "linux":
-#         key = "linux.zip"
-#     url = pymake.get_repo_assets("MODFLOW-USGS/modflow6-nightly-build")[key]
-#     pymake.download_and_unzip(url, pth, verbose=True)
 
 # -- update flopy classes ----------------------------------------------------
 flopy.mf6.utils.generate_classes(branch="develop", backup=False)
