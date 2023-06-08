@@ -36,7 +36,7 @@ import numpy as np
 import config
 from figspecs import USGSFigure
 
-mf6exe = os.path.abspath(config.mf6_exe)
+mf6exe = config.mf6_exe
 exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 

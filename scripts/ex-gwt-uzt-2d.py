@@ -15,14 +15,12 @@ sys.path.append(os.path.join("..", "common"))
 # Imports
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon
 import flopy
 import numpy as np
 import config
 from figspecs import USGSFigure
-from flopy.utils.util_array import read1d
 
-mf6exe = os.path.abspath(config.mf6_exe)
+mf6exe = config.mf6_exe
 exe_name_mf = config.mfnwt_exe
 exe_name_mt = config.mt3dusgs_exe
 
