@@ -89,7 +89,7 @@ for idx, arg in enumerate(sys.argv):
     if arg in ("--destination"):
         if idx + 1 < len(sys.argv):
             base_ws = sys.argv[idx + 1]
-            base_ws = base_ws.resolve()
+            base_ws = pl.Path(base_ws).resolve()
 assert base_ws.is_dir()
 
 # data files required for examples
