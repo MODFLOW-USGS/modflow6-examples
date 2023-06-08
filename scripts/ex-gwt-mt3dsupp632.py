@@ -78,6 +78,7 @@ top = 1.0  # Top of the model ($m$)
 botm = 0  # Layer bottom elevation ($m$)
 specific_discharge = 0.06  # Specific discharge ($md^{-1}$)
 longitudinal_dispersivity = 10  # Longitudinal dispersivity ($m$)
+volfrac = 0.2  # volume fraction that is immobile domain (unitless)
 porosity = 0.2  # Porosity of mobile domain (unitless)
 porosity_immobile = 0.05  # Porosity of immobile domain (unitless)
 bulk_density = 4.0  # Bulk density ($gL^{-1})$
@@ -190,7 +191,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
         zero_order_decay=zero_order_decay,
         first_order_decay=first_order_decay,
         sorption=sorption,
-        porosity=porosity,
+        porosity=porosity / (1.0 - volfrac),
         decay=decay,
         decay_sorbed=decay_sorbed,
         bulk_density=bulk_density,
@@ -203,7 +204,8 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
             zero_order_decay=zero_order_decay,
             first_order_decay=first_order_decay,
             sorption=istsorption,
-            thetaim=porosity_immobile,
+            porosity=porosity_immobile / volfrac,
+            volfrac=volfrac,
             zetaim=zeta_im,
             decay=decay,
             decay_sorbed=decay_sorbed,

@@ -234,9 +234,14 @@ def build_mf6gwt(
         sp2 = a
     if S is not None:
         sp2 = S
+    volfracim = 0.
+    if beta is not None:
+        if beta > 0:
+            volfracim = bulk_density / (bulk_density + porosity)
+
     flopy.mf6.ModflowGwtmst(
         gwt,
-        porosity=porosity,
+        porosity=porosity / (1.0 - volfracim),
         bulk_density=bulk_density,
         sorption=sorption,
         distcoef=distcoef,
@@ -248,8 +253,11 @@ def build_mf6gwt(
     )
     if beta is not None:
         if beta > 0:
-            thetaim = bulk_density
-            flopy.mf6.ModflowGwtist(gwt, thetaim=thetaim, zetaim=beta)
+            porosity_im = bulk_density / volfracim
+            flopy.mf6.ModflowGwtist(gwt,
+                                    volfrac=volfracim,
+                                    porosity=porosity_im,
+                                    zetaim=beta)
     pd = [
         ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
