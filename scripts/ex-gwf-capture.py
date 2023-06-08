@@ -13,12 +13,15 @@
 # Imports
 
 import os
+import pathlib as pl
+import shutil
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
 import modflowapi
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -71,14 +74,12 @@ delc = 250.0  # Row width ($m$)
 top = 35.0  # Top of the model ($m$)
 icelltype = 1  # Cell conversion type
 strt = 45.0  # Starting head ($m$)
-recharge = 1.60000000E-09  # Recharge rate ($m/s$)
-cf_q = -1e-3 # Perturbation flux ($m/s$)
+recharge = 1.60000000e-09  # Recharge rate ($m/s$)
+cf_q = -1e-3  # Perturbation flux ($m/s$)
 
 # Static temporal data used by TDIS file
 
-tdis_ds = (
-    (1.0, 1.0, 1),
-)
+tdis_ds = ((1.0, 1.0, 1),)
 
 
 # ### Create Capture Fraction Model Boundary Conditions
@@ -90,8 +91,8 @@ wel_spd = {
         [0, 8, 15, -0.00820000],
         [0, 10, 12, -0.00410000],
         [0, 19, 13, -0.00390000],
-        [0, 25, 9, -8.30000000E-04],
-        [0, 28, 5, -7.20000000E-04],
+        [0, 25, 9, -8.30000000e-04],
+        [0, 28, 5, -7.20000000e-04],
         [0, 33, 11, -0.00430000],
     ]
 }
@@ -115,7 +116,7 @@ chd_spd = {
 
 # River boundary conditions
 
-rbot = np.linspace(20., 10.25, num=nrow)
+rbot = np.linspace(20.0, 10.25, num=nrow)
 rstage = np.linspace(20.1, 11.25, num=nrow)
 riv_spd = []
 for idx, (s, b) in enumerate(zip(rstage, rbot)):
@@ -132,7 +133,7 @@ rclose = 1e-3
 
 # Create mapping array for the capture zone analysis
 imap = idomain.copy()
-for (_k, i, j, _h) in chd_spd[0]:
+for _k, i, j, _h in chd_spd[0]:
     imap[i, j] = 0
 
 
@@ -145,7 +146,9 @@ def build_model():
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=config.libmf6_exe,
+            sim_name=sim_name,
+            sim_ws=sim_ws,
+            exe_name=config.mf6_exe,
         )
         flopy.mf6.ModflowTdis(
             sim, nper=nper, perioddata=tdis_ds, time_units=time_units
@@ -154,7 +157,7 @@ def build_model():
             sim,
             linear_acceleration="BICGSTAB",
             outer_maximum=nouter,
-            outer_dvclose=hclose * 10.,
+            outer_dvclose=hclose * 10.0,
             inner_maximum=ninner,
             inner_dvclose=hclose,
             rcloserecord="{} strict".format(rclose),
@@ -195,7 +198,9 @@ def build_model():
         )
         flopy.mf6.ModflowGwfoc(
             gwf,
-            printrecord=[("BUDGET", "ALL"),],
+            printrecord=[
+                ("BUDGET", "ALL"),
+            ],
         )
         return sim
     else:
@@ -212,6 +217,7 @@ def write_model(sim, silent=True):
 
 # Function to solve the system of equations to convergence
 
+
 def capture_fraction_iteration(mobj, q, inode=None):
     mobj.initialize()
     # time loop
@@ -226,7 +232,9 @@ def capture_fraction_iteration(mobj, q, inode=None):
     mobj.finalize()
     return qriv
 
+
 # Function to update the Capture Fraction Package
+
 
 def update_wel_pak(mobj, inode, q):
     # set nodelist to inode
@@ -245,22 +253,29 @@ def update_wel_pak(mobj, inode, q):
     bound[:, 0] = q
     mobj.set_value(tag, bound)
 
+
 # Function to get the streamflow from memory
+
 
 def get_streamflow(mobj):
     tag = mobj.get_var_address("SIMVALS", sim_name, "RIV-1")
     return mobj.get_value(tag).sum()
 
+
 # Function to run the Capture Fraction model.
 # True is returned if the model runs successfully
 #
+
 
 @config.timeit
 def run_model():
     success = True
     if config.runModel:
+        libmf6_path = (
+            pl.Path(shutil.which(config.mf6_exe)).parent / config.libmf6_exe
+        )
         sim_ws = os.path.join(ws, sim_name)
-        mf6 = modflowapi.ModflowApi(config.libmf6_exe, working_directory=sim_ws)
+        mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
         qbase = capture_fraction_iteration(mf6, cf_q)
 
         # create capture fraction array
@@ -270,7 +285,6 @@ def run_model():
         ireduced_node = -1
         for irow in range(nrow):
             for jcol in range(ncol):
-
                 # skip inactive cells
                 if imap[irow, jcol] < 1:
                     continue
@@ -279,7 +293,9 @@ def run_model():
                 ireduced_node += 1
 
                 # calculate the perturbed river flow
-                qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
+                qriv = capture_fraction_iteration(
+                    mf6, cf_q, inode=ireduced_node
+                )
 
                 # add the value to the capture array
                 capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
@@ -294,6 +310,7 @@ def run_model():
 # Function to plot the Capture Fraction model results with heads in each layer.
 #
 
+
 def plot_results(silent=True):
     if config.plotModel:
         verbose = not silent
@@ -301,7 +318,6 @@ def plot_results(silent=True):
             verbosity_level = 0
         else:
             verbosity_level = 1
-
 
         fs = USGSFigure(figure_type="map", verbose=verbose)
         sim_ws = os.path.join(ws, sim_name)
@@ -333,7 +349,7 @@ def plot_results(silent=True):
         mm.plot_grid(lw=0.5, color="0.5")
         mm.plot_bc(package=wel)
         ax.axvline(x=14.5 * delc, lw=1.25, color="cyan")
-        mm.plot_bc('CHD', color="green")
+        mm.plot_bc("CHD", color="green")
         mm.plot_ibound()
         ax.set_ylabel("y-coordinate, in feet")
         ax.set_xlabel("x-coordinate, in feet")
@@ -413,7 +429,6 @@ def plot_results(silent=True):
 
 
 def simulation(silent=True):
-
     sim = build_model()
 
     write_model(sim, silent=silent)
