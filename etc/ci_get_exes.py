@@ -21,6 +21,3 @@ os.system(f"get-modflow {bin_pth}")
 
 # Replace MODFLOW 6 executables with the latest versions
 os.system(f"get-modflow --repo modflow6-nightly-build {bin_pth}")
-
-# install triangle in python bin directory
-os.system(f"get-modflow --subset 'triangle,' :python")

@@ -3,16 +3,16 @@ import sys
 import time
 import matplotlib.pyplot as plt
 from IPython import get_ipython
+import pathlib as pl
 
 # Setup working directories
 work_directories = (
-    os.path.join("..", "examples"),
-    os.path.join("..", "figures"),
-    os.path.join("..", "tables"),
+    pl.Path("../examples"),
+    pl.Path("../figures"),
+    pl.Path("../tables"),
 )
 for work_dir in work_directories:
-    if not os.path.isdir(work_dir):
-        os.makedirs(work_dir, exist_ok=True)
+    work_dir.mkdir(parents=True, exist_ok=True)
 
 # run settings
 buildModel = True
@@ -84,16 +84,16 @@ else:
                     figure_ext = extension
 
 # base example workspace
-base_ws = os.path.join("..", "examples")
+base_ws = pl.Path("../examples")
 for idx, arg in enumerate(sys.argv):
     if arg in ("--destination"):
         if idx + 1 < len(sys.argv):
             base_ws = sys.argv[idx + 1]
-            base_ws = os.path.abspath(base_ws)
-assert os.path.isdir(base_ws)
+            base_ws = base_ws.resolve()
+assert base_ws.is_dir()
 
 # data files required for examples
-data_ws = os.path.join("..", "data")
+data_ws = pl.Path("../data")
 
 # set executable extension
 eext = ""
@@ -104,11 +104,15 @@ if sys.platform.lower() == "win32":
 if sys.platform.lower() == "darwin":
     soext = ".dylib"
 
+# append bin directory to system path
+bin_path = pl.Path("../bin")
+sys.path.append(bin_path)
+
 # paths to executables
-mf6_exe = os.path.abspath(os.path.join("..", "bin", "mf6" + eext))
-libmf6_exe = os.path.abspath(os.path.join("..", "bin", "libmf6" + soext))
-mf2005_exe = os.path.abspath(os.path.join("..", "bin", "mf2005" + eext))
-mf2005dbl_exe = os.path.abspath(os.path.join("..", "bin", "mf2005dbl" + eext))
-mfnwt_exe = os.path.abspath(os.path.join("..", "bin", "mfnwt" + eext))
-mt3dms_exe = os.path.abspath(os.path.join("..", "bin", "mt3dms" + eext))
-mt3dusgs_exe = os.path.abspath(os.path.join("..", "bin", "mt3dusgs" + eext))
+mf6_exe = (bin_path / f"mf6{eext}").resolve()
+libmf6_exe = (bin_path / f"libmf6{soext}").resolve()
+mf2005_exe = (bin_path / f"mf2005{eext}").resolve()
+mf2005dbl_exe = (bin_path / f"mf2005dbl{eext}").resolve()
+mfnwt_exe = (bin_path / f"mfnwt{eext}").resolve()
+mt3dms_exe = (bin_path / f"mt3dms{eext}").resolve()
+mt3dusgs_exe = (bin_path / f"mt3dusgs{eext}").resolve()
