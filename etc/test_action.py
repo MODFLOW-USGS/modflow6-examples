@@ -1,20 +1,10 @@
 import os
-import sys
 import shutil
 from subprocess import Popen, PIPE
 
 # change to root directory - local run only
 starting_dir = os.getcwd()
 os.chdir("..")
-
-# Get executables
-args = ("python", "etc/ci_get_exes.py")
-proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=".")
-stdout, stderr = proc.communicate()
-if stdout:
-    print(stdout.decode("utf-8"))
-if stderr:
-    print("Errors:\n{}".format(stderr.decode("utf-8")))
 
 # clean up examples directory - just for local runs
 expth = os.path.join("examples")

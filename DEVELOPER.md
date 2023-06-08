@@ -4,12 +4,19 @@ Adding a new example requires adding a new example script in the `scripts` folde
 
 ## Installation of Modeling Programs
 
-Install modeling programs into the `bin` directory.  This can be done using the get-modflow utility that is available when the flopy Python package is installed.  From the `bin` directory, issue the following commands:
+Install modeling programs using the get-modflow utility that is available when the flopy Python package is installed. From any directory, issue the following commands:
 
 ```commandline
-get-modflow .
-get-modflow --repo modflow6-nightly-build .
+get-modflow :flopy
+get-modflow --repo modflow6-nightly-build :flopy
 ```
+
+This will install the executables in the `python/bin` directory associated with your flopy installation. Other installation location options can be found by issuing the following command:
+
+```commandline
+get-modflow -h
+```
+
 
 There are quite a few Python packages that are required in order to create MODFLOW 6 examples.  They are listed in `etc/requirements.pip.txt` and `etc/requirements.usgs.txt`.
 

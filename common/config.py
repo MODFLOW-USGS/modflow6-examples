@@ -104,15 +104,11 @@ if sys.platform.lower() == "win32":
 if sys.platform.lower() == "darwin":
     soext = ".dylib"
 
-# append bin directory to system path
-bin_path = pl.Path("../bin")
-sys.path.append(bin_path.resolve())
-
-# paths to executables
-mf6_exe = (bin_path / f"mf6{eext}").resolve()
-libmf6_exe = (bin_path / f"libmf6{soext}").resolve()
-mf2005_exe = (bin_path / f"mf2005{eext}").resolve()
-mf2005dbl_exe = (bin_path / f"mf2005dbl{eext}").resolve()
-mfnwt_exe = (bin_path / f"mfnwt{eext}").resolve()
-mt3dms_exe = (bin_path / f"mt3dms{eext}").resolve()
-mt3dusgs_exe = (bin_path / f"mt3dusgs{eext}").resolve()
+# set executables names
+mf6_exe = f"mf6{eext}"
+libmf6_exe = f"libmf6{soext}"
+mf2005_exe = f"mf2005{eext}"
+mf2005dbl_exe = f"mf2005dbl{eext}"
+mfnwt_exe = f"mfnwt{eext}"
+mt3dms_exe = f"mt3dms{eext}"
+mt3dusgs_exe = f"mt3dusgs{eext}"
