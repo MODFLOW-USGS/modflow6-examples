@@ -18,7 +18,7 @@ from figspecs import USGSFigure
 import flopy
 from flopy.utils.util_array import read1d
 
-mf6exe = os.path.abspath(config.mf6_exe)
+mf6exe = config.mf6_exe
 
 # ### Model Input Parameters
 

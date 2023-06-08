@@ -53,10 +53,13 @@ jobs:
           flopy.mf6.utils.generate_classes(branch="develop", backup=False)
         shell: python
 
-      - name: Run ci_get_exes script
-        run: |
-          python ci_get_exes.py
-        working-directory: ${{env.etc-directory}}
+      - name: Install MODFLOW executables release
+        uses: modflowpy/install-modflow-action@v1
+
+      - name: Install MODFLOW nightly-build executables
+        uses: modflowpy/install-modflow-action@v1
+        with:
+          repo: modflow6-nightly-build
 
       - name: Run scripts without model runs
         run: |
@@ -125,14 +128,13 @@ jobs:
           flopy.mf6.utils.generate_classes(branch="develop", backup=False)
         shell: python
 
-      - name: Run ci_get_exes script
-        run: |
-          python ci_get_exes.py
-        working-directory: ${{env.etc-directory}}
+      - name: Install MODFLOW executables release
+        uses: modflowpy/install-modflow-action@v1
 
-      - name: List executables
-        run: |
-          ls -l ./bin/
+      - name: Install MODFLOW nightly-build executables
+        uses: modflowpy/install-modflow-action@v1
+        with:
+          repo: modflow6-nightly-build
 
       - name: Run scripts
         run: |

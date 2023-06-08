@@ -26,7 +26,7 @@ from figspecs import USGSFigure
 sys.path.append(os.path.join("..", "data", "ex-gwf-sagehen"))
 import sfr_static as sfrDat
 
-mf6exe = os.path.abspath(config.mf6_exe)
+mf6exe = config.mf6_exe
 exe_name_mf = config.mf2005_exe
 exe_name_mt = config.mt3dms_exe
 

@@ -25,7 +25,7 @@ import config
 from figspecs import USGSFigure
 from analytical import Stallman
 
-mf6exe = os.path.abspath(config.mf6_exe)
+mf6exe = config.mf6_exe
 
 # Set figure properties specific to this problem
 
