@@ -106,7 +106,7 @@ if sys.platform.lower() == "darwin":
 
 # append bin directory to system path
 bin_path = pl.Path("../bin")
-sys.path.append(bin_path)
+sys.path.append(bin_path.resolve())
 
 # paths to executables
 mf6_exe = (bin_path / f"mf6{eext}").resolve()
