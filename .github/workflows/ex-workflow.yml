@@ -167,7 +167,7 @@ jobs:
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT,
                                     cwd=ws) as process:
-                  stdout, stderr = process.communicate(timeout=60)
+                  stdout, stderr = process.communicate(timeout=120)
                   if stdout:
                       stdout = stdout.decode()
                       print(stdout)
