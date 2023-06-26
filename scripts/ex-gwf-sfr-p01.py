@@ -837,7 +837,7 @@ def build_model():
         )
         sfr = flopy.mf6.ModflowGwfsfr(
             gwf,
-            unit_conversion=1.486,
+            length_conversion=3.28081,
             nreaches=len(sfr_pakdata),
             packagedata=sfr_pakdata,
             connectiondata=sfr_conn,

@@ -183,8 +183,12 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
         first_order_decay = True
     if distribution_coefficient > 0:
         sorption = "linear"
+        bd = bulk_density
+        kd = distribution_coefficient
     else:
         sorption = None
+        bd = None
+        kd = None
     flopy.mf6.ModflowGwtic(gwt, strt=0)
     flopy.mf6.ModflowGwtmst(
         gwt,
@@ -194,8 +198,8 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
         porosity=porosity / (1.0 - volfrac),
         decay=decay,
         decay_sorbed=decay_sorbed,
-        bulk_density=bulk_density,
-        distcoef=distribution_coefficient,
+        bulk_density=bd,
+        distcoef=kd,
     )
     istsorption = sorption is not None
     if dual_domain:
@@ -209,7 +213,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
             zetaim=zeta_im,
             decay=decay,
             decay_sorbed=decay_sorbed,
-            bulk_density=bulk_density,
+            bulk_density=bd,
             distcoef=distribution_coefficient,
         )
     flopy.mf6.ModflowGwtadv(gwt)

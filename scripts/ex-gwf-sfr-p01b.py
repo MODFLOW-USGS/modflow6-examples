@@ -3844,7 +3844,7 @@ def build_model():
             mover=True,
             pname="SFR-1",
             maximum_depth_change=0.1e-05,
-            unit_conversion=1.486,
+            length_conversion=3.28081,
             nreaches=len(sfr_pakdata),
             packagedata=sfr_pakdata,
             connectiondata=sfr_conn,
