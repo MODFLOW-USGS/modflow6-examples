@@ -444,25 +444,29 @@ def build_model(
         # Instantiating MODFLOW 6 transport mass storage package (formerly "reaction" package in MT3DMS)
         if retardation != 1.0:
             sorption = "linear"
+            bulk_density = rhob
             kd = (
                 (retardation - 1.0) * prsity / rhob
             )  # prsity & rhob defined in
         else:  # global variable section
             sorption = None
-            kd = 1.0
+            bulk_density = None
+            kd = None
         if decay != 0.0:
             first_order_decay = True
+            decay_arg = decay
         else:
             first_order_decay = False
+            decay_arg = None
         flopy.mf6.ModflowGwtmst(
             gwt,
             porosity=prsity,
             sorption=sorption,
-            bulk_density=rhob,
+            bulk_density=bulk_density,
             distcoef=kd,
             first_order_decay=first_order_decay,
-            decay=decay,
-            decay_sorbed=decay,
+            decay=decay_arg,
+            decay_sorbed=decay_arg,
             filename="{}.mst".format(gwtname),
         )
 

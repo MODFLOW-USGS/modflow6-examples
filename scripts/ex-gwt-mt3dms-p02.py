@@ -242,7 +242,7 @@ def build_mf6gwt(
     flopy.mf6.ModflowGwtmst(
         gwt,
         porosity=porosity / (1.0 - volfracim),
-        bulk_density=bulk_density,
+        bulk_density=bulk_density if sorption else None,
         sorption=sorption,
         distcoef=distcoef,
         sp2=sp2,
