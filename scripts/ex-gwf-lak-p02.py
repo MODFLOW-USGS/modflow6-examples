@@ -182,8 +182,6 @@ lak_spd = [
 
 # SFR package
 
-sfr_conv = 128390.4
-
 sfr_pakdata = [
     [
         0,
@@ -699,7 +697,8 @@ def build_model():
         flopy.mf6.ModflowGwfsfr(
             gwf,
             pname="SFR-1",
-            unit_conversion=sfr_conv,
+            time_conversion=86400.000,
+            length_conversion=3.28081,
             mover=True,
             print_stage=True,
             print_flows=True,

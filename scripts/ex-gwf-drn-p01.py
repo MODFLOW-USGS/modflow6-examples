@@ -1001,7 +1001,7 @@ def build_model(name, uzf_gwseep=None):
         sfr = flopy.mf6.ModflowGwfsfr(
             gwf,
             pname="SFR-1",
-            unit_conversion=1.486,
+            length_conversion=3.28081,
             mover=True,
             nreaches=len(sfr_pakdata),
             packagedata=sfr_pakdata,
