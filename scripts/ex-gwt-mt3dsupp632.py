@@ -104,7 +104,9 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     tdis_ds = (
         (source_duration, 1, 1.0),
         (total_time - source_duration, 1, 1.0),
@@ -152,7 +154,9 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     pertim1 = source_duration
     pertim2 = total_time - source_duration
     tdis_ds = ((pertim1, 10, 1.0), (pertim2, 90, 1.0))
@@ -245,7 +249,7 @@ def build_mf2005(sim_folder):
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(
-        modelname=name, model_ws=sim_ws, exe_name=config.mf2005_exe
+        modelname=name, model_ws=sim_ws, exe_name="mf2005"
     )
     pertim1 = source_duration
     pertim2 = total_time - source_duration
@@ -284,7 +288,7 @@ def build_mt3dms(
     mt = flopy.mt3d.Mt3dms(
         modelname=name,
         model_ws=sim_ws,
-        exe_name=config.mt3dms_exe,
+        exe_name="mt3dms",
         modflowmodel=modflowmodel,
         ftlfilename="../mf2005/mt3d_link.ftl",
     )

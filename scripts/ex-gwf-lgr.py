@@ -21,9 +21,9 @@ import numpy as np
 from figspecs import USGSFigure
 from flopy.utils.lgrutil import Lgr
 
-mf6exe = config.mf6_exe
-exe_name_mf = config.mf2005_exe
-exe_name_mt = config.mt3dms_exe
+mf6exe = "mf6"
+exe_name_mf = "mf2005"
+exe_name_mt = "mt3dms"
 
 # Set figure properties specific to this problem
 

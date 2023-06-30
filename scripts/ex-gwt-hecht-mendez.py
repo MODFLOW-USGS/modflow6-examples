@@ -39,9 +39,9 @@ import numpy as np
 from figspecs import USGSFigure
 from flopy.utils.util_array import read1d
 
-mf6exe = config.mf6_exe
-exe_name_mf = config.mf2005_exe
-exe_name_mt = config.mt3dusgs_exe
+mf6exe = "mf6"
+exe_name_mf = "mf2005"
+exe_name_mt = "mt3dusgs"
 
 # Set figure properties specific to this problem
 
@@ -302,7 +302,7 @@ def build_mf6_flow_model(
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name, "mf6gwf")
         sim = flopy.mf6.MFSimulation(
-            sim_name=gwfname, sim_ws=sim_ws, exe_name=config.mf6_exe
+            sim_name=gwfname, sim_ws=sim_ws, exe_name="mf6"
         )
 
         # Instantiating MODFLOW 6 time discretization
@@ -496,7 +496,7 @@ def build_mf6_transport_model(
         gwtname = "gwt-" + name
         sim_ws = os.path.join(ws, sim_name, "mf6gwt")
         sim = flopy.mf6.MFSimulation(
-            sim_name=gwtname, sim_ws=sim_ws, exe_name=config.mf6_exe
+            sim_name=gwtname, sim_ws=sim_ws, exe_name="mf6"
         )
 
         # MF6 time discretization is a bit different than corresponding flow simulation

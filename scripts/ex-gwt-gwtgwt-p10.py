@@ -20,7 +20,7 @@ import numpy as np
 from figspecs import USGSFigure
 from flopy.utils.util_array import read1d
 
-mf6exe = config.mf6_exe
+mf6exe = "mf6"
 
 # ### Model Input Parameters
 

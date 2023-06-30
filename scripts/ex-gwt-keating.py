@@ -109,7 +109,9 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     tdis_ds = ((period1, 1, 1.0), (period2, 1, 1.0))
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_ds), perioddata=tdis_ds, time_units=time_units
@@ -196,7 +198,7 @@ def build_mf6gwt(sim_folder):
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
-        exe_name=config.mf6_exe,
+        exe_name="mf6",
         continue_=True,
     )
     tdis_ds = ((period1, 73, 1.0), (period2, 2927, 1.0))

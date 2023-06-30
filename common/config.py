@@ -102,12 +102,3 @@ if sys.platform.lower() == "win32":
     soext = ".dll"
 if sys.platform.lower() == "darwin":
     soext = ".dylib"
-
-# set executables names
-mf6_exe = f"mf6{eext}"
-libmf6_exe = f"libmf6{soext}"
-mf2005_exe = f"mf2005{eext}"
-mf2005dbl_exe = f"mf2005dbl{eext}"
-mfnwt_exe = f"mfnwt{eext}"
-mt3dms_exe = f"mt3dms{eext}"
-mt3dusgs_exe = f"mt3dusgs{eext}"

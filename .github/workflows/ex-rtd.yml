@@ -4,12 +4,12 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop ]
 
 jobs:
   rtd_build:
@@ -23,9 +23,8 @@ jobs:
     defaults:
       run:
         shell: bash
-
-    if: github.repository_owner == 'MODFLOW-USGS'
     steps:
+
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v3
 
@@ -76,36 +75,29 @@ jobs:
           repo: modflow6-nightly-build
 
       - name: Run scripts without model runs
-        run: |
-          pytest -v -n=auto --durations=0 ci_build_files.py
+        run: pytest -v -n=auto --durations=0 ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: Run processing script
-        run: |
-          python process-scripts.py
+        run: python process-scripts.py
         working-directory: ${{env.script-directory}}
 
       - name: Run notebooks with jupytext for ReadtheDocs
-        run: |
-          pytest -v -n=auto --durations=0 ci_run_notebooks.py
+        run: pytest -v -n=auto --durations=0 ci_run_notebooks.py
         working-directory: ${{env.etc-directory}}
 
       - name: Create package tables and examples.rst for ReadtheDocs
-        run: |
-          python ci_create_examples_rst.py
+        run: python ci_create_examples_rst.py
         working-directory: ${{env.etc-directory}}
 
       - name: List example rst files for ReadtheDocs
-        run: |
-          ls -R .doc/_examples/
+        run: ls -R .doc/_examples/
 
       - name: List example image files for ReadtheDocs
-        run: |
-          ls -R .doc/_images/
+        run: ls -R .doc/_images/
 
       - name: List example notebook files for ReadtheDocs
-        run: |
-          ls -R .doc/_notebooks/
+        run: ls -R .doc/_notebooks/
 
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
         uses: actions/upload-artifact@v3

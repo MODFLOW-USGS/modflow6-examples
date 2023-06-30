@@ -20,9 +20,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from figspecs import USGSFigure
 
-mf6exe = config.mf6_exe
-exe_name_mf = config.mfnwt_exe
-exe_name_mt = config.mt3dusgs_exe
+mf6exe = "mf6"
+exe_name_mf = "mfnwt"
+exe_name_mt = "mt3dusgs"
 
 # Set figure properties specific to this problem
 

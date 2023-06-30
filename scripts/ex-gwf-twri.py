@@ -161,7 +161,7 @@ def build_model():
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
+            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
         flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
@@ -217,7 +217,7 @@ def build_mf5model():
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name, "mf2005")
         mf = flopy.modflow.Modflow(
-            modelname=sim_name, model_ws=sim_ws, exe_name=config.mf2005dbl_exe
+            modelname=sim_name, model_ws=sim_ws, exe_name="mf2005dbl"
         )
         flopy.modflow.ModflowDis(
             mf,

@@ -420,7 +420,7 @@ def build_mf6gwf(sim_folder):
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
-        exe_name=config.mf6_exe,
+        exe_name="mf6",
         continue_=True,
     )
     tdis = flopy.mf6.ModflowTdis(sim, time_units="days", perioddata=((pertim, 1, 1.0),))
@@ -519,7 +519,7 @@ def build_mf6gwt(sim_folder):
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
-        exe_name=config.mf6_exe,
+        exe_name="mf6",
         continue_=True,
     )
     tdis = flopy.mf6.ModflowTdis(
