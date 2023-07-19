@@ -1,0 +1,101 @@
+\section{Radial Groundwater Flow Model}
+% Describe source of problem
+Radial groundwater models simulate and analyze the flow of groundwater in a radial coordinate system. The purpose of radial groundwater models is to understand the behavior of groundwater flow in response to groundwater extraction or to estimate aquifer properties. Radial groundwater models are axisymmetric with the constant aquifer properties defined in circular radial bands and vertical layers. The radial grid’s innermost band is cylinder (single radius) and typically contains a groundwater well. Extending outward, the subsequent radial bands are ring shaped that are bound by an inner and outer radius (hollow cylinder). This example demonstrates the capability of the Unstructured Discretization (DISU) Package to represent a radial groundwater flow model.
+
+This example replicates in MODFLOW 6 using FloPy the ``Pumping Well'' radial model described in \cite{bedekar2019axisym}. The original model used MODFLOW-USG to demonstrate that it is possible to use unstructured grid cells to simulate a banded, radial model. The MODFLOW 6 results are compared with the \cite{neuman1974effect} analytical solution for radial, unconfined flow with a partially penetrating well.
+
+
+\subsection{Example description}
+
+% spatial discretization 
+The example consists of a multi-layer, radial model representing an unconfined, homogeneous, and isotropic aquifer with a partially penetrating well. The radial grid represents the horizontal direction and is composed of 22 radial bands that vary in outer radius from 0.25 $ft$ to 2000 $ft$ 
+(fig.~\ref{fig:ex-gwf-rad-disu-grid}\textit{A}). Radial band 1 is a cylinder with a radius 0.25 $ft$ and radial band 22 is a hollow cylinder with an inner and outer radius of 1500 $ft$ and 2000 $ft$, respectively. The vertical direction consists of 25 uniform-layers that are 2 $ft$ thick; with a total aquifer thickness of 50 $ft$. A partially penetrating well is located at radial band 1 
+(fig.~\ref{fig:ex-gwf-rad-disu-grid}\textit{B}) and extracts water from the bottom 10 $ft$ (layer 21 to 25) at a rate of 4000 $ft^3/day$. The remaining model properties are summarized in table~\ref{tab:ex-gwf-radial-01}.
+
+\begin{StandardFigure}{
+                                     Plan view of the two-dimensional, radial model grid.
+                                     \textit{A}, plan view of entire model grid containing 22 radial bands, and 
+                                     \textit{B}, plan view of the 5 innermost radial bands and the well location is marked in red.
+                                     }{fig:ex-gwf-rad-disu-grid}{../figures/ex-gwf-rad-disu-grid.png}
+\end{StandardFigure}                                 
+
+
+% temporal discretization
+The model simulation evaluates drawdown in response to pumping at an observation point. The simulation time frame is composed of 1 stress period of length 10 $days$, subdivided into 24 time steps with a multiplier of 1.24. The aquifer is initially saturated with an initial water level is set to 50 $ft$, which is the reference level for drawdown. Observations are made at a radial distance of 40 $ft$ (radial band 12) at the model’s top (1 $ft$ depth; layer 1), middle (25 $ft$ depth; layer 13), and bottom (49 $ft$ depth; layer 25) for every time step. 
+
+% material properties
+
+% initial conditions
+
+% boundary conditions
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-radial-01.tex}
+
+% Extra Section
+\subsection{Radial Setup with Unstructured Discretization (DISU)}
+To represent a radial grid, the DISU defines cell connectivity based on radial band circumference, circular areas, and the radial distance between bands. All radial bands have the same properties for each layer. That is, each layer’s radial band has the same radius, circumference and area and only shifts the top and bottom elevation downward by 2 $ft$. A maximum of 4 connections is possible for any given node; the connections represent flow towards the inner band, to the outer band, upward flow, and downward flow.
+
+Node numbers are assigned based on the radial band number (R), layer number (L), and the total number of radial bands (nradial) as described in equation~\ref{eq:radial_disu_node}.
+
+\begin{equation}
+   \text{node} = \text{nradial} \cdot \left(\text{L}-1\right)+\text{R}
+   \label{eq:radial_disu_node}
+\end{equation}
+
+% where:
+% \begin{conditions}
+%  node    & is the DISU node number,
+%  nradial & is the total number of radial bands,
+%  L       & is the layer number,
+%  R       & is the radial band number.
+% \end{conditions}
+
+
+To make the following more compact, radial band and layer numbers are presented as ``(R, L)'' pairs. The first node is (1, 1) and is a cylinder that is connected to the next radial band, (2, 1), and the cylinder beneath it, (1, 2). The nodal connections (JA) for node 1 is then nodes 2 and 23. The second node, (2, 1), is connected to the inner band at (1, 1), an outer band at (3, 1), and the downward band (2, 2). The JA connections for node 2 is then nodes 1, 3, and 24. Similarly node 24 is located at (2, 2) is connected to the inner band (1, 2), outer band (3, 2), upward band (2, 1), and downward band (2, 3). The JA connections for node 24 is then nodes 23, 25, 2, and 46, respectively.
+
+The input requires specifying the plan view, cell surface area. This is calculated using equation~\ref{eq:radial_disu_area}.
+\begin{equation}
+   \text{AREA}_j = \pi\left(r_j^2-r_{j-1}^2\right)
+   \label{eq:radial_disu_area}
+\end{equation}
+where $r$ is the outer radius for radial band $j$ and $r_0=0$. The surface area for any radial band is the same for all layers.
+
+The connection length (CL12) depends on if the cell connection is in the vertical or radial direction. Vertical connections are half the distance between the top and bottom elevation of the cell. Since all cells have a thickness of 2 $ft$, CL12 is 1 $ft$ for all vertical connections. The radial direction has a CL12 for radial band 1 equal to its outer radius. For the rest of the radial bands CL12 is same for both the inner and outer directions and is half the distance between the inner and outer radius. That is, $\text{CL12}_j = 0.5\left(r_j-r_{j-1}\right)$, where $r$ is the outer radius for radial band $j$ and $r_0={-r}_1$. 
+
+The input HWVA is the plan view area ($ft^2$) for vertical connections and the width ($ft$) perpendicular to flow for horizontal connections. Since all layers have the same radii, the vertical $\text{HWVA}_j$ is equal to $\text{AREA}_j$. The horizontal HWVA width is equal the radial band’s circumference ($2\pi r$) that the flow passes through. For flow towards the inner band, $\text{HWVA}_{j,\ \text{inner}} = 2\pi r_{j-1}$, and towards the outer band, $\text{HWVA}_{j,\ \text{outer}}\ = 2\pi r_j$.
+
+To assist with the FloPy setup a script called get\_disu\_radial\_kwargs.py is provided. This script provides the function \texttt{get\_disu\_radial\_kwargs} that assembles the nodal connections and aforementioned properties (JA, AREA, CL12, HWVA). The function input expects the number of layers, number of radial bands, outer radius for each band, surface elevations, and layer thicknesses. 
+
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Figures \ref{fig:ex-gwf-rad-disu-obs-head} and \ref{fig:ex-gwf-rad-disu-obs-dimensionless} present the simulated head and dimensionless drawdown results of the radial model with an initial head of 50 $ft$ and 4000 $ft^3/d$ pumping for 10 days. In the figures the circles represent the MODFLOW 6 (MF6) solution at the end of the time step and the lines are the analytical solution from Equation 17 in \cite{neuman1974effect}. The analytical solution uses dimensionless time and drawdown, so the results are presented in both head (MF6 native solution; fig.~\ref{fig:ex-gwf-rad-disu-obs-head}) and dimensionless drawdown (analytical native solution; fig.~\ref{fig:ex-gwf-rad-disu-obs-dimensionless}). Dimensionless time with respect to specific yield and dimensionless drawdown are defined as:
+%
+\begin{equation}
+   t_y = \frac{Tt}{S_yr^2}
+   \label{eq:dimensionless_time}
+\end{equation}
+%
+\begin{equation}
+   s_d = \frac{4\pi Ts}{Q}
+   \label{eq:dimensionless_drawdown}
+\end{equation}
+%
+where $t_y$ is dimensionless time with respect to specific yield (-), $T$ is the initial, radial direction transmissivity ($ft^2/d$), $t$ is the simulation time ($d$), $S_y$ is the specific yield (-), $r$ is the radial distance from the well to the observation point ($ft$), $s_d$ is dimensionless drawdown (-), $s$ is the drawdown from the initial water table elevation ($ft$), and $Q$ is the pumping rate ($ft^3/d$).
+
+\begin{StandardFigure}{
+                                     Radial model analytical solution \citep{neuman1974effect} and simulated groundwater (MF6) head 40 $ft$ from the well (radial band 12)
+                                     at the model’s Top (1 $ft$ depth; layer 1), Middle (25 $ft$ depth; layer 13), and Bottom (49 $ft$ depth; layer 25).
+                                     }{fig:ex-gwf-rad-disu-obs-head}{../figures/ex-gwf-rad-disu-obs-head.png}
+\end{StandardFigure}                                 
+
+
+\begin{StandardFigure}{
+                                     Radial model analytical dimensionless solution \citep{neuman1974effect} and simulated groundwater (MF6) dimensionless drawdown 40 $ft$ from the well (radial band 12)
+                                     at the model’s Top (1 $ft$ depth; layer 1), Middle (25 $ft$ depth; layer 13), and Bottom (49 $ft$ depth; layer 25).
+                                     }{fig:ex-gwf-rad-disu-obs-dimensionless}{../figures/ex-gwf-rad-disu-obs-dimensionless.png}
+\end{StandardFigure}                                 
+
+In figure~\ref{fig:ex-gwf-rad-disu-obs-head}, the MF6 head compare very well to the analytical solution. In figure~\ref{fig:ex-gwf-rad-disu-obs-dimensionless}, the MF6 dimensionless drawdown deviates from the analytical solution initially and then yields similar results. This deviation is more apparent in the first four circles (from the left) because of the small numbers presented on a log-log plot. These errors occur in the first 50 seconds of the 10-day simulation and are negligible in comparison to the rest of the simulation.
