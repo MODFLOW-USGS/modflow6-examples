@@ -1,7 +1,8 @@
 import os
 import shutil
 import sys
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
+
 import pytest
 
 
@@ -51,9 +52,7 @@ def test_build_run_all(build):
 
     # run the script
     print(" ".join(args))
-    proc = Popen(
-        args, stdout=PIPE, stderr=PIPE, cwd=os.path.join("..", "scripts")
-    )
+    proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=os.path.join("..", "scripts"))
     stdout, stderr = proc.communicate()
     if stdout:
         print(stdout.decode("utf-8"))

@@ -11,8 +11,9 @@
 
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Append to system path to include the common subdirectory
@@ -75,16 +76,12 @@ source_location0 = tuple([idx - 1 for idx in source_location])
 
 
 def build_mf6gwf(sim_folder):
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, print_option="summary", inner_maximum=300)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -116,8 +113,8 @@ def build_mf6gwf(sim_folder):
             welspd.append(rec)
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chdspd)
     flopy.mf6.ModflowGwfwel(gwf, stress_period_data=welspd)
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -131,16 +128,12 @@ def build_mf6gwf(sim_folder):
 
 
 def build_mf6gwt(sim_folder):
-    print("Building mf6gwt model...{}".format(sim_folder))
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((total_time, 400, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -165,7 +158,7 @@ def build_mf6gwt(sim_folder):
         ath2=alpha_tv,
     )
     pd = [
-        ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
+        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
@@ -174,7 +167,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtsrc(gwt, stress_period_data=srcspd)
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obs_data = {
-        "{}.obs.csv".format(name): [
+        f"{name}.obs.csv": [
             ("SOURCELOC", "CONCENTRATION", source_location0),
         ],
     }
@@ -183,8 +176,8 @@ def build_mf6gwt(sim_folder):
     )
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(name),
-        concentration_filerecord="{}.ucn".format(name),
+        budget_filerecord=f"{name}.cbc",
+        concentration_filerecord=f"{name}.ucn",
         saverecord=[("CONCENTRATION", "ALL"), ("BUDGET", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -268,17 +261,13 @@ def plot_results(sims):
 
         conc = sim_mf6gwt.trans.output.concentration().get_data()
 
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
 
         gwt = sim_mf6gwt.trans
         pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
         levels = [1, 3, 10, 30, 100, 300]
         cs1 = plot_analytical(axs, levels)
-        cs2 = pmv.contour_array(
-            conc, colors="blue", linestyles="--", levels=levels
-        )
+        cs2 = pmv.contour_array(conc, colors="blue", linestyles="--", levels=levels)
         axs.set_xlabel("x position (m)")
         axs.set_ylabel("y position (m)")
         axs.set_aspect(4.0)
@@ -292,7 +281,7 @@ def plot_results(sims):
             sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-map{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-map{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 

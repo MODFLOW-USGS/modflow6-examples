@@ -14,11 +14,12 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
-from shapely.geometry import Polygon
+import matplotlib.pyplot as plt
+import numpy as np
 from flopy.utils.gridintersect import GridIntersect
+from shapely.geometry import Polygon
 
 # Append to system path to include the common subdirectory
 
@@ -85,13 +86,31 @@ icelltype = [int(value) for value in icelltype_str.split(",")]
 # shapely is used to construct recharge zones
 #
 recharge_zone_1 = Polygon(
-    shell=[(0, 0), (3000, 0), (3000, 5500), (1000, 7500), (0, 7500), (0, 0),],
+    shell=[
+        (0, 0),
+        (3000, 0),
+        (3000, 5500),
+        (1000, 7500),
+        (0, 7500),
+        (0, 0),
+    ],
 )
 recharge_zone_2 = Polygon(
-    shell=[(1000, 7500), (3000, 5500), (5000, 7500), (1000, 7500),],
+    shell=[
+        (1000, 7500),
+        (3000, 5500),
+        (5000, 7500),
+        (1000, 7500),
+    ],
 )
 recharge_zone_3 = Polygon(
-    shell=[(3000, 0), (5000, 0), (5000, 7500), (3000, 5500), (3000, 0),],
+    shell=[
+        (3000, 0),
+        (5000, 0),
+        (5000, 7500),
+        (3000, 5500),
+        (3000, 0),
+    ],
 )
 
 # Solver parameters
@@ -129,16 +148,14 @@ def build_model():
             exe_name=config.mf6_exe,
             verbosity_level=0,
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
@@ -172,17 +189,13 @@ def build_model():
         )
 
         ghb_spd = []
-        ghb_spd += [
-            [1, i, 9, "tides", 15.0, "ESTUARY-L2"] for i in range(nrow)
-        ]
-        ghb_spd += [
-            [2, i, 9, "tides", 1500.0, "ESTUARY-L3"] for i in range(nrow)
-        ]
+        ghb_spd += [[1, i, 9, "tides", 15.0, "ESTUARY-L2"] for i in range(nrow)]
+        ghb_spd += [[2, i, 9, "tides", 1500.0, "ESTUARY-L3"] for i in range(nrow)]
         ghb_spd = {0: ghb_spd}
         fname = os.path.join(config.data_ws, sim_name, "tides.csv")
         tsdict = get_timeseries(fname, "tides", "linear")
         ghbobs_dict = {}
-        ghbobs_dict["{}.ghb.obs.csv".format(sim_name)] = [
+        ghbobs_dict[f"{sim_name}.ghb.obs.csv"] = [
             ("ghb_2_6_10", "ghb", (1, 5, 9)),
             ("ghb_3_6_10", "ghb", (2, 5, 9)),
             ("estuary2", "ghb", "ESTUARY-L2"),
@@ -234,9 +247,7 @@ def build_model():
         rivcol = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         rivstg = 10 * ["river_stage_1"] + 10 * ["river_stage_2"]
         rivcnd = 2 * [1000 + f + 1 for f in range(10)]
-        rivrbt = list(np.linspace(35.9, 35.0, 10)) + list(
-            np.linspace(36.9, 36.0, 10)
-        )
+        rivrbt = list(np.linspace(35.9, 35.0, 10)) + list(np.linspace(36.9, 36.0, 10))
         rivbnd = (
             5 * [""]
             + ["riv1_c6", "riv1_c7"]
@@ -246,12 +257,12 @@ def build_model():
             + ["riv2_c6", "riv2_c7"]
             + 3 * [""]
         )
-        riv_spd = list(
-            zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd)
-        )
+        riv_spd = list(zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd))
         fname = os.path.join(config.data_ws, sim_name, "riverstage.csv")
         tsdict = get_timeseries(
-            fname, ["river_stage_1", "river_stage_2"], ["linear", "stepwise"],
+            fname,
+            ["river_stage_1", "river_stage_2"],
+            ["linear", "stepwise"],
         )
         flopy.mf6.ModflowGwfriv(
             gwf,
@@ -261,9 +272,7 @@ def build_model():
             pname="RIV",
         )
 
-        for ipak, p in enumerate(
-            [recharge_zone_1, recharge_zone_2, recharge_zone_3]
-        ):
+        for ipak, p in enumerate([recharge_zone_1, recharge_zone_2, recharge_zone_3]):
             ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
             result = ix.intersect(p)
             rch_spd = []
@@ -272,18 +281,16 @@ def build_model():
                     [
                         0,
                         *result["cellids"][i],
-                        "rch_{}".format(ipak + 1),
+                        f"rch_{ipak + 1}",
                         result["areas"][i] / delr / delc,
                     ]
                 )
-            fname = os.path.join(
-                config.data_ws, sim_name, "recharge{}.csv".format(ipak + 1)
-            )
+            fname = os.path.join(config.data_ws, sim_name, f"recharge{ipak + 1}.csv")
             tsdict = get_timeseries(
                 fname,
-                ["rch_{}".format(ipak + 1)],
+                [f"rch_{ipak + 1}"],
                 ["stepwise"],
-                filename="{}.rch{}.ts".format(sim_name, ipak + 1),
+                filename=f"{sim_name}.rch{ipak + 1}.ts",
             )
             flopy.mf6.ModflowGwfrch(
                 gwf,
@@ -296,8 +303,8 @@ def build_model():
                 save_flows=True,
                 auxiliary=["MULTIPLIER"],
                 auxmultname="MULTIPLIER",
-                pname="RCH-ZONE_{}".format(ipak + 1),
-                filename="{}.rch{}".format(sim_name, ipak + 1),
+                pname=f"RCH-ZONE_{ipak + 1}",
+                filename=f"{sim_name}.rch{ipak + 1}",
             )
 
         nseg = 3
@@ -309,15 +316,12 @@ def build_model():
         row, col = np.where(np.zeros((nrow, ncol)) == 0)
         cellids = list(zip(nrow * ncol * [0], row, col))
         evt_spd = [
-            [k, i, j, etsurf, etrate, depth, *pxdp, *petm]
-            for k, i, j in cellids
+            [k, i, j, etsurf, etrate, depth, *pxdp, *petm] for k, i, j in cellids
         ]
-        flopy.mf6.ModflowGwfevt(
-            gwf, nseg=nseg, stress_period_data=evt_spd, pname="EVT"
-        )
+        flopy.mf6.ModflowGwfevt(gwf, nseg=nseg, stress_period_data=evt_spd, pname="EVT")
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -327,12 +331,10 @@ def build_model():
 
         obsdict = {}
         obslist = [["h1_13_8", "head", (2, 12, 7)]]
-        obsdict["{}.obs.head.csv".format(sim_name)] = obslist
+        obsdict[f"{sim_name}.obs.head.csv"] = obslist
         obslist = [["icf1", "flow-ja-face", (0, 4, 5), (0, 5, 5)]]
-        obsdict["{}.obs.flow.csv".format(sim_name)] = obslist
-        obs = flopy.mf6.ModflowUtlobs(
-            gwf, print_input=False, continuous=obsdict
-        )
+        obsdict[f"{sim_name}.obs.flow.csv"] = obslist
+        obs = flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
 
         return sim
     return None
@@ -419,7 +421,7 @@ def plot_grid(sim):
             alpha=0.25,
             fc=fc,
             ec="none",
-            label="Recharge Zone {}".format(ip + 1),
+            label=f"Recharge Zone {ip + 1}",
         )
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
@@ -430,9 +432,7 @@ def plot_grid(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
         fig.savefig(fpth)
     return
 
@@ -462,9 +462,7 @@ def plot_ts(sim):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{}{}".format(
-                    sim_name, obs_fig[iplot], config.figure_ext
-                ),
+                "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
             )
             fig.savefig(fpth)
     return

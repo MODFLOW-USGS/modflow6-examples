@@ -8,10 +8,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -135,11 +136,9 @@ def build_model(
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         if newton:
-            newtonoptions="newton"
+            newtonoptions = "newton"
             no_ptc = "ALL"
             complexity = "complex"
         else:
@@ -205,7 +204,7 @@ def build_model(
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
         flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd)
 
-        head_filerecord = "{}.hds".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -298,7 +297,6 @@ def plot_results(silent=True):
 
         # plot the results
         for idx, ax in enumerate(axes):
-
             # extract heads and specific discharge for newton model
             head = hobj.get_data(totim=times[idx])
             head = get_water_table(head, bot)
@@ -311,7 +309,7 @@ def plot_results(silent=True):
             diff = np.abs(head - head1)
             # print("max", diff.max(), np.argmax(diff))
             me = diff.sum() / float(ncol * nrow)
-            me_text = "Mean absolute water-table error {:.3f} feet".format(me)
+            me_text = f"Mean absolute water-table error {me:.3f} feet"
 
             ax.set_xlim(extents[:2])
             ax.set_ylim(extents[2:])
@@ -394,7 +392,7 @@ def plot_results(silent=True):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-01{}".format(sim_name, config.figure_ext),
+                f"{sim_name}-01{config.figure_ext}",
             )
             fig.savefig(fpth)
 
@@ -417,7 +415,7 @@ def simulation(idx, silent=True):
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(key)
+    assert success, f"could not run...{key}"
 
 
 # nosetest - exclude block from this nosetest to the next nosetest

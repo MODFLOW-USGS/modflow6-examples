@@ -11,8 +11,9 @@
 
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Append to system path to include the common subdirectory
@@ -88,7 +89,7 @@ nrow = 1  # Number of rows
 ncol = 101  # Number of columns
 period1 = 160  # Length of period 1 ($s$)
 period2 = 1340  # Length of period 2 ($s$)
-delta_time = 1.0 # Length of time steps ($s$)
+delta_time = 1.0  # Length of time steps ($s$)
 delr = 0.16  # Column width ($cm$)
 delc = 0.16  # Row width ($cm$)
 top = 1.0  # Top of the model ($cm$)
@@ -113,19 +114,15 @@ system_length = ncol * delr
 
 
 def build_mf6gwf(sim_folder):
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     htol = 1.0e-8
     flopy.mf6.ModflowIms(
         sim, print_option="summary", outer_dvclose=htol, inner_dvclose=htol
@@ -173,8 +170,8 @@ def build_mf6gwf(sim_folder):
         pname="WEL-1",
         auxiliary=["CONCENTRATION"],
     )
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -190,19 +187,15 @@ def build_mf6gwf(sim_folder):
 def build_mf6gwt(
     sim_folder, sorption=None, Kf=None, a=None, Kl=None, S=None, beta=None
 ):
-    print("Building mf6gwt model...{}".format(sim_folder))
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     ctol = 1.0e-8
     flopy.mf6.ModflowIms(
         sim,
@@ -234,7 +227,7 @@ def build_mf6gwt(
         sp2 = a
     if S is not None:
         sp2 = S
-    volfracim = 0.
+    volfracim = 0.0
     if beta is not None:
         if beta > 0:
             volfracim = bulk_density / (bulk_density + porosity)
@@ -248,25 +241,22 @@ def build_mf6gwt(
         sp2=sp2,
     )
     flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=dispersivity, ath1=dispersivity
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=dispersivity, ath1=dispersivity)
     if beta is not None:
         if beta > 0:
             porosity_im = bulk_density / volfracim
-            flopy.mf6.ModflowGwtist(gwt,
-                                    volfrac=volfracim,
-                                    porosity=porosity_im,
-                                    zetaim=beta)
+            flopy.mf6.ModflowGwtist(
+                gwt, volfrac=volfracim, porosity=porosity_im, zetaim=beta
+            )
     pd = [
-        ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
+        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
     sourcerecarray = [["WEL-1", "AUX", "CONCENTRATION"]]
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obs_data = {
-        "{}.obs.csv".format(name): [
+        f"{name}.obs.csv": [
             ("X008", "CONCENTRATION", (0, 0, 50)),
         ],
     }
@@ -275,8 +265,8 @@ def build_mf6gwt(
     )
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(name),
-        concentration_filerecord="{}.ucn".format(name),
+        budget_filerecord=f"{name}.cbc",
+        concentration_filerecord=f"{name}.ucn",
         saverecord=[("CONCENTRATION", "ALL"), ("BUDGET", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -284,7 +274,7 @@ def build_mf6gwt(
 
 
 def build_mf2005(sim_folder):
-    print("Building mf2005 model...{}".format(sim_folder))
+    print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(
@@ -327,7 +317,7 @@ def build_mt3dms(
     S=None,
     beta=None,
 ):
-    print("Building mt3dms model...{}".format(sim_folder))
+    print(f"Building mt3dms model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mt3d")
     mt = flopy.mt3d.Mt3dms(
@@ -434,9 +424,7 @@ def plot_results_ct(sims, idx, **kwargs):
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
 
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.OBS")
@@ -472,7 +460,7 @@ def plot_results_ct(sims, idx, **kwargs):
         if config.plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-ct{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-ct{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -482,14 +470,11 @@ def plot_results():
         print("Plotting model results...")
 
         fs = USGSFigure(figure_type="graph", verbose=False)
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
 
         case_colors = ["blue", "green", "red", "yellow"]
         pkeys = list(parameters.keys())
         for icase, sim_name in enumerate(pkeys[2:]):
-
             sim_ws = os.path.join(ws, sim_name)
             beta = parameters[sim_name]["beta"]
 
@@ -513,7 +498,7 @@ def plot_results():
                 mt3dms_ra["time"],
                 mt3dms_ra["(1, 1, 51)"] / source_concentration,
                 color=case_colors[icase],
-                label="beta {}".format(beta),
+                label=f"beta {beta}",
             )
 
         axs.set_ylim(0, 1)
@@ -523,7 +508,7 @@ def plot_results():
 
         # save figure
         if config.plotSave:
-            fname = "{}{}".format(example_name, config.figure_ext)
+            fname = f"{example_name}{config.figure_ext}"
             fpth = os.path.join("..", "figures", fname)
             fig.savefig(fpth)
     return

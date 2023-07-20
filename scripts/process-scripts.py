@@ -1,7 +1,8 @@
 import ast
 import os
-import sys
 import re
+import sys
+
 import flopy
 
 sys.path.append(os.path.join("..", "common"))
@@ -12,11 +13,7 @@ ex_pth = os.path.join("..", "examples")
 
 # only process python files starting with ex_
 files = sorted(
-    [
-        file
-        for file in os.listdir()
-        if file.endswith(".py") and file.startswith("ex-")
-    ]
+    [file for file in os.listdir() if file.endswith(".py") and file.startswith("ex-")]
 )
 
 
@@ -43,9 +40,7 @@ def make_notebooks():
         for idx, line in enumerate(lines):
             # exclude if __name__ == "main"
             if "if __name__" in line:
-                modifyIndent = len(lines[idx + 1]) - len(
-                    lines[idx + 1].lstrip(" ")
-                )
+                modifyIndent = len(lines[idx + 1]) - len(lines[idx + 1].lstrip(" "))
                 continue
 
             # exclude nosetest functions
@@ -57,7 +52,7 @@ def make_notebooks():
                     skip = True
             if skip:
                 continue
-            f.write("{}\n".format(line[modifyIndent:]))
+            f.write(f"{line[modifyIndent:]}\n")
         f.close()
 
         # convert temporary python file to a notebook
@@ -89,9 +84,7 @@ def table_standard_header(caption, label):
         "Parameter",
         "Value",
     )
-    return bt.get_header(
-        caption, label, headings, col_widths=col_widths, center=False
-    )
+    return bt.get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_scenario_header(caption, label):
@@ -107,9 +100,7 @@ def table_scenario_header(caption, label):
         "Parameter",
         "Value",
     )
-    return bt.get_header(
-        caption, label, headings, col_widths=col_widths, center=False
-    )
+    return bt.get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_footer():
@@ -122,10 +113,8 @@ def make_tables():
         os.makedirs(tab_pth)
 
     for file in files:
-        print("processing...'{}'".format(file))
-        basename = os.path.splitext(os.path.basename(file))[0].replace(
-            "_", "-"
-        )
+        print(f"processing...'{file}'")
+        basename = os.path.splitext(os.path.basename(file))[0].replace("_", "-")
         # do a little processing
         with open(file) as f:
             txt = f.read()
@@ -158,9 +147,9 @@ def make_tables():
 
         # create scenario table if parameters are specified in the script
         if parameters is not None:
-            tab_name = "{}-scenario".format(basename)
-            caption = "Scenario parameters for example {}.".format(basename)
-            label = "tab:{}".format(tab_name)
+            tab_name = f"{basename}-scenario"
+            caption = f"Scenario parameters for example {basename}."
+            label = f"tab:{tab_name}"
             fpth = os.path.join(tab_pth, tab_name + ".tex")
             f = open(fpth, "w")
 
@@ -173,19 +162,17 @@ def make_tables():
                 else:
                     row_color = ""
                 scenario_count += 1
-                table_line = "{} & {} & ".format(scenario_count, scenario_name)
+                table_line = f"{scenario_count} & {scenario_name} & "
                 for text, value in value_dict.items():
                     text_to_write = text.replace("_", "~")
                     units = ""
                     if parameter_units is not None:
                         try:
-                            units = " ({})".format(parameter_units[text])
+                            units = f" ({parameter_units[text]})"
                         except:
                             units = " (unknown)"
                     if len(table_line) > 0:
-                        table_line += "\t{}{} & {}".format(
-                            text_to_write, units, value
-                        )
+                        table_line += "\t{}{} & {}".format(text_to_write, units, value)
                     else:
                         table_line = "\t& & {}{} & {}".format(
                             text_to_write, units, value
@@ -237,9 +224,9 @@ def make_tables():
                     table_value.append(value)
             if not scanning_table and len(table_text) > 0:
                 table_number += 1
-                tab_name = "{}-{:02d}".format(basename, table_number)
-                caption = "Model parameters for example {}.".format(basename)
-                label = "tab:{}".format(tab_name)
+                tab_name = f"{basename}-{table_number:02d}"
+                caption = f"Model parameters for example {basename}."
+                label = f"tab:{tab_name}"
                 fpth = os.path.join(tab_pth, tab_name + ".tex")
                 f = open(fpth, "w")
 
@@ -250,7 +237,7 @@ def make_tables():
                 for text, value in zip(table_text, table_value):
                     if line_count % 2 != 0:
                         f.write("\t\\rowcolor{Gray}\n")
-                    f.write("\t{} & {} \\\\\n".format(text, value))
+                    f.write(f"\t{text} & {value} \\\\\n")
                     line_count += 1
 
                 # write footer
@@ -323,19 +310,16 @@ def get_examples_dict(verbose=False):
         rootDir = os.path.join(ex_pth, ex_name)
         for dirName, subdirList, fileList in os.walk(rootDir):
             if verbose:
-                print("Found directory: {}".format(dirName))
+                print(f"Found directory: {dirName}")
             for file_name in fileList:
                 if file_name.lower() == "mfsim.nam":
                     if verbose:
                         msg = (
-                            "  Found MODFLOW 6 simulation "
-                            + "name file: {}".format(file_name)
+                            "  Found MODFLOW 6 simulation " + f"name file: {file_name}"
                         )
                         print(msg)
                     print(f"Using flopy to load {dirName}")
-                    sim = flopy.mf6.MFSimulation.load(
-                        sim_ws=dirName, verbosity_level=0
-                    )
+                    sim = flopy.mf6.MFSimulation.load(sim_ws=dirName, verbosity_level=0)
                     sim_paks = []
                     for pak in sim.sim_package_list:
                         pak_type = pak.package_abbr
@@ -392,9 +376,7 @@ def build_md_tables(ex_dict):
     for ex_name in ex_paks.keys():
         for ex_root in ex_order:
             if ex_root in ex_name:
-                pak_link[ex_name] = "[{}](_examples/{}.html)".format(
-                    ex_name, ex_root
-                )
+                pak_link[ex_name] = "[{}](_examples/{}.html)".format(ex_name, ex_root)
                 break
         if ex_name not in list(pak_link.keys()):
             pak_link[ex_name] = ex_name
@@ -451,8 +433,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
 
@@ -464,8 +446,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
 
@@ -479,8 +461,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
 
@@ -500,8 +482,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
 
@@ -516,8 +498,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
 
@@ -532,8 +514,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer + "\n\n"
     f.write(line)
 
@@ -546,8 +528,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
 
@@ -562,8 +544,8 @@ def build_md_tables(ex_dict):
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
-            line += "| [{}]({}{}) |".format(pak.upper(), rtd_link, value)
-            line += " {} |\n".format(join_fmt.join(pak_dict[pak]))
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
 
@@ -577,9 +559,7 @@ def build_tex_tables(ex_dict):
     for idx, ex in enumerate(ex_order):
         for key, d in ex_dict.items():
             if ex in key:
-                ex_number = [idx + 1] + [
-                    " " for i in range(len(d["paks"]) - 1)
-                ]
+                ex_number = [idx + 1] + [" " for i in range(len(d["paks"]) - 1)]
                 d["ex_number"] = ex_number
                 ex_tex[key] = d
 
@@ -642,15 +622,15 @@ def build_tex_tables(ex_dict):
             lines += "\t\t"
             if include_idx:
                 include_idx = False
-                lines += "{} & ".format(ex_number)
+                lines += f"{ex_number} & "
             else:
                 lines += " & "
             if jdx == 0:
-                lines += "{} & ".format(key)
+                lines += f"{key} & "
             else:
                 lines += " & "
             lines += " {} & ".format(namefile.replace("_", "\\_"))
-            lines += " {} & ".format(dimensions)
+            lines += f" {dimensions} & "
 
             # packages
             pak_line = []

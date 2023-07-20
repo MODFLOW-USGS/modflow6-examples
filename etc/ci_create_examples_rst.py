@@ -1,7 +1,7 @@
 import os
 import re
 import shutil
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 # check that pandoc is available and the version is sufficient
 args = ("pandoc", "--version")
@@ -24,7 +24,7 @@ if stderr:
 if len(msg) > 0:
     raise RuntimeError(msg)
 else:
-    print("\npandoc version: {}\n".format(t))
+    print(f"\npandoc version: {t}\n")
 
 # get list of examples from body.text
 ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
@@ -45,7 +45,7 @@ for name in sorted(os.listdir(ex_pth)):
 
 # create examples rst
 pth = os.path.join("..", ".doc", "examples.rst")
-print("creating...'{}'".format(pth))
+print(f"creating...'{pth}'")
 f = open(pth, "w")
 line = "============================\n"
 line += "MODFLOW 6 – Example problems\n"
@@ -54,20 +54,20 @@ line += ".. toctree::\n"
 line += "   :numbered:\n"
 line += "   :maxdepth: 1\n\n"
 for ex in ex_list:
-    line += "   _examples/{}.rst\n".format(ex)
+    line += f"   _examples/{ex}.rst\n"
 f.write(line)
 f.close()
 
 # create rtd examples directory
 dst = os.path.join("..", ".doc", "_examples")
-print("cleaning and creating...'{}'".format(dst))
+print(f"cleaning and creating...'{dst}'")
 if os.path.isdir(dst):
     shutil.rmtree(dst)
 os.makedirs(dst, exist_ok=True)
 
 # read base latex file
 pth = os.path.join("..", "doc", "mf6examples.tex")
-print("reading...'{}'".format(pth))
+print(f"reading...'{pth}'")
 with open(pth) as f:
     orig_latex = f.readlines()
 
@@ -75,12 +75,12 @@ latex_tag = "\\input{./body.tex}"
 frontmatter_tag = "\\input{./frontmatter.tex}"
 doc_pth = os.path.join("..", "doc")
 for ex in ex_list:
-    print("creating restructured text file for {} example".format(ex))
+    print(f"creating restructured text file for {ex} example")
     src = os.path.join("..", "doc", "ex.tex")
     f = open(src, "w")
     for line in orig_latex:
         if latex_tag in line:
-            new_tag = "\\input{{sections/{}.tex}}".format(ex)
+            new_tag = f"\\input{{sections/{ex}.tex}}"
             line = line.replace(latex_tag, new_tag)
         elif frontmatter_tag in line:
             line = line.replace(frontmatter_tag, "")
@@ -88,8 +88,8 @@ for ex in ex_list:
     f.close()
 
     # create restructured text file for example using using pandoc
-    dst = os.path.join("..", ".doc", "_examples", "{}.rst".format(ex))
-    print("running pandoc to create {}".format(dst))
+    dst = os.path.join("..", ".doc", "_examples", f"{ex}.rst")
+    print(f"running pandoc to create {dst}")
     args = (
         "pandoc",
         "-s",
@@ -114,8 +114,8 @@ for ex in ex_list:
         print("Errors:\n{}".format(stderr.decode("utf-8")))
 
     # read restructured text file as a string
-    print("reading...'{}'".format(dst))
-    with open(dst, "r") as file:
+    print(f"reading...'{dst}'")
+    with open(dst) as file:
         lines = file.read()
 
     # find equation labels in lines
@@ -123,7 +123,7 @@ for ex in ex_list:
     replace_eq_labels = {}
     eq_labels = []
     for v in ex_regex.findall(lines):
-        tag = "\\label{{{}}}".format(v)
+        tag = f"\\label{{{v}}}"
         label = "   :label: {}".format(v.replace(":", "-"))
         eq_labels.append(label)
         tag = "`[{0}] <#{0}>`__".format(v)
@@ -134,18 +134,18 @@ for ex in ex_list:
     ex_tag = re.compile("\\#(.*?)\\>")
     fig_tab_refs = {}
     for v in ex_regex.findall(lines):
-        tag0 = "`{}`__".format(v)
+        tag0 = f"`{v}`__"
         for tag in ex_tag.findall(tag0):
             if tag0 not in list(fig_tab_refs.keys()):
-                fig_tab_refs[tag0] = ":numref:`{}`".format(tag)
+                fig_tab_refs[tag0] = f":numref:`{tag}`"
 
     # read restructured text file for example
-    print("reading...'{}'".format(dst))
+    print(f"reading...'{dst}'")
     with open(dst) as f:
         lines = f.readlines()
 
     # editing restructured text file for example
-    print("editing...'{}'".format(dst))
+    print(f"editing...'{dst}'")
     f = open(dst, "w")
 
     write_line = True
@@ -186,7 +186,7 @@ for ex in ex_list:
 
         tag = ".. math::"
         if tag in line:
-            line = "{}\n{}\n".format(tag, eq_labels[eq_no])
+            line = f"{tag}\n{eq_labels[eq_no]}\n"
             eq_no += 1
 
         tag = ".. figure:: ../figures/"
@@ -243,7 +243,7 @@ for ex in ex_list:
 
         tag = ".. table::"
         if tag in line:
-            line = ".. _{}:\n\n".format(table_name) + line.lstrip() + "\n"
+            line = f".. _{table_name}:\n\n" + line.lstrip() + "\n"
 
         tag = ".. container:: references"
         if tag in line:
@@ -281,12 +281,12 @@ for ex in ex_list:
     # Check to see if there is a gif with the same name as the example name
     # (e.g. ex-gwt-saltlake.gif) and if so, then assume this is an animated
     # gif and add an Animation section to the restructured text file
-    fname = "{}.gif".format(ex)
+    fname = f"{ex}.gif"
     if fname in os.listdir("../figures"):
         line = "\n\nAnimation\n"
         line += "----------------\n\n"
         line += "Animation of model results:\n\n"
-        line += ".. image:: ../_images/{}".format(fname)
+        line += f".. image:: ../_images/{fname}"
     line += "\n"
 
     # Write the restructured text lines and close the file
@@ -315,7 +315,7 @@ for ex in ex_list:
 
 # create rtd figure directory
 dst = os.path.join("..", ".doc", "_images")
-print("cleaning and creating...'{}'".format(dst))
+print(f"cleaning and creating...'{dst}'")
 if os.path.isdir(dst):
     shutil.rmtree(dst)
 os.makedirs(dst, exist_ok=True)
@@ -331,5 +331,5 @@ for src_dir in src_dirs:
     ]
     for file_name in file_names:
         src = os.path.join(src_dir, file_name)
-        print("copy '{}' -> '{}' directory".format(src, dst))
+        print(f"copy '{src}' -> '{dst}' directory")
         shutil.copy2(src, dst)

@@ -13,13 +13,14 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from shapely.geometry import Polygon
+
 import flopy
 import flopy.utils.cvfdutil
-from flopy.utils.gridintersect import GridIntersect
+import matplotlib.pyplot as plt
+import numpy as np
 from flopy.utils.geometry import get_polygon_area
+from flopy.utils.gridintersect import GridIntersect
+from shapely.geometry import Polygon
 
 # Append to system path to include the common subdirectory
 
@@ -72,8 +73,9 @@ botm = [float(value) for value in botm_str.split(",")]
 
 # create the disv grid
 
+
 def from_argus_export(fname):
-    f = open(fname, "r")
+    f = open(fname)
     line = f.readline()
     ll = line.split()
     ncells, nverts = ll[0:2]
@@ -138,9 +140,7 @@ def build_model(sim_name):
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -148,7 +148,7 @@ def build_model(sim_name):
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdisv(
@@ -184,25 +184,23 @@ def build_model(sim_name):
         ghb_cellids = np.array(result["cellids"], dtype=int)
 
         ghb_spd = []
-        ghb_spd += [
-            [0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids
-        ]
+        ghb_spd += [[0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids]
         ghb_spd = {0: ghb_spd}
         flopy.mf6.ModflowGwfghb(
-            gwf, stress_period_data=ghb_spd, pname="GHB",
+            gwf,
+            stress_period_data=ghb_spd,
+            pname="GHB",
         )
 
         ncpl = gridprops["ncpl"]
         rchcells = np.array(list(range(ncpl)), dtype=int)
         rchcells[ghb_cellids] = -1
-        rch_spd = [
-            (0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0
-        ]
+        rch_spd = [(0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0]
         rch_spd = {0: rch_spd}
         flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd, pname="RCH")
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -256,9 +254,7 @@ def plot_grid(idx, sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
         fig.savefig(fpth)
     return
 
@@ -283,7 +279,10 @@ def plot_head(idx, sim):
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
     cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
     pmv.plot_vector(
-        qx, qy, normalize=False, color="0.75",
+        qx,
+        qy,
+        normalize=False,
+        color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")
@@ -295,7 +294,10 @@ def plot_head(idx, sim):
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
     cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
     pmv.plot_vector(
-        qx, qy, normalize=False, color="0.75",
+        qx,
+        qy,
+        normalize=False,
+        color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")
@@ -305,9 +307,7 @@ def plot_head(idx, sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-head{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-head{config.figure_ext}")
         fig.savefig(fpth)
     return
 

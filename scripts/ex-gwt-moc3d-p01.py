@@ -11,8 +11,9 @@
 
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Append to system path to include the common subdirectory
@@ -135,16 +136,12 @@ def get_decay_dict(decay_rate, sorption=False):
 
 
 def build_mf6gwf(sim_folder):
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -182,8 +179,8 @@ def build_mf6gwf(sim_folder):
         pname="WEL-1",
         auxiliary=["CONCENTRATION"],
     )
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -196,19 +193,13 @@ def build_mf6gwf(sim_folder):
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 
 
-def build_mf6gwt(
-    sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate
-):
-    print("Building mf6gwt model...{}".format(sim_folder))
+def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate):
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((total_time, 240, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -237,7 +228,7 @@ def build_mf6gwt(
         ath1=longitudinal_dispersivity,
     )
     pd = [
-        ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
+        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
@@ -245,7 +236,7 @@ def build_mf6gwt(
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     # flopy.mf6.ModflowGwtcnc(gwt, stress_period_data=[((0, 0, 0), source_concentration),])
     obs_data = {
-        "{}.obs.csv".format(name): [
+        f"{name}.obs.csv": [
             ("X005", "CONCENTRATION", (0, 0, 0)),
             ("X405", "CONCENTRATION", (0, 0, 40)),
             ("X1105", "CONCENTRATION", (0, 0, 110)),
@@ -256,17 +247,15 @@ def build_mf6gwt(
     )
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(name),
-        concentration_filerecord="{}.ucn".format(name),
+        budget_filerecord=f"{name}.cbc",
+        concentration_filerecord=f"{name}.ucn",
         saverecord=[("CONCENTRATION", "ALL"), ("BUDGET", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
     return sim
 
 
-def build_model(
-    sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
-):
+def build_model(sim_name, longitudinal_dispersivity, retardation_factor, decay_rate):
     sims = None
     if config.buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
@@ -320,9 +309,7 @@ def plot_results_ct(
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         alabel = ["ANALYTICAL", "", ""]
         mlabel = ["MODFLOW 6", "", ""]
         iskip = 5
@@ -351,9 +338,7 @@ def plot_results_ct(
                     idx_filter = atimes > 79
             elif idx > 0:
                 idx_filter = atimes > 0
-            axs.plot(
-                atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i]
-            )
+            axs.plot(atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i])
             axs.plot(
                 simtimes[::iskip],
                 mf6gwt_ra[obsnames[i]][::iskip],
@@ -378,7 +363,7 @@ def plot_results_ct(
         if config.plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-ct{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-ct{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -393,9 +378,7 @@ def plot_results_cd(
 
         ucnobj_mf6 = sim_mf6gwt.trans.output.concentration()
 
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         alabel = ["ANALYTICAL", "", ""]
         mlabel = ["MODFLOW 6", "", ""]
         iskip = 5
@@ -448,7 +431,7 @@ def plot_results_cd(
             sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-cd{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-cd{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 

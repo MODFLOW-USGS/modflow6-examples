@@ -11,8 +11,9 @@
 
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Append to system path to include the common subdirectory
@@ -135,13 +136,9 @@ def get_stream_data():
         iseg = row["seg"] - 1
         rgrd = segment_gradients[iseg]
         emax, emin = emaxmin[iseg]
-        rtp = (
-            distance_along_segment[ireach]
-            / segment_lengths[iseg]
-            * (emax - emin)
-        )
+        rtp = distance_along_segment[ireach] / segment_lengths[iseg] * (emax - emin)
         rtp = emax - rtp
-        boundname = "SEG{}".format(iseg + 1)
+        boundname = f"SEG{iseg + 1}"
         rec = (
             ireach,
             (k, i, j),
@@ -164,12 +161,10 @@ def get_stream_data():
 
 def build_mf6gwf(sim_folder):
     global idomain
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_data = [(total_time, 1, 1.0)]
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_data), perioddata=tdis_data, time_units=time_units
@@ -205,8 +200,8 @@ def build_mf6gwf(sim_folder):
         k33=vk,
     )
     flopy.mf6.ModflowGwfic(gwf, strt=50.0)
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -217,7 +212,7 @@ def build_mf6gwf(sim_folder):
 
     chdlist = []
     fname = os.path.join(data_ws, "chd.dat")
-    for line in open(fname, "r").readlines():
+    for line in open(fname).readlines():
         ll = line.strip().split()
         if len(ll) == 4:
             k, i, j, hd = ll
@@ -253,9 +248,7 @@ def build_mf6gwf(sim_folder):
         [1, 35.2, lakepakdata_dict[1], "lake2"],
     ]
     # <outletno> <lakein> <lakeout> <couttype> <invert> <width> <rough> <slope>
-    outlets = [
-        [0, 0, -1, "MANNING", 44.5, 3.36493214532915, 0.03, 0.2187500e-02]
-    ]
+    outlets = [[0, 0, -1, "MANNING", 44.5, 3.36493214532915, 0.03, 0.2187500e-02]]
     flopy.mf6.ModflowGwflak(
         gwf,
         time_conversion=86400.000,
@@ -327,12 +320,10 @@ def build_mf6gwf(sim_folder):
 
 
 def build_mf6gwt(sim_folder):
-    print("Building mf6gwt model...{}".format(sim_folder))
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_data = ((total_time, 300, 1.0),)
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_data), perioddata=tdis_data, time_units=time_units
@@ -428,7 +419,7 @@ def build_mf6gwt(sim_folder):
     nreach = 38
     sftpackagedata = []
     for irno in range(nreach):
-        t = (irno, 0.0, 99.0, 999.0, "myreach{}".format(irno + 1))
+        t = (irno, 0.0, 99.0, 999.0, f"myreach{irno + 1}")
         sftpackagedata.append(t)
 
     sftperioddata = [
@@ -437,8 +428,7 @@ def build_mf6gwt(sim_folder):
 
     sft_obs = {
         (name + ".sft.obs.csv",): [
-            ("sft{}conc".format(i + 1), "CONCENTRATION", i + 1)
-            for i in range(nreach)
+            (f"sft{i + 1}conc", "CONCENTRATION", i + 1) for i in range(nreach)
         ]
     }
     # append additional obs attributes to obs dictionary
@@ -475,8 +465,8 @@ def build_mf6gwt(sim_folder):
 
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.bud".format(name),
-        concentration_filerecord="{}.ucn".format(name),
+        budget_filerecord=f"{name}.bud",
+        concentration_filerecord=f"{name}.ucn",
         concentrationprintrecord=[
             ("COLUMNS", ncol, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
@@ -566,9 +556,7 @@ def plot_gwf_results(sims):
             lake_stage = stage[ilak]
             head[0, i, j] = lake_stage
 
-        fig, axs = plt.subplots(
-            1, 2, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 2, figsize=figure_size, dpi=300, tight_layout=True)
 
         for ilay in [0, 1]:
             ax = axs[ilay]
@@ -582,7 +570,7 @@ def plot_gwf_results(sims):
                 masked_values=[1.0e30],
             )
             ax.clabel(cs, cs.levels[::5], fmt="%1.0f", colors="b")
-            title = "Model Layer {}".format(ilay + 1)
+            title = f"Model Layer {ilay + 1}"
             letter = chr(ord("@") + ilay + 1)
             fs.heading(letter=letter, heading=title, ax=ax)
 
@@ -590,7 +578,7 @@ def plot_gwf_results(sims):
         if config.plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-head{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-head{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -614,9 +602,7 @@ def plot_gwt_results(sims):
             lake_conc = lakconc[ilak]
             conc[0, i, j] = lake_conc
 
-        fig, axs = plt.subplots(
-            2, 2, figsize=(5, 7), dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(2, 2, figsize=(5, 7), dpi=300, tight_layout=True)
 
         for iplot, ilay in enumerate([0, 2, 4, 7]):
             ax = axs.flatten()[iplot]
@@ -645,7 +631,7 @@ def plot_gwt_results(sims):
                 masked_values=[1.0e30],
             )
             ax.clabel(cs, cs.levels[::1], fmt="%1.0f", colors="b")
-            title = "Model Layer {}".format(ilay + 1)
+            title = f"Model Layer {ilay + 1}"
             letter = chr(ord("@") + iplot + 1)
             fs.heading(letter=letter, heading=title, ax=ax)
 
@@ -653,7 +639,7 @@ def plot_gwt_results(sims):
         if config.plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-conc{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-conc{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -664,14 +650,10 @@ def plot_gwt_results(sims):
         times = bobj.times
 
         fs = USGSFigure(figure_type="graph", verbose=False)
-        fig, axs = plt.subplots(
-            1, 1, figsize=(5, 3), dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=(5, 3), dpi=300, tight_layout=True)
         ax = axs
         times = np.array(times) / 365.0
-        ax.plot(
-            times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2"
-        )
+        ax.plot(times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2")
         ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
         ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
 
@@ -691,15 +673,13 @@ def plot_gwt_results(sims):
         ax.set_ylim(0, 50)
         ax.set_xlim(0, 25)
         ax.set_xlabel("TIME, IN YEARS")
-        ax.set_ylabel(
-            "SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER"
-        )
+        ax.set_ylabel("SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER")
 
         # save figure
         if config.plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-cvt{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-cvt{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 

@@ -1,13 +1,13 @@
 import sys
-import numpy as np
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class USGSFigure:
     def __init__(
-            self, figure_type="map", family="Arial Narrow", font_path=None,
-            verbose=False
+        self, figure_type="map", family="Arial Narrow", font_path=None, verbose=False
     ):
         """Create a USGSFigure object
 
@@ -192,18 +192,18 @@ class USGSFigure:
         return text
 
     def add_text(
-            self,
-            ax=None,
-            text="",
-            x=0.0,
-            y=0.0,
-            transform=True,
-            bold=True,
-            italic=True,
-            fontsize=9,
-            ha="left",
-            va="bottom",
-            **kwargs
+        self,
+        ax=None,
+        text="",
+        x=0.0,
+        y=0.0,
+        transform=True,
+        bold=True,
+        italic=True,
+        fontsize=9,
+        ha="left",
+        va="bottom",
+        **kwargs,
     ):
         """Add USGS-style text to a axis object
 
@@ -256,17 +256,17 @@ class USGSFigure:
         return text_obj
 
     def add_annotation(
-            self,
-            ax=None,
-            text="",
-            xy=None,
-            xytext=None,
-            bold=True,
-            italic=True,
-            fontsize=9,
-            ha="left",
-            va="bottom",
-            **kwargs
+        self,
+        ax=None,
+        text="",
+        xy=None,
+        xytext=None,
+        bold=True,
+        italic=True,
+        fontsize=9,
+        ha="left",
+        va="bottom",
+        **kwargs,
     ):
         """Add an annotation to a axis object
 
@@ -557,7 +557,7 @@ class USGSFigure:
         if self.verbose:
             sys.stdout.write("font specifications:\n ")
             for key, value in fontspec.items():
-                sys.stdout.write("{}={} ".format(key, value))
+                sys.stdout.write(f"{key}={value} ")
             sys.stdout.write("\n")
 
         return fontspec

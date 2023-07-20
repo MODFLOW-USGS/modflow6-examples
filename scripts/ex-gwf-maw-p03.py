@@ -9,9 +9,10 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -26,9 +27,7 @@ from figspecs import USGSFigure
 
 figure_size = (6.3, 4.3)
 masked_values = (0, 1e30, -1e30)
-arrow_props = dict(
-    facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1
-)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1)
 
 # Base simulation and model name and workspace
 
@@ -166,7 +165,7 @@ obs_elev = {}
 maw_conn = []
 gwf_obs = []
 for k in range(maw_lay[0], maw_lay[1] + 1, 1):
-    gwf_obs.append(["H0_{}".format(k), "HEAD", (k, i, j)])
+    gwf_obs.append([f"H0_{k}", "HEAD", (k, i, j)])
 maw_obs = [
     ["H0", "HEAD", (0,)],
 ]
@@ -180,7 +179,7 @@ for k in range(maw_lay[0], maw_lay[1] + 1, 1):
         l2 = 2.5
         cond = calc_cond(area, l1, l2, k33, maw_highK)
         maw_conn.append([0, iconn, k - 1, i, j, top, maw_bot, cond, -999.0])
-        tag = "Q{:02d}".format(iconn)
+        tag = f"Q{iconn:02d}"
         obs_elev[tag] = z
         maw_obs.append([tag, "maw", (0,), (iconn,)])
         gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k - 1, i, j)])
@@ -193,7 +192,7 @@ for k in range(maw_lay[0], maw_lay[1] + 1, 1):
     l2 = 0.5 * delr[j - 1]
     cond = calc_cond(area, l1, l2, maw_highK, k11)
     maw_conn.append([0, iconn, k, i, j - 1, top, maw_bot, cond, -999.0])
-    tag = "Q{:02d}".format(iconn)
+    tag = f"Q{iconn:02d}"
     obs_elev[tag] = z
     maw_obs.append([tag, "maw", (0,), (iconn,)])
     gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k, i, j - 1)])
@@ -205,7 +204,7 @@ for k in range(maw_lay[0], maw_lay[1] + 1, 1):
     l2 = 0.5 * delc[i - 1]
     cond = calc_cond(area, l1, l2, maw_highK, k11)
     maw_conn.append([0, iconn, k, i - 1, j, top, maw_bot, cond, -999.0])
-    tag = "Q{:02d}".format(iconn)
+    tag = f"Q{iconn:02d}"
     obs_elev[tag] = z
     maw_obs.append([tag, "maw", (0,), (iconn,)])
     gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k, i - 1, j)])
@@ -217,7 +216,7 @@ for k in range(maw_lay[0], maw_lay[1] + 1, 1):
     l2 = 0.5 * delr[j + 1]
     cond = calc_cond(area, l1, l2, maw_highK, k11)
     maw_conn.append([0, iconn, k, i, j + 1, top, maw_bot, cond, -999.0])
-    tag = "Q{:02d}".format(iconn)
+    tag = f"Q{iconn:02d}"
     obs_elev[tag] = z
     maw_obs.append([tag, "maw", (0,), (iconn,)])
     gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k, i, j + 1)])
@@ -232,7 +231,7 @@ for k in range(maw_lay[0], maw_lay[1] + 1, 1):
         l2 = 2.5
         cond = calc_cond(area, l1, l2, maw_highK, k33)
         maw_conn.append([0, iconn, k + 1, i, j, top, maw_bot, cond, -999.0])
-        tag = "Q{:02d}".format(iconn)
+        tag = f"Q{iconn:02d}"
         obs_elev[tag] = z
         maw_obs.append([tag, "maw", (0,), (iconn,)])
         gwf_obs.append([tag, "flow-ja-face", (k, i, j), (k + 1, i, j)])
@@ -266,9 +265,7 @@ def build_regional(name):
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",
@@ -276,7 +273,7 @@ def build_regional(name):
         outer_dvclose=hclose,
         inner_maximum=ninner,
         inner_dvclose=hclose,
-        rcloserecord="{} strict".format(rclose),
+        rcloserecord=f"{rclose} strict",
     )
     botm = np.arange(-5, aq_bottom - 10.0, -10.0)
     icelltype = [1] + [0 for k in range(1, nlay_r)]
@@ -302,7 +299,7 @@ def build_regional(name):
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=[[0, 0, ncol_r - 1, 0.0]])
     flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
 
-    head_filerecord = "{}.hds".format(sim_name)
+    head_filerecord = f"{sim_name}.hds"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -316,7 +313,7 @@ def build_regional(name):
 def build_local(name, simulation):
     # get regional heads for constant head boundaries
     pth = list(parameters.keys())[0]
-    fpth = os.path.join(ws, pth, "{}.hds".format(sim_name))
+    fpth = os.path.join(ws, pth, f"{sim_name}.hds")
     try:
         h = flopy.utils.HeadFile(fpth).get_data()
     except:
@@ -346,9 +343,7 @@ def build_local(name, simulation):
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",
@@ -356,7 +351,7 @@ def build_local(name, simulation):
         outer_dvclose=hclose,
         inner_maximum=ninner,
         inner_dvclose=hclose,
-        rcloserecord="{} strict".format(rclose),
+        rcloserecord=f"{rclose} strict",
     )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
 
@@ -409,22 +404,22 @@ def build_local(name, simulation):
             packagedata=maw_packagedata,
             connectiondata=maw_conn,
         )
-        obs_file = "{}.maw.obs".format(sim_name)
+        obs_file = f"{sim_name}.maw.obs"
         csv_file = obs_file + ".csv"
         obs_dict = {csv_file: maw_obs}
         maw.obs.initialize(
             filename=obs_file, digits=10, print_input=True, continuous=obs_dict
         )
     else:
-        obs_file = "{}.gwf.obs".format(sim_name)
+        obs_file = f"{sim_name}.gwf.obs"
         csv_file = obs_file + ".csv"
         obsdict = {csv_file: gwf_obs}
         flopy.mf6.ModflowUtlobs(
             gwf, filename=obs_file, print_input=False, continuous=obsdict
         )
 
-    head_filerecord = "{}.hds".format(sim_name)
-    budget_filerecord = "{}.cbc".format(sim_name)
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -466,10 +461,10 @@ def plot_maw_results(silent=True):
 
     # load the observations
     name = list(parameters.keys())[1]
-    fpth = os.path.join(ws, name, "{}.maw.obs.csv".format(sim_name))
+    fpth = os.path.join(ws, name, f"{sim_name}.maw.obs.csv")
     maw = flopy.utils.Mf6Obs(fpth).data
     name = list(parameters.keys())[2]
-    fpth = os.path.join(ws, name, "{}.gwf.obs.csv".format(sim_name))
+    fpth = os.path.join(ws, name, f"{sim_name}.gwf.obs.csv")
     gwf = flopy.utils.Mf6Obs(fpth).data
 
     # process heads
@@ -508,10 +503,10 @@ def plot_maw_results(silent=True):
     q1 = np.array(list(results["gwf"].values()))
     mean_error = np.mean(q0 - q1)
     if silent:
-        print("total well inflow:  {}".format(q0[q0 >= 0].sum()))
-        print("total well outflow: {}".format(q0[q0 < 0].sum()))
-        print("total cell inflow:  {}".format(q1[q1 >= 0].sum()))
-        print("total cell outflow: {}".format(q1[q1 < 0].sum()))
+        print(f"total well inflow:  {q0[q0 >= 0].sum()}")
+        print(f"total well outflow: {q0[q0 < 0].sum()}")
+        print(f"total cell inflow:  {q1[q1 >= 0].sum()}")
+        print(f"total cell outflow: {q1[q1 < 0].sum()}")
 
     # create the figure
     fig, ax = plt.subplots(
@@ -560,7 +555,7 @@ def plot_maw_results(silent=True):
     fs.graph_legend(ax, loc="upper left", ncol=1, frameon=True)
     fs.add_text(
         ax,
-        "Mean Error {:.2e} cubic feet per day".format(mean_error),
+        f"Mean Error {mean_error:.2e} cubic feet per day",
         bold=False,
         italic=False,
         x=1.0,
@@ -578,7 +573,7 @@ def plot_maw_results(silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-01{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-01{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -706,7 +701,7 @@ def plot_regional_grid(silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-regional-grid{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-regional-grid{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -786,9 +781,7 @@ def plot_local_grid(silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.3f")
-    ax.fill_between(
-        px, py, y2=0, ec="none", fc="red", lw=0, zorder=200, step="post"
-    )
+    ax.fill_between(px, py, y2=0, ec="none", fc="red", lw=0, zorder=200, step="post")
     fs.add_annotation(
         ax,
         text="Well location",
@@ -844,7 +837,7 @@ def plot_local_grid(silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-local-grid{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-local-grid{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -878,7 +871,7 @@ def simulation(idx=0, silent=True):
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(sim_name)
+    assert success, f"could not run...{sim_name}"
 
 
 # nosetest - exclude block from this nosetest to the next nosetest

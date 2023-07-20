@@ -11,17 +11,17 @@ import os
 import sys
 
 sys.path.append(os.path.join("..", "common"))
+import config
+import flopy
+import flopy.utils.binaryfile as bf
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import sfr_uzf_mvr_support_funcs as sageBld
+from figspecs import USGSFigure
 
 # Imports
 
-import flopy
-import numpy as np
-import pandas as pd
-import config
-import matplotlib.pyplot as plt
-import flopy.utils.binaryfile as bf
-from figspecs import USGSFigure
 
 sys.path.append(os.path.join("..", "data", "ex-gwf-sagehen"))
 import sfr_static as sfrDat
@@ -165,16 +165,12 @@ for i in np.arange(0, top.shape[0]):
         # Don't add drains to sfr and chd cells:
         sfrCell_bool = (
             1
-            if len([itm for itm in sfrcells if itm[1] == i and itm[2] == j])
-            > 0
+            if len([itm for itm in sfrcells if itm[1] == i and itm[2] == j]) > 0
             else 0
         )
         chdCell_bool = (
             1
-            if len(
-                [itm for itm in listOfChdCoords if itm[1] == i and itm[2] == j]
-            )
-            > 0
+            if len([itm for itm in listOfChdCoords if itm[1] == i and itm[2] == j]) > 0
             else 0
         )
         if idomain1[i, j] and not sfrCell_bool and not chdCell_bool:
@@ -274,9 +270,7 @@ for t in range(num_ts):
                 pet = uz_ts["pet"].iloc[t]
                 extdp = uz_ts["rootdepth"].iloc[t]
                 extwc = uz_ts["extwc"].iloc[t]
-                spdx.append(
-                    [iuzno, finf, pet, extdp, extwc, ha, hroot, rootact]
-                )
+                spdx.append([iuzno, finf, pet, extdp, extwc, ha, hroot, rootact])
                 iuzno += 1
     uzf_perioddata.update({t: spdx})
 
@@ -287,9 +281,7 @@ for t in range(num_ts):
 # calculate an array that is the equivalent of the irunbnd array from the UZF1
 # package.  The MVR package will be used to establish these connection in MF6
 # since the IRUNBND functionality went away in the new MF6 framework.
-irunbnd = sageBld.determine_runoff_conns_4mvr(
-    dat_pth, top, idomain1, rchs, nrow, ncol
-)
+irunbnd = sageBld.determine_runoff_conns_4mvr(dat_pth, top, idomain1, rchs, nrow, ncol)
 
 iuzno = 0
 k = 0  # Hard-wire the layer no.
@@ -323,7 +315,6 @@ maxmvr = 10000  # Something arbitrarily high
 
 def build_model(sim_name, silent=False):
     if config.buildModel:
-
         # Instantiate the MODFLOW 6 simulation
         sim_ws = os.path.join(ws, example_name)
         sim = flopy.mf6.MFSimulation(
@@ -337,9 +328,7 @@ def build_model(sim_name, silent=False):
         tdis_rc = []
         for i in range(len(perlen)):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwfname = example_name
@@ -348,7 +337,7 @@ def build_model(sim_name, silent=False):
             modelname=gwfname,
             save_flows=True,
             newtonoptions="newton",
-            model_nam_file="{}.nam".format(gwfname),
+            model_nam_file=f"{gwfname}.nam",
         )
 
         # Instantiating MODFLOW 6 solver for flow model
@@ -370,7 +359,7 @@ def build_model(sim_name, silent=False):
             number_orthogonalizations=2,
             preconditioner_levels=8,
             preconditioner_drop_tolerance=0.001,
-            filename="{}.ims".format(gwfname),
+            filename=f"{gwfname}.ims",
         )
         sim.register_ims_package(imsgwf, [gwf.name])
 
@@ -385,13 +374,11 @@ def build_model(sim_name, silent=False):
             top=top,
             botm=bot1,
             idomain=idomain,
-            filename="{}.dis".format(gwfname),
+            filename=f"{gwfname}.dis",
         )
 
         # Instantiating MODFLOW 6 initial conditions package for flow model
-        flopy.mf6.ModflowGwfic(
-            gwf, strt=strt, filename="{}.ic".format(gwfname)
-        )
+        flopy.mf6.ModflowGwfic(gwf, strt=strt, filename=f"{gwfname}.ic")
 
         # Instantiating MODFLOW 6 node-property flow package
         flopy.mf6.ModflowGwfnpf(
@@ -402,7 +389,7 @@ def build_model(sim_name, silent=False):
             k=k11,
             k33=k33,
             save_specific_discharge=False,
-            filename="{}.npf".format(gwfname),
+            filename=f"{gwfname}.npf",
         )
 
         # Instantiate MODFLOW 6 storage package
@@ -413,17 +400,15 @@ def build_model(sim_name, silent=False):
             iconvert=iconvert,
             steady_state={0: True},
             transient={1: True},
-            filename="{}.sto".format(gwfname),
+            filename=f"{gwfname}.sto",
         )
 
         # Instantiating MODFLOW 6 output control package for flow model
         flopy.mf6.ModflowGwfoc(
             gwf,
-            budget_filerecord="{}.bud".format(gwfname),
-            head_filerecord="{}.hds".format(gwfname),
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            budget_filerecord=f"{gwfname}.bud",
+            head_filerecord=f"{gwfname}.hds",
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -436,7 +421,7 @@ def build_model(sim_name, silent=False):
             stress_period_data=chdspdx,
             save_flows=False,
             pname="CHD-1",
-            filename="{}.chd".format(gwfname),
+            filename=f"{gwfname}.chd",
         )
 
         maxbound = len(drn_spd)  # The total number
@@ -453,7 +438,7 @@ def build_model(sim_name, silent=False):
             stress_period_data=spd,  # wel_spd established in the MVR setup
             boundnames=False,
             save_flows=True,
-            filename="{}.drn".format(gwfname),
+            filename=f"{gwfname}.drn",
         )
 
         # Instantiating MODFLOW 6 streamflow routing package
@@ -471,7 +456,7 @@ def build_model(sim_name, silent=False):
             packagedata=pkdat,
             connectiondata=conns,
             perioddata=None,
-            filename="{}.sfr".format(gwfname),
+            filename=f"{gwfname}.sfr",
         )
 
         # Instantiating MODFLOW 6 unsaturated zone flow package
@@ -488,9 +473,9 @@ def build_model(sim_name, silent=False):
             linear_gwet=True,
             packagedata=uzf_packagedata,
             perioddata=uzf_perioddata,
-            budget_filerecord="{}.uzf.bud".format(gwfname),
+            budget_filerecord=f"{gwfname}.uzf.bud",
             pname="UZF-1",
-            filename="{}.uzf".format(gwfname),
+            filename=f"{gwfname}.uzf",
         )
 
         flopy.mf6.ModflowGwfmvr(
@@ -502,7 +487,7 @@ def build_model(sim_name, silent=False):
             packages=mvrpack,
             perioddata=mvrspd,
             budget_filerecord=gwfname + ".mvr.bud",
-            filename="{}.mvr".format(gwfname),
+            filename=f"{gwfname}.mvr",
         )
 
         return sim
@@ -616,9 +601,7 @@ def plot_results(mf6, idx):
 
         for kstpkper in ckstpkper:
             # 1. Compile groundwater discharge to land surface
-            drn_tmp = modobj.get_data(
-                kstpkper=kstpkper, text="      DRN-TO-MVR"
-            )
+            drn_tmp = modobj.get_data(kstpkper=kstpkper, text="      DRN-TO-MVR")
             drn_arr = np.zeros_like(top)
             for itm in drn_tmp[0]:
                 i, j = drn_dict_rev[itm[1] - 1]
@@ -626,9 +609,7 @@ def plot_results(mf6, idx):
             drn_disQ.append(drn_arr)
 
             # 2. Compile groundwater discharge to stream cells
-            sfr_tmp = sfrobj.get_data(
-                kstpkper=kstpkper, text="             GWF"
-            )
+            sfr_tmp = sfrobj.get_data(kstpkper=kstpkper, text="             GWF")
             sfr_arr = np.zeros_like(top)
             for x, itm in enumerate(sfr_tmp[0]):
                 i = sfrcells[x][1]
@@ -637,9 +618,7 @@ def plot_results(mf6, idx):
             sfr_gwsw.append(sfr_arr)
 
             # 3. Compile Infiltrated amount
-            uzf_tmp = uzfobj.get_data(
-                kstpkper=kstpkper, text="    INFILTRATION"
-            )
+            uzf_tmp = uzfobj.get_data(kstpkper=kstpkper, text="    INFILTRATION")
             finf_arr = np.zeros_like(top)
             for itm in uzf_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -647,9 +626,7 @@ def plot_results(mf6, idx):
             finf_tot.append(finf_arr)
 
             # 4. Compile recharge from UZF
-            uzrch_tmp = uzfobj.get_data(
-                kstpkper=kstpkper, text="             GWF"
-            )
+            uzrch_tmp = uzfobj.get_data(kstpkper=kstpkper, text="             GWF")
             uzrch_arr = np.zeros_like(top)
             for itm in uzrch_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -657,9 +634,7 @@ def plot_results(mf6, idx):
             uzrech.append(uzrch_arr)
 
             # 5. Compile rejected infiltration
-            rejinf_tmp = uzfobj.get_data(
-                kstpkper=kstpkper, text="  REJ-INF-TO-MVR"
-            )
+            rejinf_tmp = uzfobj.get_data(kstpkper=kstpkper, text="  REJ-INF-TO-MVR")
             rejinf_arr = np.zeros_like(top)
             for itm in rejinf_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -667,9 +642,7 @@ def plot_results(mf6, idx):
             rejinf.append(rejinf_arr)
 
             # 6. Compile unsat ET
-            uzet_tmp = uzfobj.get_data(
-                kstpkper=kstpkper, text="            UZET"
-            )
+            uzet_tmp = uzfobj.get_data(kstpkper=kstpkper, text="            UZET")
             uzet_arr = np.zeros_like(top)
             for itm in uzet_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -677,9 +650,7 @@ def plot_results(mf6, idx):
             uzet.append(uzet_arr)
 
             # 7. Compile groundwater ET
-            gwet_tmp = modobj.get_data(
-                kstpkper=kstpkper, text="        UZF-GWET"
-            )
+            gwet_tmp = modobj.get_data(kstpkper=kstpkper, text="        UZF-GWET")
             gwet_arr = np.zeros_like(top)
             for itm in gwet_tmp[0]:
                 i, j = iuzno_dict_rev[itm[1] - 1]
@@ -687,9 +658,7 @@ def plot_results(mf6, idx):
             gwet.append(gwet_arr)
 
             # 8. Get flows at outlet
-            outletQ = sfrobj.get_data(
-                kstpkper=kstpkper, text="    FLOW-JA-FACE"
-            )
+            outletQ = sfrobj.get_data(kstpkper=kstpkper, text="    FLOW-JA-FACE")
             outflow.append(outletQ[0][-1][2])
 
         drn_disQ = np.array(drn_disQ)

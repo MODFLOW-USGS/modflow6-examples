@@ -30,10 +30,10 @@ sys.path.append(os.path.join("..", "common"))
 
 # Imports
 
-import matplotlib.pyplot as plt
-import flopy
-import numpy as np
 import config
+import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 from figspecs import USGSFigure
 
 mf6exe = config.mf6_exe
@@ -110,7 +110,7 @@ icelltype = 0
 
 Lx = (ncol - 1) * delr
 Ly = (nrow - 1) * delc
-Ls = np.sqrt(Lx ** 2 + Ly ** 2)
+Ls = np.sqrt(Lx**2 + Ly**2)
 v = 1.0
 q = v * prsity
 h1 = q * Ls
@@ -170,7 +170,6 @@ tdis_rc.append((perlen, nstp, 1.0))
 
 def build_model(sim_name, mixelm=0, silent=False):
     if config.buildModel:
-
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
         modelname_mf = "p04-mf"
 
@@ -265,24 +264,20 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p04-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
             sim,
             modelname=gwfname,
             save_flows=True,
-            model_nam_file="{}.nam".format(gwfname),
+            model_nam_file=f"{gwfname}.nam",
         )
 
         # Instantiating MODFLOW 6 solver for flow model
@@ -299,7 +294,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             scaling_method="NONE",
             reordering_method="NONE",
             relaxation_factor=relax,
-            filename="{}.ims".format(gwfname),
+            filename=f"{gwfname}.ims",
         )
         sim.register_ims_package(imsgwf, [gwf.name])
 
@@ -315,7 +310,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             top=top,
             botm=botm,
             idomain=idomain,
-            filename="{}.dis".format(gwfname),
+            filename=f"{gwfname}.dis",
         )
 
         # Instantiating MODFLOW 6 node-property flow package
@@ -326,22 +321,18 @@ def build_model(sim_name, mixelm=0, silent=False):
             k=k11,
             k33=k33,
             save_specific_discharge=True,
-            filename="{}.npf".format(gwfname),
+            filename=f"{gwfname}.npf",
         )
 
         # Instantiating MODFLOW 6 storage package (steady flow conditions, so no actual storage, using to print values in .lst file)
-        flopy.mf6.ModflowGwfsto(
-            gwf, ss=0, sy=0, filename="{}.sto".format(gwfname)
-        )
+        flopy.mf6.ModflowGwfsto(gwf, ss=0, sy=0, filename=f"{gwfname}.sto")
 
         # Instantiating MODFLOW 6 initial conditions package for flow model
         x = gwf.modelgrid.xcellcenters
         y = gwf.modelgrid.ycellcenters
         d = abs(a * x + b * y + c) / np.sqrt(2)
         strt = h1 - d / Ls * h1
-        flopy.mf6.ModflowGwfic(
-            gwf, strt=strt, filename="{}.ic".format(gwfname)
-        )
+        flopy.mf6.ModflowGwfic(gwf, strt=strt, filename=f"{gwfname}.ic")
 
         # Instantiating MODFLOW 6 constant head package
         chdspd = []
@@ -360,7 +351,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             stress_period_data=chdspd,
             save_flows=False,
             pname="CHD-1",
-            filename="{}.chd".format(gwfname),
+            filename=f"{gwfname}.chd",
         )
 
         # Instantiate the wel package
@@ -372,17 +363,15 @@ def build_model(sim_name, mixelm=0, silent=False):
             save_flows=False,
             auxiliary="CONCENTRATION",
             pname="WEL-1",
-            filename="{}.wel".format(gwfname),
+            filename=f"{gwfname}.wel",
         )
 
         # Instantiating MODFLOW 6 output control package for flow model
         flopy.mf6.ModflowGwfoc(
             gwf,
-            head_filerecord="{}.hds".format(gwfname),
-            budget_filerecord="{}.bud".format(gwfname),
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            head_filerecord=f"{gwfname}.hds",
+            budget_filerecord=f"{gwfname}.bud",
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -393,7 +382,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             sim,
             model_type="gwt6",
             modelname=gwtname,
-            model_nam_file="{}.nam".format(gwtname),
+            model_nam_file=f"{gwtname}.nam",
         )
         gwt.name_file.save_flows = True
 
@@ -411,7 +400,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             scaling_method="NONE",
             reordering_method="NONE",
             relaxation_factor=relax,
-            filename="{}.ims".format(gwtname),
+            filename=f"{gwtname}.ims",
         )
         sim.register_ims_package(imsgwt, [gwt.name])
 
@@ -426,13 +415,11 @@ def build_model(sim_name, mixelm=0, silent=False):
             top=top,
             botm=botm,
             idomain=1,
-            filename="{}.dis".format(gwtname),
+            filename=f"{gwtname}.dis",
         )
 
         # Instantiating MODFLOW 6 transport initial concentrations
-        flopy.mf6.ModflowGwtic(
-            gwt, strt=sconc, filename="{}.ic".format(gwtname)
-        )
+        flopy.mf6.ModflowGwtic(gwt, strt=sconc, filename=f"{gwtname}.ic")
 
         # Instantiating MODFLOW 6 transport advection package
         if mixelm >= 0:
@@ -441,9 +428,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             scheme = "TVD"
         else:
             raise Exception()
-        flopy.mf6.ModflowGwtadv(
-            gwt, scheme=scheme, filename="{}.adv".format(gwtname)
-        )
+        flopy.mf6.ModflowGwtadv(gwt, scheme=scheme, filename=f"{gwtname}.adv")
 
         # Instantiating MODFLOW 6 transport dispersion package
         if al != 0:
@@ -451,7 +436,7 @@ def build_model(sim_name, mixelm=0, silent=False):
                 gwt,
                 alh=al,
                 ath1=ath1,
-                filename="{}.dsp".format(gwtname),
+                filename=f"{gwtname}.dsp",
             )
 
         # Instantiating MODFLOW 6 transport mass storage package (formerly "reaction" package in MT3DMS)
@@ -464,20 +449,18 @@ def build_model(sim_name, mixelm=0, silent=False):
             sorption=None,
             bulk_density=None,
             distcoef=None,
-            filename="{}.mst".format(gwtname),
+            filename=f"{gwtname}.mst",
         )
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
         sourcerecarray = [("WEL-1", "AUX", "CONCENTRATION")]
-        flopy.mf6.ModflowGwtssm(
-            gwt, sources=sourcerecarray, filename="{}.ssm".format(gwtname)
-        )
+        flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm")
 
         # Instantiating MODFLOW 6 transport output control package
         flopy.mf6.ModflowGwtoc(
             gwt,
-            budget_filerecord="{}.cbc".format(gwtname),
-            concentration_filerecord="{}.ucn".format(gwtname),
+            budget_filerecord=f"{gwtname}.cbc",
+            concentration_filerecord=f"{gwtname}.ucn",
             concentrationprintrecord=[
                 ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
             ],
@@ -491,7 +474,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             exgtype="GWF6-GWT6",
             exgmnamea=gwfname,
             exgmnameb=gwtname,
-            filename="{}.gwfgwt".format(name),
+            filename=f"{name}.gwfgwt",
         )
         return mf, mt, sim
     return None
@@ -555,9 +538,7 @@ def plot_results(mt3d, mf6, idx, leglab1, leglab2, ax=None):
         levels = [0.15, 1.0, 2.0, 5.0]
         mm = flopy.plot.PlotMapView(model=mt3d)
 
-        cf = plt.contourf(
-            x, y, conc_mt3d[0, 0, :, :], levels=levels, alpha=0.5
-        )
+        cf = plt.contourf(x, y, conc_mt3d[0, 0, :, :], levels=levels, alpha=0.5)
         cbar = plt.colorbar(cf, shrink=0.25)
         cbar.ax.set_title(leglab1)
 
@@ -579,9 +560,7 @@ def plot_results(mt3d, mf6, idx, leglab1, leglab2, ax=None):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", "{}{}".format(sim_name, config.figure_ext)
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}{config.figure_ext}")
             fig.savefig(fpth)
 
 

@@ -10,10 +10,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -132,7 +133,7 @@ lake_map = np.ma.masked_where(lake_map < 0, lake_map)
 # create linearly varying evapotranspiration surface
 
 xlen = delr.sum() - 0.5 * (delr[0] + delr[-1])
-x = 0.
+x = 0.0
 s1d = H1 * np.ones(ncol, dtype=float)
 for idx in range(1, ncol):
     x += 0.5 * (delr[idx - 1] + delr[idx])
@@ -178,9 +179,7 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -189,7 +188,7 @@ def build_model():
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(
             sim, modelname=sim_name, newtonoptions="newton", save_flows=True
@@ -206,7 +205,7 @@ def build_model():
             top=top,
             botm=botm,
         )
-        obs_file = "{}.gwf.obs".format(sim_name)
+        obs_file = f"{sim_name}.gwf.obs"
         csv_file = obs_file + ".csv"
         obslist = [
             ["A", "head", (0, 3, 3)],
@@ -233,9 +232,7 @@ def build_model():
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(
-            gwf, surface=surf, rate=etvrate, depth=etvdepth
-        )
+        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=etvrate, depth=etvdepth)
         (
             idomain_wlakes,
             pakdata_dict,
@@ -255,7 +252,7 @@ def build_model():
             connectiondata=lak_conn,
             perioddata=lak_spd,
         )
-        obs_file = "{}.lak.obs".format(sim_name)
+        obs_file = f"{sim_name}.lak.obs"
         csv_file = obs_file + ".csv"
         obs_dict = {
             csv_file: [
@@ -267,8 +264,8 @@ def build_model():
         )
         gwf.dis.idomain = idomain_wlakes
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -482,7 +479,7 @@ def plot_grid(gwf, silent=True):
         -10000,
         -10000,
         lw=0,
-        marker=u"$\u2192$",
+        marker="$\u2192$",
         ms=10,
         mfc="0.75",
         mec="0.75",
@@ -495,7 +492,7 @@ def plot_grid(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-grid{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-grid{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -572,7 +569,7 @@ def plot_lak_results(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-01{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-01{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -606,7 +603,7 @@ def simulation(silent=True):
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(sim_name)
+    assert success, f"could not run...{sim_name}"
 
     if success:
         plot_results(sim, silent=silent)

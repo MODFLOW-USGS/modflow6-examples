@@ -11,8 +11,9 @@
 
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Append to system path to include the common subdirectory
@@ -87,7 +88,7 @@ hclose, rclose, relax = 1e-8, 1e-8, 0.97
 
 
 def build_model(sim_folder):
-    print("Building model...{}".format(sim_folder))
+    print(f"Building model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder)
     sim = flopy.mf6.MFSimulation(
@@ -96,9 +97,7 @@ def build_model(sim_folder):
         exe_name=config.mf6_exe,
     )
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -113,7 +112,7 @@ def build_model(sim_folder):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwf.name),
+        filename=f"{gwf.name}.ims",
     )
     sim.register_ims_package(ims, [gwf.name])
     flopy.mf6.ModflowGwfdis(
@@ -150,8 +149,8 @@ def build_model(sim_folder):
         stress_period_data=rchspd,
         pname="RCH-1",
     )
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -173,7 +172,7 @@ def build_model(sim_folder):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwt.name),
+        filename=f"{gwt.name}.ims",
     )
     sim.register_ims_package(imsgwt, [gwt.name])
     flopy.mf6.ModflowGwtdis(
@@ -190,9 +189,7 @@ def build_model(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtic(gwt, strt=conc_inflow)
     flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc)
     sourcerecarray = [
         ("CHD-1", "AUX", "CONCENTRATION"),
     ]
@@ -208,11 +205,9 @@ def build_model(sim_folder):
     )
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(gwt.name),
-        concentration_filerecord="{}.ucn".format(gwt.name),
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        budget_filerecord=f"{gwt.name}.cbc",
+        concentration_filerecord=f"{gwt.name}.ucn",
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -266,9 +261,7 @@ def plot_conc(sim, idx):
     ax.set_ylabel("z position (m)")
     ax.set_xlabel("x position (m)")
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-bc{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-bc{config.figure_ext}")
         fig.savefig(fpth)
     plt.close("all")
 
@@ -295,7 +288,6 @@ def plot_conc(sim, idx):
 
     nplots = len(plot_times)
     for iplot in range(nplots):
-
         time_in_pub = plot_times[iplot]
         idx_conc = (np.abs(times - time_in_pub)).argmin()
         time_this_plot = times[idx_conc]
@@ -308,14 +300,12 @@ def plot_conc(sim, idx):
         ax.set_ylabel("z position (m)")
         if iplot in [6, 7]:
             ax.set_xlabel("x position (m)")
-        ax.set_title("Time = {} seconds".format(time_this_plot))
+        ax.set_title(f"Time = {time_this_plot} seconds")
     plt.tight_layout()
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-conc{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-conc{config.figure_ext}")
         fig.savefig(fpth)
     return
 
@@ -342,11 +332,11 @@ def make_animated_gif(sim, idx):
     def init():
         ax.set_xlim(0, 75.0)
         ax.set_ylim(0, 75.0)
-        ax.set_title("Time = {} seconds".format(times[0]))
+        ax.set_title(f"Time = {times[0]} seconds")
 
     def update(i):
         pc.set_array(conc[i].flatten())
-        ax.set_title("Time = {} seconds".format(times[i]))
+        ax.set_title(f"Time = {times[i]} seconds")
 
     ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
     writer = PillowWriter(fps=50)

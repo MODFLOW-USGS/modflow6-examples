@@ -12,11 +12,12 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
+
 import flopy
 import flopy.utils.binaryfile as bf
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 # Append to system path to include the common subdirectory
@@ -57,7 +58,7 @@ delc = 5000.0  # Row width ($ft$)
 strt = "varies"  # Starting head ($ft$)
 k11_stream = 0.002  # Hydraulic conductivity near the stream ($ft/s$)
 k11_basin = "varies"  # Hydraulic conductivity in the basin ($ft/s$)
-lake_leakance = 2e-9 # Lakebed leakance ($1/s$)
+lake_leakance = 2e-9  # Lakebed leakance ($1/s$)
 ss = 0.1e-5  # Specific storage ($1/s$)
 sy_stream = 0.2  # Specific yield near the stream (unitless)
 sy_basin = 0.1  # Specific yield in the basin (unitless)
@@ -3548,9 +3549,7 @@ for tm in range(len(tdis_ds)):
     sp = []
     iuzno = 0
     for i in range(len(extwc)):
-        sp.append(
-            (iuzno, finf[tm][i], pET, extdp, extwc[i], ha, hroot, rootact)
-        )
+        sp.append((iuzno, finf[tm][i], pET, extdp, extwc[i], ha, hroot, rootact))
         iuzno += 1
     uzf_spd.update({int(tm): sp})
 
@@ -3765,9 +3764,7 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -3850,9 +3847,9 @@ def build_model():
             connectiondata=sfr_conn,
             diversions=sfr_div,
             perioddata=sfr_spd,
-            filename="{}.sfr".format(sim_name),
+            filename=f"{sim_name}.sfr",
         )
-        sfr_obs_file = "{}.sfr.obs".format(sim_name)
+        sfr_obs_file = f"{sim_name}.sfr.obs"
         sfr_obs_dict = {
             "sfr.reach01.csv": [
                 ("extin", "ext-inflow", (0,)),
@@ -3942,9 +3939,9 @@ def build_model():
             packagedata=lak_pakdata,
             connectiondata=lakeconnectiondata,
             perioddata=lk_spd,
-            filename="{}.lak".format(sim_name),
+            filename=f"{sim_name}.lak",
         )
-        lak_obs_file = "{}.lak.obs".format(sim_name)
+        lak_obs_file = f"{sim_name}.lak.obs"
         lak_obs_dict = {
             "obs_lak.csv": [
                 ("LAK1_STAGE", "STAGE", 1),
@@ -3955,9 +3952,7 @@ def build_model():
                 ("LAK2_FROM-MVR", "FROM-MVR", 2),
             ]
         }
-        lak.obs.initialize(
-            filename=lak_obs_file, digits=10, continuous=lak_obs_dict
-        )
+        lak.obs.initialize(filename=lak_obs_file, digits=10, continuous=lak_obs_dict)
         uzf = flopy.mf6.ModflowGwfuzf(
             gwf,
             nuzfcells=len(uzf_pakdata),
@@ -3972,11 +3967,11 @@ def build_model():
             mover=True,
             packagedata=uzf_pakdata,
             perioddata=uzf_spd,
-            budget_filerecord="{}.uzf.bud".format(sim_name),
+            budget_filerecord=f"{sim_name}.uzf.bud",
             pname="UZF-1",
-            filename="{}.uzf".format(sim_name),
+            filename=f"{sim_name}.uzf",
         )
-        uzf_obs_file = "{}.uzf.obs".format(sim_name)
+        uzf_obs_file = f"{sim_name}.uzf.obs"
         uzf_obs_dict = {
             "obs_uzf.csv": [
                 ("ninfil", "net-infiltration", "ag"),
@@ -4022,14 +4017,14 @@ def build_model():
             perioddata=mvr_spd,
             pname="MVR-1",
             budget_filerecord=sim_name + ".mvr.bud",
-            filename="{}.mvr".format(sim_name),
+            filename=f"{sim_name}.mvr",
         )
 
         # rest idomain with lake adjustments
         gwf.dis.idomain = idomain_wlakes
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -4230,7 +4225,7 @@ def plot_grid(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-grid{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-grid{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -4291,9 +4286,7 @@ def plot_head_results(gwf, silent=True):
 
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
+    head_coll = mm.plot_array(head, vmin=900, vmax=1120, masked_values=masked_values)
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -4320,9 +4313,7 @@ def plot_head_results(gwf, silent=True):
 
     ax = axes[1]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
+    head_coll = mm.plot_array(head, vmin=900, vmax=1120, masked_values=masked_values)
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -4354,7 +4345,7 @@ def plot_head_results(gwf, silent=True):
         -10000,
         -10000,
         lw=0,
-        marker=u"$\u2192$",
+        marker="$\u2192$",
         ms=10,
         mfc="0.75",
         mec="0.75",
@@ -4368,7 +4359,7 @@ def plot_head_results(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-01{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-01{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -4408,9 +4399,7 @@ def plot_mvr_results(idx, gwf, silent=True):
             np.all(
                 (
                     np.array(mvr_Q.recordarray["kper"] == i),
-                    np.array(
-                        mvr_Q.recordarray["paknam"] == provider
-                    ),  # Provider
+                    np.array(mvr_Q.recordarray["paknam"] == provider),  # Provider
                     np.array(mvr_Q.recordarray["paknam2"] == receiver1),
                 ),
                 axis=0,
@@ -4428,9 +4417,7 @@ def plot_mvr_results(idx, gwf, silent=True):
                 # period - about 1 month
                 tot_stp_gwirrig += itm[2]
 
-        gwirrig.append(
-            abs(tot_stp_gwirrig) * 2.6280e6 / 43560
-        )  # results in ac*ft
+        gwirrig.append(abs(tot_stp_gwirrig) * 2.6280e6 / 43560)  # results in ac*ft
 
     # Get all groundwater discharge:
     provider = b"UZF-1           "
@@ -4444,9 +4431,7 @@ def plot_mvr_results(idx, gwf, silent=True):
             np.all(
                 (
                     np.array(mvr_Q.recordarray["kper"] == i),
-                    np.array(
-                        mvr_Q.recordarray["paknam"] == provider
-                    ),  # Provider
+                    np.array(mvr_Q.recordarray["paknam"] == provider),  # Provider
                     np.logical_or(
                         mvr_Q.recordarray["paknam2"] == receiver1,  # Receiver
                         mvr_Q.recordarray["paknam2"] == receiver2,
@@ -4508,7 +4493,7 @@ def plot_mvr_results(idx, gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-mvr{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-mvr{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -4530,9 +4515,7 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
     rch = (uzf_dat["ID26_RCH"] + uzf_dat["ID126_RCH"]) * 86400 / 43560
     gwet = (uzf_dat["ID26_GWET"] + uzf_dat["ID126_GWET"]) * 86400 / 43560
     uzet = (uzf_dat["ID26_UZET"] + uzf_dat["ID126_UZET"]) * 86400 / 43560
-    gwdisq = (
-        (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
-    )
+    gwdisq = (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
     rejinf = (uzf_dat["ID26_REJINF"] + uzf_dat["ID126_REJINF"]) * 86400 / 43560
 
     fig = plt.figure(figsize=figure_size)
@@ -4564,7 +4547,7 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-uz{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-uz{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -4600,7 +4583,7 @@ def simulation(idx, silent=True):
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(sim_name)
+    assert success, f"could not run...{sim_name}"
 
     if success:
         plot_results(idx, sim, silent=silent)

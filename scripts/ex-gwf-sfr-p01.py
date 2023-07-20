@@ -11,10 +11,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -786,9 +787,7 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -797,7 +796,7 @@ def build_model():
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(
             sim, modelname=sim_name, newtonoptions="newton", save_flows=True
@@ -832,9 +831,7 @@ def build_model():
         flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
         flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(
-            gwf, surface=surf, rate=evap_rate, depth=ext_depth
-        )
+        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=evap_rate, depth=ext_depth)
         sfr = flopy.mf6.ModflowGwfsfr(
             gwf,
             length_conversion=3.28081,
@@ -844,7 +841,7 @@ def build_model():
             diversions=sfr_div,
             perioddata=sfr_spd,
         )
-        obs_file = "{}.sfr.obs".format(sim_name)
+        obs_file = f"{sim_name}.sfr.obs"
         csv_file = obs_file + ".csv"
         obs_dict = {
             csv_file: [
@@ -862,8 +859,8 @@ def build_model():
             filename=obs_file, digits=10, print_input=True, continuous=obs_dict
         )
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -1066,7 +1063,7 @@ def plot_grid(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-grid{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-grid{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -1127,9 +1124,7 @@ def plot_head_results(gwf, silent=True):
 
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
+    head_coll = mm.plot_array(head, vmin=900, vmax=1120, masked_values=masked_values)
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -1156,9 +1151,7 @@ def plot_head_results(gwf, silent=True):
 
     ax = axes[1]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
+    head_coll = mm.plot_array(head, vmin=900, vmax=1120, masked_values=masked_values)
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -1190,7 +1183,7 @@ def plot_head_results(gwf, silent=True):
         -10000,
         -10000,
         lw=0,
-        marker=u"$\u2192$",
+        marker="$\u2192$",
         ms=10,
         mfc="0.75",
         mec="0.75",
@@ -1204,7 +1197,7 @@ def plot_head_results(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-01{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-01{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -1244,18 +1237,18 @@ def plot_sfr_results(gwf, silent=True):
     )
     ipos = 0
     for i in range(4):
-        heading = "Reach {}".format(rnos[i] + 1)
+        heading = f"Reach {rnos[i] + 1}"
         for j in range(2):
             ax = axes[i, j]
             ax.set_xlim(0, 100)
             if j == 0:
-                tag = "R{:02d}_STAGE".format(i + 1)
+                tag = f"R{i + 1:02d}_STAGE"
                 offset = offsets[i]
                 scale = 1.0
                 ylabel = "Reach depth, in feet"
                 color = "blue"
             else:
-                tag = "R{:02d}_FLOW".format(i + 1)
+                tag = f"R{i + 1:02d}_FLOW"
                 offset = 0.0
                 scale = -1.0
                 ylabel = "Downstream reach flow,\nin cubic feet per second"
@@ -1301,7 +1294,7 @@ def plot_sfr_results(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-02{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-02{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -1337,7 +1330,7 @@ def simulation(silent=True):
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(sim_name)
+    assert success, f"could not run...{sim_name}"
 
     if success:
         plot_results(sim, silent=silent)

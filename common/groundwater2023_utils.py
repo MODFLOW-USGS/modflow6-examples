@@ -54,9 +54,7 @@ def densify_geometry(line, step, keep_internal_nodes=True):
     lines_strings = []
     if keep_internal_nodes:
         for idx in range(1, len(line)):
-            lines_strings.append(
-                shapely.geometry.LineString(line[idx - 1 : idx + 1])
-            )
+            lines_strings.append(shapely.geometry.LineString(line[idx - 1 : idx + 1]))
     else:
         lines_strings = [shapely.geometry.LineString(line)]
 
@@ -81,4 +79,3 @@ def circle_function(center=(0, 0), radius=1.0, dtheta=10.0):
     xpts = center[0] + np.cos(angles) * radius
     ypts = center[1] + np.sin(angles) * radius
     return np.array([(x, y) for x, y in zip(xpts, ypts)])
-

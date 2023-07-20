@@ -10,9 +10,10 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -101,9 +102,7 @@ def build_model(H2=1.0):
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -111,7 +110,7 @@ def build_model(H2=1.0):
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
         flopy.mf6.ModflowGwfdis(
@@ -133,7 +132,7 @@ def build_model(H2=1.0):
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
 
-        head_filerecord = "{}.hds".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -235,9 +234,7 @@ def plot_results(idx, sim, silent=True):
 
         # plot colorbar
         cax = plt.axes([0.62, 0.76, 0.325, 0.025])
-        cbar = plt.colorbar(
-            plot_obj, shrink=0.8, orientation="horizontal", cax=cax
-        )
+        cbar = plt.colorbar(plot_obj, shrink=0.8, orientation="horizontal", cax=cax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
 
@@ -246,7 +243,7 @@ def plot_results(idx, sim, silent=True):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{:02d}{}".format(sim_name, idx + 1, config.figure_ext),
+                f"{sim_name}-{idx + 1:02d}{config.figure_ext}",
             )
             fig.savefig(fpth)
 

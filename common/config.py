@@ -1,9 +1,10 @@
 import os
+import pathlib as pl
 import sys
 import time
+
 import matplotlib.pyplot as plt
 from IPython import get_ipython
-import pathlib as pl
 
 # Setup working directories
 work_directories = (
@@ -46,7 +47,7 @@ def timeit(method):
             name = kw.get("log_name", method.__name__.upper())
             kw["log_time"][name] = int((te - ts) * 1000)
         else:
-            print("{}  {:,.2f} ms".format(method.__name__, (te - ts) * 1000))
+            print(f"{method.__name__}  {(te - ts) * 1000:,.2f} ms")
         return result
 
     return timed
@@ -77,9 +78,7 @@ else:
                 extension = sys.argv[idx + 1]
                 if not extension.startswith("."):
                     extension = "." + extension
-                figure_exts = tuple(
-                    plt.gcf().canvas.get_supported_filetypes().keys()
-                )
+                figure_exts = tuple(plt.gcf().canvas.get_supported_filetypes().keys())
                 if extension.lower() in figure_exts:
                     figure_ext = extension
 

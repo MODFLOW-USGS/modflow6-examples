@@ -11,10 +11,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -129,17 +130,13 @@ relax = 0.97
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(
-    name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton
-):
+def build_model(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton):
     if config.buildModel:
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration=linear_acceleration,
@@ -147,7 +144,7 @@ def build_model(
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
             relaxation_factor=relax,
         )
         gwf = flopy.mf6.ModflowGwf(
@@ -191,8 +188,8 @@ def build_model(
         flopy.mf6.ModflowGwfriv(gwf, stress_period_data=riv_spd)
         flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -276,9 +273,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
             ax.set_aspect("equal")
             mm = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=k)
             mm.plot_grid(lw=0.5, color="0.5")
-            cm = mm.plot_array(
-                head, masked_values=masked_values, vmin=vmin, vmax=vmax
-            )
+            cm = mm.plot_array(head, masked_values=masked_values, vmin=vmin, vmax=vmax)
             mm.plot_bc(ftype="WEL", kper=totim - 1)
             mm.plot_bc(ftype="RIV", color="green", kper=0)
             mm.plot_vector(qx, qy, normalize=True, color="0.75")
@@ -290,7 +285,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
                 linewidths=0.5,
             )
             plt.clabel(cn, fmt="%3.0f")
-            heading = "{} under {}".format(aquifer[k], cond[totim - 1])
+            heading = f"{aquifer[k]} under {cond[totim - 1]}"
             fs.heading(ax, letter=labels[plot_number], heading=heading)
             fs.remove_edge_ticks(ax)
 
@@ -349,7 +344,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         -10000,
         -10000,
         lw=0,
-        marker=u"$\u2192$",
+        marker="$\u2192$",
         ms=10,
         mfc="0.75",
         mec="0.75",
@@ -377,7 +372,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-{:02d}{}".format(sim_name, num, config.figure_ext),
+            f"{sim_name}-{num:02d}{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -490,7 +485,7 @@ def plot_results(silent=True):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-grid{}".format(sim_name, config.figure_ext),
+                f"{sim_name}-grid{config.figure_ext}",
             )
             fig.savefig(fpth)
 
@@ -509,9 +504,7 @@ def plot_results(silent=True):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", "{}-01{}".format(sim_name, config.figure_ext)
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-01{config.figure_ext}")
             fig.savefig(fpth)
 
         # plot simulated rewetting results
@@ -554,7 +547,7 @@ def simulation(idx, silent=True):
 
     success = run_model(sim, silent=silent)
 
-    assert success, "could not run...{}".format(key)
+    assert success, f"could not run...{key}"
 
 
 # nosetest - exclude block from this nosetest to the next nosetest

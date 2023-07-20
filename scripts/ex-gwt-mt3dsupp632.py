@@ -11,9 +11,10 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -100,19 +101,15 @@ dual_domain = True  # Flag indicating that dual domain is active
 
 
 def build_mf6gwf(sim_folder):
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = (
         (source_duration, 1, 1.0),
         (total_time - source_duration, 1, 1.0),
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -140,8 +137,8 @@ def build_mf6gwf(sim_folder):
         1: [[(0, 0, 0), specific_discharge * delc * top]],
     }
     flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, pname="WEL-1")
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -152,18 +149,14 @@ def build_mf6gwf(sim_folder):
 
 
 def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
-    print("Building mf6gwt model...{}".format(sim_folder))
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     pertim1 = source_duration
     pertim2 = total_time - source_duration
     tdis_ds = ((pertim1, 10, 1.0), (pertim2, 90, 1.0))
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -224,7 +217,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
         ath1=longitudinal_dispersivity,
     )
     pd = [
-        ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
+        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
@@ -237,7 +230,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     obsj = int(obs_xloc / delr) + 1
     obs_data = {
-        "{}.obs.csv".format(name): [
+        f"{name}.obs.csv": [
             ("myobs", "CONCENTRATION", (0, 0, obsj)),
         ],
     }
@@ -248,7 +241,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
 
 
 def build_mf2005(sim_folder):
-    print("Building mf2005 model...{}".format(sim_folder))
+    print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(
@@ -273,9 +266,7 @@ def build_mf2005(sim_folder):
     lpf = flopy.modflow.ModflowLpf(mf)
     pcg = flopy.modflow.ModflowPcg(mf)
     lmt = flopy.modflow.ModflowLmt(mf)
-    chd = flopy.modflow.ModflowChd(
-        mf, stress_period_data=[[0, 0, ncol - 1, 1.0, 1.0]]
-    )
+    chd = flopy.modflow.ModflowChd(mf, stress_period_data=[[0, 0, ncol - 1, 1.0, 1.0]])
     wel_spd = {
         0: [[0, 0, 0, specific_discharge * delc * top]],
         1: [[0, 0, 0, specific_discharge * delc * top]],
@@ -287,7 +278,7 @@ def build_mf2005(sim_folder):
 def build_mt3dms(
     sim_folder, distribution_coefficient, decay, decay_sorbed, modflowmodel
 ):
-    print("Building mt3dms model...{}".format(sim_folder))
+    print(f"Building mt3dms model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mt3d")
     mt = flopy.mt3d.Mt3dms(
@@ -408,13 +399,10 @@ def plot_results():
         print("Plotting model results...")
 
         fs = USGSFigure(figure_type="graph", verbose=False)
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
 
         case_colors = ["blue", "green", "red"]
         for icase, sim_name in enumerate(parameters.keys()):
-
             sim_ws = os.path.join(ws, sim_name)
 
             fname = os.path.join(sim_ws, "mf6gwt", "trans.obs.csv")
@@ -435,7 +423,7 @@ def plot_results():
                 mt3dms_ra["time"],
                 mt3dms_ra["(1, 1, 82)"],
                 color=case_colors[icase],
-                label="Scenario {}".format(icase + 1),
+                label=f"Scenario {icase + 1}",
             )
 
         axs.set_ylim(0, 16)
@@ -458,9 +446,7 @@ def plot_scenario_results(sims, idx):
         fs = USGSFigure(figure_type="graph", verbose=False)
 
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         axs.plot(
             mf6gwt_ra["totim"],
             mf6gwt_ra["MYOBS"],
@@ -482,7 +468,7 @@ def plot_scenario_results(sims, idx):
             label="MT3DMS",
         )
         axs.legend()
-        title = "Case {} ".format(idx + 1)
+        title = f"Case {idx + 1} "
         letter = chr(ord("@") + idx + 1)
         fs.heading(letter=letter, heading=title)
 
@@ -490,7 +476,7 @@ def plot_scenario_results(sims, idx):
         if config.plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 

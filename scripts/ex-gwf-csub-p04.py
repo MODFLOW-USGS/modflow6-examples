@@ -12,10 +12,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -138,7 +139,7 @@ well_rates = (
 wel6 = {}
 for idx, q in enumerate(well_rates):
     spd = []
-    for (k, i, j) in well_locs:
+    for k, i, j in well_locs:
         spd.append([k, i, j, q])
     wel6[idx + 1] = spd
 
@@ -151,7 +152,7 @@ for i in range(nrow):
         if ib[i, j] < 1 or (i, j) in chd_locs:
             continue
         for k in range(nlay):
-            boundname = "{:02d}_{:02d}_{:02d}".format(k + 1, i + 1, j + 1)
+            boundname = f"{k + 1:02d}_{i + 1:02d}_{j + 1:02d}"
             ib_lst = [
                 icsubno,
                 (k, i, j),
@@ -190,9 +191,7 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -201,7 +200,7 @@ def build_model():
             inner_maximum=ninner,
             inner_dvclose=hclose,
             relaxation_factor=relax,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(
             sim, modelname=sim_name, save_flows=True, newtonoptions="newton"
@@ -268,7 +267,7 @@ def build_model():
             gammaw=gammaw,
             packagedata=csub_pakdata,
         )
-        opth = "{}.csub.obs".format(sim_name)
+        opth = f"{sim_name}.csub.obs"
         csub_csv = opth + ".csv"
         obs = [
             ("w1l1", "interbed-compaction", "01_09_10"),
@@ -331,8 +330,8 @@ def build_model():
         flopy.mf6.ModflowGwfrch(gwf, stress_period_data={0: rch6})
         flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel6)
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -370,6 +369,7 @@ def run_model(sim, silent=True):
 
 # Function to get csub observations
 
+
 def get_csub_observations(sim):
     name = sim.name
     gwf = sim.get_model(sim_name)
@@ -404,8 +404,8 @@ def calc_compaction_at_surface(sim):
             2,
             1,
         ):
-            tag0 = "{}{}".format(tag, k)
-            tag1 = "{}{}".format(tag, k + 1)
+            tag0 = f"{tag}{k}"
+            tag1 = f"{tag}{k + 1}"
             csub_obs[tag0] += csub_obs[tag1]
     return csub_obs
 
@@ -418,8 +418,8 @@ def plot_compaction_values(ax, sim, tagbase="W1L"):
     obs = calc_compaction_at_surface(sim)
     for k in range(nlay):
         fc = colors[k]
-        tag = "{}{}".format(tagbase, k + 1)
-        label = "Model layer {}".format(k + 1)
+        tag = f"{tagbase}{k + 1}"
+        label = f"Model layer {k + 1}"
         ax.fill_between(obs["totim"], obs[tag], y2=0, color=fc, label=label)
 
 
@@ -560,16 +560,10 @@ def plot_grid(sim, silent=True):
     )
     # aquifer coloring
     ax.fill_between([0, dx.sum()], y1=150, y2=-100, color="cyan", alpha=0.5)
-    ax.fill_between(
-        [0, dx.sum()], y1=-100, y2=-150, color="#D2B48C", alpha=0.5
-    )
-    ax.fill_between(
-        [0, dx.sum()], y1=-150, y2=-350, color="#00BFFF", alpha=0.5
-    )
+    ax.fill_between([0, dx.sum()], y1=-100, y2=-150, color="#D2B48C", alpha=0.5)
+    ax.fill_between([0, dx.sum()], y1=-150, y2=-350, color="#00BFFF", alpha=0.5)
     # well coloring
-    ax.fill_between(
-        [dx.cumsum()[8], dx.cumsum()[9]], y1=50, y2=-100, color="red", lw=0
-    )
+    ax.fill_between([dx.cumsum()[8], dx.cumsum()[9]], y1=50, y2=-100, color="red", lw=0)
     # labels
     fs.add_text(
         ax=ax,
@@ -686,11 +680,9 @@ def plot_grid(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -753,12 +745,8 @@ def plot_stresses(sim, silent=True):
         lw=1,
         label="Preconsolidation stress",
     )
-    ax.plot(
-        [-100, -50], [-100, -100], color="red", lw=1, label="Effective stress"
-    )
-    ax.plot(
-        cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress"
-    )
+    ax.plot([-100, -50], [-100, -100], color="red", lw=1, label="Effective stress")
+    ax.plot(cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress")
     fs.graph_legend(ax, ncol=3, loc="upper center")
     fs.heading(ax, letter="D", heading="Model layer 2, row 9, column 10")
     fs.remove_edge_ticks(ax)
@@ -770,11 +758,9 @@ def plot_stresses(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-01{}".format(name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -852,11 +838,9 @@ def plot_compaction(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-02{}".format(name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -893,6 +877,8 @@ def simulation(silent=True):
 # nosetest - exclude block from this nosetest to the next nosetest
 def test_01():
     simulation()
+
+
 # nosetest end
 
 if __name__ == "__main__":

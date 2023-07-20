@@ -1,6 +1,5 @@
 import numpy as np
-from scipy.special import erfc
-from scipy.special import erf
+from scipy.special import erf, erfc
 
 
 def diffusion(x, t, v, R, D):
@@ -35,7 +34,7 @@ def diffusion(x, t, v, R, D):
     return t1 + t2 * t3
 
 
-class Wexler1d(object):
+class Wexler1d:
     """
     Analytical solution for 1D transport with inflow at a concentration of 1.
     at x=0 and a third-type bound at location l.
@@ -43,7 +42,7 @@ class Wexler1d(object):
     """
 
     def betaeqn(self, beta, d, v, l):
-        return beta / np.tan(beta) - beta ** 2 * d / v / l + v * l / 4.0 / d
+        return beta / np.tan(beta) - beta**2 * d / v / l + v * l / 4.0 / d
 
     def fprimebetaeqn(self, beta, d, v, l):
         """
@@ -103,28 +102,18 @@ class Wexler1d(object):
         sigma = 0.0
         betalist = self.root3(d, v, l, nval=nval)
         for i, bi in enumerate(betalist):
-
-            denom = bi ** 2 + (v * l / 2.0 / d) ** 2 + v * l / d
+            denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
             x1 = (
                 bi
-                * (
-                    bi * np.cos(bi * x / l)
-                    + v * l / 2.0 / d * np.sin(bi * x / l)
-                )
+                * (bi * np.cos(bi * x / l) + v * l / 2.0 / d * np.sin(bi * x / l))
                 / denom
             )
 
-            denom = bi ** 2 + (v * l / 2.0 / d) ** 2
-            x2 = np.exp(-1 * bi ** 2 * d * t / l ** 2) / denom
+            denom = bi**2 + (v * l / 2.0 / d) ** 2
+            x2 = np.exp(-1 * bi**2 * d * t / l**2) / denom
 
             sigma += x1 * x2
-            term1 = (
-                2.0
-                * v
-                * l
-                / d
-                * np.exp(v * x / 2.0 / d - v ** 2 * t / 4.0 / d)
-            )
+            term1 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d)
             conc = 1.0 - term1 * sigma
             if i > 0:
                 diff = abs(conc - concold)
@@ -160,38 +149,28 @@ class Wexler1d(object):
             normalized concentration value
 
         """
-        u = v ** 2 + 4.0 * e * d
+        u = v**2 + 4.0 * e * d
         u = np.sqrt(u)
         sigma = 0.0
-        denom = (u + v) / 2.0 / v - (u - v) ** 2.0 / 2.0 / v / (
-            u + v
-        ) * np.exp(-u * l / d)
+        denom = (u + v) / 2.0 / v - (u - v) ** 2.0 / 2.0 / v / (u + v) * np.exp(
+            -u * l / d
+        )
         term1 = np.exp((v - u) * x / 2.0 / d) + (u - v) / (u + v) * np.exp(
             (v + u) * x / 2.0 / d - u * l / d
         )
         term1 = term1 / denom
-        term2 = (
-            2.0
-            * v
-            * l
-            / d
-            * np.exp(v * x / 2.0 / d - v ** 2 * t / 4.0 / d - e * t)
-        )
+        term2 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d - e * t)
         betalist = self.root3(d, v, l, nval=nval)
         for i, bi in enumerate(betalist):
-
-            denom = bi ** 2 + (v * l / 2.0 / d) ** 2 + v * l / d
+            denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
             x1 = (
                 bi
-                * (
-                    bi * np.cos(bi * x / l)
-                    + v * l / 2.0 / d * np.sin(bi * x / l)
-                )
+                * (bi * np.cos(bi * x / l) + v * l / 2.0 / d * np.sin(bi * x / l))
                 / denom
             )
 
-            denom = bi ** 2 + (v * l / 2.0 / d) ** 2 + e * l ** 2 / d
-            x2 = np.exp(-1 * bi ** 2 * d * t / l ** 2) / denom
+            denom = bi**2 + (v * l / 2.0 / d) ** 2 + e * l**2 / d
+            x2 = np.exp(-1 * bi**2 * d * t / l**2) / denom
 
             sigma += x1 * x2
 
@@ -212,18 +191,14 @@ class Wexler3d:
     """
 
     def calcgamma(self, x, y, z, xc, yc, zc, dx, dy, dz):
-        gam = np.sqrt(
-            (x - xc) ** 2 + dx / dy * (y - yc) ** 2 + dx / dz * (z - zc) ** 2
-        )
+        gam = np.sqrt((x - xc) ** 2 + dx / dy * (y - yc) ** 2 + dx / dz * (z - zc) ** 2)
         return gam
 
     def calcbeta(self, v, dx, gam, lam):
-        beta = np.sqrt(v ** 2 + 4.0 * dx * gam * lam)
+        beta = np.sqrt(v**2 + 4.0 * dx * gam * lam)
         return beta
 
-    def analytical(
-        self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam=0.0, c0=1.0
-    ):
+    def analytical(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam=0.0, c0=1.0):
         gam = self.calcgamma(x, y, z, xc, yc, zc, dx, dy, dz)
         beta = self.calcbeta(v, dx, gam, lam)
         term1 = (
@@ -244,9 +219,7 @@ class Wexler3d:
         )
         return term1 * (term2 + term3)
 
-    def multiwell(
-        self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, ql, lam=0.0, c0=1.0
-    ):
+    def multiwell(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, ql, lam=0.0, c0=1.0):
         shape = self.analytical(
             x, y, z, t, v, xc[0], yc[0], zc[0], dx, dy, dz, n, ql[0], lam
         ).shape
@@ -406,10 +379,10 @@ def hechtMendez_SS_3d(
     """
 
     # calculate transverse horizontal heat dispersion
-    Dy = ath * (va ** 2 / abs(va)) + thermdiff
+    Dy = ath * (va**2 / abs(va)) + thermdiff
     t2 = erf(Y3d / (4 * np.sqrt(Dy * (x_pos / va))))
 
-    Dz = atv * (va ** 2 / abs(va)) + thermdiff
+    Dz = atv * (va**2 / abs(va)) + thermdiff
     t3 = erf(Z3d / (4 * np.sqrt(Dz * (x_pos / va))))
 
     # initial temperature at the source
@@ -449,19 +422,15 @@ def hechtMendezSS(x_pos, y, a, F0, va, n, rhow, cw, thermdiff):
     """
 
     # calculate transverse horizontal heat dispersion
-    Dth = a * (va ** 2 / abs(va)) + thermdiff
+    Dth = a * (va**2 / abs(va)) + thermdiff
 
-    t1 = F0 / (
-        va * n * rhow * cw * ((4 * np.pi * Dth * (x_pos / va)) ** (0.5))
-    )
-    t2 = np.exp((-1 * va * y ** 2) / (4 * Dth * x_pos))
+    t1 = F0 / (va * n * rhow * cw * ((4 * np.pi * Dth * (x_pos / va)) ** (0.5)))
+    t2 = np.exp((-1 * va * y**2) / (4 * Dth * x_pos))
     sln = t1 * t2
     return sln
 
 
-def hechtMendez3d(
-    x_pos, t, Y, Z, al, ath, atv, thermdiff, va, n, R, Fplanar, cw, rhow
-):
+def hechtMendez3d(x_pos, t, Y, Z, al, ath, atv, thermdiff, va, n, R, Fplanar, cw, rhow):
     """
     Calculate the analytical solution for three-dimensional changes in
     temperature based on the solution provided in the appendix of Hecht-Mendez
@@ -502,30 +471,35 @@ def hechtMendez3d(
     """
     To_planar = Fplanar / (va * n * rhow * cw)
 
-    Dl = al * (va ** 2 / abs(va)) + thermdiff
+    Dl = al * (va**2 / abs(va)) + thermdiff
     numer = R * x_pos - va * t
     denom = 2 * np.sqrt(Dl * R * t)
 
     t1 = (To_planar / 2) * erfc(numer / denom)
 
-    Dth = ath * (va ** 2 / abs(va)) + thermdiff
+    Dth = ath * (va**2 / abs(va)) + thermdiff
     t2 = erf(Y / (4 * np.sqrt(Dth * (x_pos / va))))
 
-    Dtv = atv * (va ** 2 / abs(va)) + thermdiff
+    Dtv = atv * (va**2 / abs(va)) + thermdiff
     t3 = erf(Z / (4 * np.sqrt(Dtv * (x_pos / va))))
 
     sln = t1 * t2 * t3
     return sln
 
-# Analytical solution for Stallman analysis (Stallman 1965, JGR)
-def Stallman(T_az,dT,tau,t,c_rho,darcy_flux,ko,c_w,rho_w,zbotm,nlay):
-    zstallman = np.zeros((nlay, 2))
-    K = np.pi*c_rho/ko/tau
-    V = darcy_flux*c_w*rho_w/2/ko
-    a = ((K**2+V**4/4)**0.5+V**2/2)**0.5-V
-    b = ((K**2+V**4/4)**0.5-V**2/2)**0.5
-    for i in range(len(zstallman)):
-        zstallman[i,0] = zbotm[i]
-        zstallman[i,1] = dT*np.exp(-a*(-zstallman[i,0]))*np.sin(2*np.pi*t/tau-b*(-zstallman[i,0])) + T_az
-    return zstallman
 
+# Analytical solution for Stallman analysis (Stallman 1965, JGR)
+def Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay):
+    zstallman = np.zeros((nlay, 2))
+    K = np.pi * c_rho / ko / tau
+    V = darcy_flux * c_w * rho_w / 2 / ko
+    a = ((K**2 + V**4 / 4) ** 0.5 + V**2 / 2) ** 0.5 - V
+    b = ((K**2 + V**4 / 4) ** 0.5 - V**2 / 2) ** 0.5
+    for i in range(len(zstallman)):
+        zstallman[i, 0] = zbotm[i]
+        zstallman[i, 1] = (
+            dT
+            * np.exp(-a * (-zstallman[i, 0]))
+            * np.sin(2 * np.pi * t / tau - b * (-zstallman[i, 0]))
+            + T_az
+        )
+    return zstallman

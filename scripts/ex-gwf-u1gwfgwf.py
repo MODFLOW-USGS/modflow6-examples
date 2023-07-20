@@ -19,11 +19,12 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 from flopy.utils.lgrutil import Lgr
+from matplotlib.colors import ListedColormap
 
 # Append to system path to include the common subdirectory
 
@@ -51,10 +52,22 @@ time_units = "days"
 # Scenario parameters
 
 parameters = {
-    "ex-gwf-u1gwfgwf-s1": {"XT3D_in_models": False, "XT3D_at_exchange": False, },
-    "ex-gwf-u1gwfgwf-s2": {"XT3D_in_models": True, "XT3D_at_exchange": False, },
-    "ex-gwf-u1gwfgwf-s3": {"XT3D_in_models": True, "XT3D_at_exchange": True, },
-    "ex-gwf-u1gwfgwf-s4": {"XT3D_in_models": False, "XT3D_at_exchange": True, },
+    "ex-gwf-u1gwfgwf-s1": {
+        "XT3D_in_models": False,
+        "XT3D_at_exchange": False,
+    },
+    "ex-gwf-u1gwfgwf-s2": {
+        "XT3D_in_models": True,
+        "XT3D_at_exchange": False,
+    },
+    "ex-gwf-u1gwfgwf-s3": {
+        "XT3D_in_models": True,
+        "XT3D_at_exchange": True,
+    },
+    "ex-gwf-u1gwfgwf-s4": {
+        "XT3D_in_models": False,
+        "XT3D_at_exchange": True,
+    },
 }
 
 # Table with Model Parameters
@@ -115,15 +128,12 @@ rclose = 1e-6
 
 
 def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
-
     if config.buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -131,7 +141,7 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
 
         # The coarse, outer model
@@ -158,16 +168,14 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
 
         # constant head boundary LEFT
         left_chd = [
-            [(ilay, irow, 0), h_left]
-            for ilay in range(nlay)
-            for irow in range(nrow)
+            [(ilay, irow, 0), h_left] for ilay in range(nlay) for irow in range(nrow)
         ]
         chd_spd = {0: left_chd}
         flopy.mf6.ModflowGwfchd(
             gwf_outer,
             stress_period_data=chd_spd,
             pname="CHD-LEFT",
-            filename="{}.left.chd".format(gwfname_outer),
+            filename=f"{gwfname_outer}.left.chd",
         )
 
         # constant head boundary RIGHT
@@ -181,11 +189,11 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
             gwf_outer,
             stress_period_data=chd_spd,
             pname="CHD-RIGHT",
-            filename="{}.right.chd".format(gwfname_outer),
+            filename=f"{gwfname_outer}.right.chd",
         )
 
-        head_filerecord = "{}.hds".format(gwfname_outer)
-        budget_filerecord = "{}.cbc".format(gwfname_outer)
+        head_filerecord = f"{gwfname_outer}.hds"
+        budget_filerecord = f"{gwfname_outer}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf_outer,
             head_filerecord=head_filerecord,
@@ -218,8 +226,8 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
             k=k11,
         )
 
-        head_filerecord = "{}.hds".format(gwfname_inner)
-        budget_filerecord = "{}.cbc".format(gwfname_inner)
+        head_filerecord = f"{gwfname_inner}.hds"
+        budget_filerecord = f"{gwfname_inner}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf_inner,
             head_filerecord=head_filerecord,
@@ -287,6 +295,7 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
 
 # Function to write model files
 
+
 def write_model(sim, silent=True):
     if config.writeModel:
         sim.write_simulation(silent=silent)
@@ -295,6 +304,7 @@ def write_model(sim, silent=True):
 # Function to run the model.
 # True is returned if the model runs successfully
 #
+
 
 @config.timeit
 def run_model(sim, silent=False):
@@ -308,6 +318,7 @@ def run_model(sim, silent=False):
 
 # Functions to plot model results.
 #
+
 
 def plot_grid(idx, sim):
     fs = USGSFigure(figure_type="map", verbose=False)
@@ -328,21 +339,14 @@ def plot_grid(idx, sim):
     pmv.plot_bc(name="CHD-LEFT", alpha=0.75)
     pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
 
-    ax.plot(
-        [200, 500, 500, 200, 200],
-        [200, 200, 500, 500, 200],
-        "r--",
-        linewidth=2.0
-    )
+    ax.plot([200, 500, 500, 200, 200], [200, 200, 500, 500, 200], "r--", linewidth=2.0)
 
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
         fig.savefig(fpth)
     return
 
@@ -359,7 +363,9 @@ def plot_stencils(idx, sim):
     # left plot, with stencils at the interface
     ax = fig.add_subplot(1, 2, 1, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0, extent=pmv.extent)
+    pmv_inner = flopy.plot.PlotMapView(
+        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
+    )
     pmv.plot_grid()
     pmv_inner.plot_grid()
 
@@ -387,15 +393,15 @@ def plot_stencils(idx, sim):
     stencil_inner[0, 8, 1] = 1
 
     # markers
-    x = [350., 216.666]
-    y = [500., 200.]
+    x = [350.0, 216.666]
+    y = [500.0, 200.0]
 
     stencil = np.ma.masked_equal(stencil, 0)
     stencil_inner = np.ma.masked_equal(stencil_inner, 0)
     cmap = ListedColormap(["dodgerblue"])
     pmv.plot_array(stencil, cmap=cmap)
     pmv_inner.plot_array(stencil_inner, cmap=cmap)
-    plt.scatter(x, y, facecolors='r')
+    plt.scatter(x, y, facecolors="r")
 
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
@@ -403,7 +409,9 @@ def plot_stencils(idx, sim):
     # right plot, with stencils '1 connection away from the interface'
     ax = fig.add_subplot(1, 2, 2, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0, extent=pmv.extent)
+    pmv_inner = flopy.plot.PlotMapView(
+        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
+    )
     pmv.plot_grid()
     pmv_inner.plot_grid()
 
@@ -433,24 +441,22 @@ def plot_stencils(idx, sim):
     stencil[0, 5, 4] = 1
 
     # markers
-    x = [150., 450.]
-    y = [500., 233.333]
+    x = [150.0, 450.0]
+    y = [500.0, 233.333]
 
     stencil = np.ma.masked_equal(stencil, 0)
     stencil_inner = np.ma.masked_equal(stencil_inner, 0)
     cmap = ListedColormap(["dodgerblue"])
     pmv.plot_array(stencil, cmap=cmap)
     pmv_inner.plot_array(stencil_inner, cmap=cmap)
-    plt.scatter(x, y, facecolors='r')
+    plt.scatter(x, y, facecolors="r")
 
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-stencils{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-stencils{config.figure_ext}")
         fig.savefig(fpth)
     return
 
@@ -466,8 +472,8 @@ def plot_head(idx, sim):
 
     head = gwf_outer.output.head().get_data()[0]
     head_inner = gwf_inner.output.head().get_data()[0]
-    head[head == 1e+30] = np.nan
-    head_inner[head_inner == 1e+30] = np.nan
+    head[head == 1e30] = np.nan
+    head_inner[head_inner == 1e30] = np.nan
 
     # create MODFLOW 6 cell-by-cell budget objects
     qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
@@ -482,16 +488,24 @@ def plot_head(idx, sim):
     # create plot with head values and spdis
     ax = fig.add_subplot(1, 2, 1, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0, extent=pmv.extent)
+    pmv_inner = flopy.plot.PlotMapView(
+        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
+    )
     cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=1.0)
     cb = pmv_inner.plot_array(head_inner, cmap="jet", vmin=0.0, vmax=1.0)
     pmv.plot_grid()
     pmv_inner.plot_grid()
     pmv.plot_vector(
-        qx, qy, normalize=False, color="0.75",
+        qx,
+        qy,
+        normalize=False,
+        color="0.75",
     )
     pmv_inner.plot_vector(
-        qx_inner, qy_inner, normalize=False, color="0.75",
+        qx_inner,
+        qy_inner,
+        normalize=False,
+        color="0.75",
     )
     cbar = plt.colorbar(cb, shrink=0.25)
     cbar.ax.set_xlabel(r"Head, ($m$)")
@@ -502,7 +516,9 @@ def plot_head(idx, sim):
     # create plot with error in head
     ax = fig.add_subplot(1, 2, 2, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0, extent=pmv.extent)
+    pmv_inner = flopy.plot.PlotMapView(
+        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
+    )
     pmv.plot_grid()
     pmv_inner.plot_grid()
     x = np.array(gwf_outer.modelgrid.xcellcenters) - 50.0
@@ -525,9 +541,7 @@ def plot_head(idx, sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-head{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-head{config.figure_ext}")
         fig.savefig(fpth)
     return
 

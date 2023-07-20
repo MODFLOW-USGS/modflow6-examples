@@ -11,10 +11,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -129,9 +130,7 @@ def build_model(
         sim = flopy.mf6.MFSimulation(
             sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -140,7 +139,7 @@ def build_model(
             inner_maximum=ninner,
             inner_dvclose=hclose,
             relaxation_factor=relax,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(
             sim, modelname=name, save_flows=True, newtonoptions="newton"
@@ -217,7 +216,7 @@ def build_model(
             beta=0.0,
             packagedata=sub6,
         )
-        opth = "{}.csub.obs".format(name)
+        opth = f"{name}.csub.obs"
         csub_csv = opth + ".csv"
         obs = [
             ("tcomp", "interbed-compaction", "ib1"),
@@ -226,7 +225,7 @@ def build_model(
             ("qbot", "delay-flowbot", (0,)),
         ]
         for k in range(ndelaycells):
-            tag = "H{:04d}".format(k + 1)
+            tag = f"H{k + 1:04d}"
             obs.append((tag, "delay-head", (0,), (k,)))
         if not head_based:
             iposm = int(ndelaycells / 2) + 1
@@ -280,24 +279,20 @@ def run_model(sim, silent=True):
 # Analytical solution for plotting
 
 
-def analytical_solution(
-    z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent=True
-):
+def analytical_solution(z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent=True):
     v = 0.0
     e = np.exp(1)
     pi = np.pi
-    pi2 = np.pi ** 2
+    pi2 = np.pi**2
     # calculate infinite sum
     for k in range(n):
         fk = float(k)
         tauk = (0.5 * b0) ** 2.0 * ssk / ((2.0 * fk + 1.0) ** 2.0 * vk)
-        ep = ((2.0 * fk + 1.0) ** 2 * pi2 * vk * t) / (
-            4.0 * ssk * (0.5 * b0) ** 2.0
-        )
+        ep = ((2.0 * fk + 1.0) ** 2 * pi2 * vk * t) / (4.0 * ssk * (0.5 * b0) ** 2.0)
         rad = (2.0 * fk + 1.0) * pi * z / b0
-        v += ((-1.0) ** fk / (2.0 * fk + 1.0)) * (e ** -ep) * np.cos(rad)
+        v += ((-1.0) ** fk / (2.0 * fk + 1.0)) * (e**-ep) * np.cos(rad)
         if not silent:
-            print("{:5d} {:20g} {:20g} {:20g}".format(k, tauk, rad, v))
+            print(f"{k:5d} {tauk:20g} {rad:20g} {v:20g}")
     return dh - 4.0 * dh * v / pi
 
 
@@ -364,11 +359,9 @@ def plot_grid(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -443,9 +436,7 @@ def plot_head_based(sim, silent=True):
 
     idx += 1
     ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black"
-    )
+    ax.plot(tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black")
     ax.set_xticks(np.arange(0, 110, 10))
     ax.set_yticks(np.arange(0, 2.2, 0.2))
     ax.set_xlabel("Percent of time constant")
@@ -461,11 +452,9 @@ def plot_head_based(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-01{}".format(name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -543,11 +532,9 @@ def plot_effstress(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-01{}".format(name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -578,7 +565,7 @@ def fill_heads(rec_arr, ndcells):
     arr = np.zeros((rec_arr.shape[0], ndcells), dtype=float)
     for i in range(100):
         for j in range(ndcells):
-            name = "H{:04d}".format(j + 1)
+            name = f"H{j + 1:04d}"
             arr[i, j] = rec_arr[name][i]
     return arr
 
@@ -646,7 +633,7 @@ def plot_comp_q_comparison(sim, silent=True):
             color = "black"
         else:
             color = scalarMap.to_rgba(idx - 1)
-        label = "Thickness = {:>3d} m".format(int(thickness))
+        label = f"Thickness = {int(thickness):>3d} m"
 
         v = 100.0 * (hb_obs["TCOMP"] - es_obs["TCOMP"]) / (skv * thickness)
         ax = axes[0]
@@ -663,11 +650,9 @@ def plot_comp_q_comparison(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-01{}".format(name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -686,9 +671,7 @@ def plot_head_comparison(sim, silent=True):
 
     # setup the figure
     fig = plt.figure(figsize=figure_size)
-    fig.subplots_adjust(
-        left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1
-    )
+    fig.subplots_adjust(left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1)
     gs = mpl.gridspec.GridSpec(1, 6, figure=fig)
     z = np.linspace(0, 1, ndcells)
     yticks = np.arange(0, 1.1, 0.1)
@@ -716,9 +699,7 @@ def plot_head_comparison(sim, silent=True):
             fs.heading(ax, letter=chr(ord("A") + idx))
             ax.set_yticks(yticks)
             fs.remove_edge_ticks(ax)
-            text = r"$\frac{t}{\tau_0}$ = " + "{}".format(
-                pct_vals[idx] / 100.0
-            )
+            text = r"$\frac{t}{\tau_0}$ = " + "{}".format(pct_vals[idx] / 100.0)
             ax.text(
                 0.25,
                 0.01,
@@ -801,18 +782,16 @@ def plot_head_comparison(sim, silent=True):
             color = "black"
         else:
             color = scalarMap.to_rgba(ic - 1)
-        label = "Thickness = {:>3d} m".format(int(b))
+        label = f"Thickness = {int(b):>3d} m"
         ax.plot([-1, -1], [-1, -1], lw=0.75, color=color, label=label)
 
     leg = fs.graph_legend(ax, loc="center", bbox_to_anchor=(0.64, 0.5))
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-02{}".format(name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -870,7 +849,7 @@ def simulation(idx, silent=True):
                     subdir_name = "hb-"
                 else:
                     subdir_name = "es-"
-                subdir_name += "{:03d}".format(int(b))
+                subdir_name += f"{int(b):03d}"
                 params["head_based"] = head_based
                 params["bed_thickness"] = b
                 params["kv"] = kv
@@ -881,7 +860,6 @@ def simulation(idx, silent=True):
 
                 if config.runModel:
                     success = run_model(sim, silent=silent)
-
 
     if config.plotModel and success:
         plot_results(sim, silent=silent)

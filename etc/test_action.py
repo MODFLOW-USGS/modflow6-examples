@@ -1,6 +1,6 @@
 import os
 import shutil
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 # change to root directory - local run only
 starting_dir = os.getcwd()
@@ -99,16 +99,16 @@ for file_name in nb_files:
 
 # -- remove ./_notebooks if it exists ----------------------------------------
 copy_pth = os.path.join(".doc", "_notebooks")
-print("clean up {}".format(copy_pth))
+print(f"clean up {copy_pth}")
 if os.path.isdir(copy_pth):
     shutil.rmtree(copy_pth)
 
 # -- copy executed notebooks to ./_notebooks ---------------------------------
-print("copy files in {} -> {}".format(dst_pth, copy_pth))
+print(f"copy files in {dst_pth} -> {copy_pth}")
 shutil.copytree(dst_pth, copy_pth)
 
 # -- clean up (remove) dst_pth directory -------------------------------------
-print("clean up {}".format(dst_pth))
+print(f"clean up {dst_pth}")
 shutil.rmtree(dst_pth)
 
 # remove zip file - local run only

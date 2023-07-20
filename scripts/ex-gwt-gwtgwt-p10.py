@@ -6,16 +6,18 @@
 # The results are checked for equivalence with the MODFLOW 6 GWT
 # solutions as produced by the example 'MT3DMS problem 10'.
 
+import os
+
 # Imports and extend system path to include the common subdirectory
 import sys
-import os
+
 sys.path.append(os.path.join("..", "common"))
 
-import numpy as np
-import matplotlib.pyplot as plt
 import config
-from figspecs import USGSFigure
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
+from figspecs import USGSFigure
 from flopy.utils.util_array import read1d
 
 mf6exe = config.mf6_exe
@@ -69,15 +71,11 @@ nstp = 500  # Number of time steps
 ttsmult = 1.0  # multiplier
 
 # Additional model input
-delr = (
-        [2000, 1600, 800, 400, 200, 100]
-        + 28 * [50]
-        + [100, 200, 400, 800, 1600, 2000]
-)
+delr = [2000, 1600, 800, 400, 200, 100] + 28 * [50] + [100, 200, 400, 800, 1600, 2000]
 delc = (
-        [2000, 2000, 2000, 1600, 800, 400, 200, 100]
-        + 45 * [50]
-        + [100, 200, 400, 800, 1600, 2000, 2000, 2000]
+    [2000, 2000, 2000, 1600, 800, 400, 200, 100]
+    + 45 * [50]
+    + [100, 200, 400, 800, 1600, 2000, 2000, 2000]
 )
 
 hk = [k1, k1, k2, k2]
@@ -196,22 +194,18 @@ exgdata = None
 # Advection
 scheme = "Undefined"
 
+
 # ### Build the MODFLOW 6 simulation
 def build_model(sim_name):
-
     if not config.buildModel:
         return
 
     sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
     # Instantiating time discretization
     tdis_rc = [(perlen, nstp, 1.0)]
-    flopy.mf6.ModflowTdis(
-        sim, nper=1, perioddata=tdis_rc, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=1, perioddata=tdis_rc, time_units=time_units)
 
     # add both solutions to the simulation
     add_flow(sim)
@@ -236,6 +230,7 @@ def build_model(sim_name):
     sim.write_simulation()
 
     return sim
+
 
 # Function to add the two GWF models, and their exchange
 def add_flow(sim):
@@ -269,24 +264,57 @@ def add_flow(sim):
     for ilay in range(nlay):
         for irow in range(nrow_inn):
             irow_outer = irow + 8
-            exgdata.append(((ilay, irow_outer, 5), (ilay, irow, 0), 1, 50.0, 25.0, 50.0, 0.0, 75.0))
+            exgdata.append(
+                ((ilay, irow_outer, 5), (ilay, irow, 0), 1, 50.0, 25.0, 50.0, 0.0, 75.0)
+            )
     # west
     for ilay in range(nlay):
         for irow in range(nrow_inn):
             irow_outer = irow + 8
             exgdata.append(
-                ((ilay, irow_outer, ncol - 6), (ilay, irow, ncol_inn - 1), 1, 50.0, 25.0, 50.0, 180.0, 75.0))
+                (
+                    (ilay, irow_outer, ncol - 6),
+                    (ilay, irow, ncol_inn - 1),
+                    1,
+                    50.0,
+                    25.0,
+                    50.0,
+                    180.0,
+                    75.0,
+                )
+            )
     # north
     for ilay in range(nlay):
         for icol in range(ncol_inn):
             icol_outer = icol + 6
-            exgdata.append(((ilay, 7, icol_outer), (ilay, 0, icol), 1, 50.0, 25.0, 50.0, 270.0, 75.0))
+            exgdata.append(
+                (
+                    (ilay, 7, icol_outer),
+                    (ilay, 0, icol),
+                    1,
+                    50.0,
+                    25.0,
+                    50.0,
+                    270.0,
+                    75.0,
+                )
+            )
     # south
     for ilay in range(nlay):
         for icol in range(ncol_inn):
             icol_outer = icol + 6
             exgdata.append(
-                ((ilay, nrow - 8, icol_outer), (ilay, nrow_inn - 1, icol), 1, 50.0, 25.0, 50.0, 90.0, 75.0))
+                (
+                    (ilay, nrow - 8, icol_outer),
+                    (ilay, nrow_inn - 1, icol),
+                    1,
+                    50.0,
+                    25.0,
+                    50.0,
+                    90.0,
+                    75.0,
+                )
+            )
 
     gwfgwf = flopy.mf6.ModflowGwfgwf(
         sim,
@@ -298,19 +326,19 @@ def add_flow(sim):
         xt3d=False,
         print_flows=True,
         auxiliary=["ANGLDEGX", "CDIST"],
-        #dev_interfacemodel_on=True,
+        # dev_interfacemodel_on=True,
     )
 
     # Observe flow for exchange 439
     gwfgwfobs = {}
     gwfgwfobs["gwfgwf.output.obs.csv"] = [
-        ["exchange439", "FLOW-JA-FACE", (439 - 1, )],
+        ["exchange439", "FLOW-JA-FACE", (439 - 1,)],
     ]
     fname = "gwfgwf.input.obs"
     # cdl -- turn off for now as it causes a flopy load fail
-    #gwfgwf.obs.initialize(
+    # gwfgwf.obs.initialize(
     #    filename=fname, digits=25, print_input=True, continuous=gwfgwfobs
-    #)
+    # )
 
 
 # Create the outer GWF model
@@ -322,7 +350,7 @@ def add_outer_gwfmodel(sim):
         sim,
         modelname=mname,
         save_flows=True,
-        model_nam_file="{}.nam".format(mname),
+        model_nam_file=f"{mname}.nam",
     )
 
     # Instantiating discretization package
@@ -337,13 +365,11 @@ def add_outer_gwfmodel(sim):
         top=top,
         botm=botm,
         idomain=idomain,
-        filename="{}.dis".format(mname),
+        filename=f"{mname}.dis",
     )
 
     # Instantiating initial conditions package for flow model
-    flopy.mf6.ModflowGwfic(
-        gwf, strt=strt, filename="{}.ic".format(mname)
-    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt, filename=f"{mname}.ic")
 
     # Instantiating node-property flow package
     flopy.mf6.ModflowGwfnpf(
@@ -354,13 +380,11 @@ def add_outer_gwfmodel(sim):
         k=hk,
         k33=vka,
         save_specific_discharge=True,
-        filename="{}.npf".format(mname),
+        filename=f"{mname}.npf",
     )
 
     # Instantiate storage package
-    flopy.mf6.ModflowGwfsto(
-        gwf, ss=0, sy=0, filename="{}.sto".format(mname)
-    )
+    flopy.mf6.ModflowGwfsto(gwf, ss=0, sy=0, filename=f"{mname}.sto")
 
     # Instantiating constant head package
     # MF6 constant head boundaries:
@@ -371,18 +395,12 @@ def add_outer_gwfmodel(sim):
         for i in np.arange(nrow):
             #              (l, r, c),    head,      conc
             chdspd.append([(k, i, 0), strt[k, i, 0], 0.0])  # left
-            chdspd.append(
-                [(k, i, ncol - 1), strt[k, i, ncol - 1], 0.0]
-            )  # right
+            chdspd.append([(k, i, ncol - 1), strt[k, i, ncol - 1], 0.0])  # right
 
-        for j in np.arange(
-                1, ncol - 1
-        ):  # skip corners, already added above
+        for j in np.arange(1, ncol - 1):  # skip corners, already added above
             #              (l, r, c),   head,        conc
             chdspd.append([(k, 0, j), strt[k, 0, j], 0.0])  # top
-            chdspd.append(
-                [(k, nrow - 1, j), strt[k, nrow - 1, j], 0.0]
-            )  # bottom
+            chdspd.append([(k, nrow - 1, j), strt[k, nrow - 1, j], 0.0])  # bottom
 
     chdspd = {0: chdspd}
 
@@ -393,7 +411,7 @@ def add_outer_gwfmodel(sim):
         save_flows=False,
         auxiliary="CONCENTRATION",
         pname="CHD-1",
-        filename="{}.chd".format(mname),
+        filename=f"{mname}.chd",
     )
 
     # Instantiate recharge package
@@ -402,17 +420,15 @@ def add_outer_gwfmodel(sim):
         print_flows=True,
         recharge=rech,
         pname="RCH-1",
-        filename="{}.rch".format(mname),
+        filename=f"{mname}.rch",
     )
 
     # Instantiating output control package for flow model
     flopy.mf6.ModflowGwfoc(
         gwf,
-        head_filerecord="{}.hds".format(mname),
-        budget_filerecord="{}.bud".format(mname),
-        headprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        head_filerecord=f"{mname}.hds",
+        budget_filerecord=f"{mname}.bud",
+        headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[
             ("HEAD", "LAST"),
             ("HEAD", "STEPS", "1", "250", "375", "500"),
@@ -427,6 +443,7 @@ def add_outer_gwfmodel(sim):
 
     return gwf
 
+
 # Create the inner GWF model
 def add_inner_gwfmodel(sim):
     mname = gwfname_inn
@@ -436,7 +453,7 @@ def add_inner_gwfmodel(sim):
         sim,
         modelname=mname,
         save_flows=True,
-        model_nam_file="{}.nam".format(mname),
+        model_nam_file=f"{mname}.nam",
     )
 
     # Instantiating discretization package
@@ -453,13 +470,11 @@ def add_inner_gwfmodel(sim):
         idomain=idomain_inn,
         xorigin=xshift,
         yorigin=yshift,
-        filename="{}.dis".format(mname),
+        filename=f"{mname}.dis",
     )
 
     # Instantiating initial conditions package for flow model
-    flopy.mf6.ModflowGwfic(
-        gwf, strt=strt_inn, filename="{}.ic".format(mname)
-    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt_inn, filename=f"{mname}.ic")
 
     # Instantiating node-property flow package
     flopy.mf6.ModflowGwfnpf(
@@ -470,13 +485,11 @@ def add_inner_gwfmodel(sim):
         k=hk,
         k33=vka,
         save_specific_discharge=True,
-        filename="{}.npf".format(mname),
+        filename=f"{mname}.npf",
     )
 
     # Instantiate storage package
-    flopy.mf6.ModflowGwfsto(
-        gwf, ss=0, sy=0, filename="{}.sto".format(mname)
-    )
+    flopy.mf6.ModflowGwfsto(gwf, ss=0, sy=0, filename=f"{mname}.sto")
 
     # Instantiate recharge package
     flopy.mf6.ModflowGwfrcha(
@@ -484,7 +497,7 @@ def add_inner_gwfmodel(sim):
         print_flows=True,
         recharge=rech,
         pname="RCH-1",
-        filename="{}.rch".format(mname),
+        filename=f"{mname}.rch",
     )
 
     # Instantiate the wel package
@@ -496,17 +509,15 @@ def add_inner_gwfmodel(sim):
         save_flows=False,
         auxiliary="CONCENTRATION",
         pname="WEL-1",
-        filename="{}.wel".format(mname),
+        filename=f"{mname}.wel",
     )
 
     # Instantiating output control package for flow model
     flopy.mf6.ModflowGwfoc(
         gwf,
-        head_filerecord="{}.hds".format(mname),
-        budget_filerecord="{}.bud".format(mname),
-        headprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        head_filerecord=f"{mname}.hds",
+        budget_filerecord=f"{mname}.bud",
+        headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[
             ("HEAD", "LAST"),
             ("HEAD", "STEPS", "1", "250", "375", "500"),
@@ -520,6 +531,7 @@ def add_inner_gwfmodel(sim):
     )
 
     return gwf
+
 
 # Function to add the transport models and exchange to the simulation
 def add_transport(sim):
@@ -573,15 +585,16 @@ def add_transport(sim):
     # Observe mass flow for exchange 439
     gwtgwtobs = {}
     gwtgwtobs["gwtgwt.output.obs.csv"] = [
-        ["exchange439", "FLOW-JA-FACE", (439 - 1, )],
+        ["exchange439", "FLOW-JA-FACE", (439 - 1,)],
     ]
     fname = "gwtgwt.input.obs"
     # cdl -- turn off for now as it causes a flopy load fail
-    #gwtgwt.obs.initialize(
+    # gwtgwt.obs.initialize(
     #    filename=fname, digits=25, print_input=True, continuous=gwtgwtobs
-    #)
+    # )
 
     return sim
+
 
 # Create the outer GWT model
 def add_outer_gwtmodel(sim):
@@ -590,7 +603,7 @@ def add_outer_gwtmodel(sim):
         sim,
         model_type="gwt6",
         modelname=mname,
-        model_nam_file="{}.nam".format(mname),
+        model_nam_file=f"{mname}.nam",
     )
     gwt.name_file.save_flows = True
 
@@ -605,17 +618,13 @@ def add_outer_gwtmodel(sim):
         top=top,
         botm=botm,
         idomain=idomain,
-        filename="{}.dis".format(mname),
+        filename=f"{mname}.dis",
     )
 
     # Instantiating transport initial concentrations
-    flopy.mf6.ModflowGwtic(
-        gwt, strt=sconc, filename="{}.ic".format(mname)
-    )
+    flopy.mf6.ModflowGwtic(gwt, strt=sconc, filename=f"{mname}.ic")
 
-    flopy.mf6.ModflowGwtadv(
-        gwt, scheme=scheme, filename="{}.adv".format(mname)
-    )
+    flopy.mf6.ModflowGwtadv(gwt, scheme=scheme, filename=f"{mname}.adv")
 
     # Instantiating transport dispersion package
     if al != 0:
@@ -625,7 +634,7 @@ def add_outer_gwtmodel(sim):
             ath1=ath1,
             atv=atv,
             pname="DSP-1",
-            filename="{}.dsp".format(mname),
+            filename=f"{mname}.dsp",
         )
 
     # Instantiating transport mass storage package
@@ -640,7 +649,7 @@ def add_outer_gwtmodel(sim):
         bulk_density=rhob,
         distcoef=kd,
         pname="MST-1",
-        filename="{}.mst".format(mname),
+        filename=f"{mname}.mst",
     )
 
     # Instantiating transport source-sink mixing package
@@ -649,27 +658,26 @@ def add_outer_gwtmodel(sim):
         gwt,
         sources=sourcerecarray,
         print_flows=True,
-        filename="{}.ssm".format(mname),
+        filename=f"{mname}.ssm",
     )
 
     # Instantiating transport output control package
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(mname),
-        concentration_filerecord="{}.ucn".format(mname),
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        budget_filerecord=f"{mname}.cbc",
+        concentration_filerecord=f"{mname}.ucn",
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[
             ("CONCENTRATION", "LAST"),
             ("CONCENTRATION", "STEPS", "1", "250", "375", "500"),
             ("BUDGET", "LAST"),
         ],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
-        filename="{}.oc".format(mname),
+        filename=f"{mname}.oc",
     )
 
     return gwt
+
 
 # Create the inner GWT model
 def add_inner_gwtmodel(sim):
@@ -679,7 +687,7 @@ def add_inner_gwtmodel(sim):
         sim,
         model_type="gwt6",
         modelname=mname,
-        model_nam_file="{}.nam".format(mname),
+        model_nam_file=f"{mname}.nam",
     )
     gwt.name_file.save_flows = True
 
@@ -696,17 +704,13 @@ def add_inner_gwtmodel(sim):
         idomain=idomain_inn,
         xorigin=xshift,
         yorigin=yshift,
-        filename="{}.dis".format(mname),
+        filename=f"{mname}.dis",
     )
 
     # Instantiating transport initial concentrations
-    flopy.mf6.ModflowGwtic(
-        gwt, strt=sconc_inn, filename="{}.ic".format(mname)
-    )
+    flopy.mf6.ModflowGwtic(gwt, strt=sconc_inn, filename=f"{mname}.ic")
 
-    flopy.mf6.ModflowGwtadv(
-        gwt, scheme=scheme, filename="{}.adv".format(mname)
-    )
+    flopy.mf6.ModflowGwtadv(gwt, scheme=scheme, filename=f"{mname}.adv")
 
     # Instantiating transport dispersion package
     if al != 0:
@@ -716,7 +720,7 @@ def add_inner_gwtmodel(sim):
             ath1=ath1,
             atv=atv,
             pname="DSP-1",
-            filename="{}.dsp".format(mname),
+            filename=f"{mname}.dsp",
         )
 
     # Instantiating transport mass storage package
@@ -731,7 +735,7 @@ def add_inner_gwtmodel(sim):
         bulk_density=rhob,
         distcoef=kd,
         pname="MST-1",
-        filename="{}.mst".format(mname),
+        filename=f"{mname}.mst",
     )
 
     # Instantiating transport source-sink mixing package
@@ -740,29 +744,29 @@ def add_inner_gwtmodel(sim):
         gwt,
         sources=sourcerecarray,
         print_flows=True,
-        filename="{}.ssm".format(mname),
+        filename=f"{mname}.ssm",
     )
 
     # Instantiating transport output control package
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(mname),
-        concentration_filerecord="{}.ucn".format(mname),
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        budget_filerecord=f"{mname}.cbc",
+        concentration_filerecord=f"{mname}.ucn",
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[
             ("CONCENTRATION", "LAST"),
             ("CONCENTRATION", "STEPS", "1", "250", "375", "500"),
             ("BUDGET", "LAST"),
         ],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
-        filename="{}.oc".format(mname),
+        filename=f"{mname}.oc",
     )
 
     return gwt
 
+
 # ### Simulation Run and Results
+
 
 # Run the simulation and generate the results
 def run_model(sim):
@@ -773,31 +777,66 @@ def run_model(sim):
             print(buff)
     return success
 
+
 # Load MODFLOW 6 reference for the concentrations (GWT MT3DMS p10)
 def get_reference_data_conc():
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_1days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_1days.txt"
+        )
+    )
     conc1 = np.loadtxt(fpath)
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_500days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_500days.txt"
+        )
+    )
     conc500 = np.loadtxt(fpath)
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_750days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_750days.txt"
+        )
+    )
     conc750 = np.loadtxt(fpath)
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_1000days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_1000days.txt"
+        )
+    )
     conc1000 = np.loadtxt(fpath)
 
     return [conc1, conc500, conc750, conc1000]
 
+
 # Load MODFLOW 6 reference for heads (GWT MT3DMS p10)
 def get_reference_data_heads():
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1days.txt"
+        )
+    )
     head1 = np.loadtxt(fpath)
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_500days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_500days.txt"
+        )
+    )
     head500 = np.loadtxt(fpath)
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_750days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_750days.txt"
+        )
+    )
     head750 = np.loadtxt(fpath)
-    fpath = open(os.path.join("..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1000days.txt"))
+    fpath = open(
+        os.path.join(
+            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1000days.txt"
+        )
+    )
     head1000 = np.loadtxt(fpath)
 
     return [head1, head500, head750, head1000]
+
 
 # Plot the inner and outer grid
 def plot_grids(sim):
@@ -818,6 +857,7 @@ def plot_grids(sim):
     )
     fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-modelgrid.png")
     fig.savefig(fpath)
+
 
 # Plot the difference in concentration after 1,500,750,1000 days
 # between this coupled model setup using a GWT-GWT exchange and the
@@ -860,7 +900,7 @@ def plot_difference_conc(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 1 day"
-    fs.heading(letter='A', heading=title)
+    fs.heading(letter="A", heading=title)
 
     # Difference in concentration @ 500 days
     ax = fig.add_subplot(2, 2, 2, aspect="equal")
@@ -880,7 +920,7 @@ def plot_difference_conc(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 500 days"
-    fs.heading(letter='B', heading=title)
+    fs.heading(letter="B", heading=title)
 
     # Difference in concentration @ 750 days
     ax = fig.add_subplot(2, 2, 3, aspect="equal")
@@ -900,7 +940,7 @@ def plot_difference_conc(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 750 days"
-    fs.heading(letter='C', heading=title)
+    fs.heading(letter="C", heading=title)
 
     # Difference in concentration @ 1000 days
     ax = fig.add_subplot(2, 2, 4, aspect="equal")
@@ -921,12 +961,13 @@ def plot_difference_conc(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 1000 days"
-    fs.heading(letter='D', heading=title)
+    fs.heading(letter="D", heading=title)
 
     fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffconc.png")
     fig.savefig(fpath)
 
     return
+
 
 # Plot the difference in head after 1,500,750,1000 days
 # between this coupled model and the single model reference
@@ -968,7 +1009,7 @@ def plot_difference_heads(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 1 day"
-    fs.heading(letter='A', heading=title)
+    fs.heading(letter="A", heading=title)
 
     # Difference in heads @ 500 days
     ax = fig.add_subplot(2, 2, 2, aspect="equal")
@@ -988,7 +1029,7 @@ def plot_difference_heads(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 500 days"
-    fs.heading(letter='B', heading=title)
+    fs.heading(letter="B", heading=title)
 
     # Difference in heads @ 750 days
     ax = fig.add_subplot(2, 2, 3, aspect="equal")
@@ -1008,7 +1049,7 @@ def plot_difference_heads(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 750 days"
-    fs.heading(letter='C', heading=title)
+    fs.heading(letter="C", heading=title)
 
     # Difference in heads @ 1000 days
     ax = fig.add_subplot(2, 2, 4, aspect="equal")
@@ -1029,12 +1070,13 @@ def plot_difference_heads(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Difference Layer 3 Time = 1000 days"
-    fs.heading(letter='D', heading=title)
+    fs.heading(letter="D", heading=title)
 
     fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffhead.png")
     fig.savefig(fpath)
 
     return
+
 
 # Plot the concentration, this figure should be compared to the same figure in MT3DMS problem 10
 def plot_concentration(sim):
@@ -1070,7 +1112,7 @@ def plot_concentration(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Layer 3 Initial Concentration"
-    fs.heading(letter='A', heading=title)
+    fs.heading(letter="A", heading=title)
 
     ax = fig.add_subplot(2, 2, 2, aspect="equal")
     mm = flopy.plot.PlotMapView(model=gwt_outer)
@@ -1086,7 +1128,7 @@ def plot_concentration(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Layer 3 Time = 500 days"
-    fs.heading(letter='B', heading=title)
+    fs.heading(letter="B", heading=title)
 
     ax = fig.add_subplot(2, 2, 3, aspect="equal")
     mm = flopy.plot.PlotMapView(model=gwt_outer)
@@ -1102,7 +1144,7 @@ def plot_concentration(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Layer 3 Time = 750 days"
-    fs.heading(letter='C', heading=title)
+    fs.heading(letter="C", heading=title)
 
     ax = fig.add_subplot(2, 2, 4, aspect="equal")
     mm = flopy.plot.PlotMapView(model=gwt_outer)
@@ -1118,12 +1160,13 @@ def plot_concentration(sim):
     for cid, f, c in welspd_mf6:
         plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
     title = "Layer 3 Time = 1000 days"
-    fs.heading(letter='D', heading=title)
+    fs.heading(letter="D", heading=title)
 
     fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-concentration.png")
     fig.savefig(fpath)
 
     return
+
 
 # Generates all plots
 def plot_results(sim):
