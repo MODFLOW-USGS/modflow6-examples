@@ -1,3 +1,4 @@
+import ast
 import os
 import sys
 import re
@@ -66,6 +67,7 @@ def make_notebooks():
             "jupytext",
             "--from py",
             "--to ipynb",
+            "--update",
             "-o",
             opth,
             tpth,
@@ -126,39 +128,33 @@ def make_tables():
         )
         # do a little processing
         with open(file) as f:
-            lines = f.read().splitlines()
+            txt = f.read()
+        doc = ast.parse(txt, file)
+        lines = txt.splitlines()
+
+        # gather all assignments, organize by (starting) lineno and name
+        assign_bylineno = {}
+        assign_byname = {}
+        for node in doc.body:
+            if isinstance(node, ast.Assign):
+                target = node.targets[0]
+                if isinstance(target, ast.Name):
+                    assign_bylineno[node.lineno] = node
+                    assign_byname[target.id] = node.value
 
         # parse optional parameters dictionary
         parameters = None
-        tag = "parameters ="
-        for idx, line in enumerate(lines):
-            if line.lower().startswith(tag):
-                dict_str = line[len(tag) + 1 :].strip()
-                for jdx in range(idx + 1, len(lines)):
-                    if len(lines[jdx].strip()) < 1:
-                        break
-                    dict_str += " " + lines[jdx].strip()
-
-                # parse the dictionary string into a dictionary
-                parameters = eval(dict_str)
-                break
+        if "parameters" in assign_byname:
+            obj = assign_byname["parameters"]
+            parameters = eval(ast.unparse(obj))
 
         # parse optional parameter units dictionary, if parameters are
         # specified in the script
         if parameters is not None:
             parameter_units = None
-            tag = "parameter_units ="
-            for idx, line in enumerate(lines):
-                if line.lower().startswith(tag):
-                    dict_str = line[len(tag) + 1 :].strip()
-                    for jdx in range(idx + 1, len(lines)):
-                        if len(lines[jdx].strip()) < 1:
-                            break
-                        dict_str += " " + lines[jdx].strip()
-
-                    # parse the dictionary string into a dictionary
-                    parameter_units = eval(dict_str)
-                    break
+            if "parameter_units" in assign_byname:
+                obj = assign_byname["parameter_units"]
+                parameter_units = eval(ast.unparse(obj))
 
         # create scenario table if parameters are specified in the script
         if parameters is not None:
@@ -208,25 +204,38 @@ def make_tables():
 
         # tables
         table_number = 0
-        for idx, line in enumerate(lines):
-            table_text = []
-            table_value = []
+        scanning_table = False
+        table_text = []
+        table_value = []
+        for lineno, line in enumerate(lines, 1):
             if line.lower().startswith("# table"):
-                for table_line in lines[idx + 1 :]:
-                    # skip empty lines
-                    if len(table_line.strip()) < 1:
+                scanning_table = True
+                continue
+            if scanning_table:
+                if line.startswith("# "):
+                    scanning_table = False
+                if lineno in assign_bylineno:
+                    obj = assign_bylineno[lineno]
+                    # get comment from at least one line
+                    for idx in range(obj.lineno - 1, obj.end_lineno):
+                        table_line = lines[idx]
+                        if (ipos := table_line.find("# ")) > 0:
+                            table_text.append(table_line[ipos + 1 :].strip())
+                            break
+                    else:
+                        scanning_table = False
                         continue
-                    if table_line.startswith("# "):
-                        break
-                    ipos = table_line.find("# ")
-                    if ipos > 0:
-                        table_text.append(table_line[ipos + 1 :].strip())
-                        table_value.append(
-                            _replace_quotes(
-                                table_line[0:ipos].split("=")[1].strip()
-                            )
-                        )
-            if len(table_text) > 0:
+                    # get content on right side of "="
+                    val = obj.value
+                    if val.lineno == val.end_lineno:
+                        value = line[val.col_offset : val.end_col_offset]
+                    else:
+                        # string may span more than one line
+                        value = obj.value.value
+                    if value.startswith("'") or value.startswith('"'):
+                        value = _replace_quotes(value)
+                    table_value.append(value)
+            if not scanning_table and len(table_text) > 0:
                 table_number += 1
                 tab_name = "{}-{:02d}".format(basename, table_number)
                 caption = "Model parameters for example {}.".format(basename)
@@ -249,6 +258,10 @@ def make_tables():
 
                 # finalize table
                 f.close()
+
+                # reset these if there is more than one table
+                table_text = []
+                table_value = []
 
 
 def get_ordered_examples():
