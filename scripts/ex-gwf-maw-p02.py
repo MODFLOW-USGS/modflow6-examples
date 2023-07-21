@@ -10,10 +10,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -123,9 +124,7 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -133,7 +132,7 @@ def build_model():
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
@@ -170,7 +169,7 @@ def build_model():
             connectiondata=maw_conn,
             perioddata=maw_spd,
         )
-        obs_file = "{}.maw.obs".format(sim_name)
+        obs_file = f"{sim_name}.maw.obs"
         csv_file = obs_file + ".csv"
         obs_dict = {
             csv_file: [
@@ -222,7 +221,7 @@ def plot_maw_results(silent=True):
     fs = USGSFigure(figure_type="graph", verbose=False)
 
     # load the observations
-    fpth = os.path.join(ws, sim_name, "{}.maw.obs.csv".format(sim_name))
+    fpth = os.path.join(ws, sim_name, f"{sim_name}.maw.obs.csv")
     maw = flopy.utils.Mf6Obs(fpth).data
 
     time = maw["totim"] * 86400.0
@@ -318,7 +317,7 @@ def plot_maw_results(silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-01{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-01{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -400,7 +399,7 @@ def plot_grid(sim, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-grid{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-grid{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -429,7 +428,7 @@ def simulation(silent=True):
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(sim_name)
+    assert success, f"could not run...{sim_name}"
 
     if success:
         plot_results(sim, silent=silent)

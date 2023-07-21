@@ -8,10 +8,11 @@
 
 import os
 import sys
-import numpy as np
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -135,9 +136,7 @@ def build_model(
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         if newton:
             linear_acceleration = "bicgstab"
             newtonoptions = "newton under_relaxation"
@@ -198,8 +197,8 @@ def build_model(
         flopy.mf6.ModflowGwfic(gwf, strt=H1)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -332,7 +331,7 @@ def plot_grid(gwf, silent=True):
         fpth = os.path.join(
             "..",
             "figures",
-            "{}-grid{}".format(sim_name, config.figure_ext),
+            f"{sim_name}-grid{config.figure_ext}",
         )
         fig.savefig(fpth)
 
@@ -399,8 +398,7 @@ def plot_results(idx, sim, silent=True):
         )
         plt.clabel(cv, fmt="%1.0f", zorder=10)
         mm.plot_bc("CHD", color="cyan", zorder=11)
-        mm.plot_vector(qx, qy, normalize=True, color="0.75", zorder=11
-        )
+        mm.plot_vector(qx, qy, normalize=True, color="0.75", zorder=11)
         ax.set_xlabel("x-coordinate, in meters")
         ax.set_ylabel("y-coordinate, in meters")
         fs.remove_edge_ticks(ax)
@@ -421,7 +419,7 @@ def plot_results(idx, sim, silent=True):
             -10000,
             -10000,
             lw=0,
-            marker=u"$\u2192$",
+            marker="$\u2192$",
             ms=10,
             mfc="0.75",
             mec="0.75",
@@ -447,9 +445,7 @@ def plot_results(idx, sim, silent=True):
         fs.graph_legend(ax, loc="center", ncol=2)
 
         cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-        cbar = plt.colorbar(
-            h_coll, shrink=0.8, orientation="horizontal", cax=cax
-        )
+        cbar = plt.colorbar(h_coll, shrink=0.8, orientation="horizontal", cax=cax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
 
@@ -458,7 +454,7 @@ def plot_results(idx, sim, silent=True):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{:02d}{}".format(sim_name, idx + 1, config.figure_ext),
+                f"{sim_name}-{idx + 1:02d}{config.figure_ext}",
             )
             fig.savefig(fpth)
 

@@ -47,10 +47,10 @@ lines = ".. toctree::\n"
 lines += "   :numbered:\n"
 lines += "   :maxdepth: 1\n\n"
 for base_name in gwf_list:
-    lines += "   {} ".format(base_name)
+    lines += f"   {base_name} "
     lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
 for base_name in gwt_list:
-    lines += "   {} ".format(base_name)
+    lines += f"   {base_name} "
     lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
 lines += "\n\n"
 f.write(lines)

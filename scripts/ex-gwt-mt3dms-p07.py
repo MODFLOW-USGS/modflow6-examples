@@ -30,10 +30,10 @@ sys.path.append(os.path.join("..", "common"))
 
 # Imports
 
-import matplotlib.pyplot as plt
-import flopy
-import numpy as np
 import config
+import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 from figspecs import USGSFigure
 
 mf6exe = config.mf6_exe
@@ -161,7 +161,6 @@ tdis_rc.append((perlen, nstp, 1.0))
 
 def build_model(sim_name, mixelm=0, silent=False):
     if config.buildModel:
-
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
         modelname_mf = "p07-mf"
 
@@ -253,24 +252,20 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p07-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
             sim,
             modelname=gwfname,
             save_flows=True,
-            model_nam_file="{}.nam".format(gwfname),
+            model_nam_file=f"{gwfname}.nam",
         )
 
         # Instantiating MODFLOW 6 solver for flow model
@@ -287,7 +282,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             scaling_method="NONE",
             reordering_method="NONE",
             relaxation_factor=relax,
-            filename="{}.ims".format(gwfname),
+            filename=f"{gwfname}.ims",
         )
         sim.register_ims_package(imsgwf, [gwf.name])
 
@@ -303,7 +298,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             top=top,
             botm=botm,
             idomain=idomain,
-            filename="{}.dis".format(gwfname),
+            filename=f"{gwfname}.dis",
         )
 
         # Instantiating MODFLOW 6 node-property flow package
@@ -314,13 +309,11 @@ def build_model(sim_name, mixelm=0, silent=False):
             k=k11,
             k33=k33,
             save_specific_discharge=True,
-            filename="{}.npf".format(gwfname),
+            filename=f"{gwfname}.npf",
         )
 
         # Instantiating MODFLOW 6 initial conditions package for flow model
-        flopy.mf6.ModflowGwfic(
-            gwf, strt=strt, filename="{}.ic".format(gwfname)
-        )
+        flopy.mf6.ModflowGwfic(gwf, strt=strt, filename=f"{gwfname}.ic")
 
         # Instantiating MODFLOW 6 constant head package
         flopy.mf6.ModflowGwfchd(
@@ -330,7 +323,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             save_flows=False,
             auxiliary="CONCENTRATION",
             pname="CHD-1",
-            filename="{}.chd".format(gwfname),
+            filename=f"{gwfname}.chd",
         )
 
         # Instantiate the wel package
@@ -342,17 +335,15 @@ def build_model(sim_name, mixelm=0, silent=False):
             save_flows=False,
             auxiliary="CONCENTRATION",
             pname="WEL-1",
-            filename="{}.wel".format(gwfname),
+            filename=f"{gwfname}.wel",
         )
 
         # Instantiating MODFLOW 6 output control package for flow model
         flopy.mf6.ModflowGwfoc(
             gwf,
-            head_filerecord="{}.hds".format(gwfname),
-            budget_filerecord="{}.bud".format(gwfname),
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            head_filerecord=f"{gwfname}.hds",
+            budget_filerecord=f"{gwfname}.bud",
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -363,7 +354,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             sim,
             model_type="gwt6",
             modelname=gwtname,
-            model_nam_file="{}.nam".format(gwtname),
+            model_nam_file=f"{gwtname}.nam",
         )
         gwt.name_file.save_flows = True
 
@@ -381,7 +372,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             scaling_method="NONE",
             reordering_method="NONE",
             relaxation_factor=relax,
-            filename="{}.ims".format(gwtname),
+            filename=f"{gwtname}.ims",
         )
         sim.register_ims_package(imsgwt, [gwt.name])
 
@@ -396,13 +387,11 @@ def build_model(sim_name, mixelm=0, silent=False):
             top=top,
             botm=botm,
             idomain=idomain,
-            filename="{}.dis".format(gwtname),
+            filename=f"{gwtname}.dis",
         )
 
         # Instantiating MODFLOW 6 transport initial concentrations
-        flopy.mf6.ModflowGwtic(
-            gwt, strt=sconc, filename="{}.ic".format(gwtname)
-        )
+        flopy.mf6.ModflowGwtic(gwt, strt=sconc, filename=f"{gwtname}.ic")
 
         # Instantiating MODFLOW 6 transport advection package
         if mixelm >= 0:
@@ -411,9 +400,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             scheme = "TVD"
         else:
             raise Exception()
-        flopy.mf6.ModflowGwtadv(
-            gwt, scheme=scheme, filename="{}.adv".format(gwtname)
-        )
+        flopy.mf6.ModflowGwtadv(gwt, scheme=scheme, filename=f"{gwtname}.adv")
 
         # Instantiating MODFLOW 6 transport dispersion package
         if al != 0:
@@ -422,7 +409,7 @@ def build_model(sim_name, mixelm=0, silent=False):
                 alh=al,
                 ath1=ath1,
                 atv=atv,
-                filename="{}.dsp".format(gwtname),
+                filename=f"{gwtname}.dsp",
             )
 
         # Instantiating MODFLOW 6 transport mass storage package (formerly "reaction" package in MT3DMS)
@@ -435,7 +422,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             sorption=None,
             bulk_density=None,
             distcoef=None,
-            filename="{}.mst".format(gwtname),
+            filename=f"{gwtname}.mst",
         )
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
@@ -443,15 +430,13 @@ def build_model(sim_name, mixelm=0, silent=False):
             ("WEL-1", "AUX", "CONCENTRATION"),
             ("CHD-1", "AUX", "CONCENTRATION"),
         ]
-        flopy.mf6.ModflowGwtssm(
-            gwt, sources=sourcerecarray, filename="{}.ssm".format(gwtname)
-        )
+        flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm")
 
         # Instantiating MODFLOW 6 transport output control package
         flopy.mf6.ModflowGwtoc(
             gwt,
-            budget_filerecord="{}.cbc".format(gwtname),
-            concentration_filerecord="{}.ucn".format(gwtname),
+            budget_filerecord=f"{gwtname}.cbc",
+            concentration_filerecord=f"{gwtname}.ucn",
             concentrationprintrecord=[
                 ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
             ],
@@ -465,7 +450,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             exgtype="GWF6-GWT6",
             exgmnamea=gwfname,
             exgmnameb=gwtname,
-            filename="{}.gwfgwt".format(name),
+            filename=f"{name}.gwfgwt",
         )
         return mf, mt, sim
     return None
@@ -541,7 +526,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         plt.clabel(cs1)
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
         plt.ylabel("DISTANCE ALONG Y-AXIS, IN METERS")
-        title = "Layer {}".format(ilay + 1)
+        title = f"Layer {ilay + 1}"
         letter = chr(ord("@") + idx + 1)
         fs.heading(letter=letter, heading=title)
 
@@ -556,9 +541,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         mm = flopy.plot.PlotMapView(ax=ax, model=mf2k5, layer=ilay)
         mm.plot_grid(color=".5", alpha=0.2)
         mm.plot_ibound()
-        cs = mm.contour_array(
-            conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k"
-        )
+        cs = mm.contour_array(conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k")
         cs = mm.contour_array(
             conc_mf6[0],
             levels=[0.01, 0.05, 0.15, 0.50],
@@ -568,7 +551,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         plt.clabel(cs)
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
         plt.ylabel("DISTANCE ALONG Y-AXIS, IN METERS")
-        title = "Layer {}".format(ilay + 1)
+        title = f"Layer {ilay + 1}"
         letter = chr(ord("@") + idx + 2)
         fs.heading(letter=letter, heading=title)
 
@@ -579,9 +562,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         mm = flopy.plot.PlotMapView(ax=ax, model=mf2k5, layer=ilay)
         mm.plot_grid(color=".5", alpha=0.2)
         mm.plot_ibound()
-        cs = mm.contour_array(
-            conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k"
-        )
+        cs = mm.contour_array(conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k")
         cs = mm.contour_array(
             conc_mf6[0],
             levels=[0.01, 0.05, 0.15, 0.50],
@@ -591,7 +572,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         plt.clabel(cs)
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
         plt.ylabel("DISTANCE ALONG Y-AXIS, IN METERS")
-        title = "Layer {}".format(ilay + 1)
+        title = f"Layer {ilay + 1}"
         letter = chr(ord("@") + idx + 3)
         fs.heading(letter=letter, heading=title)
         plt.plot(
@@ -605,7 +586,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name, config.figure_ext),
+                f"{sim_name}{config.figure_ext}",
             )
             fig.savefig(fpth)
 

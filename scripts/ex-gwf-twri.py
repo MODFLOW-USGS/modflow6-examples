@@ -11,9 +11,10 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -59,7 +60,9 @@ botm_str = "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations (
 strt = 0.0  # Starting head ($ft$)
 icelltype_str = "1, 0, 0, 0, 0"  # Cell conversion type
 k11_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
-k33_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Vertical hydraulic conductivity ($ft/s$)
+k33_str = (
+    "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Vertical hydraulic conductivity ($ft/s$)
+)
 recharge = 3e-8  # Recharge rate ($ft/s$)
 
 # Static temporal data used by TDIS file
@@ -120,7 +123,7 @@ wel_spd = {
 
 wel_spd0 = []
 layer_map = {0: 0, 2: 1, 4: 2}
-for (k, i, j, q) in wel_spd[0]:
+for k, i, j, q in wel_spd[0]:
     kk = layer_map[k]
     wel_spd0.append([kk, i, j, q])
 wel_spd0 = {0: wel_spd0}
@@ -160,16 +163,14 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
@@ -197,8 +198,8 @@ def build_model():
         flopy.mf6.ModflowGwfdrn(gwf, stress_period_data=drn_spd)
         flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -328,9 +329,10 @@ def plot_results(sim, mf, silent=True):
             )
         ):
             diff = np.abs(head[k] - head0[idx])
-            msg = "aquifer {}: ".format(
-                idx + 1
-            ) + "maximum absolute head difference is {}".format(diff.max())
+            msg = (
+                "aquifer {}: ".format(idx + 1)
+                + f"maximum absolute head difference is {diff.max()}"
+            )
             assert diff.max() < 0.05, msg
             if not silent:
                 print(msg)
@@ -368,9 +370,7 @@ def plot_results(sim, mf, silent=True):
 
         for idx, ax in enumerate(axes.flatten()[:3]):
             k = layers_mf6[idx]
-            fmp = flopy.plot.PlotMapView(
-                model=gwf, ax=ax, layer=k, extent=extents
-            )
+            fmp = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=k, extent=extents)
             ax.get_xaxis().set_ticks([])
             fmp.plot_grid(lw=0.5)
             plot_obj = fmp.plot_array(head, vmin=vmin, vmax=vmax)
@@ -389,9 +389,7 @@ def plot_results(sim, mf, silent=True):
             fs.heading(letter=letter, heading=title, ax=ax)
 
         for idx, ax in enumerate(axes.flatten()[3:6]):
-            fmp = flopy.plot.PlotMapView(
-                model=mf, ax=ax, layer=idx, extent=extents
-            )
+            fmp = flopy.plot.PlotMapView(model=mf, ax=ax, layer=idx, extent=extents)
             fmp.plot_grid(lw=0.5)
             plot_obj = fmp.plot_array(head0, vmin=vmin, vmax=vmax)
             fmp.plot_bc("DRN", color="green")
@@ -442,30 +440,24 @@ def plot_results(sim, mf, silent=True):
             -10000,
             -10000,
             lw=0,
-            marker=u"$\u2192$",
+            marker="$\u2192$",
             ms=10,
             mfc="0.75",
             mec="0.75",
             label="Normalized specific discharge",
         )
-        ax.plot(
-            -10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$"
-        )
+        ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
         fs.graph_legend(ax, loc="upper center")
 
         # plot colorbar
         cax = plt.axes([0.325, 0.125, 0.35, 0.025])
-        cbar = plt.colorbar(
-            plot_obj, shrink=0.8, orientation="horizontal", cax=cax
-        )
+        cbar = plt.colorbar(plot_obj, shrink=0.8, orientation="horizontal", cax=cax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", "{}{}".format(sim_name, config.figure_ext)
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}{config.figure_ext}")
             fig.savefig(fpth)
 
 

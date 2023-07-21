@@ -10,10 +10,11 @@
 
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import flopy
-import numpy as np
 import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -22,8 +23,8 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from figspecs import USGSFigure
 from analytical import Stallman
+from figspecs import USGSFigure
 
 mf6exe = config.mf6_exe
 
@@ -107,7 +108,7 @@ hclose, rclose, relax = 1e-8, 1e-8, 0.97
 
 
 def build_model(sim_folder):
-    print("Building model...{}".format(sim_folder))
+    print(f"Building model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder)
     sim = flopy.mf6.MFSimulation(
@@ -115,9 +116,7 @@ def build_model(sim_folder):
         sim_ws=sim_ws,
         exe_name=config.mf6_exe,
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=per_mf6, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=per_mf6, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -132,7 +131,7 @@ def build_model(sim_folder):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwf.name),
+        filename=f"{gwf.name}.ims",
     )
     sim.register_ims_package(ims, [gwf.name])
     flopy.mf6.ModflowGwfdis(
@@ -160,8 +159,8 @@ def build_model(sim_folder):
         stress_period_data=chd_mf6,
     )
 
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -183,7 +182,7 @@ def build_model(sim_folder):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwt.name),
+        filename=f"{gwt.name}.ims",
     )
     sim.register_ims_package(imsgwt, [gwt.name])
     flopy.mf6.ModflowGwtdis(
@@ -206,9 +205,7 @@ def build_model(sim_folder):
     )
     flopy.mf6.ModflowGwtic(gwt, strt=strt_conc)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc)
     flopy.mf6.ModflowGwtssm(gwt, sources=[[]])
     flopy.mf6.ModflowGwtcnc(
         gwt,
@@ -216,11 +213,9 @@ def build_model(sim_folder):
     )
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(gwt.name),
-        concentration_filerecord="{}.ucn".format(gwt.name),
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        budget_filerecord=f"{gwt.name}.cbc",
+        concentration_filerecord=f"{gwt.name}.ucn",
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -293,9 +288,7 @@ def plot_conc(sim, idx):
     c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
     darcy_flux = 5.00e-07
     ko = 1.503
-    zanal = Stallman(
-        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
-    )
+    zanal = Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay)
 
     # make conc figure
     fig = plt.figure(figsize=(6, 4))
@@ -318,9 +311,7 @@ def plot_conc(sim, idx):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-conc{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-conc{config.figure_ext}")
         fig.savefig(fpth)
     return
 
@@ -329,7 +320,6 @@ def plot_conc(sim, idx):
 
 
 def make_animated_gif(sim, idx):
-
     sim_name = example_name
     sim_ws = os.path.join(ws, sim_name)
     gwf = sim.get_model("flow")
@@ -357,9 +347,7 @@ def make_animated_gif(sim, idx):
     c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
     darcy_flux = 5.00e-07
     ko = 1.503
-    zanal = Stallman(
-        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
-    )
+    zanal = Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay)
 
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.set_ylabel("Depth (m)")
@@ -372,7 +360,7 @@ def make_animated_gif(sim, idx):
     ax.set_ylim(-top, 0)
 
     def init():
-        ax.set_title("Time = {} seconds".format(times[0]))
+        ax.set_title(f"Time = {times[0]} seconds")
 
     def update(j):
         for i in range(len(zconc)):
@@ -383,7 +371,7 @@ def make_animated_gif(sim, idx):
         )
         line[0].set_data(zconc, zbotm)
         line[1].set_data(zanal[:, 1], zanal[:, 0])
-        ax.set_title("Time = {} seconds".format(times[j]))
+        ax.set_title(f"Time = {times[j]} seconds")
         return line
 
     ani = animation.FuncAnimation(fig, update, times.shape[0], init_func=init)

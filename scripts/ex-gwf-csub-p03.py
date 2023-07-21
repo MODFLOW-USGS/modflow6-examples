@@ -10,14 +10,15 @@
 #
 # Imports
 
+import datetime
 import os
 import sys
-import datetime
-import numpy as np
-import pandas as pd
+
+import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import flopy
+import numpy as np
+import pandas as pd
 
 # Append to system path to include the common subdirectory
 
@@ -25,8 +26,8 @@ sys.path.append(os.path.join("..", "common"))
 
 # import common functionality
 
-import config
 import build_table as bt
+import config
 from figspecs import USGSFigure
 
 # Set figure properties specific to the problem
@@ -441,7 +442,7 @@ s = (
 
 df_xticks = [datetime.datetime.strptime(ss, "%m-%d-%Y").date() for ss in s]
 df_xticks1 = [
-    datetime.datetime.strptime("{:04d}-01-01".format(yr), "%Y-%m-%d").date()
+    datetime.datetime.strptime(f"{yr:04d}-01-01", "%Y-%m-%d").date()
     for yr in range(1990, 2007)
 ]
 
@@ -491,9 +492,7 @@ def build_model(
         sim = flopy.mf6.MFSimulation(
             sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -503,7 +502,7 @@ def build_model(
             inner_maximum=ninner,
             inner_dvclose=hclose,
             relaxation_factor=relax,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(
             sim,
@@ -522,13 +521,13 @@ def build_model(
             botm=botm,
         )
         # gwf obs
-        opth = "{}.gwf.obs".format(name)
+        opth = f"{name}.gwf.obs"
         cpth = opth + ".csv"
         obs_array = []
         for k in range(nlay):
             obs_array.append(
                 [
-                    "HD{:02d}".format(k + 1),
+                    f"HD{k + 1:02d}",
                     "HEAD",
                     (k, 0, 0),
                 ]
@@ -596,7 +595,7 @@ def build_model(
             cg_ske_cr=cg_ske,
             packagedata=sub6,
         )
-        opth = "{}.csub.obs".format(name)
+        opth = f"{name}.csub.obs"
         csub_csv = opth + ".csv"
         obs = [
             ("cunit", "interbed-compaction", "cunit"),
@@ -606,7 +605,7 @@ def build_model(
             ("es14", "estress-cell", (nlay - 1, 0, 0)),
         ]
         for k in (1, 2, 3, 4, 6, 7, 8, 9, 11, 13):
-            tag = "tc{:02d}".format(k + 1)
+            tag = f"tc{k + 1:02d}"
             obs.append(
                 (
                     tag,
@@ -614,7 +613,7 @@ def build_model(
                     (k, 0, 0),
                 )
             )
-            tag = "skc{:02d}".format(k + 1)
+            tag = f"skc{k + 1:02d}"
             obs.append(
                 (
                     tag,
@@ -630,7 +629,7 @@ def build_model(
         chd = flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
 
         # initialize chd time series
-        csubnam = "{}.head.ts".format(sim_name)
+        csubnam = f"{sim_name}.head.ts"
         chd.ts.initialize(
             filename=csubnam,
             timeseries=chd_ts,
@@ -690,14 +689,14 @@ def export_tables(silent=True):
     if config.plotSave:
         name = list(parameters.keys())[1]
 
-        caption = "Aquifer properties for example {}.".format(sim_name)
+        caption = f"Aquifer properties for example {sim_name}."
         headings = (
             "Layer",
             "Thickness",
             "Hydraulic conductivity",
             "Initial head",
         )
-        fpth = os.path.join("..", "tables", "{}-01.tex".format(sim_name))
+        fpth = os.path.join("..", "tables", f"{sim_name}-01.tex")
         dtype = [
             ("k", "U30"),
             ("thickness", "U30"),
@@ -711,20 +710,18 @@ def export_tables(silent=True):
             arr["k33"][k] = bt.exp_format(k33[k])
             arr["h0"][k] = bt.float_format(strt[k])
         if not silent:
-            print("creating...'{}'".format(fpth))
+            print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.15, 0.30, 0.25)
-        bt.build_table(
-            caption, fpth, arr, headings=headings, col_widths=col_widths
-        )
+        bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
-        caption = "Interbed properties for example {}.".format(sim_name)
+        caption = f"Interbed properties for example {sim_name}."
         headings = (
             "Interbed",
             "Layer",
             "Thickness",
             "Initial stress",
         )
-        fpth = os.path.join("..", "tables", "{}-02.tex".format(sim_name))
+        fpth = os.path.join("..", "tables", f"{sim_name}-02.tex")
         dtype = [
             ("ib", "U30"),
             ("k", "U30"),
@@ -742,37 +739,33 @@ def export_tables(silent=True):
                 arr["thickness"][idx] = bt.float_format(b)
             arr["pcs0"][idx] = bt.float_format(parameters[name]["pcs0"][idx])
         if not silent:
-            print("creating...'{}'".format(fpth))
+            print(f"creating...'{fpth}'")
         bt.build_table(caption, fpth, arr, headings=headings)
 
-        caption = "Aquifer storage properties for example {}.".format(sim_name)
+        caption = f"Aquifer storage properties for example {sim_name}."
         headings = (
             "Layer",
             "Specific Storage",
         )
-        fpth = os.path.join("..", "tables", "{}-03.tex".format(sim_name))
+        fpth = os.path.join("..", "tables", f"{sim_name}-03.tex")
         dtype = [("k", "U30"), ("ss", "U30")]
         arr = np.zeros(4, dtype=dtype)
         for idx, k in enumerate((4, 6, 11, 13)):
             arr["k"][idx] = bt.int_format(k + 1)
             arr["ss"][idx] = bt.exp_format(parameters[name]["cg_ske"][k])
         if not silent:
-            print("creating...'{}'".format(fpth))
+            print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.25)
-        bt.build_table(
-            caption, fpth, arr, headings=headings, col_widths=col_widths
-        )
+        bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
-        caption = "Interbed storage properties for example {}.".format(
-            sim_name
-        )
+        caption = "Interbed storage properties for example {}.".format(sim_name)
         headings = (
             "Interbed",
             "Layer",
             "Inelastic \\newline Specific \\newline Storage",
             "Elastic \\newline Specific \\newline Storage",
         )
-        fpth = os.path.join("..", "tables", "{}-04.tex".format(sim_name))
+        fpth = os.path.join("..", "tables", f"{sim_name}-04.tex")
         dtype = [
             ("ib", "U30"),
             ("k", "U30"),
@@ -786,7 +779,7 @@ def export_tables(silent=True):
             arr["ssv"][idx] = bt.exp_format(parameters[name]["ssv"][idx])
             arr["sse"][idx] = bt.exp_format(parameters[name]["sse"][idx])
         if not silent:
-            print("creating...'{}'".format(fpth))
+            print(f"creating...'{fpth}'")
         col_widths = (0.2, 0.2, 0.2, 0.2)
         bt.build_table(
             caption,
@@ -818,9 +811,7 @@ def process_sim_csv(
 ):
     v = pd.read_csv(fpth, **kwargs)
 
-    v["date"] = pd.to_datetime(
-        v[index_tag].values, unit="d", origin=origin_str
-    )
+    v["date"] = pd.to_datetime(v[index_tag].values, unit="d", origin=origin_str)
     v.set_index("date", inplace=True)
     v.drop(columns=index_tag, inplace=True)
 
@@ -832,13 +823,8 @@ def process_sim_csv(
 # Function to process compaction data and return a pandas dataframe
 
 
-def get_sim_dataframe(
-    fpth, index_tag="time", origin_str="1908-05-09 00:00:00.000000"
-):
-
-    v, col_list = process_sim_csv(
-        fpth, index_tag=index_tag, origin_str=origin_str
-    )
+def get_sim_dataframe(fpth, index_tag="time", origin_str="1908-05-09 00:00:00.000000"):
+    v, col_list = process_sim_csv(fpth, index_tag=index_tag, origin_str=origin_str)
 
     # calculate total skeletal and total
     shape = v[col_list[0]].values.shape[0]
@@ -929,7 +915,7 @@ def print_label(ax, zelev, k, fontsize=6):
     z0 = zelev[k][0]
     z1 = zelev[k + 1][0]
     z = 1 - 0.5 * (z0 + z1) / zmax
-    text = "Layer {}".format(k + 1)
+    text = f"Layer {k + 1}"
     if k == 10:
         arrowprops = dict(
             facecolor="black",
@@ -966,9 +952,7 @@ def print_label(ax, zelev, k, fontsize=6):
 
 
 def constant_heads(ax, annotate=False, fontsize=6, xrange=(0, 1)):
-    arrowprops = dict(
-        facecolor="black", arrowstyle="-", lw=0.5, shrinkA=0, shrinkB=0
-    )
+    arrowprops = dict(facecolor="black", arrowstyle="-", lw=0.5, shrinkA=0, shrinkB=0)
     label = ""
     for k in [0, 5, 10, 12]:
         label = set_label(label, text="Constant head")
@@ -1141,11 +1125,9 @@ def plot_grid(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -1165,7 +1147,7 @@ def plot_boundary_heads(silent=True):
         return v
 
     name = list(parameters.keys())[0]
-    pth = os.path.join(ws, name, "{}.gwf.obs.csv".format(name))
+    pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
     hdata = process_dtw_obs(pth)
 
     pheads = ("HD01", "HD12", "HD14")
@@ -1190,7 +1172,7 @@ def plot_boundary_heads(silent=True):
         )
 
     fs.graph_legend(ax=ax, frameon=False)
-    ax.set_ylabel("Depth to water, in {}".format(length_units))
+    ax.set_ylabel(f"Depth to water, in {length_units}")
     ax.set_xlabel("Year")
 
     fs.remove_edge_ticks(ax=ax)
@@ -1199,11 +1181,9 @@ def plot_boundary_heads(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-01{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-01{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -1214,11 +1194,11 @@ def plot_head_es_comparison(silent=True):
     verbose = not silent
     fs = USGSFigure(figure_type="graph", verbose=verbose)
     name = list(parameters.keys())[0]
-    pth = os.path.join(ws, name, "{}.csub.obs.csv".format(name))
+    pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
     hb = process_csub_obs(pth)
 
     name = list(parameters.keys())[1]
-    pth = os.path.join(ws, name, "{}.csub.obs.csv".format(name))
+    pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
     es = process_csub_obs(pth)
 
     ymin = (2.0, 1, 1, 1, 0.1, 0.1)
@@ -1240,7 +1220,7 @@ def plot_head_es_comparison(silent=True):
         if idx == 0:
             stext = "Effective stress-based"
             otext = "Head-based"
-        mtext = "mean error = {:7.4f} {}".format(me[key], length_units)
+        mtext = f"mean error = {me[key]:7.4f} {length_units}"
         ax.plot(hb["totim"], hb[key], color="#238A8DFF", lw=1.25, label=otext)
         ax.plot(
             es["totim"],
@@ -1251,7 +1231,7 @@ def plot_head_es_comparison(silent=True):
             zorder=101,
         )
         ltext = chr(ord("A") + idx)
-        htext = "{}".format(label)
+        htext = f"{label}"
         fs.heading(ax, letter=ltext, heading=htext)
         va = "bottom"
         ym = 0.15
@@ -1281,7 +1261,7 @@ def plot_head_es_comparison(silent=True):
     axp1.set_xticks([0, 1])
     axp1.set_ylim(0, 1)
     axp1.set_yticks([0, 1])
-    axp1.set_ylabel("Compaction, in {}".format(length_units))
+    axp1.set_ylabel(f"Compaction, in {length_units}")
     axp1.yaxis.set_label_coords(-0.05, 0.5)
     fs.remove_edge_ticks(ax)
 
@@ -1289,11 +1269,9 @@ def plot_head_es_comparison(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-02{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-02{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -1302,7 +1280,7 @@ def plot_calibration(silent=True):
     fs = USGSFigure(figure_type="graph", verbose=verbose)
 
     name = list(parameters.keys())[1]
-    pth = os.path.join(ws, name, "{}.csub.obs.csv".format(name))
+    pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
     df_sim = get_sim_dataframe(pth)
     df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
@@ -1378,8 +1356,8 @@ def plot_calibration(silent=True):
     es_obs = gs - u
 
     # set up indices for date text for plot c
-    locs = ["{:04d}-10-01 12:00:00".format(yr) for yr in range(1992, 2006)]
-    locs += ["{:04d}-04-01 12:00:00".format(yr) for yr in range(1993, 2007)]
+    locs = [f"{yr:04d}-10-01 12:00:00" for yr in range(1992, 2006)]
+    locs += [f"{yr:04d}-04-01 12:00:00" for yr in range(1993, 2007)]
     locs += ["2006-09-04 12:00:00"]
 
     ixs = [head_pc.index.get_loc(loc) for loc in locs]
@@ -1427,7 +1405,7 @@ def plot_calibration(silent=True):
     ax.xaxis.set_ticks(df_xticks)
     ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%m/%d/%Y"))
 
-    ax.set_ylabel("Compaction, in {}".format(length_units))
+    ax.set_ylabel(f"Compaction, in {length_units}")
     ax.set_xlabel("Year")
 
     fs.graph_legend(ax=ax, frameon=False)
@@ -1493,7 +1471,7 @@ def plot_calibration(silent=True):
     ax.xaxis.set_minor_formatter(mpl.dates.DateFormatter("%Y"))
     ax.tick_params(axis="x", which="minor", length=0)
 
-    ax.set_ylabel("Compaction, in {}".format(length_units))
+    ax.set_ylabel(f"Compaction, in {length_units}")
     ax.set_xlabel("Year")
     fs.heading(ax, letter="B")
     fs.remove_edge_ticks(ax=ax)
@@ -1552,7 +1530,7 @@ def plot_calibration(silent=True):
     )
     ytext = (
         "Effective stress at the bottom of\nthe lower aquifer, in "
-        + "{} of water".format(length_units)
+        + f"{length_units} of water"
     )
     ax.set_xlabel(xtext)
     ax.set_ylabel(ytext)
@@ -1565,11 +1543,9 @@ def plot_calibration(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-03{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-03{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 
@@ -1581,10 +1557,8 @@ def plot_vertical_head(silent=True):
     fs = USGSFigure(figure_type="graph", verbose=verbose)
 
     name = list(parameters.keys())[1]
-    pth = os.path.join(ws, name, "{}.gwf.obs.csv".format(name))
-    df_heads, col_list = process_sim_csv(
-        pth, origin_str="1908-05-09 00:00:00.000000"
-    )
+    pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
+    df_heads, col_list = process_sim_csv(pth, origin_str="1908-05-09 00:00:00.000000")
     df_heads_year = df_heads.groupby(df_heads.index.year).mean()
 
     def get_colors(vmax=6):
@@ -1603,7 +1577,7 @@ def plot_vertical_head(silent=True):
         x = []
         y = []
         for k in range(14):
-            tag = "HD{:02d}".format(k + 1)
+            tag = f"HD{k + 1:02d}"
             h = dfr[tag].values[0]
             if k == 0:
                 z0 = -25.0
@@ -1620,9 +1594,7 @@ def plot_vertical_head(silent=True):
     colors = get_colors(vmax=len(iyears) - 1)
 
     xrange = (-10, 50)
-    fig, ax = plt.subplots(
-        nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0)
-    )
+    fig, ax = plt.subplots(nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0))
 
     ax.set_xlim(xrange)
     ax.set_ylim(-botm[-1], 0)
@@ -1669,14 +1641,12 @@ def plot_vertical_head(silent=True):
     for idx, iyear in enumerate(iyears[:-1]):
         xlabel, x, y = build_head_data(df_heads_year, year=iyear)
         xlabel1, x1, y1 = build_head_data(df_heads_year, year=iyears[idx + 1])
-        ax.fill_betweenx(
-            y, x, x2=x1, color=colors[idx], zorder=zo, step="mid", lw=0
-        )
+        ax.fill_betweenx(y, x, x2=x1, color=colors[idx], zorder=zo, step="mid", lw=0)
         ax.plot(x, y, lw=0.5, color="black", zorder=201)
         ax.text(
             xlabel,
             24,
-            "{}".format(iyear),
+            f"{iyear}",
             ha="center",
             va="bottom",
             rotation=90,
@@ -1687,7 +1657,7 @@ def plot_vertical_head(silent=True):
             ax.text(
                 xlabel1,
                 24,
-                "{}".format(iyears[idx + 1]),
+                f"{iyears[idx + 1]}",
                 ha="center",
                 va="bottom",
                 rotation=90,
@@ -1710,11 +1680,9 @@ def plot_vertical_head(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-04{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-04{config.figure_ext}")
         if not silent:
-            print("saving...'{}'".format(fpth))
+            print(f"saving...'{fpth}'")
         fig.savefig(fpth)
 
 

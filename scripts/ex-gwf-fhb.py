@@ -12,9 +12,10 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -91,16 +92,14 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
@@ -167,8 +166,8 @@ def build_model():
             pname="WEL",
         )
 
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -181,12 +180,10 @@ def build_model():
             ["h1_2_1", "head", (0, 1, 0)],
             ["h1_2_10", "head", (0, 1, 9)],
         ]
-        obsdict["{}.obs.head.csv".format(sim_name)] = obslist
+        obsdict[f"{sim_name}.obs.head.csv"] = obslist
         obslist = [["icf1", "flow-ja-face", (0, 1, 1), (0, 1, 0)]]
-        obsdict["{}.obs.flow.csv".format(sim_name)] = obslist
-        obs = flopy.mf6.ModflowUtlobs(
-            gwf, print_input=False, continuous=obsdict
-        )
+        obsdict[f"{sim_name}.obs.flow.csv"] = obslist
+        obs = flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
 
         return sim
     return None
@@ -235,9 +232,7 @@ def plot_grid(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
         fig.savefig(fpth)
     return
 
@@ -266,9 +261,7 @@ def plot_ts(sim):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{}{}".format(
-                    sim_name, obs_fig[iplot], config.figure_ext
-                ),
+                "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
             )
             fig.savefig(fpth)
     return

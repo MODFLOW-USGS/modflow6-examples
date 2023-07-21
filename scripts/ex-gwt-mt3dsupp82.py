@@ -10,9 +10,10 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -63,16 +64,12 @@ porosity = 0.3  # Porosity of mobile domain (unitless)
 
 
 def build_mf6gwf(sim_folder):
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -133,8 +130,8 @@ def build_mf6gwf(sim_folder):
         save_flows=True,
         mover=True,
         no_well_storage=True,
-        head_filerecord="{}.maw.hds".format(name),
-        budget_filerecord="{}.maw.bud".format(name),
+        head_filerecord=f"{name}.maw.hds",
+        budget_filerecord=f"{name}.maw.bud",
         packagedata=mawpackagedata,
         connectiondata=mawconnectiondata,
         perioddata=mawspd,
@@ -152,15 +149,15 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwfmvr(
         gwf,
         maxmvr=len(perioddata),
-        budget_filerecord="{}.mvr.bud".format(name),
+        budget_filerecord=f"{name}.mvr.bud",
         maxpackages=len(packages),
         print_flows=True,
         packages=packages,
         perioddata=perioddata,
     )
 
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -171,16 +168,12 @@ def build_mf6gwf(sim_folder):
 
 
 def build_mf6gwt(sim_folder):
-    print("Building mf6gwt model...{}".format(sim_folder))
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((total_time, 20, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -199,7 +192,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtadv(gwt, scheme="upstream")
     flopy.mf6.ModflowGwtdsp(gwt, alh=alpha_l, ath1=alpha_th, atv=alpha_tv)
     pd = [
-        ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
+        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
         ("GWFMOVER", "../mf6gwf/flow.mvr.bud", None),
         ("MAW-1", "../mf6gwf/flow.maw.bud", None),
@@ -243,8 +236,8 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(name),
-        concentration_filerecord="{}.ucn".format(name),
+        budget_filerecord=f"{name}.cbc",
+        concentration_filerecord=f"{name}.ucn",
         concentrationprintrecord=[
             ("COLUMNS", ncol, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
@@ -261,7 +254,7 @@ def build_mf6gwt(sim_folder):
 
 
 def build_mf2005(sim_folder):
-    print("Building mf2005 model...{}".format(sim_folder))
+    print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(
@@ -303,7 +296,7 @@ def build_mf2005(sim_folder):
 
 
 def build_mt3dms(sim_folder, modflowmodel):
-    print("Building mt3dms model...{}".format(sim_folder))
+    print(f"Building mt3dms model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mt3d")
     mt = flopy.mt3d.Mt3dms(
@@ -399,9 +392,7 @@ def plot_results(sims, idx):
         cobjmt = flopy.utils.UcnFile(fname)
         concmt = cobjmt.get_data()
 
-        fig, ax = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, ax = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
         pmv.plot_bc(ftype="MAW", color="red")
         pmv.plot_bc(ftype="CHD")
@@ -414,9 +405,7 @@ def plot_results(sims, idx):
         levels = [0.01, 0.1, 1, 10, 100]
         cs1 = pmv.contour_array(concmt, levels=levels, colors="r")
 
-        cs2 = pmv.contour_array(
-            conc, levels=levels, colors="b", linestyles="--"
-        )
+        cs2 = pmv.contour_array(conc, levels=levels, colors="b", linestyles="--")
         ax.clabel(cs2, cs2.levels[::1], fmt="%3.2f", colors="b")
 
         labels = ["MT3DMS", "MODFLOW 6"]
@@ -430,7 +419,7 @@ def plot_results(sims, idx):
         if config.plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = "{}-map{}".format(sim_folder, config.figure_ext)
+            fname = f"{sim_folder}-map{config.figure_ext}"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 

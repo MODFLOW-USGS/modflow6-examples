@@ -48,9 +48,7 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
                     pass
                 elif iupseg > 0:  # Lake connections, signified with negative
                     # numbers, aren't handled here
-                    iupseg_rchs = [
-                        item for item in orig_rch if item[3] == iupseg
-                    ]
+                    iupseg_rchs = [item for item in orig_rch if item[3] == iupseg]
                     # Get the index of the last reach of the segement that was
                     # the upstream segment in the orig sfr file
                     idx = orig_rch.index(iupseg_rchs[len(iupseg_rchs) - 1])  #
@@ -92,9 +90,7 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
                 elif ioutseg > 0:  # Lake connections, signified with
                     # negative numbers, aren't handled here
                     idnseg_rchs = [
-                        item
-                        for item in orig_rch
-                        if item[3] == ioutseg and item[4] == 1
+                        item for item in orig_rch if item[3] == ioutseg and item[4] == 1
                     ]
                     idx = orig_rch.index(idnseg_rchs[0])
                     # adjust idx for 0-based and increment to next item in list
@@ -102,16 +98,12 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
 
                 # In addition to ioutseg, look for all segments that may have
                 # the current segment as their iupseg
-                possible_divs = [
-                    item for item in orig_seg if item[3] == rchx[3]
-                ]
+                possible_divs = [item for item in orig_seg if item[3] == rchx[3]]
                 for segx in possible_divs:
                     # Next, peel out all first reach for any segments listed in
                     # possible_divs
                     first_rchs = [
-                        item
-                        for item in orig_rch
-                        if item[3] == segx[0] and item[4] == 1
+                        item for item in orig_rch if item[3] == segx[0] and item[4] == 1
                     ]
                     for firstx in first_rchs:
                         idx = orig_rch.index(firstx)
@@ -127,7 +119,6 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
 
 
 def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
-
     # Get the sfr information stored in a companion script
     sfr_dat = orig_rch.copy()
     sfrlayout = np.zeros_like(ibnd)
@@ -142,7 +133,6 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
 
     for i in np.arange(0, nrow):
         for j in np.arange(0, ncol):
-
             # Check to ensure current cell is active
             if ibnd[i, j] == 0:
                 continue
@@ -167,17 +157,12 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i, curr_j - 1] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i, curr_j - 1] > 0 and (
-                            elev_arr[curr_i, curr_j - 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i, curr_j - 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i, curr_j - 1]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i, curr_j - 1
-                            ]
-                            sfrlayout_conn_candidate_elev = elev_arr[
-                                curr_i, curr_j - 1
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i, curr_j - 1]
+                            sfrlayout_conn_candidate_elev = elev_arr[curr_i, curr_j - 1]
                             stop_candidate = True
 
                     elif (
@@ -185,8 +170,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i, curr_j - 1] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i, curr_j - 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i, curr_j - 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i, curr_j - 1] < min_elev
                         ):
                             elevcm1 = elev_arr[curr_i, curr_j - 1]
@@ -200,14 +184,11 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i - 1, curr_j - 1] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i - 1, curr_j - 1] > 0 and (
-                            elev_arr[curr_i - 1, curr_j - 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i - 1, curr_j - 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i - 1, curr_j - 1]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i - 1, curr_j - 1
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i - 1, curr_j - 1]
                             sfrlayout_conn_candidate_elev = elev_arr[
                                 curr_i - 1, curr_j - 1
                             ]
@@ -218,8 +199,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i - 1, curr_j - 1] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i - 1, curr_j - 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i - 1, curr_j - 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i - 1, curr_j - 1] < min_elev
                         ):
                             elevrm1cm1 = elev_arr[curr_i - 1, curr_j - 1]
@@ -233,17 +213,12 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i, curr_j + 1] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i, curr_j + 1] > 0 and (
-                            elev_arr[curr_i, curr_j + 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i, curr_j + 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i, curr_j + 1]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i, curr_j + 1
-                            ]
-                            sfrlayout_conn_candidate_elev = elev_arr[
-                                curr_i, curr_j + 1
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i, curr_j + 1]
+                            sfrlayout_conn_candidate_elev = elev_arr[curr_i, curr_j + 1]
                             stop_candidate = True
 
                     elif (
@@ -251,8 +226,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i, curr_j + 1] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i, curr_j + 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i, curr_j + 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i, curr_j + 1] < min_elev
                         ):
                             elevcm1 = elev_arr[curr_i, curr_j + 1]
@@ -266,14 +240,11 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i + 1, curr_j + 1] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i + 1, curr_j + 1] > 0 and (
-                            elev_arr[curr_i + 1, curr_j + 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i + 1, curr_j + 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i + 1, curr_j + 1]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i + 1, curr_j + 1
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i + 1, curr_j + 1]
                             sfrlayout_conn_candidate_elev = elev_arr[
                                 curr_i + 1, curr_j + 1
                             ]
@@ -284,8 +255,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i + 1, curr_j + 1] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i + 1, curr_j + 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i + 1, curr_j + 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i + 1, curr_j + 1] < min_elev
                         ):
                             elevrp1cp1 = elev_arr[curr_i + 1, curr_j + 1]
@@ -299,17 +269,12 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i - 1, curr_j] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i - 1, curr_j] > 0 and (
-                            elev_arr[curr_i - 1, curr_j]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i - 1, curr_j] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i - 1, curr_j]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i - 1, curr_j
-                            ]
-                            sfrlayout_conn_candidate_elev = elev_arr[
-                                curr_i - 1, curr_j
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i - 1, curr_j]
+                            sfrlayout_conn_candidate_elev = elev_arr[curr_i - 1, curr_j]
                             stop_candidate = True
 
                     elif (
@@ -317,8 +282,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i - 1, curr_j] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i - 1, curr_j]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i - 1, curr_j] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i - 1, curr_j] < min_elev
                         ):
                             elevcm1 = elev_arr[curr_i - 1, curr_j]
@@ -332,14 +296,11 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i - 1, curr_j + 1] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i - 1, curr_j + 1] > 0 and (
-                            elev_arr[curr_i - 1, curr_j + 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i - 1, curr_j + 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i - 1, curr_j + 1]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i - 1, curr_j + 1
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i - 1, curr_j + 1]
                             sfrlayout_conn_candidate_elev = elev_arr[
                                 curr_i - 1, curr_j + 1
                             ]
@@ -350,8 +311,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i - 1, curr_j + 1] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i - 1, curr_j + 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i - 1, curr_j + 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i - 1, curr_j + 1] < min_elev
                         ):
                             elevrm1cp1 = elev_arr[curr_i - 1, curr_j + 1]
@@ -365,17 +325,12 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i + 1, curr_j] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i + 1, curr_j] > 0 and (
-                            elev_arr[curr_i + 1, curr_j]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i + 1, curr_j] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i + 1, curr_j]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i + 1, curr_j
-                            ]
-                            sfrlayout_conn_candidate_elev = elev_arr[
-                                curr_i + 1, curr_j
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i + 1, curr_j]
+                            sfrlayout_conn_candidate_elev = elev_arr[curr_i + 1, curr_j]
                             stop_candidate = True
 
                     elif (
@@ -383,8 +338,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i + 1, curr_j] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i + 1, curr_j]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i + 1, curr_j] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i + 1, curr_j] < min_elev
                         ):
                             elevrp1 = elev_arr[curr_i + 1, curr_j]
@@ -398,14 +352,11 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i + 1, curr_j - 1] == 0
                     ):  # Step in if neighbor is a stream cell
                         if elev_arr[curr_i + 1, curr_j - 1] > 0 and (
-                            elev_arr[curr_i + 1, curr_j - 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i + 1, curr_j - 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i + 1, curr_j - 1]
                             < sfrlayout_conn_candidate_elev
                         ):
-                            sfrlayout_conn_candidate = sfrlayout[
-                                curr_i + 1, curr_j - 1
-                            ]
+                            sfrlayout_conn_candidate = sfrlayout[curr_i + 1, curr_j - 1]
                             sfrlayout_conn_candidate_elev = elev_arr[
                                 curr_i + 1, curr_j - 1
                             ]
@@ -416,8 +367,7 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
                         and not ibnd[curr_i + 1, curr_j - 1] == 0
                     ):  # Step here if neighbor is not an sfr cell
                         if (
-                            elev_arr[curr_i + 1, curr_j - 1]
-                            < elev_arr[curr_i, curr_j]
+                            elev_arr[curr_i + 1, curr_j - 1] < elev_arr[curr_i, curr_j]
                             and elev_arr[curr_i + 1, curr_j - 1] < min_elev
                         ):
                             elevrp1cm1 = elev_arr[curr_i + 1, curr_j - 1]

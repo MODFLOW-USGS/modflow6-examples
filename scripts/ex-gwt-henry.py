@@ -11,8 +11,9 @@
 
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Append to system path to include the common subdirectory
@@ -39,8 +40,12 @@ ws = config.base_ws
 # Scenario parameters - make sure there is at least one blank line before next item
 
 parameters = {
-    "ex-gwt-henry-a": {"inflow": 5.7024,},
-    "ex-gwt-henry-b": {"inflow": 2.851,},
+    "ex-gwt-henry-a": {
+        "inflow": 5.7024,
+    },
+    "ex-gwt-henry-b": {
+        "inflow": 2.851,
+    },
 }
 
 # Scenario parameter units - make sure there is at least one blank line before next item
@@ -86,16 +91,12 @@ hclose, rclose, relax = 1e-10, 1e-6, 0.97
 
 
 def build_model(sim_folder, inflow):
-    print("Building model...{}".format(sim_folder))
+    print(f"Building model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder)
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -110,7 +111,7 @@ def build_model(sim_folder, inflow):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwf.name),
+        filename=f"{gwf.name}.ims",
     )
     sim.register_ims_package(ims, [gwf.name])
     flopy.mf6.ModflowGwfdis(
@@ -149,8 +150,8 @@ def build_model(sim_folder, inflow):
         pname="WEL-1",
         auxiliary="CONCENTRATION",
     )
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -172,7 +173,7 @@ def build_model(sim_folder, inflow):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwt.name),
+        filename=f"{gwt.name}.ims",
     )
     sim.register_ims_package(imsgwt, [gwt.name])
     flopy.mf6.ModflowGwtdis(
@@ -197,11 +198,9 @@ def build_model(sim_folder, inflow):
     flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray)
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(gwt.name),
-        concentration_filerecord="{}.ucn".format(gwt.name),
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        budget_filerecord=f"{gwt.name}.cbc",
+        concentration_filerecord=f"{gwt.name}.ucn",
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -264,9 +263,7 @@ def plot_conc(sim, idx):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-conc{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-conc{config.figure_ext}")
         fig.savefig(fpth)
     return
 

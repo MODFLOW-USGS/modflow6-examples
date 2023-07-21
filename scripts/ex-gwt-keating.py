@@ -13,10 +13,11 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches
+
 import flopy
+import matplotlib.patches
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -105,12 +106,10 @@ rchspd[1] = [[(0, 0, j), rrate, 0.0] for j in rcol]
 
 
 def build_mf6gwf(sim_folder):
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
     tdis_ds = ((period1, 1, 1.0), (period2, 1, 1.0))
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_ds), perioddata=tdis_ds, time_units=time_units
@@ -179,8 +178,8 @@ def build_mf6gwf(sim_folder):
         pname="RCH-1",
     )
 
-    head_filerecord = "{}.hds".format(name)
-    budget_filerecord = "{}.bud".format(name)
+    head_filerecord = f"{name}.hds"
+    budget_filerecord = f"{name}.bud"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -191,7 +190,7 @@ def build_mf6gwf(sim_folder):
 
 
 def build_mf6gwt(sim_folder):
-    print("Building mf6gwt model...{}".format(sim_folder))
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
@@ -238,12 +237,10 @@ def build_mf6gwt(sim_folder):
         gwt, xt3d_off=True, alh=alpha_l, ath1=alpha_th, atv=alpha_tv
     )
     pd = [
-        ("GWFHEAD", "../mf6gwf/flow.hds".format(), None),
+        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
-    flopy.mf6.ModflowGwtfmi(
-        gwt, flow_imbalance_correction=True, packagedata=pd
-    )
+    flopy.mf6.ModflowGwtfmi(gwt, flow_imbalance_correction=True, packagedata=pd)
     sourcerecarray = [
         ("RCH-1", "AUX", "CONCENTRATION"),
     ]
@@ -262,8 +259,8 @@ def build_mf6gwt(sim_folder):
     }
     flopy.mf6.ModflowGwtoc(
         gwt,
-        budget_filerecord="{}.cbc".format(name),
-        concentration_filerecord="{}.ucn".format(name),
+        budget_filerecord=f"{name}.cbc",
+        concentration_filerecord=f"{name}.ucn",
         concentrationprintrecord=[
             ("COLUMNS", ncol, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
@@ -277,14 +274,12 @@ def build_mf6gwt(sim_folder):
         ],
     )
     obs_data = {
-        "{}.obs.csv".format(name): [
+        f"{name}.obs.csv": [
             ("obs1", "CONCENTRATION", obs1),
             ("obs2", "CONCENTRATION", obs2),
         ],
     }
-    flopy.mf6.ModflowUtlobs(
-        gwt, digits=10, print_input=True, continuous=obs_data
-    )
+    flopy.mf6.ModflowUtlobs(gwt, digits=10, print_input=True, continuous=obs_data)
     return sim
 
 
@@ -341,7 +336,7 @@ def plot_results(sims, idx):
         plot_conc_results(sims, idx)
         plot_cvt_results(sims, idx)
         if config.plotSave and config.createGif:
-           make_animated_gif(sims, idx)
+            make_animated_gif(sims, idx)
     return
 
 
@@ -355,9 +350,7 @@ def plot_head_results(sims, idx):
     sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
     head = gwf.output.head().get_data()
     head = np.where(head > botm, head, np.nan)
-    fig, ax = plt.subplots(
-        1, 1, figsize=figure_size, dpi=300, tight_layout=True
-    )
+    fig, ax = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
     pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
     pa = pxs.plot_array(head, head=head, cmap="jet")
     pxs.plot_bc(ftype="RCH", color="red")
@@ -375,7 +368,7 @@ def plot_head_results(sims, idx):
     if config.plotSave:
         sim_folder = os.path.split(sim_ws)[0]
         sim_folder = os.path.basename(sim_folder)
-        fname = "{}-head{}".format(sim_folder, config.figure_ext)
+        fname = f"{sim_folder}-head{config.figure_ext}"
         fpth = os.path.join(ws, "..", "figures", fname)
         fig.savefig(fpth)
 
@@ -393,15 +386,13 @@ def plot_conc_results(sims, idx):
     cobj = gwt.output.concentration()
     conc_times = cobj.get_times()
     conc_times = np.array(conc_times)
-    fig, axes = plt.subplots(
-        3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True
-    )
+    fig, axes = plt.subplots(3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True)
     xgrid, _, zgrid = gwt.modelgrid.xyzcellcenters
     # Desired plot times
     plot_times = [100.0, 1000.0, 3000.0]
     nplots = len(plot_times)
     for iplot in range(nplots):
-        print("  Plotting conc {}".format(iplot + 1))
+        print(f"  Plotting conc {iplot + 1}")
         time_in_pub = plot_times[iplot]
         idx_conc = (np.abs(conc_times - time_in_pub)).argmin()
         totim = conc_times[idx_conc]
@@ -419,7 +410,7 @@ def plot_conc_results(sims, idx):
         if iplot == 2:
             ax.set_xlabel("x position (m)")
         ax.set_ylabel("elevation (m)")
-        title = "Time = {}".format(totim)
+        title = f"Time = {totim}"
         letter = chr(ord("@") + iplot + 1)
         fs.heading(letter=letter, heading=title, ax=ax)
         ax.set_aspect(plotaspect)
@@ -439,15 +430,16 @@ def plot_conc_results(sims, idx):
     if config.plotSave:
         sim_folder = os.path.split(sim_ws)[0]
         sim_folder = os.path.basename(sim_folder)
-        fname = "{}-conc{}".format(sim_folder, config.figure_ext)
+        fname = f"{sim_folder}-conc{config.figure_ext}"
         fpth = os.path.join(ws, "..", "figures", fname)
         fig.savefig(fpth)
 
 
 def make_animated_gif(sims, idx):
+    import copy
+
     import matplotlib as mpl
     from matplotlib.animation import FuncAnimation, PillowWriter
-    import copy
 
     print("Animating conc model results...")
     sim_name = example_name
@@ -487,14 +479,14 @@ def make_animated_gif(sims, idx):
     pxs.plot_bc(ftype="CHD")
 
     def init():
-        ax.set_title("Time = {} days".format(conc_times[0]))
+        ax.set_title(f"Time = {conc_times[0]} days")
 
     def update(i):
         a = np.where(head > botm, conc[i], nodata)
         a = np.ma.masked_where(a < 0, a)
         a = a[~a.mask]
         pc.set_array(a.flatten())
-        ax.set_title("Time = {} days".format(conc_times[i]))
+        ax.set_title(f"Time = {conc_times[i]} days")
 
     # Stop the animation at 18,000 days
     idx_end = (np.abs(conc_times - 18000.0)).argmin()
@@ -570,7 +562,7 @@ def plot_cvt_results(sims, idx):
     if config.plotSave:
         sim_folder = os.path.split(sim_ws)[0]
         sim_folder = os.path.basename(sim_folder)
-        fname = "{}-cvt{}".format(sim_folder, config.figure_ext)
+        fname = f"{sim_folder}-cvt{config.figure_ext}"
         fpth = os.path.join(ws, "..", "figures", fname)
         fig.savefig(fpth)
 

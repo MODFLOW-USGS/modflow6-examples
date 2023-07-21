@@ -12,9 +12,10 @@
 
 import os
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Append to system path to include the common subdirectory
 
@@ -88,9 +89,7 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name=config.mf6_exe
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -98,7 +97,7 @@ def build_model():
             outer_dvclose=hclose,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
         flopy.mf6.ModflowGwfdis(
@@ -128,8 +127,7 @@ def build_model():
         rate[:, :, -1] = -inflow_rate
         wellay, welrow, welcol = np.where(rate != 0.0)
         wel_spd = [
-            ((k, i, j), rate[k, i, j])
-            for k, i, j in zip(wellay, welrow, welcol)
+            ((k, i, j), rate[k, i, j]) for k, i, j in zip(wellay, welrow, welcol)
         ]
         wel_spd = {0: wel_spd}
         flopy.mf6.ModflowGwfwel(
@@ -137,8 +135,8 @@ def build_model():
             stress_period_data=wel_spd,
             pname="WEL",
         )
-        head_filerecord = "{}.hds".format(sim_name)
-        budget_filerecord = "{}.cbc".format(sim_name)
+        head_filerecord = f"{sim_name}.hds"
+        budget_filerecord = f"{sim_name}.cbc"
         flopy.mf6.ModflowGwfoc(
             gwf,
             head_filerecord=head_filerecord,
@@ -199,9 +197,7 @@ def plot_spdis(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-spdis{}".format(sim_name, config.figure_ext)
-        )
+        fpth = os.path.join("..", "figures", f"{sim_name}-spdis{config.figure_ext}")
         fig.savefig(fpth)
     return
 

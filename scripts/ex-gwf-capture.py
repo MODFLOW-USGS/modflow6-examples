@@ -150,9 +150,7 @@ def build_model():
             sim_ws=sim_ws,
             exe_name=config.mf6_exe,
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="BICGSTAB",
@@ -160,7 +158,7 @@ def build_model():
             outer_dvclose=hclose * 10.0,
             inner_maximum=ninner,
             inner_dvclose=hclose,
-            rcloserecord="{} strict".format(rclose),
+            rcloserecord=f"{rclose} strict",
         )
         gwf = flopy.mf6.ModflowGwf(
             sim,
@@ -194,7 +192,7 @@ def build_model():
             gwf,
             maxbound=1,
             pname="CF-1",
-            filename="{}.cf.wel".format(sim_name),
+            filename=f"{sim_name}.cf.wel",
         )
         flopy.mf6.ModflowGwfoc(
             gwf,
@@ -271,9 +269,7 @@ def get_streamflow(mobj):
 def run_model():
     success = True
     if config.runModel:
-        libmf6_path = (
-            pl.Path(shutil.which(config.mf6_exe)).parent / config.libmf6_exe
-        )
+        libmf6_path = pl.Path(shutil.which(config.mf6_exe)).parent / config.libmf6_exe
         sim_ws = os.path.join(ws, sim_name)
         mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
         qbase = capture_fraction_iteration(mf6, cf_q)
@@ -293,9 +289,7 @@ def run_model():
                 ireduced_node += 1
 
                 # calculate the perturbed river flow
-                qriv = capture_fraction_iteration(
-                    mf6, cf_q, inode=ireduced_node
-                )
+                qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
 
                 # add the value to the capture array
                 capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
@@ -413,9 +407,7 @@ def plot_results(silent=True):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", "{}-01{}".format(sim_name, config.figure_ext)
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-01{config.figure_ext}")
             fig.savefig(fpth)
 
 
@@ -435,7 +427,7 @@ def simulation(silent=True):
 
     success = run_model()
 
-    assert success, "could not run...{}".format(sim_name)
+    assert success, f"could not run...{sim_name}"
 
 
 # nosetest - exclude block from this nosetest to the next nosetest

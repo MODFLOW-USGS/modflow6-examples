@@ -13,13 +13,13 @@ sys.path.append(os.path.join("..", "common"))
 
 # Imports
 
-import flopy
-import numpy as np
 import config
-import matplotlib.pyplot as plt
+import flopy
 import flopy.utils.binaryfile as bf
-from flopy.utils.lgrutil import Lgr
+import matplotlib.pyplot as plt
+import numpy as np
 from figspecs import USGSFigure
+from flopy.utils.lgrutil import Lgr
 
 mf6exe = config.mf6_exe
 exe_name_mf = config.mf2005_exe
@@ -527,7 +527,6 @@ sfrspdc = {0: [[0, "INFLOW", 0.0]]}
 
 def build_model(sim_name, silent=False):
     if config.buildModel:
-
         # Instantiate the MODFLOW 6 simulation
         name = "lgr"
         gwfname = "gwf-" + name
@@ -544,9 +543,7 @@ def build_model(sim_name, silent=False):
         tdis_rc = []
         for i in range(len(perlen)):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwfname = gwfname + "-parent"
@@ -555,7 +552,7 @@ def build_model(sim_name, silent=False):
             modelname=gwfname,
             save_flows=True,
             newtonoptions="newton",
-            model_nam_file="{}.nam".format(gwfname),
+            model_nam_file=f"{gwfname}.nam",
         )
 
         # Instantiating MODFLOW 6 solver for flow model
@@ -572,7 +569,7 @@ def build_model(sim_name, silent=False):
             scaling_method="NONE",
             reordering_method="NONE",
             relaxation_factor=relax,
-            filename="{}.ims".format(gwfname),
+            filename=f"{gwfname}.ims",
         )
         sim.register_ims_package(imsgwf, [gwf.name])
 
@@ -587,14 +584,12 @@ def build_model(sim_name, silent=False):
             top=topp,
             botm=botmp,
             idomain=idomainp,
-            filename="{}.dis".format(gwfname),
+            filename=f"{gwfname}.dis",
         )
 
         # Instantiating MODFLOW 6 initial conditions package for flow model
         strt = [topp - 0.25, topp - 0.25, topp - 0.25]
-        ic = flopy.mf6.ModflowGwfic(
-            gwf, strt=strt, filename="{}.ic".format(gwfname)
-        )
+        ic = flopy.mf6.ModflowGwfic(gwf, strt=strt, filename=f"{gwfname}.ic")
 
         # Instantiating MODFLOW 6 node-property flow package
         npf = flopy.mf6.ModflowGwfnpf(
@@ -605,17 +600,15 @@ def build_model(sim_name, silent=False):
             k=k11,
             k33=k33,
             save_specific_discharge=False,
-            filename="{}.npf".format(gwfname),
+            filename=f"{gwfname}.npf",
         )
 
         # Instantiating MODFLOW 6 output control package for flow model
         oc = flopy.mf6.ModflowGwfoc(
             gwf,
-            budget_filerecord="{}.bud".format(gwfname),
-            head_filerecord="{}.hds".format(gwfname),
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            budget_filerecord=f"{gwfname}.bud",
+            head_filerecord=f"{gwfname}.hds",
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -644,7 +637,7 @@ def build_model(sim_name, silent=False):
             stress_period_data=chdspd,
             save_flows=False,
             pname="CHD-1",
-            filename="{}.chd1.chd".format(gwfname),
+            filename=f"{gwfname}.chd1.chd",
         )
         chdspd = {0: chdspd_right}
         chd2 = flopy.mf6.modflow.mfgwfchd.ModflowGwfchd(
@@ -653,7 +646,7 @@ def build_model(sim_name, silent=False):
             stress_period_data=chdspd,
             save_flows=False,
             pname="CHD-2",
-            filename="{}.chd2.chd".format(gwfname),
+            filename=f"{gwfname}.chd2.chd",
         )
 
         # Instantiating MODFLOW 6 Parent model's SFR package
@@ -671,7 +664,7 @@ def build_model(sim_name, silent=False):
             packagedata=pkdat,
             connectiondata=connsp,
             perioddata=sfrspd,
-            filename="{}.sfr".format(gwfname),
+            filename=f"{gwfname}.sfr",
         )
 
         # -------------------------------
@@ -707,7 +700,7 @@ def build_model(sim_name, silent=False):
             modelname=gwfnamec,
             save_flows=True,
             newtonoptions="newton",
-            model_nam_file="{}.nam".format(gwfnamec),
+            model_nam_file=f"{gwfnamec}.nam",
         )
 
         # Instantiating MODFLOW 6 discretization package for the child model
@@ -725,7 +718,7 @@ def build_model(sim_name, silent=False):
             top=topc,
             botm=botmc,
             idomain=idomainc,
-            filename="{}.dis".format(gwfnamec),
+            filename=f"{gwfnamec}.dis",
         )
 
         # Instantiating MODFLOW 6 initial conditions package for child model
@@ -737,9 +730,7 @@ def build_model(sim_name, silent=False):
             topc - 0.25,
             topc - 0.25,
         ]
-        icc = flopy.mf6.ModflowGwfic(
-            gwfc, strt=strtc, filename="{}.ic".format(gwfnamec)
-        )
+        icc = flopy.mf6.ModflowGwfic(gwfc, strt=strtc, filename=f"{gwfnamec}.ic")
 
         # Instantiating MODFLOW 6 node property flow package for child model
         icelltypec = [1, 1, 1, 0, 0, 0]
@@ -751,17 +742,15 @@ def build_model(sim_name, silent=False):
             k=k11,
             k33=k33,
             save_specific_discharge=False,
-            filename="{}.npf".format(gwfnamec),
+            filename=f"{gwfnamec}.npf",
         )
 
         # Instantiating MODFLOW 6 output control package for the child model
         occ = flopy.mf6.ModflowGwfoc(
             gwfc,
-            budget_filerecord="{}.bud".format(gwfnamec),
-            head_filerecord="{}.hds".format(gwfnamec),
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            budget_filerecord=f"{gwfnamec}.bud",
+            head_filerecord=f"{gwfnamec}.hds",
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -781,7 +770,7 @@ def build_model(sim_name, silent=False):
             packagedata=pkdatc,
             connectiondata=connsc,
             perioddata=sfrspdc,
-            filename="{}.sfr".format(gwfnamec),
+            filename=f"{gwfnamec}.sfr",
         )
 
         # Retrieve exchange data using Lgr class functionality
@@ -797,9 +786,9 @@ def build_model(sim_name, silent=False):
             exgmnameb=gwfnamec,
             nexg=len(exchange_data),
             exchangedata=exchange_data,
-            mvr_filerecord="{}.mvr".format(name),
+            mvr_filerecord=f"{name}.mvr",
             pname="EXG-1",
-            filename="{}.exg".format(name),
+            filename=f"{name}.exg",
         )
 
         # Instantiate MVR package
@@ -840,7 +829,7 @@ def build_model(sim_name, silent=False):
             maxpackages=maxpackages,
             packages=mvrpack,
             perioddata=mvrspd,
-            filename="{}.mvr".format(name),
+            filename=f"{name}.mvr",
         )
 
         return sim
@@ -909,26 +898,18 @@ def plot_results(mf6, idx):
             gwswc.append(datc[0])
 
             # No values for some reason?
-            dat_fmp = modobjp.get_data(
-                kstpkper=kstpkper, text="        FROM-MVR"
-            )
-            dat_tmp = modobjp.get_data(
-                kstpkper=kstpkper, text="          TO-MVR"
-            )
+            dat_fmp = modobjp.get_data(kstpkper=kstpkper, text="        FROM-MVR")
+            dat_tmp = modobjp.get_data(kstpkper=kstpkper, text="          TO-MVR")
             toMvrp.append(dat_fmp[0])
             fromMvrp.append(dat_tmp[0])
 
             # No values for some reason?
-            dat_fmc = modobjc.get_data(
-                kstpkper=kstpkper, text="        FROM-MVR"
-            )
-            dat_tmc = modobjc.get_data(
-                kstpkper=kstpkper, text="          TO-MVR"
-            )
+            dat_fmc = modobjc.get_data(kstpkper=kstpkper, text="        FROM-MVR")
+            dat_tmc = modobjc.get_data(kstpkper=kstpkper, text="          TO-MVR")
             toMvrc.append(dat_fmc[0])
             fromMvrc.append(dat_tmc[0])
 
-        strmQ = np.zeros((len(connsp) + len(connsc)))
+        strmQ = np.zeros(len(connsp) + len(connsc))
         # Hardwire the first reach to the specified inflow rate
         strmQ[0] = 40.0
         for i, itm in enumerate(np.arange(1, len(qp[0][0]), 2)):
@@ -959,12 +940,10 @@ def plot_results(mf6, idx):
         # Now get center of all the reaches
         rch_lengths = []
         for i in np.arange(len(all_rch_lengths)):
-            rch_lengths.append(
-                np.sum(all_rch_lengths[0:i]) + (all_rch_lengths[i] / 2)
-            )
+            rch_lengths.append(np.sum(all_rch_lengths[0:i]) + (all_rch_lengths[i] / 2))
 
         # Make a continuous vector of the gw-sw exchanges
-        gwsw_exg = np.zeros((len(connsp) + len(connsc)))
+        gwsw_exg = np.zeros(len(connsp) + len(connsc))
         for i, itm in enumerate(gwswp[0]):
             if itm[0] <= 8:
                 gwsw_exg[i] = itm[2]
@@ -975,9 +954,7 @@ def plot_results(mf6, idx):
         for j, jtm in enumerate(gwswc[0]):
             gwsw_exg[8 + j] = jtm[2]
 
-        fig, ax1 = plt.subplots(
-            figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, ax1 = plt.subplots(figsize=figure_size, dpi=300, tight_layout=True)
         pts = ax1.plot(rch_lengths, strmQ, "r^", label="Stream Flow", zorder=3)
         ax1.set_zorder(4)
         ax1.set_facecolor("none")
@@ -988,12 +965,8 @@ def plot_results(mf6, idx):
             ha="center",
             fontsize=10,
         )
-        ax1.arrow(
-            1080, 163, -440, 0, head_width=5, head_length=50, fc="k", ec="k"
-        )
-        ax1.arrow(
-            2150, 163, 395, 0, head_width=5, head_length=50, fc="k", ec="k"
-        )
+        ax1.arrow(1080, 163, -440, 0, head_width=5, head_length=50, fc="k", ec="k")
+        ax1.arrow(2150, 163, 395, 0, head_width=5, head_length=50, fc="k", ec="k")
         ax1.arrow(
             525,
             27,
@@ -1110,9 +1083,7 @@ def plot_results(mf6, idx):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", "{}{}".format(sim_name, config.figure_ext)
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}{config.figure_ext}")
             fig.savefig(fpth)
 
 

@@ -313,9 +313,7 @@ sfr_slope = -0.0002
 cum_dist = np.zeros(sfr_nodes.shape, dtype=float)
 cum_dist[0] = 0.5 * sfr_lengths[0]
 for idx in range(1, sfr_nodes.shape[0]):
-    cum_dist[idx] = cum_dist[idx - 1] + 0.5 * (
-        sfr_lengths[idx - 1] + sfr_lengths[idx]
-    )
+    cum_dist[idx] = cum_dist[idx - 1] + 0.5 * (sfr_lengths[idx - 1] + sfr_lengths[idx])
 sfr_bot = b0 + sfr_slope * cum_dist
 sfr_conn = []
 for idx, node in enumerate(sfr_nodes):
@@ -328,9 +326,7 @@ for idx, node in enumerate(sfr_nodes):
 
 # <rno> <cellid(ncelldim)> <rlen> <rwid> <rgrd> <rtp> <rbth> <rhk> <man> <ncon> <ustrf> <ndv>
 sfrpak_data = []
-for idx, (cellid, rlen, rtp) in enumerate(
-    zip(gwf_nodes, sfr_lengths, sfr_bot)
-):
+for idx, (cellid, rlen, rtp) in enumerate(zip(gwf_nodes, sfr_lengths, sfr_bot)):
     sfr_plt_array[cellid] = 1
     sfrpak_data.append(
         (
@@ -418,7 +414,7 @@ welspd = [
 
 
 def build_mf6gwf(sim_folder):
-    print("Building mf6gwf model...{}".format(sim_folder))
+    print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(
@@ -427,9 +423,7 @@ def build_mf6gwf(sim_folder):
         exe_name=config.mf6_exe,
         continue_=True,
     )
-    tdis = flopy.mf6.ModflowTdis(
-        sim, time_units="days", perioddata=((pertim, 1, 1.0),)
-    )
+    tdis = flopy.mf6.ModflowTdis(sim, time_units="days", perioddata=((pertim, 1, 1.0),))
     ims = flopy.mf6.ModflowIms(
         sim,
         print_option="all",
@@ -472,12 +466,8 @@ def build_mf6gwf(sim_folder):
         ],
     )
     rch = flopy.mf6.ModflowGwfrcha(gwf, recharge=rainfall)
-    evt = flopy.mf6.ModflowGwfevta(
-        gwf, surface=top_vg, rate=evaporation, depth=1.0
-    )
-    wel = flopy.mf6.ModflowGwfwel(
-        gwf, stress_period_data=welspd, boundnames=True
-    )
+    evt = flopy.mf6.ModflowGwfevta(gwf, surface=top_vg, rate=evaporation, depth=1.0)
+    wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=welspd, boundnames=True)
     drn = flopy.mf6.ModflowGwfdrn(
         gwf,
         auxiliary=["depth"],
@@ -490,8 +480,8 @@ def build_mf6gwf(sim_folder):
         print_flows=True,
         length_conversion=sfr_length_conversion,
         time_conversion=sfr_time_conversion,
-        stage_filerecord="{}.sfr.stage.bin".format(name),
-        budget_filerecord="{}.sfr.cbc".format(name),
+        stage_filerecord=f"{name}.sfr.stage.bin",
+        budget_filerecord=f"{name}.sfr.cbc",
         nreaches=len(sfrpak_data),
         packagedata=sfrpak_data,
         connectiondata=sfr_conn,
@@ -505,8 +495,8 @@ def build_mf6gwf(sim_folder):
         auxiliary=["concentration"],
         print_stage=True,
         print_flows=True,
-        stage_filerecord="{}.lak.stage.bin".format(name),
-        budget_filerecord="{}.lak.cbc".format(name),
+        stage_filerecord=f"{name}.lak.stage.bin",
+        budget_filerecord=f"{name}.lak.cbc",
         nlakes=1,
         packagedata=lakpak_data,
         connectiondata=lak_connections,
@@ -523,7 +513,7 @@ def build_mf6gwf(sim_folder):
 
 
 def build_mf6gwt(sim_folder):
-    print("Building mf6gwt model...{}".format(sim_folder))
+    print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
@@ -802,7 +792,6 @@ def plot_river_mapping(sims, idx):
         xticks = np.arange(mm.extent[0], mm.extent[1], 1000.0).tolist()
         yticks = np.arange(mm.extent[2], mm.extent[3], 1000.0).tolist()
         set_ticklabels(ax, fmt="{:.0f}", xticks=xticks, yticks=yticks)
-
 
         # legend
         ax = ax_leg
@@ -1131,9 +1120,7 @@ def plot_conc_results(sims, idx):
         )
         ax.axhline(xy0[0], color="cyan", lw=0.5, label="Lake")
         ax.axhline(xy0[0], **river_dict, label="River")
-        ax.axhline(
-            xy0[0], **contour_gwt_label_dict, label="Concentration (mg/L)"
-        )
+        ax.axhline(xy0[0], **contour_gwt_label_dict, label="Concentration (mg/L)")
         ax.plot(
             xy0,
             xy0,
