@@ -69,10 +69,10 @@ parameters = {
 parameter_units = {
     "beta": "$s^{-1}$",
     "sorption": "text string",
-    "Kf": "$\mu g L g^{} mg^{-1}$",
+    "Kf": r"$\mu g L g^{} mg^{-1}$",
     "a": "unitless",
     "Kl": "$L mg^{-1}$",
-    "S": "$\mu g g^{-1}$",
+    "S": r"$\mu g g^{-1}$",
 }
 
 # Model units
