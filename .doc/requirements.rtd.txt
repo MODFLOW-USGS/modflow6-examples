@@ -2,6 +2,8 @@ nbsphinx
 nbsphinx_link
 ipython
 ipykernel
+recommonmark
 rtds_action
 sphinx_markdown_tables
+sphinx-rtd-theme
 pygments>=2.4.1

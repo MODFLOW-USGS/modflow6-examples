@@ -37,9 +37,9 @@ import numpy as np
 from figspecs import USGSFigure
 from flopy.utils.util_array import read1d
 
-mf6exe = config.mf6_exe
-exe_name_mf = config.mf2005_exe
-exe_name_mt = config.mt3dusgs_exe
+mf6exe = "mf6"
+exe_name_mf = "mf2005"
+exe_name_mt = "mt3dusgs"
 
 # Set figure properties specific to this problem
 

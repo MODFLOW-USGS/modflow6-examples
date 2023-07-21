@@ -4,12 +4,12 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop ]
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'

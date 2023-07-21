@@ -26,9 +26,9 @@ import analytical
 import config
 from figspecs import USGSFigure
 
-mf6exe = config.mf6_exe
-exe_name_mf = config.mf2005_exe
-exe_name_mt = config.mt3dms_exe
+mf6exe = "mf6"
+exe_name_mf = "mf2005"
+exe_name_mt = "mt3dms"
 
 # Set figure properties specific to this problem
 
@@ -79,7 +79,9 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     tdis_ds = ((total_time, 1, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, print_option="summary", inner_maximum=300)
@@ -131,7 +133,9 @@ def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     tdis_ds = ((total_time, 400, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")

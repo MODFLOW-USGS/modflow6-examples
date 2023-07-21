@@ -39,9 +39,9 @@ sys.path.append(os.path.join("..", "common"))
 import config
 from figspecs import USGSFigure
 
-mf6exe = config.mf6_exe
-exe_name_mf = config.mf2005_exe
-exe_name_mt = config.mt3dms_exe
+mf6exe = "mf6"
+exe_name_mf = "mf2005"
+exe_name_mt = "mt3dms"
 
 # Set figure properties specific to this problem
 

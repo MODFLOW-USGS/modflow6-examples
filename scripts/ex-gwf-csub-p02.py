@@ -128,7 +128,7 @@ def build_model(
         if subdir_name is not None:
             sim_ws = os.path.join(sim_ws, subdir_name)
         sim = flopy.mf6.MFSimulation(
-            sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe
+            sim_name=name, sim_ws=sim_ws, exe_name="mf6"
         )
         flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(

@@ -25,9 +25,9 @@ sys.path.append(os.path.join("..", "common"))
 import config
 from figspecs import USGSFigure
 
-mf6exe = config.mf6_exe
-exe_name_mf = config.mf2005_exe
-exe_name_mt = config.mt3dms_exe
+mf6exe = "mf6"
+exe_name_mf = "mf2005"
+exe_name_mt = "mt3dms"
 
 # Set figure properties specific to this problem
 
@@ -94,7 +94,9 @@ def build_model(sim_folder, inflow):
     print(f"Building model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder)
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     tdis_ds = ((perlen, nstp, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)

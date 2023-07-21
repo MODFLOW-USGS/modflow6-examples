@@ -26,7 +26,7 @@ import analytical
 import config
 from figspecs import USGSFigure
 
-mf6exe = config.mf6_exe
+mf6exe = "mf6"
 
 # Set figure properties specific to this problem
 
@@ -117,7 +117,9 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
@@ -190,7 +192,9 @@ def build_mf6gwt(
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name=config.mf6_exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
+    )
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
@@ -278,7 +282,7 @@ def build_mf2005(sim_folder):
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(
-        modelname=name, model_ws=sim_ws, exe_name=config.mf2005_exe
+        modelname=name, model_ws=sim_ws, exe_name="mf2005"
     )
     perlen = [period1, period2]
     dis = flopy.modflow.ModflowDis(
@@ -323,7 +327,7 @@ def build_mt3dms(
     mt = flopy.mt3d.Mt3dms(
         modelname=name,
         model_ws=sim_ws,
-        exe_name=config.mt3dms_exe,
+        exe_name="mt3dms",
         modflowmodel=modflowmodel,
         ftlfilename="../mf2005/mt3d_link.ftl",
     )
