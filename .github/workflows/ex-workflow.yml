@@ -4,12 +4,16 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches: [ master, develop ]
+    branches: 
+      - master
+      - develop
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches: [ master, develop ]
+    branches:
+      - master
+      - develop
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
@@ -241,13 +245,13 @@ jobs:
           ls -l .
 
       - name: Delete the latest release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
         uses: ame-yu/action-delete-latest-release@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create/Update the current release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
         uses: ncipollo/release-action@v1
         with:
           tag: current
@@ -258,7 +262,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload MODFLOW 6 examples to the current GitHub release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -268,7 +272,7 @@ jobs:
           file_glob: true
 
       - name: Delete all Artifacts
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
         uses: GeekyEggo/delete-artifact@v2
         with:
           name: |

@@ -4,12 +4,16 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches: [ master, develop ]
+    branches:
+      - master
+      - develop
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches: [ master, develop ]
+    branches:
+      - master
+      - develop
 
 jobs:
   rtd_build:
@@ -116,7 +120,7 @@ jobs:
     needs: rtd_build
     runs-on: ubuntu-latest
 
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v3
