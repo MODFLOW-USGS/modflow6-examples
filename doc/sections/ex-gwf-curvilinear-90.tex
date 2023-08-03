@@ -1,0 +1,44 @@
+\section{Curvilinear Groundwater Flow Model}
+% Describe source of problem
+MODFLOW 6 vertex grids specify a set of vertices that define the boundary of each model cell. Two vertices in the same horizontal plain are connected by a straight line to represent the face of the model cell. A set of vertices can represent a curvilinear grid \citep{romero2006grid} by a piecewise linear representation of the curved surfaces. Curvilinear grids can represent a radial model or replicate a curved flow pattern with a major change in the dominate flow path. For example, a 90$^{\circ}$ curvilinear grid can change the dominate flow path from the x-direction to the y-direction along the same model ``column''.  This example demonstrates the capability of the Discretization by Vertices (DISV) Package to represent a curvilinear grid.
+
+Using FloPy this example replicates the steady-state, curvilinear model described in \cite{romero2006grid} using the Figure 3d grid. The original model used a modified MODFLOW-88 \citep{modflow88} code to demonstrate the ability of MODFLOW to simulate curvilinear models by distorting the model grid to use trapezoids. The results were validated against the analytical solution presented in equation 5.4 in \cite{crank1975diffusion}.
+
+
+\subsection{Example Description}
+
+% spatial discretization
+The example consists of a steady-state, 90$^{\circ}$ curvilinear model representing a single layer, confined, homogeneous, and isotropic aquifer (fig.~\ref{fig:ex-gwf-curve-90-grid}). The positive x-axis represents the 0$^{\circ}$ angle and the positive y-axis is the 90$^{\circ}$ angle. The curvilinear model is discretized by radial bands and columns. The radial bands are a piecewise linear approximation of a curve and the columns are the discretization within a radial band.
+
+The radial band numbering starts at 1 for the inner most band and the column number starts at 1 for the column closes to the x-axis. For MODFLOW 6, the DISV package identifies cells by the CELL2D number ($icell2d$). For this example, $icell2d$ starts at radial band 1, column 1 and increases sequentially in the column direction, then the radial direction (fig.~\ref{fig:ex-gwf-curve-90-grid}).
+
+All vertices between two radial bands have the same radial distance from the axis origin. The inner- and outer most vertices have a radial distance of 4 $ft$ and 20 $ft$, respectively. The radial distance between band vertices is 1 $ft$ for a total of 16 curvilinear radial bands. The radial bands are discretized in 5$^{\circ}$ increments for a total of 18 columns per band. The single model layer is 10 $ft$ thick with a transmissivity of 0.19 $ft^2/day$. A constant head boundary condition is assigned to the inner and outer most radial bands at 10 $ft$ and 3.334 $ft$, respectively. The remaining model properties are summarized in table~\ref{tab:ex-gwf-curvilinear-90-01}.
+
+\begin{StandardFigure}{
+                                     Model grid used for the 90$^{\circ}$ curvilinear vertex model.
+                                     Constant-head cells are marked in blue.
+                                     The inner constant head is 10 $ft$ and the outer constant head is 3.33 $ft$.
+                                     Cell numbers are shown inside each model cell.
+                                     Vertices are also numbered and are shown in red.
+                                     }{fig:ex-gwf-curve-90-grid}{../figures/ex-gwf-curve-90-grid.png}
+\end{StandardFigure}
+
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-curvilinear-90-01.tex}
+
+% for examples without scenarios
+\subsection{Example Results}
+The curvilinear vertex model is solved using one, steady state, stress period and compares it to the analytical solution (eqn. 5.4 in \cite{crank1975diffusion}). Figure~\ref{fig:ex-gwf-curve-90-head} presents the MODFLOW 6 simulated head and flow lines for all model cells. Figure~\ref{fig:ex-gwf-curve-90-obs-head} presents the head solution along column 9 from all radial bands ($icell2d\colon 9, 27, 45, \ldots, 261, 279$) and compares it to the analytical solution. The MODFLOW 6 head solution occurs at the cell center rather than the edge, so the radial distance of the inner most head solution is 4.5 $ft$ instead of 4 $ft$. The MODFLOW 6 results are nearly identical to the analytical solution with a relative error of 0.05\% and root mean square error of 0.0037 $ft$.
+
+\begin{StandardFigure}{
+                                     Steady state head solution and flow rate line arrows from the MODFLOW 6 curvilinear vertex model.
+                                     }{fig:ex-gwf-curve-90-head}{../figures/ex-gwf-curve-90-head.png}
+\end{StandardFigure}
+
+\begin{StandardFigure}{
+                                     Steady state head solution from the MODFLOW 6 curvilinear vertex model (MF6) compared with the analytical solution \citep{crank1975diffusion}.
+                                     The MF6 head values are taken from each radial band along column 10.
+                                     The radial distance of each MF6 solution is the distance from the vertex axis origin to the cell center.
+                                     }{fig:ex-gwf-curve-90-obs-head}{../figures/ex-gwf-curve-90-obs-head.png}
+\end{StandardFigure}
