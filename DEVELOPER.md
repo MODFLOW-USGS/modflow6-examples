@@ -220,7 +220,7 @@ To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks
 Notebooks must be created and run (including model runs and plots) before building the ReadTheDocs documentation:
 
 ```shell
-pytest -v -n auto test_notebooks.py
+pytest -v -n auto test_notebooks.py --plot
 ```
 
 This will create and/or update notebooks in `.doc/_notebooks`. Next, build LaTeX and Markdown files:
