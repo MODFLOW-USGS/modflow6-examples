@@ -10,7 +10,7 @@ import flopy
 is_CI = "CI" in os.environ or os.environ.get("READTHEDOCS") == "True"
 
 # -- update flopy classes ----------------------------------------------------
-flopy.mf6.utils.generate_classes(branch="develop", backup=False)
+flopy.mf6.utils.generate_classes(owner="aprovost-usgs", branch="PRT", backup=False)
 
 # -- update notebooks and tables ---------------------------------------------
 pth = os.path.join("..", "scripts")
