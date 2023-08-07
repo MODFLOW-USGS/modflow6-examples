@@ -8,9 +8,10 @@ on:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches:
+    branches: 
       - master
       - develop
+      - PRT
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
@@ -51,7 +52,7 @@ jobs:
       - name: Update flopy MODFLOW 6 classes
         run: |
           import flopy
-          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
+          flopy.mf6.utils.generate_classes(owner="aprovost-usgs", ref="PRT", backup=False)
         shell: python
 
       - name: Install MODFLOW executables release
@@ -128,26 +129,25 @@ jobs:
       - name: Update flopy MODFLOW 6 classes
         run: |
           import flopy
-          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
+          flopy.mf6.utils.generate_classes(owner="aprovost-usgs", ref="PRT", backup=False)
         shell: python
 
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW nightly-build executables
+      - name: Install MODFLOW 6 PRT build
         uses: modflowpy/install-modflow-action@v1
         with:
-          repo: modflow6-nightly-build
+          owner: aprovost-usgs
+          repo: modflow6
 
       - name: Run scripts
-        run: |
-          pytest -v -n=auto --durations=0 --run=True ci_build_files.py
+        run: pytest -v -n=auto --durations=0 --run=True ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: Run processing script
         if: matrix.python == '3.9'
-        run: |
-          python process-scripts.py
+        run: python process-scripts.py
         working-directory: ${{env.script-directory}}
 
       - name: Build mf6examples LaTeX document
