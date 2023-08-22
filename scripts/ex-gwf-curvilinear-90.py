@@ -31,8 +31,7 @@ sys.path.append(os.path.join("..", "common"))
 
 import config
 from figspecs import USGSFigure
-
-from disv_curvilinear_builder import disv_curvilinear_builder
+from DisvCurvilinearBuilder import DisvCurvilinearBuilder
 
 
 def analytical_model(r1, h1, r2, h2, r):
@@ -104,7 +103,7 @@ radii = np.arange(r_inner, r_outer + r_width, r_width)
 
 # Get the curvilinear model properties and vertices
 
-curvlin = disv_curvilinear_builder(
+curvlin = DisvCurvilinearBuilder(
     nlay,
     radii,
     angle_start,
@@ -122,10 +121,10 @@ curvlin = disv_curvilinear_builder(
 chd_inner = []
 chd_outer = []
 for lay in range(nlay):
-    for node in curvlin.iter_radial_nodes(rad=0):
+    for node in curvlin.iter_radial_cellid(rad=0):
         chd_inner.append([(lay, node), bc0])
 for lay in range(nlay):
-    for node in curvlin.iter_radial_nodes(rad=nradial - 1):
+    for node in curvlin.iter_radial_cellid(rad=nradial - 1):
         chd_outer.append([(lay, node), bc1])
 
 chd_inner = {sp: chd_inner for sp in range(nper)}
@@ -348,7 +347,7 @@ def plot_analytical(sim, verbose=False):
 
     col = ncol // 2 - 1  # Get head along middle of model
 
-    head = [head[0, curvlin.get_node(rad, col)] for rad in range(nradial)]
+    head = [head[0, curvlin.get_cellid(rad, col)] for rad in range(nradial)]
 
     xrad = [0.5 * (radii[r - 1] + radii[r]) for r in range(1, nradial + 1)]
 
@@ -438,7 +437,7 @@ def calculate_model_error():
     sse = 0.0
     for rad in range(nradial):
         asol = analytical[rad]
-        for node in curvlin.iter_radial_nodes(rad):
+        for node in curvlin.iter_radial_cellid(rad):
             diff = head[node] - asol
             rel += abs(diff / asol)
             sse += diff**2
