@@ -214,7 +214,7 @@ def make_tables():
                         continue
                     # get content on right side of "="
                     val = obj.value
-                    if val.lineno == val.end_lineno:
+                    if obj.lineno == obj.end_lineno:
                         value = line[val.col_offset : val.end_col_offset]
                     else:
                         # string may span more than one line
