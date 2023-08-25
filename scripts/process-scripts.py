@@ -251,6 +251,12 @@ def make_tables():
                 for text, value in zip(table_text, table_value):
                     if line_count % 2 != 0:
                         f.write("\t\\rowcolor{Gray}\n")
+                    # replace minus signs with double minus signs for
+                    # latex render (so minus sign "sticks" to number)
+                    # but don't replace "e-" in scientific notation.
+                    value = re.sub(
+                        r"(?<!e)(-)\d*", lambda m: m.group(0).replace("-", "--"), value
+                    )
                     f.write(f"\t{text} & {value} \\\\\n")
                     line_count += 1
 
