@@ -97,7 +97,9 @@ rivdat = np.loadtxt(fname, dtype=dt)
 rivdat["k"] -= 1
 rivdat["i"] -= 1
 rivdat["j"] -= 1
-riv_spd = [[(k, i, j), stage, cond, rbot] for k, i, j, stage, cond, rbot in rivdat]
+riv_spd = [
+    [(k, i, j), stage, cond, rbot] for k, i, j, stage, cond, rbot in rivdat
+]
 
 botm = [30 - k * delv for k in range(nlay)]
 botm = np.array(botm)
@@ -211,7 +213,9 @@ def build_lgr_model(sim_name):
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
     )
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(
         sim,
         outer_maximum=nouter,
@@ -406,7 +410,9 @@ def build_model(
         strt = nlayc * [topc]
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        rivdatc = riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan)
+        rivdatc = riv_resample(
+            icoarsen, nrow, ncol, rivdat, idomain, rowcolspan
+        )
         riv_spd = {0: rivdatc}
         flopy.mf6.ModflowGwfriv(
             gwf,
@@ -508,7 +514,9 @@ def plot_grid(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 
@@ -536,7 +544,9 @@ def plot_xsect(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-xsect{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-xsect{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 
@@ -569,7 +579,9 @@ def plot_heads(sim):
     print("  Making figure...")
     ax = fig.add_subplot(1, 1, 1, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    cb = pmv.plot_array(head, cmap="jet", masked_values=[1e30], vmin=vmin, vmax=vmax)
+    cb = pmv.plot_array(
+        head, cmap="jet", masked_values=[1e30], vmin=vmin, vmax=vmax
+    )
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
     cbar = plt.colorbar(cb, shrink=0.5)
@@ -591,7 +603,9 @@ def plot_heads(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-head{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 

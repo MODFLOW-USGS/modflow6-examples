@@ -130,7 +130,9 @@ def build_model(
         sim = flopy.mf6.MFSimulation(
             sim_name=name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -279,7 +281,9 @@ def run_model(sim, silent=True):
 # Analytical solution for plotting
 
 
-def analytical_solution(z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent=True):
+def analytical_solution(
+    z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent=True
+):
     v = 0.0
     e = np.exp(1)
     pi = np.pi
@@ -288,7 +292,9 @@ def analytical_solution(z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent
     for k in range(n):
         fk = float(k)
         tauk = (0.5 * b0) ** 2.0 * ssk / ((2.0 * fk + 1.0) ** 2.0 * vk)
-        ep = ((2.0 * fk + 1.0) ** 2 * pi2 * vk * t) / (4.0 * ssk * (0.5 * b0) ** 2.0)
+        ep = ((2.0 * fk + 1.0) ** 2 * pi2 * vk * t) / (
+            4.0 * ssk * (0.5 * b0) ** 2.0
+        )
         rad = (2.0 * fk + 1.0) * pi * z / b0
         v += ((-1.0) ** fk / (2.0 * fk + 1.0)) * (e**-ep) * np.cos(rad)
         if not silent:
@@ -359,7 +365,9 @@ def plot_grid(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         if not silent:
             print(f"saving...'{fpth}'")
         fig.savefig(fpth)
@@ -436,7 +444,9 @@ def plot_head_based(sim, silent=True):
 
     idx += 1
     ax = fig.add_subplot(gs[idx])
-    ax.plot(tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black")
+    ax.plot(
+        tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black"
+    )
     ax.set_xticks(np.arange(0, 110, 10))
     ax.set_yticks(np.arange(0, 2.2, 0.2))
     ax.set_xlabel("Percent of time constant")
@@ -671,7 +681,9 @@ def plot_head_comparison(sim, silent=True):
 
     # setup the figure
     fig = plt.figure(figsize=figure_size)
-    fig.subplots_adjust(left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1)
+    fig.subplots_adjust(
+        left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1
+    )
     gs = mpl.gridspec.GridSpec(1, 6, figure=fig)
     z = np.linspace(0, 1, ndcells)
     yticks = np.arange(0, 1.1, 0.1)
@@ -699,7 +711,9 @@ def plot_head_comparison(sim, silent=True):
             fs.heading(ax, letter=chr(ord("A") + idx))
             ax.set_yticks(yticks)
             fs.remove_edge_ticks(ax)
-            text = r"$\frac{t}{\tau_0}$ = " + "{}".format(pct_vals[idx] / 100.0)
+            text = r"$\frac{t}{\tau_0}$ = " + "{}".format(
+                pct_vals[idx] / 100.0
+            )
             ax.text(
                 0.25,
                 0.01,

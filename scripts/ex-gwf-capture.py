@@ -150,7 +150,9 @@ def build_model():
             sim_ws=sim_ws,
             exe_name="mf6",
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="BICGSTAB",
@@ -291,7 +293,9 @@ def run_model():
                 ireduced_node += 1
 
                 # calculate the perturbed river flow
-                qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
+                qriv = capture_fraction_iteration(
+                    mf6, cf_q, inode=ireduced_node
+                )
 
                 # add the value to the capture array
                 capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
@@ -409,7 +413,9 @@ def plot_results(silent=True):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-01{config.figure_ext}")
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+            )
             fig.savefig(fpth)
 
 

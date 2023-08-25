@@ -308,7 +308,9 @@ def build_mf6_flow_model(
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         tdis_rc.append((perlen, 1, 1.0))
-        flopy.mf6.ModflowTdis(sim, nper=1, perioddata=tdis_rc, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=1, perioddata=tdis_rc, time_units=time_units
+        )
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -400,7 +402,9 @@ def build_mf6_flow_model(
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+            headprintrecord=[
+                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+            ],
             saverecord=[
                 ("HEAD", "LAST"),
                 ("BUDGET", "LAST"),
@@ -476,10 +480,14 @@ def build_mt3d_transport_model(
         )
 
         # Instantiate the reaction package
-        flopy.mt3d.Mt3dRct(mt, isothm=isothm, igetsc=0, rhob=rhob, sp1=sp1, sp2=sp2)
+        flopy.mt3d.Mt3dRct(
+            mt, isothm=isothm, igetsc=0, rhob=rhob, sp1=sp1, sp2=sp2
+        )
 
         # Instantiate the GCG solver in MT3DMS
-        flopy.mt3d.Mt3dGcg(mt, mxiter=100, iter1=50, isolve=1, ncrs=1, cclose=1e-7)
+        flopy.mt3d.Mt3dGcg(
+            mt, mxiter=100, iter1=50, isolve=1, ncrs=1, cclose=1e-7
+        )
 
 
 def build_mf6_transport_model(
@@ -724,7 +732,9 @@ def plot_results(
             val - model_centroids_x[21] for val in model_centroids_x
         ]
         # Drop the negative locations to the left of the BHE
-        model_centroids_x_right_of_BHE = model_centroids_x_BHE[22:]  # Does not include
+        model_centroids_x_right_of_BHE = model_centroids_x_BHE[
+            22:
+        ]  # Does not include
 
         # Analytical solution(s)
         To = T0  # deg K (initial temperature of the ground)
@@ -809,9 +819,13 @@ def plot_results(
             mt_ss_ln = ax.plot(
                 x_pos, y_150_mt_sln, "r+", label="Steady state MT3DMS, TVD"
             )
-            mt_tr_ln = ax.plot(x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS")
+            mt_tr_ln = ax.plot(
+                x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS"
+            )
 
-        mf6_ss_ln = ax.plot(x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT")
+        mf6_ss_ln = ax.plot(
+            x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
+        )
         mf6_tr_ln = ax.plot(
             x_pos,
             y_10_mf6_sln,
@@ -872,11 +886,18 @@ def scenario(idx, runMT3D=False, silent=True):
 
     write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=silent)
 
-    success = run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent)
+    success = run_model(
+        sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent
+    )
 
     if success:
         plot_results(
-            sim_mf6gwf, sim_mf6gwt, idx, mf2k5=mf2k5, mt3d=mt3d, **parameter_dict
+            sim_mf6gwf,
+            sim_mf6gwt,
+            idx,
+            mf2k5=mf2k5,
+            mt3d=mt3d,
+            **parameter_dict,
         )
 
 

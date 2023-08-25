@@ -27,7 +27,9 @@ from figspecs import USGSFigure
 
 figure_size = (6.3, 4.3)
 masked_values = (0, 1e30, -1e30)
-arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1)
+arrow_props = dict(
+    facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1
+)
 
 # Base simulation and model name and workspace
 
@@ -265,7 +267,9 @@ def build_regional(name):
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
     )
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",
@@ -343,7 +347,9 @@ def build_local(name, simulation):
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
     )
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",
@@ -781,7 +787,9 @@ def plot_local_grid(silent=True):
         masked_values=masked_values,
     )
     plt.clabel(cv, fmt="%1.3f")
-    ax.fill_between(px, py, y2=0, ec="none", fc="red", lw=0, zorder=200, step="post")
+    ax.fill_between(
+        px, py, y2=0, ec="none", fc="red", lw=0, zorder=200, step="post"
+    )
     fs.add_annotation(
         ax,
         text="Well location",

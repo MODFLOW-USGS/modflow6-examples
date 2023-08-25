@@ -328,7 +328,9 @@ def build_model(
         flopy.modflow.ModflowBas(mf, ibound=ibound_mf2k5, strt=strt)
 
         # Instantiate layer property flow package
-        flopy.modflow.ModflowUpw(mf, hk=k1, vka=vk, sy=sy, ss=Ss, laytyp=laytyp)
+        flopy.modflow.ModflowUpw(
+            mf, hk=k1, vka=vk, sy=sy, ss=Ss, laytyp=laytyp
+        )
 
         # Instantiate unsaturated-zone flow package
         flopy.modflow.ModflowUzf1(
@@ -357,7 +359,9 @@ def build_model(
         flopy.modflow.ModflowOc(
             mf,
             # stress_period_data={(0, nstp[0] - 1): ["save head", "save budget"]}
-            stress_period_data={(0, nstp[0] - 1): ["save head", "save budget"]},
+            stress_period_data={
+                (0, nstp[0] - 1): ["save head", "save budget"]
+            },
         )
 
         # Instantiate solver package
@@ -455,7 +459,9 @@ def build_model(
         name = "uzt-2d-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+        sim = flopy.mf6.MFSimulation(
+            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
+        )
 
         # How much output to write?
         from flopy.mf6.mfbase import VerbosityLevel
@@ -467,7 +473,9 @@ def build_model(
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
+        )
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -582,7 +590,9 @@ def build_model(
             gwf,
             budget_filerecord=f"{gwfname}.bud",
             head_filerecord=f"{gwfname}.hds",
-            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+            headprintrecord=[
+                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+            ],
             saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "ALL")],
         )

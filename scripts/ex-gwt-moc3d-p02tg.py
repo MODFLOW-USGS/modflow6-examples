@@ -147,11 +147,11 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",
@@ -210,11 +210,11 @@ def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 100, 1.0),)
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(
         sim,
         print_option="SUMMARY",
@@ -351,7 +351,9 @@ def plot_grid(sims):
         fs = USGSFigure(figure_type="map", verbose=False)
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
+        fig, axs = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
         gwt = sim_mf6gwt.trans
         pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
         pmv.plot_grid()
@@ -377,7 +379,9 @@ def plot_results(sims):
         gwt = sim_mf6gwt.get_model("trans")
         conc = gwt.output.concentration().get_data()
 
-        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
+        fig, axs = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
 
         gwt = sim_mf6gwt.trans
         pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
@@ -385,7 +389,9 @@ def plot_results(sims):
         # pmv.plot_grid()
         levels = [1, 3, 10, 30, 100, 300]
         cs1 = plot_analytical(axs, levels)
-        cs2 = pmv.contour_array(conc, colors="blue", linestyles="--", levels=levels)
+        cs2 = pmv.contour_array(
+            conc, colors="blue", linestyles="--", levels=levels
+        )
         axs.set_xlabel("x position (m)")
         axs.set_ylabel("y position (m)")
         axs.set_aspect(4.0)

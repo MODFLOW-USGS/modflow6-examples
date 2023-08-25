@@ -92,7 +92,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -183,7 +185,9 @@ def build_model():
         obsdict[f"{sim_name}.obs.head.csv"] = obslist
         obslist = [["icf1", "flow-ja-face", (0, 1, 1), (0, 1, 0)]]
         obsdict[f"{sim_name}.obs.flow.csv"] = obslist
-        obs = flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
+        obs = flopy.mf6.ModflowUtlobs(
+            gwf, print_input=False, continuous=obsdict
+        )
 
         return sim
     return None
@@ -232,7 +236,9 @@ def plot_grid(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 

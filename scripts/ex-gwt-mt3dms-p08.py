@@ -266,13 +266,17 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p08_mf6"
         gwfname = "gwf_" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+        sim = flopy.mf6.MFSimulation(
+            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
+        )
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
+        )
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -367,7 +371,9 @@ def build_model(sim_name, mixelm=0, silent=False):
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+            headprintrecord=[
+                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+            ],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -461,7 +467,9 @@ def build_model(sim_name, mixelm=0, silent=False):
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
         sourcerecarray = [("CHD-1", "AUX", "CONCENTRATION")]
-        flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm")
+        flopy.mf6.ModflowGwtssm(
+            gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm"
+        )
 
         # Instantiating MODFLOW 6 transport output control package
         flopy.mf6.ModflowGwtoc(
@@ -596,7 +604,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
+        title = (
+            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
+        )
         letter = chr(ord("@") + idx + 1)
         fs.heading(letter=letter, heading=title)
 
@@ -612,7 +622,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
+        title = (
+            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
+        )
         letter = chr(ord("@") + idx + 2)
         fs.heading(letter=letter, heading=title)
 
@@ -644,7 +656,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
+        title = (
+            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
+        )
         letter = chr(ord("@") + idx + 3)
         fs.heading(letter=letter, heading=title)
 
@@ -660,7 +674,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
+        title = (
+            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
+        )
         letter = chr(ord("@") + idx + 4)
         fs.heading(letter=letter, heading=title)
 
@@ -692,7 +708,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
+        title = (
+            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
+        )
         letter = chr(ord("@") + idx + 5)
         fs.heading(letter=letter, heading=title)
 
@@ -708,7 +726,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
+        title = (
+            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
+        )
         letter = chr(ord("@") + idx + 6)
         fs.heading(letter=letter, heading=title)
 

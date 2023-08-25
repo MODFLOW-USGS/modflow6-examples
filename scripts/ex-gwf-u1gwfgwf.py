@@ -133,7 +133,9 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -145,7 +147,9 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
         )
 
         # The coarse, outer model
-        gwf_outer = flopy.mf6.ModflowGwf(sim, modelname=gwfname_outer, save_flows=True)
+        gwf_outer = flopy.mf6.ModflowGwf(
+            sim, modelname=gwfname_outer, save_flows=True
+        )
         flopy.mf6.ModflowGwfdis(
             gwf_outer,
             nlay=nlay,
@@ -168,7 +172,9 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
 
         # constant head boundary LEFT
         left_chd = [
-            [(ilay, irow, 0), h_left] for ilay in range(nlay) for irow in range(nrow)
+            [(ilay, irow, 0), h_left]
+            for ilay in range(nlay)
+            for irow in range(nrow)
         ]
         chd_spd = {0: left_chd}
         flopy.mf6.ModflowGwfchd(
@@ -202,7 +208,9 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
         )
 
         # the refined, inner model
-        gwf_inner = flopy.mf6.ModflowGwf(sim, modelname=gwfname_inner, save_flows=True)
+        gwf_inner = flopy.mf6.ModflowGwf(
+            sim, modelname=gwfname_inner, save_flows=True
+        )
         flopy.mf6.ModflowGwfdis(
             gwf_inner,
             nlay=nlay,
@@ -339,14 +347,21 @@ def plot_grid(idx, sim):
     pmv.plot_bc(name="CHD-LEFT", alpha=0.75)
     pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
 
-    ax.plot([200, 500, 500, 200, 200], [200, 200, 500, 500, 200], "r--", linewidth=2.0)
+    ax.plot(
+        [200, 500, 500, 200, 200],
+        [200, 200, 500, 500, 200],
+        "r--",
+        linewidth=2.0,
+    )
 
     ax.set_xlabel("x position (m)")
     ax.set_ylabel("y position (m)")
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 
@@ -456,7 +471,9 @@ def plot_stencils(idx, sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-stencils{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-stencils{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 
@@ -480,7 +497,11 @@ def plot_head(idx, sim):
         gwf_outer.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
         gwf_outer,
     )
-    qx_inner, qy_inner, qz_inner = flopy.utils.postprocessing.get_specific_discharge(
+    (
+        qx_inner,
+        qy_inner,
+        qz_inner,
+    ) = flopy.utils.postprocessing.get_specific_discharge(
         gwf_inner.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
         gwf_inner,
     )
@@ -541,7 +562,9 @@ def plot_head(idx, sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-head{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 

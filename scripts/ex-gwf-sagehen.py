@@ -165,12 +165,16 @@ for i in np.arange(0, top.shape[0]):
         # Don't add drains to sfr and chd cells:
         sfrCell_bool = (
             1
-            if len([itm for itm in sfrcells if itm[1] == i and itm[2] == j]) > 0
+            if len([itm for itm in sfrcells if itm[1] == i and itm[2] == j])
+            > 0
             else 0
         )
         chdCell_bool = (
             1
-            if len([itm for itm in listOfChdCoords if itm[1] == i and itm[2] == j]) > 0
+            if len(
+                [itm for itm in listOfChdCoords if itm[1] == i and itm[2] == j]
+            )
+            > 0
             else 0
         )
         if idomain1[i, j] and not sfrCell_bool and not chdCell_bool:
@@ -270,7 +274,9 @@ for t in range(num_ts):
                 pet = uz_ts["pet"].iloc[t]
                 extdp = uz_ts["rootdepth"].iloc[t]
                 extwc = uz_ts["extwc"].iloc[t]
-                spdx.append([iuzno, finf, pet, extdp, extwc, ha, hroot, rootact])
+                spdx.append(
+                    [iuzno, finf, pet, extdp, extwc, ha, hroot, rootact]
+                )
                 iuzno += 1
     uzf_perioddata.update({t: spdx})
 
@@ -281,7 +287,9 @@ for t in range(num_ts):
 # calculate an array that is the equivalent of the irunbnd array from the UZF1
 # package.  The MVR package will be used to establish these connection in MF6
 # since the IRUNBND functionality went away in the new MF6 framework.
-irunbnd = sageBld.determine_runoff_conns_4mvr(dat_pth, top, idomain1, rchs, nrow, ncol)
+irunbnd = sageBld.determine_runoff_conns_4mvr(
+    dat_pth, top, idomain1, rchs, nrow, ncol
+)
 
 iuzno = 0
 k = 0  # Hard-wire the layer no.
@@ -328,7 +336,9 @@ def build_model(sim_name, silent=False):
         tdis_rc = []
         for i in range(len(perlen)):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
+        )
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwfname = example_name
@@ -408,7 +418,9 @@ def build_model(sim_name, silent=False):
             gwf,
             budget_filerecord=f"{gwfname}.bud",
             head_filerecord=f"{gwfname}.hds",
-            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+            headprintrecord=[
+                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+            ],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -601,7 +613,9 @@ def plot_results(mf6, idx):
 
         for kstpkper in ckstpkper:
             # 1. Compile groundwater discharge to land surface
-            drn_tmp = modobj.get_data(kstpkper=kstpkper, text="      DRN-TO-MVR")
+            drn_tmp = modobj.get_data(
+                kstpkper=kstpkper, text="      DRN-TO-MVR"
+            )
             drn_arr = np.zeros_like(top)
             for itm in drn_tmp[0]:
                 i, j = drn_dict_rev[itm[1] - 1]
@@ -609,7 +623,9 @@ def plot_results(mf6, idx):
             drn_disQ.append(drn_arr)
 
             # 2. Compile groundwater discharge to stream cells
-            sfr_tmp = sfrobj.get_data(kstpkper=kstpkper, text="             GWF")
+            sfr_tmp = sfrobj.get_data(
+                kstpkper=kstpkper, text="             GWF"
+            )
             sfr_arr = np.zeros_like(top)
             for x, itm in enumerate(sfr_tmp[0]):
                 i = sfrcells[x][1]
@@ -618,7 +634,9 @@ def plot_results(mf6, idx):
             sfr_gwsw.append(sfr_arr)
 
             # 3. Compile Infiltrated amount
-            uzf_tmp = uzfobj.get_data(kstpkper=kstpkper, text="    INFILTRATION")
+            uzf_tmp = uzfobj.get_data(
+                kstpkper=kstpkper, text="    INFILTRATION"
+            )
             finf_arr = np.zeros_like(top)
             for itm in uzf_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -626,7 +644,9 @@ def plot_results(mf6, idx):
             finf_tot.append(finf_arr)
 
             # 4. Compile recharge from UZF
-            uzrch_tmp = uzfobj.get_data(kstpkper=kstpkper, text="             GWF")
+            uzrch_tmp = uzfobj.get_data(
+                kstpkper=kstpkper, text="             GWF"
+            )
             uzrch_arr = np.zeros_like(top)
             for itm in uzrch_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -634,7 +654,9 @@ def plot_results(mf6, idx):
             uzrech.append(uzrch_arr)
 
             # 5. Compile rejected infiltration
-            rejinf_tmp = uzfobj.get_data(kstpkper=kstpkper, text="  REJ-INF-TO-MVR")
+            rejinf_tmp = uzfobj.get_data(
+                kstpkper=kstpkper, text="  REJ-INF-TO-MVR"
+            )
             rejinf_arr = np.zeros_like(top)
             for itm in rejinf_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -642,7 +664,9 @@ def plot_results(mf6, idx):
             rejinf.append(rejinf_arr)
 
             # 6. Compile unsat ET
-            uzet_tmp = uzfobj.get_data(kstpkper=kstpkper, text="            UZET")
+            uzet_tmp = uzfobj.get_data(
+                kstpkper=kstpkper, text="            UZET"
+            )
             uzet_arr = np.zeros_like(top)
             for itm in uzet_tmp[0]:
                 i, j = iuzno_dict_rev[itm[0] - 1]
@@ -650,7 +674,9 @@ def plot_results(mf6, idx):
             uzet.append(uzet_arr)
 
             # 7. Compile groundwater ET
-            gwet_tmp = modobj.get_data(kstpkper=kstpkper, text="        UZF-GWET")
+            gwet_tmp = modobj.get_data(
+                kstpkper=kstpkper, text="        UZF-GWET"
+            )
             gwet_arr = np.zeros_like(top)
             for itm in gwet_tmp[0]:
                 i, j = iuzno_dict_rev[itm[1] - 1]
@@ -658,7 +684,9 @@ def plot_results(mf6, idx):
             gwet.append(gwet_arr)
 
             # 8. Get flows at outlet
-            outletQ = sfrobj.get_data(kstpkper=kstpkper, text="    FLOW-JA-FACE")
+            outletQ = sfrobj.get_data(
+                kstpkper=kstpkper, text="    FLOW-JA-FACE"
+            )
             outflow.append(outletQ[0][-1][2])
 
         drn_disQ = np.array(drn_disQ)

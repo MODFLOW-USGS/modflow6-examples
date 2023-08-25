@@ -136,7 +136,9 @@ def build_model(
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         if newton:
             linear_acceleration = "bicgstab"
             newtonoptions = "newton under_relaxation"
@@ -445,7 +447,9 @@ def plot_results(idx, sim, silent=True):
         fs.graph_legend(ax, loc="center", ncol=2)
 
         cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-        cbar = plt.colorbar(h_coll, shrink=0.8, orientation="horizontal", cax=cax)
+        cbar = plt.colorbar(
+            h_coll, shrink=0.8, orientation="horizontal", cax=cax
+        )
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
 

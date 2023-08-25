@@ -62,11 +62,15 @@ top = 0.0  # Top of the model ($ft$)
 botm_str = "-12.2, -21.3, -30.5"  # Layer bottom elevations ($m$)
 strt = -10.7  # Starting head ($m$)
 icelltype_str = "1, 0, 0"  # Cell conversion type
-k11_str = "1.8e-5, 3.5e-10, 3.1e-5"  # Horizontal hydraulic conductivity ($m/s$)
+k11_str = (
+    "1.8e-5, 3.5e-10, 3.1e-5"  # Horizontal hydraulic conductivity ($m/s$)
+)
 sy_str = "0.1, 0.05, 0.25"  # Specific yield (unitless)
 sgm = 1.7  # Specific gravity of moist soils (unitless)
 sgs = 2.0  # Specific gravity of saturated soils (unitless)
-cg_ske_str = "3.3e-5, 6.6e-4, 4.5e-7"  # Coarse grained elastic storativity (1/$m$)
+cg_ske_str = (
+    "3.3e-5, 6.6e-4, 4.5e-7"  # Coarse grained elastic storativity (1/$m$)
+)
 cg_theta_str = "0.25, 0.50, 0.30"  # Coarse-grained porosity (unitless)
 
 # Create delr from delr0 and delrmac
@@ -107,7 +111,9 @@ dstart = datetime.datetime(1937, 4, 23, 13, 5, 55)
 
 # Create a datetime list
 
-date_list = [dstart + datetime.timedelta(seconds=x) for x in csv_load["sim_time"]]
+date_list = [
+    dstart + datetime.timedelta(seconds=x) for x in csv_load["sim_time"]
+]
 
 # parse parameter strings into tuples
 
@@ -139,7 +145,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -164,7 +172,9 @@ def build_model():
             top=top,
             botm=botm,
         )
-        obs_recarray = {"gwf_calib_obs.csv": [("w3_1_1", "HEAD", (2, 0, locw201))]}
+        obs_recarray = {
+            "gwf_calib_obs.csv": [("w3_1_1", "HEAD", (2, 0, locw201))]
+        }
         flopy.mf6.ModflowUtlobs(
             gwf, digits=10, print_input=True, continuous=obs_recarray
         )
@@ -262,7 +272,10 @@ def plot_results(sim, silent=True):
         mm = flopy.plot.PlotMapView(model=gwf, ax=ax, extent=extent)
         mm.plot_grid(color="0.5", lw=0.5, zorder=100)
         ax.set_ylabel("y-coordinate,\nin meters")
-        x, y = gwf.modelgrid.xcellcenters[0, locw201], gwf.modelgrid.ycellcenters[0, 0]
+        x, y = (
+            gwf.modelgrid.xcellcenters[0, locw201],
+            gwf.modelgrid.ycellcenters[0, 0],
+        )
         ax.plot(x, y, marker="o", ms=4, zorder=100, mew=0.5, mec="black")
         ax.annotate(
             "Well S-201",
@@ -271,7 +284,9 @@ def plot_results(sim, silent=True):
             ha="left",
             va="center",
             zorder=100,
-            arrowprops=dict(facecolor="black", shrink=0.05, headwidth=5, width=1.5),
+            arrowprops=dict(
+                facecolor="black", shrink=0.05, headwidth=5, width=1.5
+            ),
         )
         fs.heading(ax, letter="A", heading="Map view")
         fs.remove_edge_ticks(ax)
@@ -283,7 +298,9 @@ def plot_results(sim, silent=True):
         mc = flopy.plot.PlotCrossSection(
             model=gwf, line={"Row": 0}, ax=ax, extent=extent
         )
-        ax.fill_between([0, delr.sum()], y1=top, y2=botm[0], color="cyan", alpha=0.5)
+        ax.fill_between(
+            [0, delr.sum()], y1=top, y2=botm[0], color="cyan", alpha=0.5
+        )
         ax.fill_between(
             [0, delr.sum()], y1=botm[0], y2=botm[1], color="#D2B48C", alpha=0.5
         )
@@ -299,7 +316,12 @@ def plot_results(sim, silent=True):
             ls="dashed",
         )
         ax.text(
-            delr.sum() / 2, -10, "static water-level", va="bottom", ha="center", size=9
+            delr.sum() / 2,
+            -10,
+            "static water-level",
+            va="bottom",
+            ha="center",
+            size=9,
         )
         ax.set_ylabel("Elevation, in meters")
         ax.set_xlabel("x-coordinate, in meters")
@@ -312,14 +334,18 @@ def plot_results(sim, silent=True):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
             fig.savefig(fpth)
 
         # get the simulated heads
         sim_obs = gwf.obs.output.obs().data
         h0 = sim_obs["W3_1_1"][0]
         sim_obs["W3_1_1"] -= h0
-        sim_date = [dstart + datetime.timedelta(seconds=x) for x in sim_obs["totim"]]
+        sim_date = [
+            dstart + datetime.timedelta(seconds=x) for x in sim_obs["totim"]
+        ]
 
         # get the observed head
         pth = os.path.join("..", "data", sim_name, "s201_gw_2sec.csv")
@@ -328,7 +354,9 @@ def plot_results(sim, silent=True):
         obs_date = []
         for s in obs_head["date"]:
             obs_date.append(
-                datetime.datetime.strptime(s.decode("utf-8"), "%m-%d-%Y %H:%M:%S.%f")
+                datetime.datetime.strptime(
+                    s.decode("utf-8"), "%m-%d-%Y %H:%M:%S.%f"
+                )
             )
         t0, t1 = obs_date[0], obs_date[-1]
 
@@ -352,7 +380,13 @@ def plot_results(sim, silent=True):
         fs.remove_edge_ticks(ax)
 
         ax = axe
-        ax.plot(sim_date, sim_obs["W3_1_1"], color="black", lw=0.75, label="Simulated")
+        ax.plot(
+            sim_date,
+            sim_obs["W3_1_1"],
+            color="black",
+            lw=0.75,
+            label="Simulated",
+        )
         ax.plot(
             obs_date,
             obs_head["dz_m"],
@@ -378,7 +412,9 @@ def plot_results(sim, silent=True):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-01{config.figure_ext}")
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+            )
             fig.savefig(fpth)
 
 

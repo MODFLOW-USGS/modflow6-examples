@@ -56,13 +56,13 @@ nrow = 15  # Number of rows
 delr = 5000.0  # Column width ($ft$)
 delc = 5000.0  # Row width ($ft$)
 top = 200.0  # Top of the model ($ft$)
-botm_str = "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations ($ft$)
+botm_str = (
+    "-150.0, -200.0, -300.0, -350.0, -450.0"  # Layer bottom elevations ($ft$)
+)
 strt = 0.0  # Starting head ($ft$)
 icelltype_str = "1, 0, 0, 0, 0"  # Cell conversion type
 k11_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Horizontal hydraulic conductivity ($ft/s$)
-k33_str = (
-    "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Vertical hydraulic conductivity ($ft/s$)
-)
+k33_str = "1.0e-3, 1.0e-8, 1.0e-4, 5.0e-7, 2.0e-4"  # Vertical hydraulic conductivity ($ft/s$)
 recharge = 3e-8  # Recharge rate ($ft/s$)
 
 # Static temporal data used by TDIS file
@@ -163,7 +163,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -370,7 +372,9 @@ def plot_results(sim, mf, silent=True):
 
         for idx, ax in enumerate(axes.flatten()[:3]):
             k = layers_mf6[idx]
-            fmp = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=k, extent=extents)
+            fmp = flopy.plot.PlotMapView(
+                model=gwf, ax=ax, layer=k, extent=extents
+            )
             ax.get_xaxis().set_ticks([])
             fmp.plot_grid(lw=0.5)
             plot_obj = fmp.plot_array(head, vmin=vmin, vmax=vmax)
@@ -389,7 +393,9 @@ def plot_results(sim, mf, silent=True):
             fs.heading(letter=letter, heading=title, ax=ax)
 
         for idx, ax in enumerate(axes.flatten()[3:6]):
-            fmp = flopy.plot.PlotMapView(model=mf, ax=ax, layer=idx, extent=extents)
+            fmp = flopy.plot.PlotMapView(
+                model=mf, ax=ax, layer=idx, extent=extents
+            )
             fmp.plot_grid(lw=0.5)
             plot_obj = fmp.plot_array(head0, vmin=vmin, vmax=vmax)
             fmp.plot_bc("DRN", color="green")
@@ -446,18 +452,24 @@ def plot_results(sim, mf, silent=True):
             mec="0.75",
             label="Normalized specific discharge",
         )
-        ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
+        ax.plot(
+            -10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$"
+        )
         fs.graph_legend(ax, loc="upper center")
 
         # plot colorbar
         cax = plt.axes([0.325, 0.125, 0.35, 0.025])
-        cbar = plt.colorbar(plot_obj, shrink=0.8, orientation="horizontal", cax=cax)
+        cbar = plt.colorbar(
+            plot_obj, shrink=0.8, orientation="horizontal", cax=cax
+        )
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}{config.figure_ext}")
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}{config.figure_ext}"
+            )
             fig.savefig(fpth)
 
 

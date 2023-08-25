@@ -957,7 +957,9 @@ def build_model(name, uzf_gwseep=None):
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -968,7 +970,9 @@ def build_model(name, uzf_gwseep=None):
             inner_dvclose=hclose,
             rcloserecord=f"{rclose} strict",
         )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
+        gwf = flopy.mf6.ModflowGwf(
+            sim, modelname=sim_name, newtonoptions="newton"
+        )
         flopy.mf6.ModflowGwfdis(
             gwf,
             length_units=length_units,
@@ -1188,7 +1192,9 @@ def plot_gwseep_results(silent=True):
     fs.heading(ax, idx=0)
 
     ax.set_xlabel("Simulation time, in days")
-    ax.set_ylabel("Infiltration to the unsaturated zone,\nin cubic feet per second")
+    ax.set_ylabel(
+        "Infiltration to the unsaturated zone,\nin cubic feet per second"
+    )
 
     ax = axes[-1]
     ax.set_xlim(0, 365)
@@ -1216,7 +1222,9 @@ def plot_gwseep_results(silent=True):
     )
     plot_stress_periods(ax)
 
-    fs.graph_legend(ax, loc="upper center", ncol=1, frameon=True, edgecolor="none")
+    fs.graph_legend(
+        ax, loc="upper center", ncol=1, frameon=True, edgecolor="none"
+    )
     fs.heading(ax, idx=1)
     fs.add_text(
         ax,
@@ -1231,7 +1239,9 @@ def plot_gwseep_results(silent=True):
     )
 
     ax.set_xlabel("Simulation time, in days")
-    ax.set_ylabel("Groundwater seepage to the land surface,\nin cubic feet per second")
+    ax.set_ylabel(
+        "Groundwater seepage to the land surface,\nin cubic feet per second"
+    )
 
     # save figure
     if config.plotSave:
@@ -1247,7 +1257,9 @@ def plot_gwseep_results(silent=True):
 
 def export_tables(silent=True):
     if config.plotSave:
-        caption = "Infiltration and pumping rates for example {}.".format(sim_name)
+        caption = "Infiltration and pumping rates for example {}.".format(
+            sim_name
+        )
         headings = (
             "Stress period",
             "Infiltration rate",
@@ -1267,7 +1279,9 @@ def export_tables(silent=True):
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.30, 0.30)
-        bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
+        bt.build_table(
+            caption, fpth, arr, headings=headings, col_widths=col_widths
+        )
 
 
 # Function to plot the UZF Package Problem 2 model results.

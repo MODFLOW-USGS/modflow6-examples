@@ -102,7 +102,9 @@ def build_model(H2=1.0):
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -112,7 +114,9 @@ def build_model(H2=1.0):
             inner_dvclose=hclose,
             rcloserecord=f"{rclose} strict",
         )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
+        gwf = flopy.mf6.ModflowGwf(
+            sim, modelname=sim_name, newtonoptions="newton"
+        )
         flopy.mf6.ModflowGwfdis(
             gwf,
             length_units=length_units,
@@ -234,7 +238,9 @@ def plot_results(idx, sim, silent=True):
 
         # plot colorbar
         cax = plt.axes([0.62, 0.76, 0.325, 0.025])
-        cbar = plt.colorbar(plot_obj, shrink=0.8, orientation="horizontal", cax=cax)
+        cbar = plt.colorbar(
+            plot_obj, shrink=0.8, orientation="horizontal", cax=cax
+        )
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
 

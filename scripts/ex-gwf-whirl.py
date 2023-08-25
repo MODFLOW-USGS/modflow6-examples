@@ -89,7 +89,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -127,7 +129,8 @@ def build_model():
         rate[:, :, -1] = -inflow_rate
         wellay, welrow, welcol = np.where(rate != 0.0)
         wel_spd = [
-            ((k, i, j), rate[k, i, j]) for k, i, j in zip(wellay, welrow, welcol)
+            ((k, i, j), rate[k, i, j])
+            for k, i, j in zip(wellay, welrow, welcol)
         ]
         wel_spd = {0: wel_spd}
         flopy.mf6.ModflowGwfwel(
@@ -197,7 +200,9 @@ def plot_spdis(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-spdis{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-spdis{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 

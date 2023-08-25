@@ -53,7 +53,9 @@ top = 500.0  # Top of the model ($ft$)
 botm_str = "107., 97., 87., 77., 67."  # Bottom elevations ($ft$)
 strt = 115.0  # Starting head ($ft$)
 k11 = 30.0  # Horizontal hydraulic conductivity ($ft/d$)
-k33_str = "1179., 30., 30., 30., 30."  # Vertical hydraulic conductivity ($ft/d$)
+k33_str = (
+    "1179., 30., 30., 30., 30."  # Vertical hydraulic conductivity ($ft/d$)
+)
 ss = 3e-4  # Specific storage ($1/d$)
 sy = 0.2  # Specific yield (unitless)
 H1 = 160.0  # Constant head on left side of model ($ft$)
@@ -179,7 +181,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -232,7 +236,9 @@ def build_model():
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=etvrate, depth=etvdepth)
+        flopy.mf6.ModflowGwfevta(
+            gwf, surface=surf, rate=etvrate, depth=etvdepth
+        )
         (
             idomain_wlakes,
             pakdata_dict,

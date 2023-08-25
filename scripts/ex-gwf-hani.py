@@ -88,7 +88,9 @@ def build_model(sim_name, angle1, xt3d):
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -190,7 +192,9 @@ def plot_grid(idx, sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 
@@ -217,7 +221,9 @@ def plot_head(idx, sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-head{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 

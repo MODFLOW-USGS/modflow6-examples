@@ -117,14 +117,14 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
     )
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     htol = 1.0e-8
     flopy.mf6.ModflowIms(
         sim, print_option="summary", outer_dvclose=htol, inner_dvclose=htol
@@ -192,14 +192,14 @@ def build_mf6gwt(
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
     )
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     ctol = 1.0e-8
     flopy.mf6.ModflowIms(
         sim,
@@ -245,7 +245,9 @@ def build_mf6gwt(
         sp2=sp2,
     )
     flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
-    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=dispersivity, ath1=dispersivity)
+    flopy.mf6.ModflowGwtdsp(
+        gwt, xt3d_off=True, alh=dispersivity, ath1=dispersivity
+    )
     if beta is not None:
         if beta > 0:
             porosity_im = bulk_density / volfracim
@@ -428,7 +430,9 @@ def plot_results_ct(sims, idx, **kwargs):
 
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
+        fig, axs = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
 
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.OBS")
@@ -474,7 +478,9 @@ def plot_results():
         print("Plotting model results...")
 
         fs = USGSFigure(figure_type="graph", verbose=False)
-        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
+        fig, axs = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
 
         case_colors = ["blue", "green", "red", "yellow"]
         pkeys = list(parameters.keys())

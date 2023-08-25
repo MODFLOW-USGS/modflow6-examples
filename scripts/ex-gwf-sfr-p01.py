@@ -787,7 +787,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -831,7 +833,9 @@ def build_model():
         flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
         flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=evap_rate, depth=ext_depth)
+        flopy.mf6.ModflowGwfevta(
+            gwf, surface=surf, rate=evap_rate, depth=ext_depth
+        )
         sfr = flopy.mf6.ModflowGwfsfr(
             gwf,
             length_conversion=3.28081,
@@ -1124,7 +1128,9 @@ def plot_head_results(gwf, silent=True):
 
     ax = axes[0]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(head, vmin=900, vmax=1120, masked_values=masked_values)
+    head_coll = mm.plot_array(
+        head, vmin=900, vmax=1120, masked_values=masked_values
+    )
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
@@ -1151,7 +1157,9 @@ def plot_head_results(gwf, silent=True):
 
     ax = axes[1]
     mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(head, vmin=900, vmax=1120, masked_values=masked_values)
+    head_coll = mm.plot_array(
+        head, vmin=900, vmax=1120, masked_values=masked_values
+    )
     cv = mm.contour_array(
         head,
         levels=np.arange(900, 1100, 10),
