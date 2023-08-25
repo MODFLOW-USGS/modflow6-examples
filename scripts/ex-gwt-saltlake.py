@@ -97,7 +97,9 @@ def build_model(sim_folder):
         exe_name="mf6",
     )
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -189,7 +191,9 @@ def build_model(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtic(gwt, strt=conc_inflow)
     flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
-    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc)
+    flopy.mf6.ModflowGwtdsp(
+        gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc
+    )
     sourcerecarray = [
         ("CHD-1", "AUX", "CONCENTRATION"),
     ]
@@ -207,7 +211,9 @@ def build_model(sim_folder):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        concentrationprintrecord=[
+            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+        ],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -261,7 +267,9 @@ def plot_conc(sim, idx):
     ax.set_ylabel("z position (m)")
     ax.set_xlabel("x position (m)")
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-bc{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-bc{config.figure_ext}"
+        )
         fig.savefig(fpth)
     plt.close("all")
 
@@ -305,7 +313,9 @@ def plot_conc(sim, idx):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-conc{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 

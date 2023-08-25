@@ -104,14 +104,14 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = (
         (source_duration, 1, 1.0),
         (total_time - source_duration, 1, 1.0),
     )
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -154,13 +154,13 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     pertim1 = source_duration
     pertim2 = total_time - source_duration
     tdis_ds = ((pertim1, 10, 1.0), (pertim2, 90, 1.0))
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -270,7 +270,9 @@ def build_mf2005(sim_folder):
     lpf = flopy.modflow.ModflowLpf(mf)
     pcg = flopy.modflow.ModflowPcg(mf)
     lmt = flopy.modflow.ModflowLmt(mf)
-    chd = flopy.modflow.ModflowChd(mf, stress_period_data=[[0, 0, ncol - 1, 1.0, 1.0]])
+    chd = flopy.modflow.ModflowChd(
+        mf, stress_period_data=[[0, 0, ncol - 1, 1.0, 1.0]]
+    )
     wel_spd = {
         0: [[0, 0, 0, specific_discharge * delc * top]],
         1: [[0, 0, 0, specific_discharge * delc * top]],
@@ -403,7 +405,9 @@ def plot_results():
         print("Plotting model results...")
 
         fs = USGSFigure(figure_type="graph", verbose=False)
-        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
+        fig, axs = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
 
         case_colors = ["blue", "green", "red"]
         for icase, sim_name in enumerate(parameters.keys()):
@@ -450,7 +454,9 @@ def plot_scenario_results(sims, idx):
         fs = USGSFigure(figure_type="graph", verbose=False)
 
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
+        fig, axs = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
         axs.plot(
             mf6gwt_ra["totim"],
             mf6gwt_ra["MYOBS"],

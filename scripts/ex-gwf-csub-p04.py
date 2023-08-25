@@ -71,9 +71,15 @@ k33_str = "0.4, 0.4, 0.01, 0.4"  # Vertical hydraulic conductivity ($m/d$)
 sy_str = "0.3, 0.3, 0.4, 0.3"  # Specific yield (unitless)
 gammaw = 9806.65  # Compressibility of water (Newtons/($m^3$)
 beta = 4.6612e-10  # Specific gravity of water (1/$Pa$)
-sgm_str = "1.77, 1.77, 1.60, 1.77"  # Specific gravity of moist soils (unitless)
-sgs_str = "2.06, 2.05, 1.94, 2.06"  # Specific gravity of saturated soils (unitless)
-cg_theta_str = "0.32, 0.32, 0.45, 0.32"  # Coarse-grained material porosity (unitless)
+sgm_str = (
+    "1.77, 1.77, 1.60, 1.77"  # Specific gravity of moist soils (unitless)
+)
+sgs_str = (
+    "2.06, 2.05, 1.94, 2.06"  # Specific gravity of saturated soils (unitless)
+)
+cg_theta_str = (
+    "0.32, 0.32, 0.45, 0.32"  # Coarse-grained material porosity (unitless)
+)
 cg_ske_str = "0.005, 0.005, 0.01, 0.005"  # Elastic specific storage ($1/m$)
 ib_thick_str = "45., 70., 50., 90."  # Interbed thickness ($m$)
 ib_theta = 0.45  # Interbed initial porosity (unitless)
@@ -191,7 +197,9 @@ def build_model():
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -560,10 +568,16 @@ def plot_grid(sim, silent=True):
     )
     # aquifer coloring
     ax.fill_between([0, dx.sum()], y1=150, y2=-100, color="cyan", alpha=0.5)
-    ax.fill_between([0, dx.sum()], y1=-100, y2=-150, color="#D2B48C", alpha=0.5)
-    ax.fill_between([0, dx.sum()], y1=-150, y2=-350, color="#00BFFF", alpha=0.5)
+    ax.fill_between(
+        [0, dx.sum()], y1=-100, y2=-150, color="#D2B48C", alpha=0.5
+    )
+    ax.fill_between(
+        [0, dx.sum()], y1=-150, y2=-350, color="#00BFFF", alpha=0.5
+    )
     # well coloring
-    ax.fill_between([dx.cumsum()[8], dx.cumsum()[9]], y1=50, y2=-100, color="red", lw=0)
+    ax.fill_between(
+        [dx.cumsum()[8], dx.cumsum()[9]], y1=50, y2=-100, color="red", lw=0
+    )
     # labels
     fs.add_text(
         ax=ax,
@@ -680,7 +694,9 @@ def plot_grid(sim, silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         if not silent:
             print(f"saving...'{fpth}'")
         fig.savefig(fpth)
@@ -716,7 +732,9 @@ def plot_stresses(sim, silent=True):
         lw=1,
         label="Preconsolidation stress",
     )
-    ax.plot(cd["totim"], cd["ES1"], color="red", lw=1, label="Effective stress")
+    ax.plot(
+        cd["totim"], cd["ES1"], color="red", lw=1, label="Effective stress"
+    )
     fs.heading(ax, letter="A", heading="Model layer 1, row 9, column 10")
     fs.remove_edge_ticks(ax)
 
@@ -745,8 +763,12 @@ def plot_stresses(sim, silent=True):
         lw=1,
         label="Preconsolidation stress",
     )
-    ax.plot([-100, -50], [-100, -100], color="red", lw=1, label="Effective stress")
-    ax.plot(cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress")
+    ax.plot(
+        [-100, -50], [-100, -100], color="red", lw=1, label="Effective stress"
+    )
+    ax.plot(
+        cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress"
+    )
     fs.graph_legend(ax, ncol=3, loc="upper center")
     fs.heading(ax, letter="D", heading="Model layer 2, row 9, column 10")
     fs.remove_edge_ticks(ax)

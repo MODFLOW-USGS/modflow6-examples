@@ -109,9 +109,7 @@ def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
-    sim = flopy.mf6.MFSimulation(
-        sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((period1, 1, 1.0), (period2, 1, 1.0))
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_ds), perioddata=tdis_ds, time_units=time_units
@@ -242,7 +240,9 @@ def build_mf6gwt(sim_folder):
         ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
-    flopy.mf6.ModflowGwtfmi(gwt, flow_imbalance_correction=True, packagedata=pd)
+    flopy.mf6.ModflowGwtfmi(
+        gwt, flow_imbalance_correction=True, packagedata=pd
+    )
     sourcerecarray = [
         ("RCH-1", "AUX", "CONCENTRATION"),
     ]
@@ -281,7 +281,9 @@ def build_mf6gwt(sim_folder):
             ("obs2", "CONCENTRATION", obs2),
         ],
     }
-    flopy.mf6.ModflowUtlobs(gwt, digits=10, print_input=True, continuous=obs_data)
+    flopy.mf6.ModflowUtlobs(
+        gwt, digits=10, print_input=True, continuous=obs_data
+    )
     return sim
 
 
@@ -352,7 +354,9 @@ def plot_head_results(sims, idx):
     sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
     head = gwf.output.head().get_data()
     head = np.where(head > botm, head, np.nan)
-    fig, ax = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
+    fig, ax = plt.subplots(
+        1, 1, figsize=figure_size, dpi=300, tight_layout=True
+    )
     pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
     pa = pxs.plot_array(head, head=head, cmap="jet")
     pxs.plot_bc(ftype="RCH", color="red")
@@ -388,7 +392,9 @@ def plot_conc_results(sims, idx):
     cobj = gwt.output.concentration()
     conc_times = cobj.get_times()
     conc_times = np.array(conc_times)
-    fig, axes = plt.subplots(3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True)
+    fig, axes = plt.subplots(
+        3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True
+    )
     xgrid, _, zgrid = gwt.modelgrid.xyzcellcenters
     # Desired plot times
     plot_times = [100.0, 1000.0, 3000.0]

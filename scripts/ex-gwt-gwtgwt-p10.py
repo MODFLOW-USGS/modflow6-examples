@@ -71,7 +71,11 @@ nstp = 500  # Number of time steps
 ttsmult = 1.0  # multiplier
 
 # Additional model input
-delr = [2000, 1600, 800, 400, 200, 100] + 28 * [50] + [100, 200, 400, 800, 1600, 2000]
+delr = (
+    [2000, 1600, 800, 400, 200, 100]
+    + 28 * [50]
+    + [100, 200, 400, 800, 1600, 2000]
+)
 delc = (
     [2000, 2000, 2000, 1600, 800, 400, 200, 100]
     + 45 * [50]
@@ -201,11 +205,15 @@ def build_model(sim_name):
         return
 
     sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
+    )
 
     # Instantiating time discretization
     tdis_rc = [(perlen, nstp, 1.0)]
-    flopy.mf6.ModflowTdis(sim, nper=1, perioddata=tdis_rc, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=1, perioddata=tdis_rc, time_units=time_units
+    )
 
     # add both solutions to the simulation
     add_flow(sim)
@@ -265,7 +273,16 @@ def add_flow(sim):
         for irow in range(nrow_inn):
             irow_outer = irow + 8
             exgdata.append(
-                ((ilay, irow_outer, 5), (ilay, irow, 0), 1, 50.0, 25.0, 50.0, 0.0, 75.0)
+                (
+                    (ilay, irow_outer, 5),
+                    (ilay, irow, 0),
+                    1,
+                    50.0,
+                    25.0,
+                    50.0,
+                    0.0,
+                    75.0,
+                )
             )
     # west
     for ilay in range(nlay):
@@ -395,12 +412,16 @@ def add_outer_gwfmodel(sim):
         for i in np.arange(nrow):
             #              (l, r, c),    head,      conc
             chdspd.append([(k, i, 0), strt[k, i, 0], 0.0])  # left
-            chdspd.append([(k, i, ncol - 1), strt[k, i, ncol - 1], 0.0])  # right
+            chdspd.append(
+                [(k, i, ncol - 1), strt[k, i, ncol - 1], 0.0]
+            )  # right
 
         for j in np.arange(1, ncol - 1):  # skip corners, already added above
             #              (l, r, c),   head,        conc
             chdspd.append([(k, 0, j), strt[k, 0, j], 0.0])  # top
-            chdspd.append([(k, nrow - 1, j), strt[k, nrow - 1, j], 0.0])  # bottom
+            chdspd.append(
+                [(k, nrow - 1, j), strt[k, nrow - 1, j], 0.0]
+            )  # bottom
 
     chdspd = {0: chdspd}
 
@@ -666,7 +687,9 @@ def add_outer_gwtmodel(sim):
         gwt,
         budget_filerecord=f"{mname}.cbc",
         concentration_filerecord=f"{mname}.ucn",
-        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        concentrationprintrecord=[
+            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+        ],
         saverecord=[
             ("CONCENTRATION", "LAST"),
             ("CONCENTRATION", "STEPS", "1", "250", "375", "500"),
@@ -752,7 +775,9 @@ def add_inner_gwtmodel(sim):
         gwt,
         budget_filerecord=f"{mname}.cbc",
         concentration_filerecord=f"{mname}.ucn",
-        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        concentrationprintrecord=[
+            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+        ],
         saverecord=[
             ("CONCENTRATION", "LAST"),
             ("CONCENTRATION", "STEPS", "1", "250", "375", "500"),
@@ -782,25 +807,37 @@ def run_model(sim):
 def get_reference_data_conc():
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_1days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_conc_lay3_1days.txt",
         )
     )
     conc1 = np.loadtxt(fpath)
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_500days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_conc_lay3_500days.txt",
         )
     )
     conc500 = np.loadtxt(fpath)
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_750days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_conc_lay3_750days.txt",
         )
     )
     conc750 = np.loadtxt(fpath)
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_conc_lay3_1000days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_conc_lay3_1000days.txt",
         )
     )
     conc1000 = np.loadtxt(fpath)
@@ -812,25 +849,37 @@ def get_reference_data_conc():
 def get_reference_data_heads():
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_head_lay3_1days.txt",
         )
     )
     head1 = np.loadtxt(fpath)
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_500days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_head_lay3_500days.txt",
         )
     )
     head500 = np.loadtxt(fpath)
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_750days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_head_lay3_750days.txt",
         )
     )
     head750 = np.loadtxt(fpath)
     fpath = open(
         os.path.join(
-            "..", "data", "ex-gwt-gwtgwt-p10", "gwt-p10-mf6_head_lay3_1000days.txt"
+            "..",
+            "data",
+            "ex-gwt-gwtgwt-p10",
+            "gwt-p10-mf6_head_lay3_1000days.txt",
         )
     )
     head1000 = np.loadtxt(fpath)

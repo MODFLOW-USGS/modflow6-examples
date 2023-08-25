@@ -78,7 +78,9 @@ perlen = [912.5, 2737.5]
 nper = len(perlen)
 nstp = [365, 1095]
 tsmult = [1.0, 1.0]
-k11 = 0.005 * 86400  # established above, but explicitly writing out its origin here
+k11 = (
+    0.005 * 86400
+)  # established above, but explicitly writing out its origin here
 sconc = 0.0
 c0 = 0.0
 dt0 = 56.25
@@ -250,13 +252,17 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p06-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+        sim = flopy.mf6.MFSimulation(
+            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
+        )
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
+        )
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -343,7 +349,9 @@ def build_model(sim_name, mixelm=0, silent=False):
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+            headprintrecord=[
+                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+            ],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -427,7 +435,9 @@ def build_model(sim_name, mixelm=0, silent=False):
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
         sourcerecarray = [("WEL-1", "AUX", "CONCENTRATION")]
-        flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm")
+        flopy.mf6.ModflowGwtssm(
+            gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm"
+        )
 
         # Instantiating MODFLOW 6 transport output control package
         flopy.mf6.ModflowGwtoc(
@@ -444,7 +454,9 @@ def build_model(sim_name, mixelm=0, silent=False):
         # Instantiate observation package (for transport)
         obslist = [["bckgrnd_cn", "concentration", (0, 15, 15)]]
         obsdict = {f"{gwtname}.obs.csv": obslist}
-        obs = flopy.mf6.ModflowUtlobs(gwt, print_input=False, continuous=obsdict)
+        obs = flopy.mf6.ModflowUtlobs(
+            gwt, print_input=False, continuous=obsdict
+        )
 
         # Instantiating MODFLOW 6 flow-transport exchange mechanism
         flopy.mf6.ModflowGwfgwt(
@@ -500,7 +512,9 @@ def plot_results(mt3d, mf6, idx, ax=None):
             cvt = None
 
         # Get the MODFLOW 6 concentration observation output file
-        fname = os.path.join(mf6_out_path, list(mf6.model_names)[1] + ".obs.csv")
+        fname = os.path.join(
+            mf6_out_path, list(mf6.model_names)[1] + ".obs.csv"
+        )
         mf6cobs = flopy.utils.Mf6Obs(fname).data
 
         # Create figure for scenario

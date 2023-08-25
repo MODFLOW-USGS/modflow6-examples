@@ -148,7 +148,9 @@ def build_model():
             exe_name="mf6",
             verbosity_level=0,
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -189,8 +191,12 @@ def build_model():
         )
 
         ghb_spd = []
-        ghb_spd += [[1, i, 9, "tides", 15.0, "ESTUARY-L2"] for i in range(nrow)]
-        ghb_spd += [[2, i, 9, "tides", 1500.0, "ESTUARY-L3"] for i in range(nrow)]
+        ghb_spd += [
+            [1, i, 9, "tides", 15.0, "ESTUARY-L2"] for i in range(nrow)
+        ]
+        ghb_spd += [
+            [2, i, 9, "tides", 1500.0, "ESTUARY-L3"] for i in range(nrow)
+        ]
         ghb_spd = {0: ghb_spd}
         fname = os.path.join(config.data_ws, sim_name, "tides.csv")
         tsdict = get_timeseries(fname, "tides", "linear")
@@ -247,7 +253,9 @@ def build_model():
         rivcol = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         rivstg = 10 * ["river_stage_1"] + 10 * ["river_stage_2"]
         rivcnd = 2 * [1000 + f + 1 for f in range(10)]
-        rivrbt = list(np.linspace(35.9, 35.0, 10)) + list(np.linspace(36.9, 36.0, 10))
+        rivrbt = list(np.linspace(35.9, 35.0, 10)) + list(
+            np.linspace(36.9, 36.0, 10)
+        )
         rivbnd = (
             5 * [""]
             + ["riv1_c6", "riv1_c7"]
@@ -257,7 +265,9 @@ def build_model():
             + ["riv2_c6", "riv2_c7"]
             + 3 * [""]
         )
-        riv_spd = list(zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd))
+        riv_spd = list(
+            zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd)
+        )
         fname = os.path.join(config.data_ws, sim_name, "riverstage.csv")
         tsdict = get_timeseries(
             fname,
@@ -272,7 +282,9 @@ def build_model():
             pname="RIV",
         )
 
-        for ipak, p in enumerate([recharge_zone_1, recharge_zone_2, recharge_zone_3]):
+        for ipak, p in enumerate(
+            [recharge_zone_1, recharge_zone_2, recharge_zone_3]
+        ):
             ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
             result = ix.intersect(p)
             rch_spd = []
@@ -285,7 +297,9 @@ def build_model():
                         result["areas"][i] / delr / delc,
                     ]
                 )
-            fname = os.path.join(config.data_ws, sim_name, f"recharge{ipak + 1}.csv")
+            fname = os.path.join(
+                config.data_ws, sim_name, f"recharge{ipak + 1}.csv"
+            )
             tsdict = get_timeseries(
                 fname,
                 [f"rch_{ipak + 1}"],
@@ -316,9 +330,12 @@ def build_model():
         row, col = np.where(np.zeros((nrow, ncol)) == 0)
         cellids = list(zip(nrow * ncol * [0], row, col))
         evt_spd = [
-            [k, i, j, etsurf, etrate, depth, *pxdp, *petm] for k, i, j in cellids
+            [k, i, j, etsurf, etrate, depth, *pxdp, *petm]
+            for k, i, j in cellids
         ]
-        flopy.mf6.ModflowGwfevt(gwf, nseg=nseg, stress_period_data=evt_spd, pname="EVT")
+        flopy.mf6.ModflowGwfevt(
+            gwf, nseg=nseg, stress_period_data=evt_spd, pname="EVT"
+        )
 
         head_filerecord = f"{sim_name}.hds"
         budget_filerecord = f"{sim_name}.cbc"
@@ -334,7 +351,9 @@ def build_model():
         obsdict[f"{sim_name}.obs.head.csv"] = obslist
         obslist = [["icf1", "flow-ja-face", (0, 4, 5), (0, 5, 5)]]
         obsdict[f"{sim_name}.obs.flow.csv"] = obslist
-        obs = flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
+        obs = flopy.mf6.ModflowUtlobs(
+            gwf, print_input=False, continuous=obsdict
+        )
 
         return sim
     return None
@@ -432,7 +451,9 @@ def plot_grid(sim):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 

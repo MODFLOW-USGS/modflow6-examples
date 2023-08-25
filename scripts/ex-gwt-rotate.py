@@ -116,7 +116,9 @@ def build_model(sim_folder):
         continue_=True,
     )
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -199,7 +201,9 @@ def build_model(sim_folder):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        concentrationprintrecord=[
+            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+        ],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -309,7 +313,9 @@ def plot_velocity_profile(sim, idx):
     ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-vh{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-vh{config.figure_ext}"
+        )
         fig.savefig(fpth)
 
 
@@ -330,7 +336,9 @@ def plot_conc(sim, idx):
     ax.set_ylabel("z position (m)")
     ax.set_xlabel("x position (m)")
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-bc{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-bc{config.figure_ext}"
+        )
         fig.savefig(fpth)
     plt.close("all")
 
@@ -369,7 +377,9 @@ def plot_conc(sim, idx):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-conc{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+        )
         fig.savefig(fpth)
     return
 
@@ -403,7 +413,9 @@ def make_animated_gif(sim, idx):
         pc.set_array(conc[i].flatten())
         ax.set_title(f"Time = {times[i]} days")
 
-    ani = FuncAnimation(fig, update, range(1, times.shape[0], 5), init_func=init)
+    ani = FuncAnimation(
+        fig, update, range(1, times.shape[0], 5), init_func=init
+    )
     writer = PillowWriter(fps=50)
     fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
     ani.save(fpth, writer=writer)

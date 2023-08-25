@@ -264,13 +264,17 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p04-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+        sim = flopy.mf6.MFSimulation(
+            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
+        )
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
+        )
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -371,7 +375,9 @@ def build_model(sim_name, mixelm=0, silent=False):
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+            headprintrecord=[
+                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+            ],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -454,7 +460,9 @@ def build_model(sim_name, mixelm=0, silent=False):
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
         sourcerecarray = [("WEL-1", "AUX", "CONCENTRATION")]
-        flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm")
+        flopy.mf6.ModflowGwtssm(
+            gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm"
+        )
 
         # Instantiating MODFLOW 6 transport output control package
         flopy.mf6.ModflowGwtoc(
@@ -538,7 +546,9 @@ def plot_results(mt3d, mf6, idx, leglab1, leglab2, ax=None):
         levels = [0.15, 1.0, 2.0, 5.0]
         mm = flopy.plot.PlotMapView(model=mt3d)
 
-        cf = plt.contourf(x, y, conc_mt3d[0, 0, :, :], levels=levels, alpha=0.5)
+        cf = plt.contourf(
+            x, y, conc_mt3d[0, 0, :, :], levels=levels, alpha=0.5
+        )
         cbar = plt.colorbar(cf, shrink=0.25)
         cbar.ax.set_title(leglab1)
 
@@ -560,7 +570,9 @@ def plot_results(mt3d, mf6, idx, leglab1, leglab2, ax=None):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}{config.figure_ext}")
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}{config.figure_ext}"
+            )
             fig.savefig(fpth)
 
 

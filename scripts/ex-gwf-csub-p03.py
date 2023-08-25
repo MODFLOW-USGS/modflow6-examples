@@ -492,7 +492,9 @@ def build_model(
         sim = flopy.mf6.MFSimulation(
             sim_name=name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -712,7 +714,9 @@ def export_tables(silent=True):
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.15, 0.30, 0.25)
-        bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
+        bt.build_table(
+            caption, fpth, arr, headings=headings, col_widths=col_widths
+        )
 
         caption = f"Interbed properties for example {sim_name}."
         headings = (
@@ -756,9 +760,13 @@ def export_tables(silent=True):
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.25)
-        bt.build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
+        bt.build_table(
+            caption, fpth, arr, headings=headings, col_widths=col_widths
+        )
 
-        caption = "Interbed storage properties for example {}.".format(sim_name)
+        caption = "Interbed storage properties for example {}.".format(
+            sim_name
+        )
         headings = (
             "Interbed",
             "Layer",
@@ -811,7 +819,9 @@ def process_sim_csv(
 ):
     v = pd.read_csv(fpth, **kwargs)
 
-    v["date"] = pd.to_datetime(v[index_tag].values, unit="d", origin=origin_str)
+    v["date"] = pd.to_datetime(
+        v[index_tag].values, unit="d", origin=origin_str
+    )
     v.set_index("date", inplace=True)
     v.drop(columns=index_tag, inplace=True)
 
@@ -823,8 +833,12 @@ def process_sim_csv(
 # Function to process compaction data and return a pandas dataframe
 
 
-def get_sim_dataframe(fpth, index_tag="time", origin_str="1908-05-09 00:00:00.000000"):
-    v, col_list = process_sim_csv(fpth, index_tag=index_tag, origin_str=origin_str)
+def get_sim_dataframe(
+    fpth, index_tag="time", origin_str="1908-05-09 00:00:00.000000"
+):
+    v, col_list = process_sim_csv(
+        fpth, index_tag=index_tag, origin_str=origin_str
+    )
 
     # calculate total skeletal and total
     shape = v[col_list[0]].values.shape[0]
@@ -952,7 +966,9 @@ def print_label(ax, zelev, k, fontsize=6):
 
 
 def constant_heads(ax, annotate=False, fontsize=6, xrange=(0, 1)):
-    arrowprops = dict(facecolor="black", arrowstyle="-", lw=0.5, shrinkA=0, shrinkB=0)
+    arrowprops = dict(
+        facecolor="black", arrowstyle="-", lw=0.5, shrinkA=0, shrinkB=0
+    )
     label = ""
     for k in [0, 5, 10, 12]:
         label = set_label(label, text="Constant head")
@@ -1125,7 +1141,9 @@ def plot_grid(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-grid{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        )
         if not silent:
             print(f"saving...'{fpth}'")
         fig.savefig(fpth)
@@ -1181,7 +1199,9 @@ def plot_boundary_heads(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-01{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-01{config.figure_ext}"
+        )
         if not silent:
             print(f"saving...'{fpth}'")
         fig.savefig(fpth)
@@ -1269,7 +1289,9 @@ def plot_head_es_comparison(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-02{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-02{config.figure_ext}"
+        )
         if not silent:
             print(f"saving...'{fpth}'")
         fig.savefig(fpth)
@@ -1543,7 +1565,9 @@ def plot_calibration(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-03{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-03{config.figure_ext}"
+        )
         if not silent:
             print(f"saving...'{fpth}'")
         fig.savefig(fpth)
@@ -1558,7 +1582,9 @@ def plot_vertical_head(silent=True):
 
     name = list(parameters.keys())[1]
     pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
-    df_heads, col_list = process_sim_csv(pth, origin_str="1908-05-09 00:00:00.000000")
+    df_heads, col_list = process_sim_csv(
+        pth, origin_str="1908-05-09 00:00:00.000000"
+    )
     df_heads_year = df_heads.groupby(df_heads.index.year).mean()
 
     def get_colors(vmax=6):
@@ -1594,7 +1620,9 @@ def plot_vertical_head(silent=True):
     colors = get_colors(vmax=len(iyears) - 1)
 
     xrange = (-10, 50)
-    fig, ax = plt.subplots(nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0))
+    fig, ax = plt.subplots(
+        nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0)
+    )
 
     ax.set_xlim(xrange)
     ax.set_ylim(-botm[-1], 0)
@@ -1641,7 +1669,9 @@ def plot_vertical_head(silent=True):
     for idx, iyear in enumerate(iyears[:-1]):
         xlabel, x, y = build_head_data(df_heads_year, year=iyear)
         xlabel1, x1, y1 = build_head_data(df_heads_year, year=iyears[idx + 1])
-        ax.fill_betweenx(y, x, x2=x1, color=colors[idx], zorder=zo, step="mid", lw=0)
+        ax.fill_betweenx(
+            y, x, x2=x1, color=colors[idx], zorder=zo, step="mid", lw=0
+        )
         ax.plot(x, y, lw=0.5, color="black", zorder=201)
         ax.text(
             xlabel,
@@ -1680,7 +1710,9 @@ def plot_vertical_head(silent=True):
 
     # save figure
     if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{sim_name}-04{config.figure_ext}")
+        fpth = os.path.join(
+            "..", "figures", f"{sim_name}-04{config.figure_ext}"
+        )
         if not silent:
             print(f"saving...'{fpth}'")
         fig.savefig(fpth)

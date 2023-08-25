@@ -287,10 +287,14 @@ def build_model(
         name = "p01-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+        sim = flopy.mf6.MFSimulation(
+            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
+        )
 
         # Instantiating MODFLOW 6 time discretization
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
+        )
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -362,7 +366,9 @@ def build_model(
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.cbc",
-            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+            headprintrecord=[
+                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+            ],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -433,7 +439,9 @@ def build_model(
         if retardation != 1.0:
             sorption = "linear"
             bulk_density = rhob
-            kd = (retardation - 1.0) * prsity / rhob  # prsity & rhob defined in
+            kd = (
+                (retardation - 1.0) * prsity / rhob
+            )  # prsity & rhob defined in
         else:  # global variable section
             sorption = None
             bulk_density = None
@@ -567,14 +575,18 @@ def plot_results(mt3d, mf6, idx, ax=None):
         ax.set_xlim(0, 1000)
         ax.set_xlabel("Distance, in m")
         ax.set_ylabel("Concentration")
-        title = "Concentration Profile at Time = 2,000 " + "{}".format(time_units)
+        title = "Concentration Profile at Time = 2,000 " + "{}".format(
+            time_units
+        )
         ax.legend()
         letter = chr(ord("@") + idx + 1)
         fs.heading(letter=letter, heading=title)
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}{config.figure_ext}")
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}{config.figure_ext}"
+            )
             fig.savefig(fpth)
 
 

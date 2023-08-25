@@ -130,13 +130,17 @@ relax = 0.97
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton):
+def build_model(
+    name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton
+):
     if config.buildModel:
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
         )
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration=linear_acceleration,
@@ -273,7 +277,9 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
             ax.set_aspect("equal")
             mm = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=k)
             mm.plot_grid(lw=0.5, color="0.5")
-            cm = mm.plot_array(head, masked_values=masked_values, vmin=vmin, vmax=vmax)
+            cm = mm.plot_array(
+                head, masked_values=masked_values, vmin=vmin, vmax=vmax
+            )
             mm.plot_bc(ftype="WEL", kper=totim - 1)
             mm.plot_bc(ftype="RIV", color="green", kper=0)
             mm.plot_vector(qx, qy, normalize=True, color="0.75")
@@ -504,7 +510,9 @@ def plot_results(silent=True):
 
         # save figure
         if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-01{config.figure_ext}")
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+            )
             fig.savefig(fpth)
 
         # plot simulated rewetting results
