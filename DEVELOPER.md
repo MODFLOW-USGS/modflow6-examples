@@ -16,8 +16,8 @@ This document describes how to set up an environment to use or develop the MODFL
   - [Using `pytest`](#using-pytest)
 - [Contributing examples](#contributing-examples)
 - [Releasing the examples](#releasing-the-examples)
-  - [Extract notebooks and tables from scripts](#extract-notebooks-and-tables-from-scripts)
-  - [Build the documentation](#build-the-documentation)
+  - [Generate notebooks and tables](#generate-notebooks-and-tables)
+  - [Build examples documentation](#build-examples-documentation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -71,30 +71,33 @@ To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks
 
 ### Using `pytest`
 
-Pytest can be used to run all of the examples from the `scripts` directory. For instance, to run the examples on as many cores as your machine can spare, issue the following command:
+Pytest can be used to run all of the example scripts and models. The `pytest-xdist` plugin is a convenient way to run the scripts in parallel. Note that `pytest` must be invoked from the `etc/` directory, *not* from `scripts/`.
 
-```commandline
-pytest -v -n auto
+To run example scripts in parallel with verbose output, and generate input files *without* running models:
+
+```shell
+pytest -v -n auto ci_build_files.py
 ```
 
-Remove `-n auto` to run in serial instead of parallel.
+To run models, use `--run True`.
+
+To run in serial instead of parallel, omit `-n auto`.
 
 ## Contributing examples
 
-Adding a new example requires adding a new example script in the `scripts/` folder and adding a new LaTeX problem description in the `doc/sections/` folder. After a new example is added, a new release should be made (see below).
+Adding a new example requires adding a new example script in the `scripts/` folder and adding a new LaTeX problem description in the `doc/sections/` folder. Then open a pull request from your fork of the repository.
 
 ## Releasing the examples
 
 A new release is automatically created whenever code is merged into the trunk branch of this repository. Steps to manually prepare for a release are listed below.
 
-### Extract notebooks and tables from scripts
+1. Generate notebooks and tables
+2. Build examples documentation
 
-The example scripts are converted into jupyter notebooks, and latex tables are created from the scripts using jupytext.  To convert all of the scripts, run the following command in the scripts directory:
+### Generate notebooks and tables
 
-```commandline
-python process-scripts.py
-```
+The example scripts must be converted into jupyter notebooks using `jupytext`, then latex tables generated from specially formatted code/comments. Run `process-scripts.py` in the `scripts/` directory to do this.
 
-### Build the documentation
+### Build examples documentation
 
-If the figures and tables were generated correctly, then it should be possible to build the pdf document for the examples. The pdf is created by converting the `doc/mf6examples.tex` document into a pdf with `pdftex` or a similar tool.
+If the figures and tables were generated correctly, then it should be possible to build the examples PDF document. The PDF can be created by processing `doc/mf6examples.tex` with `pdftex` or a similar tool.
