@@ -254,7 +254,9 @@ def make_tables():
                     # replace minus signs with double minus signs for
                     # latex render (so minus sign "sticks" to number)
                     # but don't replace "e-" in scientific notation.
-                    value = re.sub(r"(?<!e)(-)\d*", "--", value)
+                    value = re.sub(
+                        r"(?<!e)(-)\d*", lambda m: m.group(0).replace("-", "--"), value
+                    )
                     f.write(f"\t{text} & {value} \\\\\n")
                     line_count += 1
 
