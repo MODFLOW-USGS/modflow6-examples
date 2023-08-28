@@ -1,7 +1,60 @@
+"""
+Process MODFLOW 6 examples to build jupyter notebooks,
+summary tables for the LaTeX document, and markdown tables for ReadtheDocs.
+
+The files that are processed are the example python scripts (expy) and
+the example directories (exdir) that are created from running those scripts.
+
+There are a set of optional flags that take up to two additional arguments.
+
+Flag1 and Flag2 are equivalent representations of the same flag.
+
+For options that search for a subset of expy and exdir,
+Arg1 and Arg2 are unix search pattern strings to filter the expy and exdir.
+If either Arg1 or Arg2 is set to "None", then the search that it is meant
+to perform is disabled and no result is returned.
+
+Flag1 Flag2    Arg1 Arg2  Description
+
+-v  --verbose    -   -    Indicates that while processing the expy and exdir,
+                          print detailed file information.
+
+-p  --print      -   -    If present, prints all found expy and exdir
+                          and exits the program.
+
+-f  --find     yes  opt  Prints expy and exdir that match a Unix
+                         filename search pattern and exits the program.
+                         Arg1 is the Unix filename matching pattern
+                         to filter and print the expy and exdir names.
+                         Arg2 is optional, and if present replaces Arg1 for
+                         pattern matching exdir.
+
+-l  --list     yes  opt  Prints in the shape of a single python list the
+                         expy and exdir that match a Unix filename
+                         search pattern and exits the program.
+                         Arg1 is the Unix filename matching pattern
+                         to filter and print the expy and exdir names.
+                         Arg2 is optional, and if present replaces Arg1 for
+                         pattern matching exdir.
+
+-k  --keyword  yes  opt  Proces the expy and exdir that match a Unix
+                         filename search pattern.
+                         Arg1 is the Unix filename matching pattern
+                         to filter and print the expy and exdir names.
+                         Arg2 is optional, and if present replaces Arg1 for
+                         pattern matching exdir.
+
+    Examples
+    --------
+    >>> process-scripts.py --print     # print to prompt all example problems.
+    >>> process-scripts.py -f *-maw-*  # print to prompt MAW example problems.
+    >>> process-scripts.py -k *-maw-*  # process all MAW example problems.
+"""
 import ast
 import os
 import re
 import sys
+import fnmatch
 
 import flopy
 
@@ -19,6 +72,8 @@ files = sorted(
         if file.endswith(".py") and file.startswith("ex-")
     ]
 )
+
+only_process_ex = []
 
 
 def _replace_quotes(proc_str):
@@ -271,8 +326,9 @@ def make_tables():
                 table_value = []
 
 
-def get_ordered_examples():
-    print("creating a ordered list of examples from the LaTeX document")
+def get_ordered_examples(verbose=True):
+    if verbose:
+        print("creating a ordered list of examples from the LaTeX document")
     # get order of examples from body.text
     ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
     ex_order = []
@@ -284,13 +340,14 @@ def get_ordered_examples():
     return ex_order
 
 
-def get_examples_list():
-    print("creating a list of available examples")
+def get_examples_list(verbose=True):
+    if verbose:
+        print("creating a list of available examples")
     # examples to exclude
     exclude = ("ex-gwf-csub-p02c",)
 
     # get order of examples from body.text
-    ex_order = get_ordered_examples()
+    ex_order = get_ordered_examples(verbose)
 
     # get list of all examples
     ex_list = []
@@ -321,6 +378,8 @@ def get_examples_list():
 def get_examples_dict(verbose=False):
     print("creating dictionary with examples information")
     ex_list = get_examples_list()
+    if len(only_process_ex) > 0:
+        ex_list = [item for item in ex_list if item in only_process_ex]
     ex_dict = {}
     for ex_name in ex_list:
         namefiles = []
@@ -677,9 +736,88 @@ def build_tex_tables(ex_dict):
 if __name__ == "__main__":
     verbose = False
     # parse command line arguments
-    for arg in sys.argv:
+    arg1 = None
+    for it, arg in enumerate(sys.argv):
         if arg in ("-v", "--verbose"):
             verbose = True
+        elif arg in ("-p", "--print"):
+            print("\nList of all example scripts\n")
+            for file in files:
+                print(file)
+            print("\n\nList of all available examples\n")
+            for file in sorted(get_examples_list(False)):
+                print(file)
+            print()
+            sys.exit(0)
+        elif arg in ("-f", "--find", "-l", "--list", "-k", "-keyword"):
+            # Setup Unix Style search pattern
+            if "=" in arg:
+                arg1 = arg[arg.find("=") + 1 :]
+            else:
+                it += 1
+                try:
+                    arg1 = sys.argv[it]
+                except IndexError:
+                    raise RuntimeError(
+                        f"flag {arg} found, but it must be "
+                        "followed by the unix-style search "
+                        "expression."
+                    )
+            arg1 = arg1.replace("'", " ").replace('"', " ").strip()
+            if arg1.lower() == "none":
+                arg1 = "\x0fnull\x0e\x15\x17"  # always fail search
+            it += 1
+            try:
+                arg2 = sys.argv[it]
+                arg2 = arg2.replace("'", " ").replace('"', " ").strip()
+                if arg2.lower() == "none":
+                    arg2 = "\x0fnull\x0e\x15\x17"  # always fail search
+            except IndexError:
+                arg2 = arg1
+            break
+
+    if arg1 is not None:  # Found unix search flag
+        if arg in ("-f", "--find"):
+            print(f"\nList of example scripts that match {arg1}\n")
+            for file in fnmatch.filter(files, arg1):
+                print(file)
+            files.sort()
+            print(f"\nList of available examples that match {arg2}\n")
+            for file in sorted(fnmatch.filter(get_examples_list(False), arg1)):
+                print(file)
+            print()
+            sys.exit(0)
+        else:  # if arg in ("-l", "--list", "-k", "-keyword"):
+            lst = []
+            for file in fnmatch.filter(files, arg1):
+                lst.append(file)
+            lst.sort()
+            for file in sorted(fnmatch.filter(get_examples_list(False), arg1)):
+                lst.append(file)
+            lst = "[" + ", ".join(lst) + "]"
+            if arg in ("-l", "--list"):
+                print(
+                    "\nPython list of example scripts that match "
+                    f"{arg1} and example directories that match {arg2}\n\n"
+                    f"{lst}\n"
+                )
+                sys.exit(0)
+            sys.argv = [sys.argv[0], lst]
+
+    # check if only doing a specified files
+    if len(sys.argv) > 1:
+        cmd_line = " ".join(sys.argv[1:])
+        st = cmd_line.find("[") + 1
+        sp = cmd_line.find("]")
+        if st > 0:
+            cmd_line = cmd_line[st:sp]  # becomes "" if [ not found
+            only_process_ex = [
+                item.replace("'", " ").replace('"', " ").strip()
+                for item in cmd_line.split(",")
+            ]
+
+        if len(only_process_ex) > 0:
+            files = [item for item in files if item in only_process_ex]
 
     # make the notebooks
     make_notebooks()
