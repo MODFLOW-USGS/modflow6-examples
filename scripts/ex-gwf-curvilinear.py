@@ -1,18 +1,18 @@
 # ## Curvilinear example
 #
 # This example, ex-gwf-curvilinear, shows how the MODFLOW 6 DISV Package
-# can be used to simulate a curvilinear models.
+# can be used to simulate a multipart curvilinear models.
 #
-# The example corresponds to Figure 3d (lower-right) in:
+# The example reproduces the hypothetical model grid presented in Figure 6 of
 #    Romero, D. M., & Silver, S. E. (2006).
 #    Grid cell distortion and MODFLOW's integrated finite difference
 #    numerical solution. Groundwater, 44(6), 797-802.
 #
-# And the numerical result is compared against the analytical solution
-# presented in Equation 5.4 of
-#    Crank, J. (1975). The mathematics of diffusion.
-#    Oxford. England: Clarendon.
-# The equation is transformed here to use head instead of concentration
+# The hypothetical, curvilinear grid is built in three parts:
+#    1) 180 to 270 degree curvilinear grid
+#    2) 16 by 18 structured grid
+#    3) 90 to 0 degree curvilinear grid
+# that are merged, as 1-2-3, to make the final multipart curvilinear grid.
 
 # Imports
 
@@ -31,23 +31,16 @@ sys.path.append(os.path.join("..", "common"))
 
 import config
 from figspecs import USGSFigure
+
 from DisvCurvilinearBuilder import DisvCurvilinearBuilder
-
-
-def analytical_model(r1, h1, r2, h2, r):
-    # Analytical model from Equation 5.4 of
-    #    Crank, J. (1975). The mathematics of diffusion.
-    #    Oxford. England: Clarendon.
-    num = h1 * np.log(r2 / r) + h2 * np.log(r / r1)
-    den = np.log(r2 / r1)
-    return num / den
-
+from DisvStructuredGridBuilder import DisvStructuredGridBuilder
+from DisvGridMerger import DisvGridMerger
 
 # Set default figure properties
 
-figure_size_grid = (6, 6)
-figure_size_head = (7, 6)
-figure_size_obsv = (6, 6)
+figure_size_grid_com = (6.5, 2.5)
+figure_size_grid = (6.5, 3)
+figure_size_head = (6.5, 2.5)
 
 # Base simulation and model name and workspace
 
@@ -55,7 +48,7 @@ ws = config.base_ws
 
 # Simulation name
 
-sim_name = "ex-gwf-curve-90"
+sim_name = "ex-gwf-curvilin"
 
 # Model units
 
@@ -69,16 +62,7 @@ nper = 1  # Number of periods
 _ = 1  # Number of time steps
 
 nlay = 1  # Number of layers
-nradial = 16  # Number of radial direction cells (radial bands)
-ncol = 18  # Number of columns in radial band (ncol)
-
-_ = "0"  # Degree angle of column 1 boundary
-_ = "90"  # Degree angle of column ncol boundary
-_ = "5"  # Degree angle width of each column
-
-r_inner = 4  # Model inner radius ($ft$)
-r_outer = 20  # Model outer radius ($ft$)
-r_width = 1  # Model radial band width ($ft$)
+_ = 864  # Number cells per layer
 
 surface_elevation = 10.0  # Top of the model ($ft$)
 model_base = 0.0  # Base of the model ($ft$)
@@ -86,50 +70,145 @@ model_base = 0.0  # Base of the model ($ft$)
 Tran = 0.19  # Horizontal transmissivity ($ft^2/day$)
 k11 = 0.019  # Horizontal hydraulic conductivity ($ft/day$)
 
-bc0 = 10  # Inner Constant Head Boundary ($ft$)
-_ = "3.334"  # Outer Constant Head Boundary ($ft$)
+bc0 = 10  # Left constant head boundary ($ft$)
+_ = "3.334"  # Right constant head boundary ($ft$)
 
-# Input specified in table as text
+_ = " "  # --- Left Curvilinear Grid Properties ---
+
+_ = "180"  # Degree angle of column 1 boundary
+_ = "270"  # Degree angle of column ncol boundary
+_ = "5"  # Degree angle width of each column
+
+nradial1 = 16  # Number of radial direction cells (radial bands)
+_ = 18  # Number of columns in radial band (ncol)
+
+r_inner1 = 4  # Grid inner radius ($ft$)
+r_outer1 = 20  # Grid outer radius ($ft$)
+r_width1 = 1  # Radial band width ($ft$)
+
+_ = " "  # --- Middle Structured Grid Properties ---
+nrow = 16  # Number of rows
+ncol = 18  # Number of columns
+row_width = 1  # Row width ($ft$)
+col_width = 1  # Column width ($ft$)
+
+_ = " "  # --- Right Curvilinear Grid Properties ---
+
+_ = "0"  # Degree angle of column 1 boundary
+_ = "90"  # Degree angle of column ncol boundary
+_ = "5"  # Degree angle width of each column
+
+nradial2 = 16  # Number of radial direction cells (radial bands)
+_ = 18  # Number of columns in radial band (ncol)
+
+r_inner2 = 4  # Grid inner radius ($ft$)
+r_outer2 = 20  # Grid outer radius ($ft$)
+r_width2 = 1  # Grid radial band width ($ft$)
+
+# Set up input that is not used in the table
+# Left Curvilinear Model Angle and discretization
+angle_start1 = 180
+angle_stop1 = 270
+angle_step1 = 5
+
+# Right Curvilinear Model Angles
+angle_start2 = 0
+angle_stop2 = 90
+angle_step2 = 5
+
+
+# Right Curvilinear Model Boundary Condition
 bc1 = bc0 / 3
-
-angle_start = 0
-angle_stop = 90
-angle_step = 5
 
 # Radius for each radial band.
 #   First value is inner radius, the remaining are outer radii
 
-radii = np.arange(r_inner, r_outer + r_width, r_width)
+radii = np.arange(r_inner1, r_outer1 + r_width1, r_width1)
 
 # Get the curvilinear model properties and vertices
 
-curvlin = DisvCurvilinearBuilder(
+# Left Curvilinear Model
+curvlin1 = DisvCurvilinearBuilder(
     nlay,
     radii,
-    angle_start,
-    angle_stop,
-    angle_step,
+    angle_start1,
+    angle_stop1,
+    angle_step1,
+    surface_elevation=surface_elevation,
+    layer_thickness=surface_elevation,
+    single_center_cell=False,
+    origin_x=radii[-1],  # Shift to make merged image have (0, 0) for origin
+    origin_y=radii[-1] + radii[0],
+)
+
+# Middle Structured Grid Model
+rectgrid = DisvStructuredGridBuilder(
+    nlay,
+    nrow,
+    ncol,
+    row_width,
+    col_width,
+    surface_elevation,
+    surface_elevation,
+)
+
+# Right Curvilinear Model
+curvlin2 = DisvCurvilinearBuilder(
+    nlay,
+    radii,
+    angle_start2,
+    angle_stop2,
+    angle_step2,
     surface_elevation=surface_elevation,
     layer_thickness=surface_elevation,
     single_center_cell=False,
 )
 
+# Combine the three models into one new vertex grid
+
+grid_merger = DisvGridMerger()
+
+grid_merger.add_grid("curvlin1", curvlin1)
+grid_merger.add_grid("rectgrid", rectgrid)
+grid_merger.add_grid("curvlin2", curvlin2)
+
+# # Plot individual grids to find vertex connections
+# grid_merger.plot_grid("curvlin1", show=False)
+# grid_merger.plot_grid("rectgrid", show=False)
+# grid_merger.plot_grid("curvlin2", show=False)
+# plt.show()
+
+# Setup vertex connections between model grids
+grid_merger.set_vertex_connection("curvlin1", "rectgrid", 19 - 1, 1 - 1)
+grid_merger.set_vertex_connection("rectgrid", "curvlin2", 19 - 1, 323 - 1)
+
+# Merge grids into one single model grid
+grid_merger.merge_grids()
+
+# Shift first curvilinear grid for plotting against the orgin.
+# (Note, grid_merger no longer needs curvlin1)
+curvlin1.change_origin(0.0, 0.0)
+
+# grid_merger.plot_grid(show=False, figsize=(23, 10))
+
 # Constant head boundary condition
-# Constant head is located along the innermost radial band (rad = 0)
-# and outermost radial band (rad = nradial-1)
-
-chd_inner = []
-chd_outer = []
+# Constant head is located along column 1 of curvlin1
+# and column 1 of curvlin2
+chd_left = []
+chd_right = []
 for lay in range(nlay):
-    for node in curvlin.iter_radial_cellid(rad=0):
-        chd_inner.append([(lay, node), bc0])
+    for cellid_old in curvlin1.iter_column_cellid(col=0):
+        node = grid_merger.get_merged_cell2d("curvlin1", cellid_old)
+        chd_left.append([(lay, node), bc0])
+
 for lay in range(nlay):
-    for node in curvlin.iter_radial_cellid(rad=nradial - 1):
-        chd_outer.append([(lay, node), bc1])
+    for cellid_old in curvlin2.iter_column_cellid(col=0):
+        node = grid_merger.get_merged_cell2d("curvlin2", cellid_old)
+        chd_right.append([(lay, node), bc1])
 
-chd_inner = {sp: chd_inner for sp in range(nper)}
+chd_left = {sp: chd_left for sp in range(nper)}
 
-chd_outer = {sp: chd_outer for sp in range(nper)}
+chd_right = {sp: chd_right for sp in range(nper)}
 
 # Static temporal data used by TDIS file
 # Simulation is steady state so setup only a one day stress period.
@@ -170,9 +249,8 @@ def build_model(name):
 
         gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
 
-        # **curvlin is an alias for **curvlin.disv_kw
         disv = flopy.mf6.ModflowGwfdisv(
-            gwf, length_units=length_units, **curvlin
+            gwf, length_units=length_units, **grid_merger.get_disv_kwargs()
         )
 
         npf = flopy.mf6.ModflowGwfnpf(
@@ -194,16 +272,16 @@ def build_model(name):
 
         flopy.mf6.ModflowGwfchd(
             gwf,
-            stress_period_data=chd_inner,
-            pname="CHD-INNER",
-            filename=f"{sim_name}.inner.chd",
+            stress_period_data=chd_left,
+            pname="CHD-LEFT",
+            filename=f"{sim_name}.left.chd",
             save_flows=True,
         )
         flopy.mf6.ModflowGwfchd(
             gwf,
-            stress_period_data=chd_outer,
-            pname="CHD-OUTER",
-            filename=f"{sim_name}.outer.chd",
+            stress_period_data=chd_right,
+            pname="CHD-RIGHT",
+            filename=f"{sim_name}.right.chd",
             save_flows=True,
         )
 
@@ -212,7 +290,15 @@ def build_model(name):
             budget_filerecord=f"{name}.cbc",
             head_filerecord=f"{name}.hds",
             headprintrecord=[
-                ("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+                (
+                    "COLUMNS",
+                    curvlin1.ncol + ncol + curvlin2.ncol,
+                    "WIDTH",
+                    15,
+                    "DIGITS",
+                    6,
+                    "GENERAL",
+                )
             ],
             saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
             printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
@@ -258,8 +344,8 @@ def plot_grid(sim, verbose=False):
     ax = fig.add_subplot(1, 1, 1, aspect="equal")
     pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
     pmv.plot_grid()
-    pmv.plot_bc(name="CHD-INNER", alpha=0.75, color="blue")
-    pmv.plot_bc(name="CHD-OUTER", alpha=0.75, color="blue")
+    pmv.plot_bc(name="CHD-LEFT", alpha=0.75, color="blue")
+    pmv.plot_bc(name="CHD-RIGHT", alpha=0.75, color="blue")
     ax.set_xlabel("x position (ft)")
     ax.set_ylabel("y position (ft)")
     for i, (x, y) in enumerate(
@@ -269,19 +355,20 @@ def plot_grid(sim, verbose=False):
             x,
             y,
             f"{i + 1}",
-            fontsize=6,
+            fontsize=3,
             horizontalalignment="center",
             verticalalignment="center",
         )
     v = gwf.disv.vertices.array
-    ax.plot(v["xv"], v["yv"], "yo")
+    vert_size = 2
+    ax.plot(v["xv"], v["yv"], "yo", markersize=vert_size)
     for i in range(v.shape[0]):
         x, y = v["xv"][i], v["yv"][i]
         ax.text(
             x,
             y,
             f"{i + 1}",
-            fontsize=5,
+            fontsize=vert_size,
             color="red",
             horizontalalignment="center",
             verticalalignment="center",
@@ -289,12 +376,107 @@ def plot_grid(sim, verbose=False):
 
     fig.tight_layout()
 
+    # Save components that made up the main grid
+    fig2, ax2 = plt.subplots(
+        1,
+        3,
+        figsize=figure_size_grid_com,
+    )
+
+    curvlin1.plot_grid(
+        "Left Curvilinear Grid",
+        ax_override=ax2[0],
+        cell_dot=False,
+        cell_num=False,
+        vertex_dot=True,
+        vertex_num=False,
+        vertex_dot_size=3,
+        vertex_dot_color="y",
+    )
+
+    rectgrid.plot_grid(
+        "Center Rectangular Grid",
+        ax_override=ax2[1],
+        cell_dot=False,
+        cell_num=False,
+        vertex_dot=True,
+        vertex_num=False,
+        vertex_dot_size=3,
+        vertex_dot_color="y",
+    )
+
+    curvlin2.plot_grid(
+        "Right Curvilinear Grid",
+        ax_override=ax2[2],
+        cell_dot=False,
+        cell_num=False,
+        vertex_dot=True,
+        vertex_num=False,
+        vertex_dot_size=3,
+        vertex_dot_color="y",
+    )
+
+    for ax_tmp in ax2:
+        ax_tmp.set_xlabel("x position (ft)")
+        ax_tmp.set_ylabel("y position (ft)")
+
+    xshift, yshift = 0.0, 0.0
+    for ax_tmp in ax2:
+        xmin, xmax = ax_tmp.get_xlim()
+        ymin, ymax = ax_tmp.get_ylim()
+        if xshift < xmax - xmin:
+            xshift = xmax - xmin
+        if yshift < ymax - ymin:
+            yshift = ymax - ymin
+
+    for ax_tmp in ax2:
+        xmin, xmax = ax_tmp.get_xlim()
+        ymin, ymax = ax_tmp.get_ylim()
+        ax_tmp.set_xlim(xmin, xmin + xshift)
+        ax_tmp.set_ylim(ymin, ymin + yshift)
+
+    ax2[0].annotate(
+        "A",
+        (-0.05, 1.05),
+        xycoords="axes fraction",
+        fontweight="black",
+        fontsize="xx-large",
+    )
+
+    ax2[1].annotate(
+        "B",
+        (-0.05, 1.05),
+        xycoords="axes fraction",
+        fontweight="black",
+        fontsize="xx-large",
+    )
+
+    ax2[2].annotate(
+        "C",
+        (-0.05, 1.05),
+        xycoords="axes fraction",
+        fontweight="black",
+        fontsize="xx-large",
+    )
+
+    fig2.tight_layout()
+
     # save figure
     if config.plotSave:
         fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            "..",
+            "figures",
+            f"{sim_name}-grid{config.figure_ext}",
         )
-        fig.savefig(fpth)
+        fig.savefig(fpth, dpi=600)
+
+        fpth2 = os.path.join(
+            "..",
+            "figures",
+            f"{sim_name}-grid-components{config.figure_ext}",
+        )
+        fig2.savefig(fpth2, dpi=300)
+
     return
 
 
@@ -336,52 +518,8 @@ def plot_head(sim):
         fpth = os.path.join(
             "..", "figures", f"{sim_name}-head{config.figure_ext}"
         )
-        fig.savefig(fpth)
+        fig.savefig(fpth, dpi=300)
     return
-
-
-def plot_analytical(sim, verbose=False):
-    gwf = sim.get_model(sim_name)
-
-    head = gwf.output.head().get_data()[:, 0, :]
-
-    col = ncol // 2 - 1  # Get head along middle of model
-
-    head = [head[0, curvlin.get_cellid(rad, col)] for rad in range(nradial)]
-
-    xrad = [0.5 * (radii[r - 1] + radii[r]) for r in range(1, nradial + 1)]
-
-    analytical = [head[0]]
-    r1 = xrad[0]
-    r2 = xrad[-1]
-    h1 = bc0
-    h2 = bc1
-    for rad in range(2, nradial):
-        r = 0.5 * (radii[rad - 1] + radii[rad])
-        analytical.append(analytical_model(r1, h1, r2, h2, r))
-    analytical.append(head[-1])
-
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-
-    obs_fig = "obs-head"
-    fig = plt.figure(figsize=figure_size_obsv)
-    ax = fig.add_subplot()
-    ax.set_xlabel("Radial distance (ft)")
-    ax.set_ylabel("Head (ft)")
-    ax.plot(xrad, head, "ob", label="MF6 Solution", markerfacecolor="none")
-    ax.plot(xrad, analytical, "-b", label="Analytical Solution")
-
-    fs.graph_legend(ax)
-
-    fig.tight_layout()
-
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
-        )
-        fig.savefig(fpth)
 
 
 # Function to plot the model results.
@@ -406,53 +544,7 @@ def plot_results(silent=True):
     if config.plotModel:
         plot_grid(sim, verbose)
         plot_head(sim)
-        plot_analytical(sim, verbose)
     return
-
-
-def calculate_model_error():
-    sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation.load(
-        sim_name=sim_name, sim_ws=sim_ws, verbosity_level=0
-    )
-
-    gwf = sim.get_model(sim_name)
-
-    head = gwf.output.head().get_data()[0, 0, :]
-
-    xrad = [0.5 * (radii[r - 1] + radii[r]) for r in range(1, nradial + 1)]
-
-    analytical = [head[0]]
-    r1 = xrad[0]
-    r2 = xrad[-1]
-    h1 = bc0
-    h2 = bc1
-    for rad in range(2, nradial):
-        r = 0.5 * (radii[rad - 1] + radii[rad])
-        analytical.append(analytical_model(r1, h1, r2, h2, r))
-    analytical.append(head[-1])
-
-    dim = len(head)
-    rel = 0.0
-    sse = 0.0
-    for rad in range(nradial):
-        asol = analytical[rad]
-        for node in curvlin.iter_radial_cellid(rad):
-            diff = head[node] - asol
-            rel += abs(diff / asol)
-            sse += diff**2
-    # for x, y in zip(head, analytical):
-    #     mae += abs(x-y)
-    #     sse += (x-y)**2
-    rel /= dim
-    rmse = sqrt(sse / dim)
-    return rel, rmse
-
-
-def check_model_error():
-    if config.runModel:
-        rel_error, rmse = calculate_model_error()
-        assert rel_error < 0.001
 
 
 # Function that wraps all of the steps for the curvilinear model
@@ -494,5 +586,3 @@ if __name__ == "__main__":
 
     # Solve analytical and plot results with MF6 results
     plot_results()
-
-    check_model_error()
