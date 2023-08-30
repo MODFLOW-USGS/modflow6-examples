@@ -1,0 +1,44 @@
+\section{Multipart Curvilinear Groundwater Flow Model}
+% Describe source of problem
+This example demonstrates how the MODFLOW 6 DISV Package can be used to simulate a multipart curvilinear model. This model extends the MODFLOW 6 ``Curvilinear Groundwater Flow Model'' example to reproduce the model grid presented in Figure 6 of \cite{romero2006grid}. The hypothetical, curvilinear grid represents a meandering, curved flow path that traditional, structured grids cannot simulate. Figure~6 in \cite{romero2006grid} was introduced as an illustration of a curvilinear MODFLOW grid, but did develop it as a actual simulation model. This example illustrates that MODFLOW 6 can simulate this hypothetical grid.
+
+
+\subsection{Example Description}
+
+% spatial discretization
+The hypothetical, curvilinear grid is composed of three distinct model regions that are combined to form the final grid. The first region (Left Grid; fig.~\ref{fig:ex-gwf-curvilin-grid-components}\textit{A}) is a curvilinear grid with 16 radial bands that start at 180$^{\circ}$ and end at 270$^{\circ}$ with a column discretization of 5$^{\circ}$ (18 columns). The Left Grid's inner- and outer-most radius is 4 $ft$ and 20 $ft$, respectively, and the radial direction vertices are 1 $ft$ apart. The second region (Center Grid; fig.~\ref{fig:ex-gwf-curvilin-grid-components}\textit{B}) is a 1 $ft$ rectangular, structured grid with 16 rows and 18 columns. The third region (Right Grid; fig.~\ref{fig:ex-gwf-curvilin-grid-components}\textit{C}) is an identical curvilinear grid as the first, but starts at 90$^{\circ}$ and end at 0$^{\circ}$. The three regions are combined to derive the hypothetical, curvilinear grid presented in figure~\ref{fig:ex-gwf-curvilin-grid}.
+
+The hypothetical, curvilinear grid contains a single, 10 $ft$ thick, model layer with a transmissivity of 0.19 $ft^2/day$. There are two constant head boundary conditions that are placed along the columns of the curvilinear regions (fig.~\ref{fig:ex-gwf-curvilin-grid}). The first constant head boundary is 10 $ft$ and is along the first column of the Left Grid. The second constant head boundary is 3.334 $ft$ and is along the last column of the Right Grid. The remaining model properties are summarized in table~\ref{tab:ex-gwf-curvilinear-01}.
+
+\begin{StandardFigure}{
+                                     Three regions that combine to construct the hypothetical, curvilinear grid. 
+                                     \textit{A}, Left curvilinear grid from 180$^{\circ}$ to 270$^{\circ}$, 
+                                     \textit{B}, Center 16 by 18 rectangular grid , and 
+                                     \textit{C}, Right curvilinear grid from 90$^{\circ}$ to 0$^{\circ}$. 
+                                     Grid vertices are marked in yellow. Note, the x, y coordinate positions 
+                                     are included for relative comparisons and not for the specific spatial location. 
+                                     }{fig:ex-gwf-curvilin-grid-components}{../figures/ex-gwf-curvilin-grid-components.png}
+\end{StandardFigure}
+
+\begin{StandardFigure}{
+                                     Plan view of the hypothetical, curvilinear grid with a meandering, curved flow path. 
+                                     Constant-head cells are marked in blue. 
+                                     The cell numbers $1, 19, \ldots, 253, 271$ constant head is 10 $ft$. The cell numbers $577, 595, \ldots, 829, 847$ constant head is 3.33 $ft$. 
+                                     Grid cell numbers are shown inside each model cell. 
+                                     Grid vertices are yellow with vertex numbers in red. 
+                                     }{fig:ex-gwf-curvilin-grid}{../figures/ex-gwf-curvilin-grid.png}
+\end{StandardFigure}
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-curvilinear-01.tex}
+
+% for examples without scenarios
+\subsection{Example Results}
+The hypothetical, curvilinear grid (fig. ~\ref{fig:ex-gwf-curvilin-grid}.) is solved using one, steady state, stress period. Figure~\ref{fig:ex-gwf-curvilin-head} presents the MODFLOW 6 simulated head and flow lines for all model cells.
+
+\begin{StandardFigure}{
+                                     Steady state head solution and specific discharge vectors from the MODFLOW 6 curvilinear grid with a meandering, curved flow path.
+                                     }{fig:ex-gwf-curvilin-head}{../figures/ex-gwf-curvilin-head.png}
+\end{StandardFigure}
+
+
