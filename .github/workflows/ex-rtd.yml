@@ -65,10 +65,7 @@ jobs:
         working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
-        run: |
-          import flopy
-          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
-        shell: python
+        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
