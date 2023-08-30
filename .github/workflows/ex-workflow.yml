@@ -41,22 +41,16 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Print python version
-        run: |
-          python --version
-
       - name: Install Python packages
         run: |
+          python --version
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
         working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
-        run: |
-          import flopy
-          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
-        shell: python
+        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
@@ -67,8 +61,7 @@ jobs:
           repo: modflow6-nightly-build
 
       - name: Run scripts without model runs
-        run: |
-          pytest -v -n=auto --durations=0 ci_build_files.py
+        run: pytest -v -n=auto --durations=0 ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: zip input files
@@ -81,8 +74,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: zip_files
-          path: |
-            ./modflow6-examples.zip
+          path: ./modflow6-examples.zip
 
   build:
     name: current-build
@@ -130,10 +122,7 @@ jobs:
         working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
-        run: |
-          import flopy
-          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
-        shell: python
+        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
@@ -144,8 +133,7 @@ jobs:
           repo: modflow6-nightly-build
 
       - name: Run scripts
-        run: |
-          pytest -v -n=auto --durations=0 --run=True ci_build_files.py
+        run: pytest -v -n=auto --durations=0 --run=True ci_build_files.py
         working-directory: ${{env.etc-directory}}
 
       - name: Run processing script
@@ -241,9 +229,7 @@ jobs:
           path: ./current/
 
       - name: List files in the artifact directory
-        run: |
-          pwd
-          ls -R ./current/
+        run: ls -R ./current/
 
       - name: create bodyFile
         run: |

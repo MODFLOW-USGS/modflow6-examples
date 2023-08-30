@@ -14,6 +14,7 @@ This document describes how to set up an environment to use or develop the MODFL
 - [Running the examples](#running-the-examples)
   - [Using `jupyter`](#using-jupyter)
   - [Using `pytest`](#using-pytest)
+  - [Using `jupytext`](#using-jupytext)
 - [Contributing examples](#contributing-examples)
 - [Releasing the examples](#releasing-the-examples)
   - [Generate notebooks and tables](#generate-notebooks-and-tables)
@@ -82,6 +83,14 @@ pytest -v -n auto ci_build_files.py
 To run models, use `--run True`.
 
 To run in serial instead of parallel, omit `-n auto`.
+
+### Using `jupytext`
+
+The example scripts can be converted to notebooks with `jupytext`. For instance, from the project root, to generate and execute a notebook in `notebooks/`:
+
+```shell
+jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ipynb --execute
+```
 
 ## Contributing examples
 
