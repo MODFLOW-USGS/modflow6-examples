@@ -1,14 +1,113 @@
 import numpy as np
 
-__all__ = ["disv_curvilinear_builder"]
+from DisvPropertyContainer import DisvPropertyContainer
+
+__all__ = ["DisvCurvilinearBuilder"]
 
 
-class disv_curvilinear_builder:
-    nlay: int
+class DisvCurvilinearBuilder(DisvPropertyContainer):
+    """
+    A class for generating a curvilinear MODFLOW 6 DISV grid. A curvilinear
+    grid is similar to a radial grid, composed of radial bands, but includes
+    ncol discretization within a radial band and does not have to form an
+    entire circle (such as, a discretized wedge).
+
+    This class inherits from the `DisvPropertyContainer` class and provides
+    methods to generate a curvilinear grid using radial and angular parameters.
+
+    All indices are zero-based, but translated to one-base for the figures and
+    by flopy for use with MODFLOW 6. Angles are in degrees, with ``0`` being in
+    the positive x-axis direction and ``90`` in the positive y-axis direction.
+
+    If no arguments are provided then an empty object is returned.
+
+    Parameters
+    ----------
+    nlay : int
+        Number of layers
+    radii : array_like
+        List of radial distances that describe the radial bands.
+        The first radius is the innermost radius, and then the rest are the
+        outer radius of each radial band. Note that the number of radial bands
+        is equal to ``len(radii) - 1``.
+    angle_start : float
+        Starting angle in degrees for the curvilinear grid.
+    angle_stop : float
+        Stopping angle in degrees for the curvilinear grid.
+    angle_step : float
+        Column discretization of each radial band.
+        If positive, then represents the angle step in degrees for each column
+        in a radial band. That is, the number of columns (`ncol`) is:
+           ``ncol = (angle_stop - angle_start)/angle_step``
+        If negative, then the absolute value is the number of columns (ncol).
+    surface_elevation : float or array_like
+        Surface elevation for the top layer. Can either be a single float
+        for the entire `top`, or array_like of length `nradial`, or
+        array_like of length `ncpl`.
+    layer_thickness : float or array_like
+        Thickness of each layer. Can either be a single float
+        for model cells, or array_like of length `nlay`, or
+        array_like of length `ncpl`.
+    single_center_cell : bool, default=False
+        If True, include a single center cell. If true, then innermost `radii`
+        must be **zero**. That is, the innermost, radial band has ``ncol=1``.
+    origin_x : float, default=0.0
+        X-coordinate reference point for the `radii` distance.
+    origin_y : float, default=0.0
+        Y-coordinate reference point for the `radii` distance.
+
+    Attributes
+    ----------
+    nradial : int
+        Number of radial bands in the grid.
+    ncol : int
+        Number of columns in each radial band.
+    inner_vertex_count : int
+        Number of vertices in the innermost radial band.
+    single_center_cell : bool
+        Whether a single center cell is included.
+    full_circle : bool
+        Whether the grid spans a full circle. That is,
+         full_circle = `angle_start`==`angle_stop`==``0``).
+    radii : numpy.ndarray
+        Array of radial distances from (origin_x, origin_y) for each radial
+        band. The first value is the innermost radius and the remaining are
+        each radial bands outer radius.
+    angle_start : float
+        Starting angle in degrees for the curvilinear grid.
+    angle_stop : float
+        Stopping angle in degrees for the curvilinear grid.
+    angle_step : float
+        Angle step in degrees for each column in a radial band.
+    angle_span : float
+        Span of the angle range in degrees for the curvilinear grid.
+
+    Methods
+    -------
+    get_disv_kwargs()
+        Get the keyword arguments for creating a MODFLOW-6 DISV package.
+    plot_grid(...)
+        Plot the model grid from `vertices` and `cell2d` attributes.
+    get_cellid(rad, col, col_check=True)
+        Get the cellid given the radial and column indices.
+    get_rad_col(cellid)
+        Get the radial and column indices given the cellid.
+    get_vertices(rad, col)
+        Get the vertex indices for a cell given the radial and column indices.
+    calc_curvilinear_ncol(angle_start, angle_stop, angle_step)
+        Calculate the number of columns in the curvilinear grid based on
+        the given angle parameters. It will adjust `angle_step` to ensure
+        that the number of columns is an integer value.
+    iter_rad_col()
+        Iterate through the radial band columns, then bands.
+    iter_radial_cellid(rad)
+        Iterate through the cellid within a radial band.
+    iter_column_cellid(col)
+        Iterate through the cellid along a column across all radial bands.
+    """
+
     nradial: int
     ncol: int
-    ncpl: int
-    nodes: int
     inner_vertex_count: int
     single_center_cell: bool
     full_circle: bool
@@ -17,26 +116,31 @@ class disv_curvilinear_builder:
     angle_stop: float
     angle_step: float
     angle_span: float
-    disv_kw: dict
 
     def __init__(
         self,
-        nlay,
-        radii,
-        angle_start,
-        angle_stop,
-        angle_step,
+        nlay=-1,
+        radii=np.array((0.0, 1.0)),
+        angle_start=0.0,
+        angle_stop=90.0,
+        angle_step=-1,
         surface_elevation=100.0,
         layer_thickness=100.0,
         single_center_cell=False,
+        origin_x=0.0,
+        origin_y=0.0,
     ):
+        if nlay is None or nlay < 1:
+            self._init_empty()
+            return
+
         if angle_start < 0.0:
             angle_start += 360.0
         if angle_stop < 0.0:
             angle_stop += 360.0
         if abs(angle_step) < 1.0e-30:
             raise RuntimeError(
-                "disv_curvilinear_builder: angle_step is near zero"
+                "DisvCurvilinearBuilder: angle_step is near zero"
             )
 
         angle_span = self._get_angle_span(angle_start, angle_stop)
@@ -53,7 +157,7 @@ class disv_curvilinear_builder:
 
         if angle_span < angle_step:
             raise RuntimeError(
-                "disv_curvilinear_builder: angle_step is greater than "
+                "DisvCurvilinearBuilder: angle_step is greater than "
                 "the total angel, that is:\n"
                 "angle_step > |angle_stop - angle_start|\n"
                 f"{angle_step} > {angle_span}"
@@ -63,26 +167,20 @@ class disv_curvilinear_builder:
             nradial = len(radii) - 1
         except TypeError:
             raise RuntimeError(
-                "disv_curvilinear_builder: radii must be list-like type"
+                "DisvCurvilinearBuilder: radii must be list-like type"
             )
 
         if nradial < 1:
             raise RuntimeError(
-                "disv_curvilinear_builder: len(radii) must be greater than 1"
+                "DisvCurvilinearBuilder: len(radii) must be greater than 1"
             )
 
         if single_center_cell and radii[0] > 1.0e-100:
             raise RuntimeError(
-                "disv_curvilinear_builder: single_center_cell=True must "
+                "DisvCurvilinearBuilder: single_center_cell=True must "
                 "have the first radii be zero, that is: radii[0] = 0.0\n"
                 f"Input received radii[0]={radii[0]}"
             )
-
-        # if single_center_cell and 90.0 < angle_span < 360.0:
-        #     raise RuntimeError(
-        #         "disv_curvilinear_builder: single_center_cell=True must "
-        #         "|angle_stop - angle_start| be either <90 or equal to 0 or 360"
-        #     )
 
         full_circle = 359.999 < angle_span
         nver = ncol if full_circle else ncol + 1
@@ -91,14 +189,9 @@ class disv_curvilinear_builder:
         if single_center_cell:
             ncpl = (ncol * nradial) - ncol + 1
 
-        nodes = ncpl * nlay
-
         self.radii = np.array(radii, dtype=np.float64)
-        self.nlay = nlay
         self.nradial = nradial
         self.ncol = ncol
-        self.ncpl = ncpl
-        self.nodes = nodes
 
         self.single_center_cell = single_center_cell
         self.full_circle = full_circle
@@ -108,12 +201,33 @@ class disv_curvilinear_builder:
         self.angle_step = angle_step
         self.angle_span = angle_span
 
-        top = self._get_rad_array(surface_elevation, ncpl)
-        thick = self._get_rad_array(layer_thickness, nlay)
+        cls_name = "DisvCurvilinearBuilder"
+        top = self._get_array(cls_name, surface_elevation, ncpl, nradial)
+        thick = self._get_array(cls_name, layer_thickness, nlay, ncpl * nlay)
+
+        if top.size == nradial and nradial != ncpl:
+            tmp = []
+            for it, rad in top:
+                if it == 0 and single_center_cell:
+                    tmp.append(rad)
+                else:
+                    tmp += ncol * [rad]
+            top = np.array(tmp)
+            del tmp
 
         bot = []
-        for lay in range(nlay):
-            bot.append(top - thick[: lay + 1].sum())
+
+        if thick.size == nlay:
+            for lay in range(nlay):
+                bot.append(top - thick[: lay + 1].sum())
+        else:
+            st = 0
+            sp = ncpl
+            bt = top.copy()
+            for lay in range(nlay):
+                bt -= thick[st:sp]
+                st, sp = sp, sp + ncpl
+                bot.append(bt)
 
         if single_center_cell and full_circle:
             # Full, filled circle - No vertex at center
@@ -160,43 +274,86 @@ class disv_curvilinear_builder:
                 if single_cell_rad0:
                     xc, yc = 0.0, 0.0
                 else:
-                    xc, yc = self._find_Centroid(icvert, vertices)
+                    xc, yc = self.get_centroid(icvert, vertices)
                 cell2d.append([ic, xc, yc, len(icvert), *icvert])
                 ic += 1
                 if single_cell_rad0:
                     break
 
-        self.disv_kw = {}
-        self.disv_kw["nlay"] = nlay
-        self.disv_kw["ncpl"] = ncpl
-        self.disv_kw["top"] = top
-        self.disv_kw["botm"] = bot
-        self.disv_kw["nvert"] = len(vertices)
-        self.disv_kw["vertices"] = vertices
-        self.disv_kw["cell2d"] = cell2d
+        super().__init__(nlay, vertices, cell2d, top, bot, origin_x, origin_y)
 
-    def keys(self):
-        # Return keys in disv_kw
-        return self.disv_kw.keys()
+    def __repr__(self):
+        return super().__repr__("DisvCurvilinearBuilder")
 
-    def __getitem__(self, k):
-        if k in self.disv_kw:
-            return self.disv_kw[k]
-        if hasattr(self, k):
-            return getattr(self, k)
-        raise KeyError(f"{k}")
+    def _init_empty(self):
+        super()._init_empty()
+        nul = np.array([])
+        self.nradial = 0
+        self.ncol = 0
+        self.inner_vertex_count = 0
+        self.single_center_cell = False
+        self.full_circle = False
+        self.radii = nul
+        self.angle_start = 0
+        self.angle_stop = 0
+        self.angle_step = 0
+        self.angle_span = 0
 
-    def get_disv_kw(self):
-        return self.disv_kw
+    def property_copy_to(self, DisvCurvilinearBuilderType):
+        if isinstance(DisvCurvilinearBuilderType, DisvCurvilinearBuilder):
+            super().property_copy_to(DisvCurvilinearBuilderType)
+            DisvCurvilinearBuilderType.nradial = self.nradial
+            DisvCurvilinearBuilderType.ncol = self.ncol
+            DisvCurvilinearBuilderType.full_circle = self.full_circle
+            DisvCurvilinearBuilderType.radii = self.radii
+            DisvCurvilinearBuilderType.angle_start = self.angle_start
+            DisvCurvilinearBuilderType.angle_stop = self.angle_stop
+            DisvCurvilinearBuilderType.angle_step = self.angle_step
+            DisvCurvilinearBuilderType.angle_span = self.angle_span
+            DisvCurvilinearBuilderType.inner_vertex_count = (
+                self.inner_vertex_count
+            )
+            DisvCurvilinearBuilderType.single_center_cell = (
+                self.single_center_cell
+            )
+        else:
+            raise RuntimeError(
+                "DisvCurvilinearBuilder.property_copy_to "
+                "can only copy to objects that inherit "
+                "properties from DisvCurvilinearBuilder"
+            )
 
-    def get_node(self, rad, col, col_check=True):
+    def copy(self):
+        cp = DisvCurvilinearBuilder()
+        self.property_copy_to(cp)
+        return cp
+
+    def get_cellid(self, rad, col, col_check=True):
+        """
+        Get the cellid given the radial and column indices.
+
+        Parameters
+        ----------
+        rad : int
+            Radial index.
+        col : int
+            Column index.
+        col_check : bool, default=True
+            If True, than a RuntimeError error is raised for single_center_cell
+            grids with ``rad==0`` and ``col>0``. Otherwise, assumes ``col=0``.
+
+        Returns
+        -------
+        int
+            cellid index
+        """
         ncol = self.ncol
         if self.single_center_cell:
             # Have to account for only one cell at the center
             if rad == 0 and col > 0:
                 if col_check:
                     raise RuntimeError(
-                        "get_curvilinear_node: Bad rad and col given"
+                        "DisvCurvilinearBuilder: Bad rad and col given"
                     )
                 return 0
             # if rad == 0, then first cell and pos =  0
@@ -207,22 +364,50 @@ class disv_curvilinear_builder:
 
         return pos
 
-    def get_rad_col(self, node):
+    def get_rad_col(self, cellid):
+        """
+        Get the radial and column indices given the cellid.
+
+        Parameters
+        ----------
+        cellid : int
+            cellid index
+
+        Returns
+        -------
+        (int, int)
+            Radial index, Column index
+        """
         ncol = self.ncol
 
-        if node < 1:
+        if cellid < 1:
             rad, col = 0, 0
         elif self.single_center_cell:
-            node -= 1  # drop out first radial band (single cell)
-            rad = node // ncol + 1
-            col = node - ncol * (rad - 1)
+            cellid -= 1  # drop out first radial band (single cell)
+            rad = cellid // ncol + 1
+            col = cellid - ncol * (rad - 1)
         else:
-            rad = node // ncol
-            col = node - ncol * rad
+            rad = cellid // ncol
+            col = cellid - ncol * rad
 
         return rad, col
 
     def get_vertices(self, rad, col):
+        """
+        Get the vertex indices for a cell given the radial and column indices.
+
+        Parameters
+        ----------
+        rad : int
+            Radial index.
+        col : int
+            Column index.
+
+        Returns
+        -------
+        list[int]
+            List of vertex indices that define the cell at (rad, col).
+        """
         ivc = self.inner_vertex_count
         full_circle = self.full_circle
         ncol = self.ncol
@@ -248,34 +433,67 @@ class disv_curvilinear_builder:
         return [n + nver + col + 1, n + nver + col, n + col, n + col + 1]
 
     def iter_rad_col(self):
-        for node in range(self.ncpl):
-            yield self.get_rad_col(node)
+        """Generator that iterates through the radial band columns, then bands.
 
-    def iter_radial_nodes(self, rad):
-        st = self.get_node(rad, 0)
+        Yields
+        -------
+        (int, int)
+            radial band index, column index
+        """
+        for cellid in range(self.ncpl):
+            yield self.get_rad_col(cellid)
+
+    def iter_radial_cellid(self, rad):
+        """Generator that iterates through the cellid within a radial band.
+
+        Parameters
+        ----------
+        rad : int
+            Radial index.
+
+        Yields
+        -------
+        int
+            cellid index
+        """
+        st = self.get_cellid(rad, 0)
         if self.single_center_cell and rad == 0:
             return iter([st])
-        sp = self.get_node(rad, self.ncol - 1) + 1
+        sp = self.get_cellid(rad, self.ncol - 1) + 1
         return iter(range(st, sp))
 
-    # def iter_column_nodes(self, col):
-    #     nradial = self.nradial
-    #     rad = 0
-    #
-    #     def column_node_generator():
-    #         nonlocal rad, col, self
-    #         while rad < self.nradial:
-    #             yield self.get_node(rad, col)
-    #             rad += 1
-    #     return column_node_generator
+    def iter_column_cellid(self, col):
+        """Generator that iterates through the cellid along a column across
+        all radial bands.
 
-    def iter_column_nodes(self, col):
+        Parameters
+        ----------
+        col : int
+            Column index.
+
+        Yields
+        -------
+        int
+            cellid index
+        """
         rad = 0
         while rad < self.nradial:
-            yield self.get_node(rad, col)
+            yield self.get_cellid(rad, col)
             rad += 1
 
     def iter_columns(self, rad):
+        """Generator that iterates through the columns within a radial band.
+
+        Parameters
+        ----------
+        rad : int
+            Radial index.
+
+        Yields
+        -------
+        int
+            column index
+        """
         if self.single_center_cell and rad == 0:
             return iter([0])
         return iter(range(0, self.ncol))
@@ -291,7 +509,31 @@ class disv_curvilinear_builder:
 
     @staticmethod
     def calc_curvilinear_ncol(angle_start, angle_stop, angle_step):
-        angle_span = disv_curvilinear_builder._get_angle_span(
+        """
+        Calculate the number of columns in the curvilinear grid based on
+        the given angle parameters. It will adjust `angle_step` to ensure
+        that the number of columns is an integer value.
+
+        Parameters
+        ----------
+        angle_start : float
+            Starting angle in degrees for the curvilinear grid.
+        angle_stop : float
+            Stopping angle in degrees for the curvilinear grid.
+        angle_step : float
+            If positive, then represents the largest angle step in degrees
+            for each column in a radial band. It may be reduced to make
+            the number of columns be a positive, integer.
+            If negative, then the absolute value is the number of columns
+            (ncol) and angle_step is calculated based on it.
+
+        Returns
+        -------
+        (int, float)
+            The number of columns in the curvilinear grid and the angle_step
+            that can reproduce the exact integer number.
+        """
+        angle_span = DisvCurvilinearBuilder._get_angle_span(
             angle_start, angle_stop
         )
 
@@ -304,114 +546,11 @@ class disv_curvilinear_builder:
         angle_step = angle_span / ncol
         return ncol, angle_step
 
-    @staticmethod
-    def _find_Centroid(icvert, vertices):
-        # From https://en.wikipedia.org/wiki/Centroid#Of_a_polygon
-        nv = len(icvert)
-        x = []
-        y = []
-        for iv in icvert:
-            x.append(vertices[iv][1])
-            y.append(vertices[iv][2])
-
-        if nv < 3:
-            raise RuntimeError("_find_Centroid: len(icvert) < 3")
-
-        if nv == 3:  # Triangle
-            return sum(x) / 3, sum(y) / 3
-
-        xc, yc = 0.0, 0.0
-        signedArea = 0.0
-        for i in range(nv - 1):
-            x0, y0, x1, y1 = x[i], y[i], x[i + 1], y[i + 1]
-            a = x0 * y1 - x1 * y0
-            signedArea += a
-            xc += (x0 + x1) * a
-            yc += (y0 + y1) * a
-
-        x0, y0, x1, y1 = x1, y1, x[0], y[0]
-
-        a = x0 * y1 - x1 * y0
-        signedArea += a
-        xc += (x0 + x1) * a
-        yc += (y0 + y1) * a
-
-        signedArea *= 0.5
-        return xc / (6 * signedArea), yc / (6 * signedArea)
-
-    @staticmethod
-    def _get_rad_array(var, rep, rep2=None):
-        if rep2 is None:
-            rep2 = rep
-        try:
-            dim = len(var)
-        except TypeError:
-            dim, var = 1, [var]
-
-        if dim != 1 and dim != rep and dim != rep2:
-            msg = "disv_curvilinear_builder(var): var must be a scalar "
-            msg += f"or have len(var)=={rep}"
-            if rep2 != rep:
-                msg += f"or have len(var)=={rep2}"
-            raise IndexError(msg)
-
-        if dim == 1:
-            return np.full(rep, var[0], dtype=np.float64)
-        else:
-            return np.array(var, dtype=np.float64)
-
-    def plot(self, show=True, title=""):
-        import matplotlib.pyplot as plt
-
-        nradial = self.nradial
-        ncol = self.ncol
-        single_center_cell = self.single_center_cell
-        ncpl = self.disv_kw["ncpl"]
-        vertices = self.disv_kw["vertices"]
-        cell2d = self.disv_kw["cell2d"]
-
-        x = []
-        y = []
-        for r in vertices:
-            x.append(r[1])
-            y.append(r[2])
-        xx = []
-        yy = []
-        for r in cell2d[:ncpl]:
-            xx.append(r[1])
-            yy.append(r[2])
-
-        fig = plt.figure(figsize=(6, 6), dpi=200)
-        ax = fig.add_subplot()
-        ax.set_aspect("equal", adjustable="box")
-        if title != "":
-            ax.set_title(title)
-
-        ax.scatter(x, y, color="blue", s=7, marker="o", zorder=1)
-        ax.scatter(xx, yy, color="red", s=3, marker="o", zorder=2)
-
-        ic = -1
-        for rad in range(nradial):
-            for col in range(ncol):
-                ic += 1
-                ncon = cell2d[ic][3]
-                conn = cell2d[ic][4:] + [cell2d[ic][4]]
-                for i in range(ncon):
-                    n1, n2 = conn[i], conn[i + 1]
-                    px = [vertices[n1][1], vertices[n2][1]]
-                    py = [vertices[n1][2], vertices[n2][2]]
-                    ax.plot(px, py, color="black", zorder=0)
-                if single_center_cell and rad == 0:
-                    break
-        if show:
-            fig.show()
-        return fig, ax
-
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    test1 = disv_curvilinear_builder(
+    test1 = DisvCurvilinearBuilder(
         1,
         [0, 1, 2, 3],
         angle_start=0,
@@ -420,14 +559,28 @@ if __name__ == "__main__":
         single_center_cell=False,
     )
 
+    tst = test1.copy()
+    print(test1)
+    print(tst)
+
     def tmp(**kwargs):
         assert "nlay" in kwargs
 
     tmp(**test1)
     del test1
 
-    def check(nlay, radii, a_st, a_sp, a_stp, single, plot_time=0.0, title=""):
-        ob = disv_curvilinear_builder(
+    def check(
+        nlay,
+        radii,
+        a_st,
+        a_sp,
+        a_stp,
+        single,
+        plot_time=0.0,
+        title="",
+        dpi=150,
+    ):
+        ob = DisvCurvilinearBuilder(
             nlay,
             radii,
             angle_start=a_st,
@@ -442,24 +595,11 @@ if __name__ == "__main__":
         ncol = ob.ncol
         for rad in range(nradial):
             for col in range(ncol):
-                node = ob.get_node(rad, col)
+                node = ob.get_cellid(rad, col)
                 assert (rad, col) == ob.get_rad_col(node)
 
                 if single and rad == 0:
                     break
-
-        def ColorCycler():
-            c = ("black", "green", "red", "grey", "magenta", "cyan", "yellow")
-            i, d = -1, len(c)
-
-            def dummy():
-                nonlocal i, d
-                i += 1
-                if i == d:
-                    i = 0
-                return c[i]
-
-            return dummy
 
         if title == "":
             title = (
@@ -467,79 +607,12 @@ if __name__ == "__main__":
                 f"({ncol}, {nradial}) and SingleCenter={single}"
                 f""
             )
+
         if plot_time < 0:
-            fig, _ = ob.plot(False, title)
+            fig, _ = ob.plot_grid(show=False)
             plt.close(fig)
-            return
-
-        ncpl = ob.disv_kw["ncpl"]
-        vertices = ob.disv_kw["vertices"]
-        cell2d = ob.disv_kw["cell2d"]
-
-        x = []
-        y = []
-        for r in vertices:
-            x.append(r[1])
-            y.append(r[2])
-        xx = []
-        yy = []
-        for r in cell2d[:ncpl]:
-            xx.append(r[1])
-            yy.append(r[2])
-
-        fig = plt.figure(figsize=(6, 6), dpi=200)
-        ax = fig.add_subplot()
-        ax.set_aspect("equal", adjustable="box")
-        ax.set_title(title)
-
-        ax.scatter(x, y, color="blue", s=7, marker="o")
-        ax.scatter(xx, yy, color="red", s=3, marker="o")
-
-        if plot_time > 0:
-            plt.show(block=False)
-            plt.pause(5 * plot_time)
-
-        ic = -1
-        ColorCycle = ColorCycler()
-        for rad in range(nradial):
-            for col in range(ncol):
-                color = ColorCycle()
-                ic += 1
-                ncon = cell2d[ic][3]
-                conn = cell2d[ic][4:] + [cell2d[ic][4]]
-                for i in range(ncon):
-                    n1, n2 = conn[i], conn[i + 1]
-                    px = [vertices[n1][1], vertices[n2][1]]
-                    py = [vertices[n1][2], vertices[n2][2]]
-                    ax.plot(px, py, color=color)
-                    if plot_time > 0:
-                        plt.draw()
-                        plt.pause(plot_time)
-                if single and rad == 0:
-                    break
-
-        _ = ob.plot(False, title)
-        plt.show()
-
-    # Plot Checking ---------------------------------------------------------
-
-    check(3, [0, 10, 20, 30, 40, 50], 0, 90, 15, False, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 180, 15, False, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 270, 15, False, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 360, 15, False, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 0, 15, False, plot_time=-1)
-
-    check(3, [10, 20, 30, 40, 50], 0, 90, 15, False, plot_time=0.1)
-    check(3, [10, 20, 30, 40, 50], 0, 180, 15, False, plot_time=0.1)
-    check(3, [10, 20, 30, 40, 50], 0, 270, 15, False, plot_time=0.1)
-    check(3, [10, 20, 30, 40, 50], 0, 360, 15, False, plot_time=0.1)
-    check(3, [10, 20, 30, 40, 50], 0, 0, 15, False, plot_time=-1)
-
-    check(3, [0, 10, 20, 30, 40, 50], 0, 90, 15, True, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 180, 15, True, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 270, 15, True, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 360, 15, True, plot_time=0.1)
-    check(3, [0, 10, 20, 30, 40, 50], 0, 0, 15, True, plot_time=-1)
+        else:
+            ob.plot_grid(title=title, plot_time=plot_time, dpi=dpi)
 
     # Non-Plot Checks Angle -------------------------------------------------
 
@@ -708,3 +781,23 @@ if __name__ == "__main__":
     check(3, [0, 10, 20, 30, 40, 50, 60, 70], 0, 270, 5, True, plot_time=-1)
     check(3, [0, 10, 20, 30, 40, 50, 60, 70], 0, 360, 5, True, plot_time=-1)
     check(3, [0, 10, 20, 30, 40, 50, 60, 70], 0, 0, 5, True, plot_time=-1)
+
+    # Plot Checking ---------------------------------------------------------
+
+    check(3, [0, 10, 20, 30, 40, 50], 0, 90, 15, False, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 180, 15, False, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 270, 15, False, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 360, 15, False, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 0, 15, False, plot_time=-1)
+
+    check(3, [10, 20, 30, 40, 50], 0, 90, 15, False, plot_time=0.1)
+    check(3, [10, 20, 30, 40, 50], 0, 180, 15, False, plot_time=0.1)
+    check(3, [10, 20, 30, 40, 50], 0, 270, 15, False, plot_time=0.1)
+    check(3, [10, 20, 30, 40, 50], 0, 360, 15, False, plot_time=0.1)
+    check(3, [10, 20, 30, 40, 50], 0, 0, 15, False, plot_time=-1)
+
+    check(3, [0, 10, 20, 30, 40, 50], 0, 90, 15, True, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 180, 15, True, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 270, 15, True, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 360, 15, True, plot_time=0.1)
+    check(3, [0, 10, 20, 30, 40, 50], 0, 0, 15, True, plot_time=-1)
