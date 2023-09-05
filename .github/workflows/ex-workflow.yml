@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -98,7 +98,7 @@ jobs:
 
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install TeX Live and additional TrueType fonts
         run: |
@@ -106,7 +106,7 @@ jobs:
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
       - name: Checkout usgslatex
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/usgslatex
           path: usgslatex
@@ -203,7 +203,7 @@ jobs:
 
     steps:
       - name: Checkout MODFLOW6 examples repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get Current Time
         uses: josStorer/get-current-time@v2
