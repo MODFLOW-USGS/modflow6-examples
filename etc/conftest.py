@@ -13,4 +13,6 @@ def pytest_generate_tests(metafunc):
             for file_name in sorted(os.listdir(os.path.join("..", "scripts")))
             if file_name.endswith(".py") and file_name.startswith("ex-")
         }
-        metafunc.parametrize("build", scripts_dict.values(), ids=scripts_dict.keys())
+        metafunc.parametrize(
+            "build", scripts_dict.values(), ids=scripts_dict.keys()
+        )

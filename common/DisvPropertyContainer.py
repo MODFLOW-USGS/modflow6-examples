@@ -1,5 +1,6 @@
 import copy
 from itertools import cycle
+from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -103,10 +104,10 @@ class DisvPropertyContainer:
     nlay: int
     ncpl: int
     nvert: int
-    vertices: list[list]  # [[iv, xv, yv], ...]
-    cell2d: list[list]  # [[ic, xc, yc, ncvert, icvert], ...]
+    vertices: List[list]  # [[iv, xv, yv], ...]
+    cell2d: List[list]  # [[ic, xc, yc, ncvert, icvert], ...]
     top: np.ndarray
-    botm: list[np.ndarray]
+    botm: List[np.ndarray]
     origin_x: float
     origin_y: float
     rotation: float
