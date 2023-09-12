@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import copy
 from itertools import cycle
-from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -104,10 +105,10 @@ class DisvPropertyContainer:
     nlay: int
     ncpl: int
     nvert: int
-    vertices: List[list]  # [[iv, xv, yv], ...]
-    cell2d: List[list]  # [[ic, xc, yc, ncvert, icvert], ...]
+    vertices: list[list]  # [[iv, xv, yv], ...]
+    cell2d: list[list]  # [[ic, xc, yc, ncvert, icvert], ...]
     top: np.ndarray
-    botm: List[np.ndarray]
+    botm: list[np.ndarray]
     origin_x: float
     origin_y: float
     rotation: float
@@ -541,7 +542,7 @@ class DisvPropertyContainer:
             plot_time = -1.0
 
         if not isinstance(grid_color, tuple):
-            grid_color = (grid_color, )
+            grid_color = (grid_color,)
 
         ColorCycler = grid_color
         if plot_time > 0.0 and grid_color == ("grey",):
