@@ -20,3 +20,4 @@ rasterstats
 jupyter
 jupytext
 modflow-devtools
+pyvista
