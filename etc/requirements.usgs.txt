@@ -1,2 +1,2 @@
-https://github.com/w-bonelli/flopy/archive/prt-utils.zip
+https://github.com/wpbonelli/flopy/archive/prt-utils.zip
 https://github.com/MODFLOW-USGS/modflowapi/archive/develop.zip

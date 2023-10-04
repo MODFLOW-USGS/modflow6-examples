@@ -61,7 +61,8 @@ jobs:
       - name: Install MODFLOW nightly-build executables
         uses: modflowpy/install-modflow-action@v1
         with:
-          repo: modflow6-nightly-build
+          owner: aprovost-usgs
+          repo: modflow6
 
       - name: Run scripts without model runs
         run: |
