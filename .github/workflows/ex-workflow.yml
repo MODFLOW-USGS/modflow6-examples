@@ -55,7 +55,8 @@ jobs:
       - name: Install MODFLOW 6 development build
         uses: modflowpy/install-modflow-action@v1
         with:
-          repo: modflow6-nightly-build
+          owner: aprovost-usgs
+          repo: modflow6
 
       - name: Run scripts without model runs
         run: pytest -v -n=auto --durations=0 ci_build_files.py
