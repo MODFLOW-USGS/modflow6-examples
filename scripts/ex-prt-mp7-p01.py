@@ -248,7 +248,7 @@ part0 = flopy.modpath.ParticleData(
 
 # Example 1B
 divs = sloc_tmpl_size
-locs1b = [[0, 0, 0, 0, nrow - 1, ncol - 1]]
+locs1b = [0, 0, 0, 0, nrow - 1, ncol - 1]
 sd = flopy.modpath.CellDataType(
     drape=0, columncelldivisions=1, rowcelldivisions=1, layercelldivisions=1
 )
