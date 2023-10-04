@@ -190,8 +190,8 @@ celldata = flopy.modpath.CellDataType(
 )
 lrcregions = [[rel_minl, rel_minr, rel_minc, rel_maxl, rel_maxr, rel_maxc]]
 lrcpd = flopy.modpath.LRCParticleData(
-    subdivisiondata=celldata,
-    lrcregions=lrcregions,
+    subdivisiondata=[celldata],
+    lrcregions=[lrcregions],
 )
 pg = flopy.modpath.ParticleGroupLRCTemplate(
     particlegroupname="PG1",
