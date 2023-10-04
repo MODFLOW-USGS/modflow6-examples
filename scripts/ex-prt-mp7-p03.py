@@ -41,6 +41,34 @@
 # | 5             | steady-state | 1          | 100000        | 1          |
 #
 
+try:
+    # append the common/ subdirectory to the system path
+    # (assumes running one level down from project root)
+    sys.path.append(os.path.join("..", "common"))
+    import config
+
+    buildModel = config.buildModel
+    writeModel = config.writeModel
+    runModel = config.runModel
+    plotModel = config.plotModel
+    plotSave = config.plotSave
+    figure_ext = config.figure_ext
+    base_ws = config.base_ws
+    timeit = config.timeit
+except:
+    warn(f"Failed to import config")
+    # default settings
+    buildModel = True
+    writeModel = True
+    runModel = True
+    plotModel = True
+    plotSave = False
+    figure_ext = ".png"
+    base_ws = Path("../examples")
+
+    def timeit(func):
+        return func
+
 perioddata = [
     # perlen, nstp, tsmult
     (90000, 1, 1),
@@ -746,6 +774,9 @@ def scenario():
     grid = gwf.modelgrid
 
     # run models
+    if not runModel:
+        return
+
     run_models(mf6sim, mp7sim)
 
     # load results
