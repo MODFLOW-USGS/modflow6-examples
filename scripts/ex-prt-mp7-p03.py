@@ -41,6 +41,19 @@
 # | 5             | steady-state | 1          | 100000        | 1          |
 #
 
+#
+# First import dependencies.
+
+# +
+import os
+import sys
+import matplotlib.pyplot as plt
+import flopy
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from warnings import warn
+
 try:
     # append the common/ subdirectory to the system path
     # (assumes running one level down from project root)
@@ -77,21 +90,6 @@ perioddata = [
     (36500, 10, 1.5),
     (100000, 1, 1),
 ]
-
-#
-# First import dependencies.
-
-# +
-import os
-import sys
-import matplotlib.pyplot as plt
-import flopy
-import numpy as np
-import pandas as pd
-from pathlib import Path
-
-sys.path.append(os.path.join("..", "common"))
-import config
 # -
 
 # Setup model name and workspace variables.
