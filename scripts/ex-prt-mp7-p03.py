@@ -62,7 +62,7 @@ try:
 
     buildModel = config.buildModel
     writeModel = config.writeModel
-    runModel = config.runModel
+    runModel = False # config.runModel
     plotModel = config.plotModel
     plotSave = config.plotSave
     figure_ext = config.figure_ext
@@ -73,7 +73,7 @@ except:
     # default settings
     buildModel = True
     writeModel = True
-    runModel = True
+    runModel = False
     plotModel = True
     plotSave = False
     figure_ext = ".png"
@@ -467,6 +467,7 @@ def load_mf6_pathlines(p):
 
     # return a dict keyed on capture zone
     return {
+        "all": to_mp7_pathlines(pls),
         "well": to_mp7_pathlines(pls[(pls["izone_term"] == 2) | (pls["izone_term"] == 3)]),
         "drain": to_mp7_pathlines(pls[pls["izone_term"] == 4]),
         "river": to_mp7_pathlines(pls[pls["izone_term"] == 5]),
@@ -491,14 +492,19 @@ def load_mf6_endpoints(p):
         id = row["particleid"]
         ep = eps[eps["particleid"] == id].iloc[0]
         return ep["izone"]
-    pls["izone_term"] = pls.apply(lambda r: set_term_zone(r), axis=1)
+    
+    zone_col = "izone_term"
+    eps[zone_col] = eps.apply(lambda r: set_term_zone(r), axis=1)
+    well = eps[(eps[zone_col] == 2) | (eps[zone_col] == 3)]
+    drain = eps[eps[zone_col] == 4]
+    river = eps[eps[zone_col] == 5]
 
     # return a dict keyed on capture zone
     return {
         "all": to_mp7_endpoints(pls),
-        "well": to_mp7_endpoints(pls[(pls["izone_term"] == 2) | (pls["izone_term"] == 3)]),
-        "drain": to_mp7_endpoints(pls[pls["izone_term"] == 4]),
-        "river": to_mp7_endpoints(pls[pls["izone_term"] == 5]),
+        # "well": to_mp7_endpoints(well),
+        # "drain": to_mp7_endpoints(drain),
+        # "river": to_mp7_endpoints(river),
     }
 # -
 
@@ -557,6 +563,8 @@ def plot_endpoints(ax, gwf, ep, title):
     mv.plot_bc("RIV", alpha=0.2)
     mv.plot_bc("WEL", alpha=0.2, plotAll=True)
 
+    if ep["all"] is not None:
+        mv.plot_endpoint(ep["all"], label="end points")
     if ep["well"] is not None:
         mv.plot_endpoint(ep["well"], label="end points", color="red")
     if ep["drain"] is not None:
@@ -569,6 +577,8 @@ def plot_endpoints(ax, gwf, ep, title):
     mvins1 = flopy.plot.PlotMapView(model=gwf, ax=axins1)
     mvins1.plot_grid(lw=0.5)
 
+    if ep["all"] is not None:
+        mv.plot_endpoint(ep["all"], label="end points")
     if ep["well"] is not None:
         mvins1.plot_endpoint(ep["well"], label="end points", color="red")
     if ep["drain"] is not None:
@@ -585,6 +595,8 @@ def plot_endpoints(ax, gwf, ep, title):
     mvins2 = flopy.plot.PlotMapView(model=gwf, ax=axins2)
     mvins2.plot_grid(lw=0.5)
 
+    if ep["all"] is not None:
+        mv.plot_endpoint(ep["all"], label="end points")
     if ep["well"] is not None:
         mvins2.plot_endpoint(ep["well"], label="end points", color="red")
     if ep["drain"] is not None:
@@ -762,9 +774,6 @@ def plot_results_3d(gwf, heads, path1, path2, title1="MODFLOW 6 PRT", title2="MO
 
 # Define a function to wrap the entire scenario.
 
-# +
-import flopy.utils.binaryfile as bf
-
 def scenario():
     # build models
     mf6sim, mp7sim = build_models()
@@ -787,12 +796,12 @@ def scenario():
     # export pathline results to VTK files
     vtk = Vtk(model=gwf, binary=True, vertical_exageration=True, smooth=False)
     vtk.add_model(gwf)
-    vtk.add_pathline_points(mf6_pl["well"] + mf6_pl["river"])
+    vtk.add_pathline_points(mf6_pl["all"])
     mf6_vtk_path = mf6sim.sim_path / f"{sim_name}_mf6.vtk"
     vtk.write(mf6_vtk_path)
     vtk = Vtk(model=gwf, binary=True, vertical_exageration=True, smooth=False)
     vtk.add_model(gwf)
-    vtk.add_pathline_points([mp7_pl["well"], mp7_pl["river"]])
+    vtk.add_pathline_points([mp7_pl["all"]])
     mp7_vtk_path = mf6sim.sim_path / f"{sim_name}_mp7.vtk"
     vtk.write(mp7_vtk_path)
 
@@ -800,8 +809,6 @@ def scenario():
     plot_results_2d(gwf, hds, mf6_ep, mp7_ep, mf6_pl, mp7_pl)
     plot_results_3d(gwf, hds, mf6_vtk_path, mp7_vtk_path)
 
-
-# -
 
 # Run the MODPATH 7 example problem 3 scenario.
 
