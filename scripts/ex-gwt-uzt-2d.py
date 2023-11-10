@@ -350,7 +350,6 @@ def build_model(
             thti=thti,
             thtr=thtr,
             finf=finf_mfnwt,
-            nwt_11_fmt=True,
             specifythti=True,
             specifythtr=True,
         )
