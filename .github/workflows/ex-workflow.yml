@@ -4,10 +4,6 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches: 
-      - master
-      - develop
-      - ci-*
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
@@ -105,7 +101,7 @@ jobs:
       - name: Install TeX Live and additional TrueType fonts
         run: |
           sudo apt-get update
-          sudo apt install texlive-science texlive-latex-extra texlive-font-utils texlive-fonts-recommended texlive-fonts-extra
+          sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
       - name: Checkout usgslatex
         uses: actions/checkout@v4
