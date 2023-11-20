@@ -109,7 +109,7 @@ mpd2inpy = 12.0 * 365.25 * 3.28081
 
 # Model units
 
-length_units = "m"
+length_units = "meters"
 time_units = "days"
 
 # Table of model parameters

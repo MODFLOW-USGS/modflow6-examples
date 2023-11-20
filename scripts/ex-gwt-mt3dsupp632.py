@@ -64,7 +64,7 @@ parameter_units = {
 
 # Model units
 
-length_units = "m"
+length_units = "meters"
 time_units = "days"
 
 # Table of model parameters
