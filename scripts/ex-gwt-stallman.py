@@ -39,7 +39,7 @@ example_name = "ex-gwt-stallman"
 
 # Model units
 
-length_units = "m"
+length_units = "meters"
 time_units = "seconds"
 
 # Table of model parameters

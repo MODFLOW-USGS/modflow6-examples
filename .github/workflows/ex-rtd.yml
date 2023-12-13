@@ -4,10 +4,6 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches:
-      - master
-      - develop
-      - ci-*
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
@@ -15,6 +11,9 @@ on:
     branches:
       - master
       - develop
+    paths-ignore:
+      - 'README.md'
+      - 'DEVELOPER.md'
 
 jobs:
   rtd_build:

@@ -57,7 +57,7 @@ parameter_units = {
 
 # Model units
 
-length_units = "cm"
+length_units = "centimeters"
 time_units = "seconds"
 
 # Table of model parameters
