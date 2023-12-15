@@ -225,13 +225,13 @@ jobs:
           echo "MODFLOW 6 examples: built at ${F_TIME}"
 
       - name: Download mf6examples.pdf build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: current
           path: ./current/
 
       - name: Download zip_file build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: zip_files
           path: ./current/
