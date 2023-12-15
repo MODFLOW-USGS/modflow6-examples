@@ -74,7 +74,7 @@ jobs:
         shell: python
 
       - name: Upload build artifacts for current release
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zip_files
           path: |
@@ -190,7 +190,7 @@ jobs:
 
       - name: Upload build artifacts for current release
         if: matrix.python == '3.9'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: current
           path: |
