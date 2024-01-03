@@ -248,9 +248,9 @@ def update_wel_pak(mobj, inode, q):
     nbound[0] = 1
     mobj.set_value(tag, nbound)
     # set bound to q
-    tag = mobj.get_var_address("BOUND", sim_name, "CF-1")
+    tag = mobj.get_var_address("Q", sim_name, "CF-1")
     bound = mobj.get_value(tag)
-    bound[:, 0] = q
+    bound[:] = q
     mobj.set_value(tag, bound)
 
 
