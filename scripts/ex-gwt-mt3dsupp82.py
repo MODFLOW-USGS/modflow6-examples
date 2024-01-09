@@ -22,7 +22,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -382,13 +382,15 @@ def run_model(sims, silent=True):
 
 
 def plot_results(sims, idx):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        gwf = sim_mf6gwf.flow
-        gwt = sim_mf6gwt.trans
-        fs = USGSFigure(figure_type="map", verbose=False)
+    if not config.plotModel:
+        return
 
+    print("Plotting model results...")
+    sim_mf6gwf, sim_mf6gwt, _, sim_mt3dms = sims
+    gwf = sim_mf6gwf.flow
+    gwt = sim_mf6gwt.trans
+
+    with styles.USGSMap() as fs:
         conc = gwt.output.concentration().get_data()
 
         sim_ws = sim_mt3dms.model_ws

@@ -33,7 +33,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -329,244 +329,241 @@ def run_model(sim, silent=False):
 
 
 def plot_grid(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    gwf_outer = sim.get_model(gwfname_outer)
-    gwf_inner = sim.get_model(gwfname_inner)
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        gwf_outer = sim.get_model(gwfname_outer)
+        gwf_inner = sim.get_model(gwfname_inner)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0)
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
+        pmv_inner = flopy.plot.PlotMapView(model=gwf_inner, ax=ax, layer=0)
 
-    pmv.plot_grid()
-    pmv_inner.plot_grid()
+        pmv.plot_grid()
+        pmv_inner.plot_grid()
 
-    pmv.plot_bc(name="CHD-LEFT", alpha=0.75)
-    pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
+        pmv.plot_bc(name="CHD-LEFT", alpha=0.75)
+        pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
 
-    ax.plot(
-        [200, 500, 500, 200, 200],
-        [200, 200, 500, 500, 200],
-        "r--",
-        linewidth=2.0,
-    )
-
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        ax.plot(
+            [200, 500, 500, 200, 200],
+            [200, 200, 500, 500, 200],
+            "r--",
+            linewidth=2.0,
         )
-        fig.savefig(fpth)
-    return
+
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_stencils(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    gwf_outer = sim.get_model(gwfname_outer)
-    gwf_inner = sim.get_model(gwfname_inner)
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        gwf_outer = sim.get_model(gwfname_outer)
+        gwf_inner = sim.get_model(gwfname_inner)
 
-    fig = plt.figure(figsize=figure_size_double)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size_double)
+        fig.tight_layout()
 
-    # left plot, with stencils at the interface
-    ax = fig.add_subplot(1, 2, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(
-        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
-    )
-    pmv.plot_grid()
-    pmv_inner.plot_grid()
-
-    stencil = np.zeros(pmv.mg.shape, dtype=int)
-    stencil_inner = np.zeros(pmv_inner.mg.shape, dtype=int)
-
-    # stencil 1
-    stencil[0, 0, 3] = 1
-    stencil[0, 1, 2] = 1
-    stencil[0, 1, 3] = 1
-    stencil[0, 1, 4] = 1
-    stencil_inner[0, 0, 3] = 1
-    stencil_inner[0, 0, 4] = 1
-    stencil_inner[0, 0, 5] = 1
-    stencil_inner[0, 1, 4] = 1
-
-    # stencil 2
-    stencil[0, 4, 1] = 1
-    stencil[0, 5, 1] = 1
-    stencil[0, 5, 2] = 1
-    stencil[0, 5, 3] = 1
-    stencil[0, 6, 2] = 1
-    stencil_inner[0, 7, 0] = 1
-    stencil_inner[0, 8, 0] = 1
-    stencil_inner[0, 8, 1] = 1
-
-    # markers
-    x = [350.0, 216.666]
-    y = [500.0, 200.0]
-
-    stencil = np.ma.masked_equal(stencil, 0)
-    stencil_inner = np.ma.masked_equal(stencil_inner, 0)
-    cmap = ListedColormap(["dodgerblue"])
-    pmv.plot_array(stencil, cmap=cmap)
-    pmv_inner.plot_array(stencil_inner, cmap=cmap)
-    plt.scatter(x, y, facecolors="r")
-
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-
-    # right plot, with stencils '1 connection away from the interface'
-    ax = fig.add_subplot(1, 2, 2, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(
-        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
-    )
-    pmv.plot_grid()
-    pmv_inner.plot_grid()
-
-    stencil = np.zeros(pmv.mg.shape, dtype=int)
-    stencil_inner = np.zeros(pmv_inner.mg.shape, dtype=int)
-
-    # stencil 1
-    stencil[0, 0, 1] = 1
-    stencil[0, 1, 1] = 1
-    stencil[0, 1, 2] = 1
-    stencil[0, 1, 0] = 1
-    stencil[0, 2, 1] = 1
-    stencil[0, 2, 0] = 1
-    stencil[0, 3, 1] = 1
-    stencil_inner[0, 0, 0] = 1
-    stencil_inner[0, 1, 0] = 1
-    stencil_inner[0, 2, 0] = 1
-
-    # stencil 2
-    stencil_inner[0, 6, 7] = 1
-    stencil_inner[0, 7, 6] = 1
-    stencil_inner[0, 7, 7] = 1
-    stencil_inner[0, 7, 8] = 1
-    stencil_inner[0, 8, 6] = 1
-    stencil_inner[0, 8, 7] = 1
-    stencil_inner[0, 8, 8] = 1
-    stencil[0, 5, 4] = 1
-
-    # markers
-    x = [150.0, 450.0]
-    y = [500.0, 233.333]
-
-    stencil = np.ma.masked_equal(stencil, 0)
-    stencil_inner = np.ma.masked_equal(stencil_inner, 0)
-    cmap = ListedColormap(["dodgerblue"])
-    pmv.plot_array(stencil, cmap=cmap)
-    pmv_inner.plot_array(stencil_inner, cmap=cmap)
-    plt.scatter(x, y, facecolors="r")
-
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-stencils{config.figure_ext}"
+        # left plot, with stencils at the interface
+        ax = fig.add_subplot(1, 2, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
+        pmv_inner = flopy.plot.PlotMapView(
+            model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
         )
-        fig.savefig(fpth)
-    return
+        pmv.plot_grid()
+        pmv_inner.plot_grid()
+
+        stencil = np.zeros(pmv.mg.shape, dtype=int)
+        stencil_inner = np.zeros(pmv_inner.mg.shape, dtype=int)
+
+        # stencil 1
+        stencil[0, 0, 3] = 1
+        stencil[0, 1, 2] = 1
+        stencil[0, 1, 3] = 1
+        stencil[0, 1, 4] = 1
+        stencil_inner[0, 0, 3] = 1
+        stencil_inner[0, 0, 4] = 1
+        stencil_inner[0, 0, 5] = 1
+        stencil_inner[0, 1, 4] = 1
+
+        # stencil 2
+        stencil[0, 4, 1] = 1
+        stencil[0, 5, 1] = 1
+        stencil[0, 5, 2] = 1
+        stencil[0, 5, 3] = 1
+        stencil[0, 6, 2] = 1
+        stencil_inner[0, 7, 0] = 1
+        stencil_inner[0, 8, 0] = 1
+        stencil_inner[0, 8, 1] = 1
+
+        # markers
+        x = [350.0, 216.666]
+        y = [500.0, 200.0]
+
+        stencil = np.ma.masked_equal(stencil, 0)
+        stencil_inner = np.ma.masked_equal(stencil_inner, 0)
+        cmap = ListedColormap(["dodgerblue"])
+        pmv.plot_array(stencil, cmap=cmap)
+        pmv_inner.plot_array(stencil_inner, cmap=cmap)
+        plt.scatter(x, y, facecolors="r")
+
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+
+        # right plot, with stencils '1 connection away from the interface'
+        ax = fig.add_subplot(1, 2, 2, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
+        pmv_inner = flopy.plot.PlotMapView(
+            model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
+        )
+        pmv.plot_grid()
+        pmv_inner.plot_grid()
+
+        stencil = np.zeros(pmv.mg.shape, dtype=int)
+        stencil_inner = np.zeros(pmv_inner.mg.shape, dtype=int)
+
+        # stencil 1
+        stencil[0, 0, 1] = 1
+        stencil[0, 1, 1] = 1
+        stencil[0, 1, 2] = 1
+        stencil[0, 1, 0] = 1
+        stencil[0, 2, 1] = 1
+        stencil[0, 2, 0] = 1
+        stencil[0, 3, 1] = 1
+        stencil_inner[0, 0, 0] = 1
+        stencil_inner[0, 1, 0] = 1
+        stencil_inner[0, 2, 0] = 1
+
+        # stencil 2
+        stencil_inner[0, 6, 7] = 1
+        stencil_inner[0, 7, 6] = 1
+        stencil_inner[0, 7, 7] = 1
+        stencil_inner[0, 7, 8] = 1
+        stencil_inner[0, 8, 6] = 1
+        stencil_inner[0, 8, 7] = 1
+        stencil_inner[0, 8, 8] = 1
+        stencil[0, 5, 4] = 1
+
+        # markers
+        x = [150.0, 450.0]
+        y = [500.0, 233.333]
+
+        stencil = np.ma.masked_equal(stencil, 0)
+        stencil_inner = np.ma.masked_equal(stencil_inner, 0)
+        cmap = ListedColormap(["dodgerblue"])
+        pmv.plot_array(stencil, cmap=cmap)
+        pmv_inner.plot_array(stencil_inner, cmap=cmap)
+        plt.scatter(x, y, facecolors="r")
+
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-stencils{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_head(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    gwf_outer = sim.get_model(gwfname_outer)
-    gwf_inner = sim.get_model(gwfname_inner)
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        gwf_outer = sim.get_model(gwfname_outer)
+        gwf_inner = sim.get_model(gwfname_inner)
 
-    fig = plt.figure(figsize=figure_size_double)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size_double)
+        fig.tight_layout()
 
-    head = gwf_outer.output.head().get_data()[0]
-    head_inner = gwf_inner.output.head().get_data()[0]
-    head[head == 1e30] = np.nan
-    head_inner[head_inner == 1e30] = np.nan
+        head = gwf_outer.output.head().get_data()[0]
+        head_inner = gwf_inner.output.head().get_data()[0]
+        head[head == 1e30] = np.nan
+        head_inner[head_inner == 1e30] = np.nan
 
-    # create MODFLOW 6 cell-by-cell budget objects
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf_outer.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf_outer,
-    )
-    (
-        qx_inner,
-        qy_inner,
-        qz_inner,
-    ) = flopy.utils.postprocessing.get_specific_discharge(
-        gwf_inner.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf_inner,
-    )
-
-    # create plot with head values and spdis
-    ax = fig.add_subplot(1, 2, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(
-        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
-    )
-    cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=1.0)
-    cb = pmv_inner.plot_array(head_inner, cmap="jet", vmin=0.0, vmax=1.0)
-    pmv.plot_grid()
-    pmv_inner.plot_grid()
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    pmv_inner.plot_vector(
-        qx_inner,
-        qy_inner,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="A", heading="Simulated Head")
-
-    # create plot with error in head
-    ax = fig.add_subplot(1, 2, 2, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
-    pmv_inner = flopy.plot.PlotMapView(
-        model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
-    )
-    pmv.plot_grid()
-    pmv_inner.plot_grid()
-    x = np.array(gwf_outer.modelgrid.xcellcenters) - 50.0
-    x_inner = np.array(gwf_inner.modelgrid.xcellcenters) - 50.0
-    slp = (h_left - h_right) / (50.0 - 650.0)
-    head_exact = slp * x + h_left
-    head_exact_inner = slp * x_inner + h_left
-    err = head - head_exact
-    err_inner = head_inner - head_exact_inner
-    vmin = min(np.nanmin(err), np.nanmin(err_inner))
-    vmax = min(np.nanmax(err), np.nanmax(err_inner))
-    cb = pmv.plot_array(err, cmap="jet", vmin=vmin, vmax=vmax)
-    cb = pmv_inner.plot_array(err_inner, cmap="jet", vmin=vmin, vmax=vmax)
-
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Error, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="B", heading="Error")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget objects
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf_outer.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf_outer,
         )
-        fig.savefig(fpth)
-    return
+        (
+            qx_inner,
+            qy_inner,
+            qz_inner,
+        ) = flopy.utils.postprocessing.get_specific_discharge(
+            gwf_inner.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf_inner,
+        )
+
+        # create plot with head values and spdis
+        ax = fig.add_subplot(1, 2, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
+        pmv_inner = flopy.plot.PlotMapView(
+            model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
+        )
+        cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=1.0)
+        cb = pmv_inner.plot_array(head_inner, cmap="jet", vmin=0.0, vmax=1.0)
+        pmv.plot_grid()
+        pmv_inner.plot_grid()
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        pmv_inner.plot_vector(
+            qx_inner,
+            qy_inner,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="A", heading="Simulated Head")
+
+        # create plot with error in head
+        ax = fig.add_subplot(1, 2, 2, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf_outer, ax=ax, layer=0)
+        pmv_inner = flopy.plot.PlotMapView(
+            model=gwf_inner, ax=ax, layer=0, extent=pmv.extent
+        )
+        pmv.plot_grid()
+        pmv_inner.plot_grid()
+        x = np.array(gwf_outer.modelgrid.xcellcenters) - 50.0
+        x_inner = np.array(gwf_inner.modelgrid.xcellcenters) - 50.0
+        slp = (h_left - h_right) / (50.0 - 650.0)
+        head_exact = slp * x + h_left
+        head_exact_inner = slp * x_inner + h_left
+        err = head - head_exact
+        err_inner = head_inner - head_exact_inner
+        vmin = min(np.nanmin(err), np.nanmin(err_inner))
+        vmax = min(np.nanmax(err), np.nanmax(err_inner))
+        cb = pmv.plot_array(err, cmap="jet", vmin=vmin, vmax=vmax)
+        cb = pmv_inner.plot_array(err_inner, cmap="jet", vmin=vmin, vmax=vmax)
+
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Error, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="B", heading="Error")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
@@ -575,7 +572,6 @@ def plot_results(idx, sim, silent=True):
             plot_grid(idx, sim)
             plot_stencils(idx, sim)
         plot_head(idx, sim)
-    return
 
 
 # Function that wraps all of the steps for the FHB model

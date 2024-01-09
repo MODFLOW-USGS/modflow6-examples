@@ -24,7 +24,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the problem
 
@@ -306,246 +306,244 @@ def analytical_solution(
 
 
 def plot_grid(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-    name = sim.name
-    gwf = sim.get_model(name)
+    with styles.USGSMap() as fs:
+        name = sim.name
+        gwf = sim.get_model(name)
 
-    fig, ax = plt.subplots(figsize=(6.8, 2.0))
-    mc = flopy.plot.PlotCrossSection(model=gwf, line={"Row": 0}, ax=ax)
+        fig, ax = plt.subplots(figsize=(6.8, 2.0))
+        mc = flopy.plot.PlotCrossSection(model=gwf, line={"Row": 0}, ax=ax)
 
-    ax.fill_between([0, 1], y1=0, y2=botm, color="cyan", alpha=0.5)
-    fs.add_text(
-        ax=ax,
-        text="Constant head",
-        x=0.5,
-        y=-500.0,
-        bold=False,
-        italic=False,
-        transform=False,
-        va="center",
-        ha="center",
-        fontsize=9,
-    )
-    ax.fill_between([2, 3], y1=0, y2=botm, color="cyan", alpha=0.5)
-    fs.add_text(
-        ax=ax,
-        text="Constant head",
-        x=2.5,
-        y=-500.0,
-        bold=False,
-        italic=False,
-        transform=False,
-        va="center",
-        ha="center",
-        fontsize=9,
-    )
-    ax.fill_between([1, 2], y1=-499.5, y2=-500.5, color="brown", alpha=0.5)
-    fs.add_annotation(
-        ax=ax,
-        text="Delay interbed",
-        xy=(1.5, -510.0),
-        xytext=(1.6, -300),
-        bold=False,
-        italic=False,
-        fontsize=9,
-        ha="center",
-        va="center",
-        zorder=100,
-        arrowprops=arrow_props,
-    )
-    mc.plot_grid(color="0.5", lw=0.5, zorder=100)
-
-    ax.set_xlim(0, 3)
-    ax.set_ylabel("Elevation, in meters")
-    ax.set_xlabel("x-coordinate, in meters")
-    fs.remove_edge_ticks(ax)
-
-    plt.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        ax.fill_between([0, 1], y1=0, y2=botm, color="cyan", alpha=0.5)
+        styles.add_text(
+            ax=ax,
+            text="Constant head",
+            x=0.5,
+            y=-500.0,
+            bold=False,
+            italic=False,
+            transform=False,
+            va="center",
+            ha="center",
+            fontsize=9,
         )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        ax.fill_between([2, 3], y1=0, y2=botm, color="cyan", alpha=0.5)
+        styles.add_text(
+            ax=ax,
+            text="Constant head",
+            x=2.5,
+            y=-500.0,
+            bold=False,
+            italic=False,
+            transform=False,
+            va="center",
+            ha="center",
+            fontsize=9,
+        )
+        ax.fill_between([1, 2], y1=-499.5, y2=-500.5, color="brown", alpha=0.5)
+        styles.add_annotation(
+            ax=ax,
+            text="Delay interbed",
+            xy=(1.5, -510.0),
+            xytext=(1.6, -300),
+            bold=False,
+            italic=False,
+            fontsize=9,
+            ha="center",
+            va="center",
+            zorder=100,
+            arrowprops=arrow_props,
+        )
+        mc.plot_grid(color="0.5", lw=0.5, zorder=100)
+
+        ax.set_xlim(0, 3)
+        ax.set_ylabel("Elevation, in meters")
+        ax.set_xlabel("x-coordinate, in meters")
+        styles.remove_edge_ticks(ax)
+
+        plt.tight_layout()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the head based results
 
 
 def plot_head_based(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
+    with styles.USGSPlot() as fs:
+        name = sim.name
 
-    # get csub observations
-    ws = sim.simulation_data.mfpath.get_sim_path()
-    s = flopy.mf6.MFSimulation().load(sim_ws=ws, verbosity_level=0)
-    gwf = s.get_model(name)
-    cobs = gwf.csub.output.obs().data
+        # get csub observations
+        ws = sim.simulation_data.mfpath.get_sim_path()
+        s = flopy.mf6.MFSimulation().load(sim_ws=ws, verbosity_level=0)
+        gwf = s.get_model(name)
+        cobs = gwf.csub.output.obs().data
 
-    # calculate the compaction analytically
-    ac = []
-    nz = 100
-    thick = parameters[name]["bed_thickness"][0]
-    kv = parameters[name]["kv"][0]
-    dhalf = thick * 0.5
-    az = np.linspace(-dhalf, dhalf, num=nz)
-    dz = az[1] - az[0]
-    for tt in cobs["totim"]:
-        c = 0.0
-        for jdx, zz in enumerate(az):
-            f = 1.0
-            if jdx == 0 or jdx == nz - 1:
-                f = 0.5
-            h = analytical_solution(zz, tt, ssk=skv, vk=kv, n=200, dh=1.0)
-            c += h * skv * f * dz
-        ac.append(c)
-    ac = np.array(ac)
+        # calculate the compaction analytically
+        ac = []
+        nz = 100
+        thick = parameters[name]["bed_thickness"][0]
+        kv = parameters[name]["kv"][0]
+        dhalf = thick * 0.5
+        az = np.linspace(-dhalf, dhalf, num=nz)
+        dz = az[1] - az[0]
+        for tt in cobs["totim"]:
+            c = 0.0
+            for jdx, zz in enumerate(az):
+                f = 1.0
+                if jdx == 0 or jdx == nz - 1:
+                    f = 0.5
+                h = analytical_solution(zz, tt, ssk=skv, vk=kv, n=200, dh=1.0)
+                c += h * skv * f * dz
+            ac.append(c)
+        ac = np.array(ac)
 
-    # calculate normalized simulation time
-    tpct = cobs["totim"] * 100 / tau0
+        # calculate normalized simulation time
+        tpct = cobs["totim"] * 100 / tau0
 
-    # plot the results
-    fig = plt.figure(figsize=figure_size)
-    gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
+        # plot the results
+        fig = plt.figure(figsize=figure_size)
+        gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
 
-    idx = 0
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct,
-        100 * ac / skv,
-        marker=".",
-        lw=0,
-        ms=3,
-        color="red",
-        label="Analytical",
-    )
-    ax.plot(
-        tpct,
-        100 * cobs["TCOMP"] / skv,
-        label="Simulated",
-        color="black",
-        lw=1,
-        zorder=100,
-    )
-    leg = fs.graph_legend(ax, loc="lower right")
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_yticks(np.arange(0, 110, 10))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel("Compaction, in percent of ultimate value")
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
-    fs.heading(ax, letter="A")
-    fs.remove_edge_ticks(ax)
+        idx = 0
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(
+            tpct,
+            100 * ac / skv,
+            marker=".",
+            lw=0,
+            ms=3,
+            color="red",
+            label="Analytical",
+        )
+        ax.plot(
+            tpct,
+            100 * cobs["TCOMP"] / skv,
+            label="Simulated",
+            color="black",
+            lw=1,
+            zorder=100,
+        )
+        leg = styles.graph_legend(ax, loc="lower right")
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_yticks(np.arange(0, 110, 10))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel("Compaction, in percent of ultimate value")
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 100)
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black"
-    )
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_yticks(np.arange(0, 2.2, 0.2))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel(
-        "Analytical minus simulated subsidence,\nin percent of ultimate value"
-    )
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 2)
-    fs.heading(ax, letter="B")
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(
+            tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black"
+        )
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_yticks(np.arange(0, 2.2, 0.2))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel(
+            "Analytical minus simulated subsidence,\nin percent of ultimate value"
+        )
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 2)
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 def plot_effstress(sim, silent=True):
     verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
+    with styles.USGSPlot() as fs:
+        name = sim.name
 
-    # get effective stress csub observations
-    gwf = sim.get_model(name)
-    cobs = gwf.csub.output.obs().data
+        # get effective stress csub observations
+        gwf = sim.get_model(name)
+        cobs = gwf.csub.output.obs().data
 
-    # get head-based csub observations
-    name0 = name.replace("-p02b", "-p02a")
-    ws0 = os.path.join(ws, name0)
-    sim0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
-    gwf0 = sim0.get_model(name0)
-    cobs0 = gwf0.csub.output.obs().data
+        # get head-based csub observations
+        name0 = name.replace("-p02b", "-p02a")
+        ws0 = os.path.join(ws, name0)
+        sim0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+        gwf0 = sim0.get_model(name0)
+        cobs0 = gwf0.csub.output.obs().data
 
-    # calculate normalized simulation time
-    tpct = cobs["totim"] * 100 / tau0
+        # calculate normalized simulation time
+        tpct = cobs["totim"] * 100 / tau0
 
-    # plot the results
-    fig = plt.figure(figsize=figure_size)
-    gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
+        # plot the results
+        fig = plt.figure(figsize=figure_size)
+        gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
 
-    idx = 0
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct,
-        100 * cobs0["TCOMP"] / skv,
-        lw=0,
-        marker=".",
-        ms=3,
-        color="#238A8DFF",
-        label="Head-based",
-    )
-    ax.plot(
-        tpct,
-        100 * cobs["TCOMP"] / skv,
-        lw=0.75,
-        label="Effective stress-based",
-        color="black",
-        zorder=100,
-    )
-    leg = fs.graph_legend(ax, loc="lower right")
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_yticks(np.arange(0, 110, 10))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel("Compaction, in percent of ultimate value")
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
-    fs.heading(ax, letter="A")
-    fs.remove_edge_ticks(ax)
+        idx = 0
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(
+            tpct,
+            100 * cobs0["TCOMP"] / skv,
+            lw=0,
+            marker=".",
+            ms=3,
+            color="#238A8DFF",
+            label="Head-based",
+        )
+        ax.plot(
+            tpct,
+            100 * cobs["TCOMP"] / skv,
+            lw=0.75,
+            label="Effective stress-based",
+            color="black",
+            zorder=100,
+        )
+        leg = styles.graph_legend(ax, loc="lower right")
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_yticks(np.arange(0, 110, 10))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel("Compaction, in percent of ultimate value")
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 100)
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct,
-        100 * (cobs0["TCOMP"] - cobs["TCOMP"]) / skv,
-        lw=1,
-        ls=":",
-        color="black",
-    )
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel(
-        "Head-based minus effective stress-based\nsubsidence, in percent of ultimate value"
-    )
-    ax.set_xlim(0, 100)
-    fs.heading(ax, letter="B")
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(
+            tpct,
+            100 * (cobs0["TCOMP"] - cobs["TCOMP"]) / skv,
+            lw=1,
+            ls=":",
+            color="black",
+        )
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel(
+            "Head-based minus effective stress-based\nsubsidence, in percent of ultimate value"
+        )
+        ax.set_xlim(0, 100)
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to get subdirectory names
@@ -584,229 +582,227 @@ def fill_heads(rec_arr, ndcells):
 
 
 def plot_comp_q_comparison(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
-    thicknesses = parameters[name]["bed_thickness"]
+    with styles.USGSPlot() as fs:
+        name = sim.name
+        thicknesses = parameters[name]["bed_thickness"]
 
-    # get the subdirectory names
-    hb_dirs, es_dirs = get_subdirs(sim)
+        # get the subdirectory names
+        hb_dirs, es_dirs = get_subdirs(sim)
 
-    # setup the figure
-    fig = plt.figure(figsize=figure_size)
-    gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
+        # setup the figure
+        fig = plt.figure(figsize=figure_size)
+        gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
 
-    # set color
-    cmap = plt.get_cmap("viridis")
-    cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
-    scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
+        # set color
+        cmap = plt.get_cmap("viridis")
+        cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
+        scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
 
-    axes = []
-    for idx in range(2):
-        ax = fig.add_subplot(gs[idx])
-        if idx == 0:
-            ax.set_yticks(np.arange(-0.40, 0.1, 0.05))
-            ax.set_ylim(-0.40, 0)
-            ax.set_xlim(0, 100)
-            ylabel = (
-                "Head-based minus effective stress-based\nsubsidence, "
-                + "in percent of ultimate value"
-            )
-        else:
-            ax.set_ylim(0, 8)
-            ax.set_xlim(0, 100)
-            ylabel = (
-                "Top minus bottom interbed effective stress-based\ndrainage "
-                + "rate, in percent of head-based drainage rate"
-            )
-        ax.set_xlabel("Percent of time constant")
-        ax.set_ylabel(ylabel)
-        fs.heading(ax, letter=chr(ord("A") + idx))
-        axes.append(ax)
+        axes = []
+        for idx in range(2):
+            ax = fig.add_subplot(gs[idx])
+            if idx == 0:
+                ax.set_yticks(np.arange(-0.40, 0.1, 0.05))
+                ax.set_ylim(-0.40, 0)
+                ax.set_xlim(0, 100)
+                ylabel = (
+                    "Head-based minus effective stress-based\nsubsidence, "
+                    + "in percent of ultimate value"
+                )
+            else:
+                ax.set_ylim(0, 8)
+                ax.set_xlim(0, 100)
+                ylabel = (
+                    "Top minus bottom interbed effective stress-based\ndrainage "
+                    + "rate, in percent of head-based drainage rate"
+                )
+            ax.set_xlabel("Percent of time constant")
+            ax.set_ylabel(ylabel)
+            styles.heading(ax, letter=chr(ord("A") + idx))
+            axes.append(ax)
 
-    for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-        sim_ws = os.path.join(ws, name, hb_dir)
-        s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
-        g = s.get_model(name)
-        hb_obs = g.csub.output.obs().data
+        for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
+            sim_ws = os.path.join(ws, name, hb_dir)
+            s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+            g = s.get_model(name)
+            hb_obs = g.csub.output.obs().data
 
-        ws0 = os.path.join(ws, name, es_dir)
-        s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
-        g0 = s0.get_model(name)
-        es_obs = g0.csub.output.obs().data
+            ws0 = os.path.join(ws, name, es_dir)
+            s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+            g0 = s0.get_model(name)
+            es_obs = g0.csub.output.obs().data
 
-        # calculate normalized simulation time
-        tpct = hb_obs["totim"] * 100 / tau0
+            # calculate normalized simulation time
+            tpct = hb_obs["totim"] * 100 / tau0
 
-        thickness = thicknesses[idx]
-        if idx == 0:
-            color = "black"
-        else:
-            color = scalarMap.to_rgba(idx - 1)
-        label = f"Thickness = {int(thickness):>3d} m"
+            thickness = thicknesses[idx]
+            if idx == 0:
+                color = "black"
+            else:
+                color = scalarMap.to_rgba(idx - 1)
+            label = f"Thickness = {int(thickness):>3d} m"
 
-        v = 100.0 * (hb_obs["TCOMP"] - es_obs["TCOMP"]) / (skv * thickness)
-        ax = axes[0]
-        ax.plot(tpct, v, color=color, lw=0.75, label=label)
+            v = 100.0 * (hb_obs["TCOMP"] - es_obs["TCOMP"]) / (skv * thickness)
+            ax = axes[0]
+            ax.plot(tpct, v, color=color, lw=0.75, label=label)
 
-        denom = hb_obs["QTOP"] + hb_obs["QBOT"]
-        v = 100 * (es_obs["QTOP"] - es_obs["QBOT"]) / denom
-        ax = axes[1]
-        ax.plot(tpct, v, color=color, lw=0.75, label=label)
+            denom = hb_obs["QTOP"] + hb_obs["QBOT"]
+            v = 100 * (es_obs["QTOP"] - es_obs["QBOT"]) / denom
+            ax = axes[1]
+            ax.plot(tpct, v, color=color, lw=0.75, label=label)
 
-    # legend
-    ax = axes[-1]
-    leg = fs.graph_legend(ax, loc="upper right")
+        # legend
+        ax = axes[-1]
+        leg = styles.graph_legend(ax, loc="upper right")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the interbed head results for multiple interbed thicknesses
 
 
 def plot_head_comparison(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
-    ndcells = parameters[name]["ndelaycells"]
-    thicknesses = parameters[name]["bed_thickness"]
+    with styles.USGSPlot() as fs:
+        name = sim.name
+        ndcells = parameters[name]["ndelaycells"]
+        thicknesses = parameters[name]["bed_thickness"]
 
-    # get the subdirectory names
-    hb_dirs, es_dirs = get_subdirs(sim)
+        # get the subdirectory names
+        hb_dirs, es_dirs = get_subdirs(sim)
 
-    # setup the figure
-    fig = plt.figure(figsize=figure_size)
-    fig.subplots_adjust(
-        left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1
-    )
-    gs = mpl.gridspec.GridSpec(1, 6, figure=fig)
-    z = np.linspace(0, 1, ndcells)
-    yticks = np.arange(0, 1.1, 0.1)
+        # setup the figure
+        fig = plt.figure(figsize=figure_size)
+        fig.subplots_adjust(
+            left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1
+        )
+        gs = mpl.gridspec.GridSpec(1, 6, figure=fig)
+        z = np.linspace(0, 1, ndcells)
+        yticks = np.arange(0, 1.1, 0.1)
 
-    # set color
-    cmap = plt.get_cmap("viridis")
-    cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
-    scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
+        # set color
+        cmap = plt.get_cmap("viridis")
+        cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
+        scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
 
-    # percentages to evaluate
-    pct_vals = (
-        1,
-        5,
-        10,
-        50,
-        100,
-    )
+        # percentages to evaluate
+        pct_vals = (
+            1,
+            5,
+            10,
+            50,
+            100,
+        )
 
-    axes = []
-    for idx in range(6):
-        ax = fig.add_subplot(gs[idx])
+        axes = []
+        for idx in range(6):
+            ax = fig.add_subplot(gs[idx])
+            ax.set_ylim(1, 0)
+            ax.set_xlim(-5, 5)
+            if idx < 5:
+                styles.heading(ax, letter=chr(ord("A") + idx))
+                ax.set_yticks(yticks)
+                styles.remove_edge_ticks(ax)
+                text = r"$\frac{t}{\tau_0}$ = " + "{}".format(
+                    pct_vals[idx] / 100.0
+                )
+                ax.text(
+                    0.25,
+                    0.01,
+                    text,
+                    ha="center",
+                    va="bottom",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                )
+            else:
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+            if idx == 0:
+                ax.set_ylabel("Interbed position, relative to interbed thickness")
+            else:
+                if idx == 2:
+                    text = (
+                        "Difference in head-based and effective stress-based"
+                        + "\ninterbed heads, in percent of head-based interbed heads"
+                    )
+                    ax.set_xlabel(text)
+                ax.set_yticklabels([])
+            axes.append(ax)
+
+        for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
+            sim_ws = os.path.join(ws, name, hb_dir)
+            s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+            g = s.get_model(name)
+            hb_obs = g.csub.output.obs().data
+            hb_arr = fill_heads(hb_obs, ndcells)
+
+            ws0 = os.path.join(ws, name, es_dir)
+            s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+            g0 = s0.get_model(name)
+            es_obs = g0.csub.output.obs().data
+            es_arr = fill_heads(es_obs, ndcells)
+            #
+            # pth = os.path.join(ws, name, hb_dir, "{}.csub.obs.csv".format(name))
+            # hb_obs = np.genfromtxt(pth, names=True, delimiter=",")
+            # hb_arr = fill_heads(hb_obs, ndcells)
+            #
+            # pth = os.path.join(ws, name, es_dir, "{}.csub.obs.csv".format(name))
+            # es_obs = np.genfromtxt(pth, names=True, delimiter=",")
+            # es_arr = fill_heads(es_obs, ndcells)
+
+            # calculate normalized simulation time
+            tpct = hb_obs["totim"] * 100 / tau0
+
+            # calculate location closest to 1, 5, 10, 50, and 100 percent of time constant
+            locs = {}
+            for i in pct_vals:
+                for jdx, t in enumerate(tpct):
+                    if t <= i:
+                        locs[i] = jdx
+
+            for jdx, (key, ivalue) in enumerate(locs.items()):
+                # add data to the subplot
+                ax = axes[jdx]
+                if idx == 0:
+                    color = "black"
+                else:
+                    color = scalarMap.to_rgba(idx - 1)
+                hhb = hb_arr[ivalue, :]
+                hes = es_arr[ivalue, :]
+                v = 100.0 * (hhb - hes) / hhb
+                ax.plot(v, z, lw=0.75, color=color)
+
+        # legend
+        ax = axes[-1]
         ax.set_ylim(1, 0)
         ax.set_xlim(-5, 5)
-        if idx < 5:
-            fs.heading(ax, letter=chr(ord("A") + idx))
-            ax.set_yticks(yticks)
-            fs.remove_edge_ticks(ax)
-            text = r"$\frac{t}{\tau_0}$ = " + "{}".format(
-                pct_vals[idx] / 100.0
-            )
-            ax.text(
-                0.25,
-                0.01,
-                text,
-                ha="center",
-                va="bottom",
-                transform=ax.transAxes,
-                fontsize=8,
-            )
-        else:
-            ax.set_xticks([])
-            ax.set_yticks([])
-
-        if idx == 0:
-            ax.set_ylabel("Interbed position, relative to interbed thickness")
-        else:
-            if idx == 2:
-                text = (
-                    "Difference in head-based and effective stress-based"
-                    + "\ninterbed heads, in percent of head-based interbed heads"
-                )
-                ax.set_xlabel(text)
-            ax.set_yticklabels([])
-        axes.append(ax)
-
-    for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-        sim_ws = os.path.join(ws, name, hb_dir)
-        s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
-        g = s.get_model(name)
-        hb_obs = g.csub.output.obs().data
-        hb_arr = fill_heads(hb_obs, ndcells)
-
-        ws0 = os.path.join(ws, name, es_dir)
-        s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
-        g0 = s0.get_model(name)
-        es_obs = g0.csub.output.obs().data
-        es_arr = fill_heads(es_obs, ndcells)
-        #
-        # pth = os.path.join(ws, name, hb_dir, "{}.csub.obs.csv".format(name))
-        # hb_obs = np.genfromtxt(pth, names=True, delimiter=",")
-        # hb_arr = fill_heads(hb_obs, ndcells)
-        #
-        # pth = os.path.join(ws, name, es_dir, "{}.csub.obs.csv".format(name))
-        # es_obs = np.genfromtxt(pth, names=True, delimiter=",")
-        # es_arr = fill_heads(es_obs, ndcells)
-
-        # calculate normalized simulation time
-        tpct = hb_obs["totim"] * 100 / tau0
-
-        # calculate location closest to 1, 5, 10, 50, and 100 percent of time constant
-        locs = {}
-        for i in pct_vals:
-            for jdx, t in enumerate(tpct):
-                if t <= i:
-                    locs[i] = jdx
-
-        for jdx, (key, ivalue) in enumerate(locs.items()):
-            # add data to the subplot
-            ax = axes[jdx]
-            if idx == 0:
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+        for ic, b in enumerate(thicknesses):
+            if ic == 0:
                 color = "black"
             else:
-                color = scalarMap.to_rgba(idx - 1)
-            hhb = hb_arr[ivalue, :]
-            hes = es_arr[ivalue, :]
-            v = 100.0 * (hhb - hes) / hhb
-            ax.plot(v, z, lw=0.75, color=color)
+                color = scalarMap.to_rgba(ic - 1)
+            label = f"Thickness = {int(b):>3d} m"
+            ax.plot([-1, -1], [-1, -1], lw=0.75, color=color, label=label)
 
-    # legend
-    ax = axes[-1]
-    ax.set_ylim(1, 0)
-    ax.set_xlim(-5, 5)
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
-    for ic, b in enumerate(thicknesses):
-        if ic == 0:
-            color = "black"
-        else:
-            color = scalarMap.to_rgba(ic - 1)
-        label = f"Thickness = {int(b):>3d} m"
-        ax.plot([-1, -1], [-1, -1], lw=0.75, color=color, label=label)
+        leg = styles.graph_legend(ax, loc="center", bbox_to_anchor=(0.64, 0.5))
 
-    leg = fs.graph_legend(ax, loc="center", bbox_to_anchor=(0.64, 0.5))
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the model results.

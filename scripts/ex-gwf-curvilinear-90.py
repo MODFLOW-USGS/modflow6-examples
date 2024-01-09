@@ -30,7 +30,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 from DisvCurvilinearBuilder import DisvCurvilinearBuilder
 
 
@@ -250,94 +250,92 @@ def run_model(sim, silent=True):
 
 
 def plot_grid(sim, verbose=False):
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size_grid)
+        fig = plt.figure(figsize=figure_size_grid)
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    pmv.plot_bc(name="CHD-INNER", alpha=0.75, color="blue")
-    pmv.plot_bc(name="CHD-OUTER", alpha=0.75, color="blue")
-    ax.set_xlabel("x position (ft)")
-    ax.set_ylabel("y position (ft)")
-    for i, (x, y) in enumerate(
-        zip(gwf.modelgrid.xcellcenters, gwf.modelgrid.ycellcenters)
-    ):
-        ax.text(
-            x,
-            y,
-            f"{i + 1}",
-            fontsize=6,
-            horizontalalignment="center",
-            verticalalignment="center",
-        )
-    v = gwf.disv.vertices.array
-    ax.plot(v["xv"], v["yv"], "yo")
-    for i in range(v.shape[0]):
-        x, y = v["xv"][i], v["yv"][i]
-        ax.text(
-            x,
-            y,
-            f"{i + 1}",
-            fontsize=5,
-            color="red",
-            horizontalalignment="center",
-            verticalalignment="center",
-        )
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        pmv.plot_bc(name="CHD-INNER", alpha=0.75, color="blue")
+        pmv.plot_bc(name="CHD-OUTER", alpha=0.75, color="blue")
+        ax.set_xlabel("x position (ft)")
+        ax.set_ylabel("y position (ft)")
+        for i, (x, y) in enumerate(
+            zip(gwf.modelgrid.xcellcenters, gwf.modelgrid.ycellcenters)
+        ):
+            ax.text(
+                x,
+                y,
+                f"{i + 1}",
+                fontsize=6,
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
+        v = gwf.disv.vertices.array
+        ax.plot(v["xv"], v["yv"], "yo")
+        for i in range(v.shape[0]):
+            x, y = v["xv"][i], v["yv"][i]
+            ax.text(
+                x,
+                y,
+                f"{i + 1}",
+                fontsize=5,
+                color="red",
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
 
-    fig.tight_layout()
+        fig.tight_layout()
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the curvilinear model results.
 
 
 def plot_head(sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size_head)
+        fig = plt.figure(figsize=figure_size_head)
 
-    head = gwf.output.head().get_data()[:, 0, :]
+        head = gwf.output.head().get_data()[:, 0, :]
 
-    # create MODFLOW 6 cell-by-cell budget object
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf,
-    )
-
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($ft$)")
-    ax.set_xlabel("x position (ft)")
-    ax.set_ylabel("y position (ft)")
-
-    fig.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget object
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
         )
-        fig.savefig(fpth)
-    return
+
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($ft$)")
+        ax.set_xlabel("x position (ft)")
+        ax.set_ylabel("y position (ft)")
+
+        fig.tight_layout()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_analytical(sim, verbose=False):
@@ -361,27 +359,26 @@ def plot_analytical(sim, verbose=False):
         analytical.append(analytical_model(r1, h1, r2, h2, r))
     analytical.append(head[-1])
 
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
+    with styles.USGSPlot() as fs:
+        obs_fig = "obs-head"
+        fig = plt.figure(figsize=figure_size_obsv)
+        ax = fig.add_subplot()
+        ax.set_xlabel("Radial distance (ft)")
+        ax.set_ylabel("Head (ft)")
+        ax.plot(xrad, head, "ob", label="MF6 Solution", markerfacecolor="none")
+        ax.plot(xrad, analytical, "-b", label="Analytical Solution")
 
-    obs_fig = "obs-head"
-    fig = plt.figure(figsize=figure_size_obsv)
-    ax = fig.add_subplot()
-    ax.set_xlabel("Radial distance (ft)")
-    ax.set_ylabel("Head (ft)")
-    ax.plot(xrad, head, "ob", label="MF6 Solution", markerfacecolor="none")
-    ax.plot(xrad, analytical, "-b", label="Analytical Solution")
+        styles.graph_legend(ax)
 
-    fs.graph_legend(ax)
+        fig.tight_layout()
 
-    fig.tight_layout()
-
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
-        )
-        fig.savefig(fpth)
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the model results.

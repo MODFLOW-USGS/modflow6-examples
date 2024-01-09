@@ -28,7 +28,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -385,108 +385,103 @@ def run_model(sim, silent=False):
 # Function to plot the Advgwtidal model results.
 #
 def plot_grid(sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=(5.5, 8.0))
+        fig = plt.figure(figsize=(5.5, 8.0))
 
-    ax = fig.add_subplot(2, 2, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    pmv.plot_bc(name="WEL", kper=3)
-    pmv.plot_bc(name="RIV")
-    title = "Layer 1"
-    letter = chr(ord("@") + 1)
-    fs.heading(letter=letter, heading=title, ax=ax)
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(2, 2, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        pmv.plot_bc(name="WEL", kper=3)
+        pmv.plot_bc(name="RIV")
+        title = "Layer 1"
+        letter = chr(ord("@") + 1)
+        styles.heading(letter=letter, heading=title, ax=ax)
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    ax = fig.add_subplot(2, 2, 2, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
-    pmv.plot_grid()
-    pmv.plot_bc(name="GHB")
-    title = "Layer 2"
-    letter = chr(ord("@") + 2)
-    fs.heading(letter=letter, heading=title, ax=ax)
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(2, 2, 2, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
+        pmv.plot_grid()
+        pmv.plot_bc(name="GHB")
+        title = "Layer 2"
+        letter = chr(ord("@") + 2)
+        styles.heading(letter=letter, heading=title, ax=ax)
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    ax = fig.add_subplot(2, 2, 3, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=2)
-    pmv.plot_grid()
-    pmv.plot_bc(name="GHB")
-    pmv.plot_bc(ftype="WEL", kper=3)
-    title = "Layer 3"
-    letter = chr(ord("@") + 3)
-    fs.heading(letter=letter, heading=title, ax=ax)
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(2, 2, 3, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=2)
+        pmv.plot_grid()
+        pmv.plot_bc(name="GHB")
+        pmv.plot_bc(ftype="WEL", kper=3)
+        title = "Layer 3"
+        letter = chr(ord("@") + 3)
+        styles.heading(letter=letter, heading=title, ax=ax)
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    ax = fig.add_subplot(2, 2, 4, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
-    pmv.plot_grid(linewidth=0)
-    for ip, (p, fc) in enumerate(
-        [
-            (recharge_zone_1, "r"),
-            (recharge_zone_2, "b"),
-            (recharge_zone_3, "g"),
-        ]
-    ):
-        xs, ys = p.exterior.xy
-        ax.fill(
-            xs,
-            ys,
-            alpha=0.25,
-            fc=fc,
-            ec="none",
-            label=f"Recharge Zone {ip + 1}",
-        )
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.graph_legend(ax)
-    title = "Recharge zones"
-    letter = chr(ord("@") + 4)
-    fs.heading(letter=letter, heading=title, ax=ax)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        ax = fig.add_subplot(2, 2, 4, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
+        pmv.plot_grid(linewidth=0)
+        for ip, (p, fc) in enumerate(
+            [
+                (recharge_zone_1, "r"),
+                (recharge_zone_2, "b"),
+                (recharge_zone_3, "g"),
+            ]
+        ):
+            xs, ys = p.exterior.xy
+            ax.fill(
+                xs,
+                ys,
+                alpha=0.25,
+                fc=fc,
+                ec="none",
+                label=f"Recharge Zone {ip + 1}",
+            )
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.graph_legend(ax)
+        title = "Recharge zones"
+        letter = chr(ord("@") + 4)
+        styles.heading(letter=letter, heading=title, ax=ax)
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_ts(sim):
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
-    obsnames = gwf.obs[1].output.obs_names
-    obs_list = [
-        gwf.obs[1].output.obs(f=obsnames[0]),
-        gwf.obs[1].output.obs(f=obsnames[1]),
-        gwf.ghb.output.obs(),
-    ]
-    ylabel = ("head (m)", "flow ($m^3/d$)", "flow ($m^3/d$)")
-    obs_fig = ("obs-head", "obs-flow", "ghb-obs")
-    for iplot, obstype in enumerate(obs_list):
-        fig = plt.figure(figsize=(6, 3))
-        ax = fig.add_subplot()
-        tsdata = obstype.data
-        for name in tsdata.dtype.names[1:]:
-            ax.plot(tsdata["totim"], tsdata[name], label=name)
-        ax.set_xlabel("time (d)")
-        ax.set_ylabel(ylabel[iplot])
-        fs.graph_legend(ax)
-        if config.plotSave:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
-            )
-            fig.savefig(fpth)
-    return
+    with styles.USGSMap() as fs:
+        gwf = sim.get_model(sim_name)
+        obsnames = gwf.obs[1].output.obs_names
+        obs_list = [
+            gwf.obs[1].output.obs(f=obsnames[0]),
+            gwf.obs[1].output.obs(f=obsnames[1]),
+            gwf.ghb.output.obs(),
+        ]
+        ylabel = ("head (m)", "flow ($m^3/d$)", "flow ($m^3/d$)")
+        obs_fig = ("obs-head", "obs-flow", "ghb-obs")
+        for iplot, obstype in enumerate(obs_list):
+            fig = plt.figure(figsize=(6, 3))
+            ax = fig.add_subplot()
+            tsdata = obstype.data
+            for name in tsdata.dtype.names[1:]:
+                ax.plot(tsdata["totim"], tsdata[name], label=name)
+            ax.set_xlabel("time (d)")
+            ax.set_ylabel(ylabel[iplot])
+            styles.graph_legend(ax)
+            if config.plotSave:
+                fpth = os.path.join(
+                    "..",
+                    "figures",
+                    "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
+                )
+                fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):

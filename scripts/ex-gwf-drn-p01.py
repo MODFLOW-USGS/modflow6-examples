@@ -24,7 +24,7 @@ sys.path.append(os.path.join("..", "common"))
 
 from modflow_devtools.latex import int_format, float_format, exp_format, build_table
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -1138,121 +1138,118 @@ def plot_stress_periods(ax):
 
 
 def plot_gwseep_results(silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
+    with styles.USGSPlot() as fs:
+        # load the observations
+        name = list(parameters.keys())[0]
+        fpth = os.path.join(ws, name, f"{sim_name}.surfrate.obs.csv")
+        drn = flopy.utils.Mf6Obs(fpth).data
+        name = list(parameters.keys())[1]
+        fpth = os.path.join(ws, name, f"{sim_name}.surfrate.obs.csv")
+        uzf = flopy.utils.Mf6Obs(fpth).data
 
-    # load the observations
-    name = list(parameters.keys())[0]
-    fpth = os.path.join(ws, name, f"{sim_name}.surfrate.obs.csv")
-    drn = flopy.utils.Mf6Obs(fpth).data
-    name = list(parameters.keys())[1]
-    fpth = os.path.join(ws, name, f"{sim_name}.surfrate.obs.csv")
-    uzf = flopy.utils.Mf6Obs(fpth).data
+        time = drn["totim"] / 86400.0
+        q0 = drn["SURFRATE"]
+        q1 = uzf["SURFRATE"]
+        mean_error = np.mean(q0 - q1)
 
-    time = drn["totim"] / 86400.0
-    q0 = drn["SURFRATE"]
-    q1 = uzf["SURFRATE"]
-    mean_error = np.mean(q0 - q1)
+        # create the figure
+        fig, axes = plt.subplots(
+            ncols=2,
+            nrows=1,
+            sharex=True,
+            figsize=(6.3, 3.15),
+            constrained_layout=True,
+        )
 
-    # create the figure
-    fig, axes = plt.subplots(
-        ncols=2,
-        nrows=1,
-        sharex=True,
-        figsize=(6.3, 3.15),
-        constrained_layout=True,
-    )
+        ax = axes[0]
+        ax.set_xlim(0, 365)
+        ax.set_ylim(0, 175)
 
-    ax = axes[0]
-    ax.set_xlim(0, 365)
-    ax.set_ylim(0, 175)
+        xp, yp = [0.0], [uzf["NETINFIL"][0]]
+        for idx in range(time.shape[0]):
+            if idx == 0:
+                x0, x1 = 0.0, time[idx]
+            else:
+                x0, x1 = time[idx - 1], time[idx]
+            y2 = uzf["NETINFIL"][idx]
+            xp.append(x0)
+            xp.append(x1)
+            yp.append(y2)
+            yp.append(y2)
+            ax.fill_between(
+                [x0, x1],
+                0,
+                y2=y2,
+                lw=0,
+                color="blue",
+                step="post",
+                ec="none",
+                zorder=100,
+            )
+        ax.plot(xp, yp, lw=0.5, color="black", zorder=101)
+        plot_stress_periods(ax)
+        styles.heading(ax, idx=0)
 
-    xp, yp = [0.0], [uzf["NETINFIL"][0]]
-    for idx in range(time.shape[0]):
-        if idx == 0:
-            x0, x1 = 0.0, time[idx]
-        else:
-            x0, x1 = time[idx - 1], time[idx]
-        y2 = uzf["NETINFIL"][idx]
-        xp.append(x0)
-        xp.append(x1)
-        yp.append(y2)
-        yp.append(y2)
-        ax.fill_between(
-            [x0, x1],
-            0,
-            y2=y2,
-            lw=0,
+        ax.set_xlabel("Simulation time, in days")
+        ax.set_ylabel(
+            "Infiltration to the unsaturated zone,\nin cubic feet per second"
+        )
+
+        ax = axes[-1]
+        ax.set_xlim(0, 365)
+        ax.set_ylim(50.8, 51.8)
+        ax.plot(
+            time,
+            -drn["SURFRATE"],
+            lw=0.75,
+            ls="-",
             color="blue",
-            step="post",
-            ec="none",
-            zorder=100,
+            label="Drainage package",
         )
-    ax.plot(xp, yp, lw=0.5, color="black", zorder=101)
-    plot_stress_periods(ax)
-    fs.heading(ax, idx=0)
-
-    ax.set_xlabel("Simulation time, in days")
-    ax.set_ylabel(
-        "Infiltration to the unsaturated zone,\nin cubic feet per second"
-    )
-
-    ax = axes[-1]
-    ax.set_xlim(0, 365)
-    ax.set_ylim(50.8, 51.8)
-    ax.plot(
-        time,
-        -drn["SURFRATE"],
-        lw=0.75,
-        ls="-",
-        color="blue",
-        label="Drainage package",
-    )
-    ax.plot(
-        time,
-        -uzf["SURFRATE"],
-        marker="o",
-        ms=3,
-        mfc="none",
-        mec="black",
-        markeredgewidth=0.5,
-        lw=0.0,
-        ls="-",
-        color="red",
-        label="UZF groundwater seepage",
-    )
-    plot_stress_periods(ax)
-
-    fs.graph_legend(
-        ax, loc="upper center", ncol=1, frameon=True, edgecolor="none"
-    )
-    fs.heading(ax, idx=1)
-    fs.add_text(
-        ax,
-        f"Mean Error {mean_error:.2e} cubic feet per second",
-        bold=False,
-        italic=False,
-        x=1.0,
-        y=1.01,
-        va="bottom",
-        ha="right",
-        fontsize=7,
-    )
-
-    ax.set_xlabel("Simulation time, in days")
-    ax.set_ylabel(
-        "Groundwater seepage to the land surface,\nin cubic feet per second"
-    )
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+        ax.plot(
+            time,
+            -uzf["SURFRATE"],
+            marker="o",
+            ms=3,
+            mfc="none",
+            mec="black",
+            markeredgewidth=0.5,
+            lw=0.0,
+            ls="-",
+            color="red",
+            label="UZF groundwater seepage",
         )
-        fig.savefig(fpth)
+        plot_stress_periods(ax)
 
-    return
+        styles.graph_legend(
+            ax, loc="upper center", ncol=1, frameon=True, edgecolor="none"
+        )
+        styles.heading(ax, idx=1)
+        styles.add_text(
+            ax,
+            f"Mean Error {mean_error:.2e} cubic feet per second",
+            bold=False,
+            italic=False,
+            x=1.0,
+            y=1.01,
+            va="bottom",
+            ha="right",
+            fontsize=7,
+        )
+
+        ax.set_xlabel("Simulation time, in days")
+        ax.set_ylabel(
+            "Groundwater seepage to the land surface,\nin cubic feet per second"
+        )
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 def export_tables(silent=True):

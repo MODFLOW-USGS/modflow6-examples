@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -186,51 +186,48 @@ def run_model(sim, silent=False):
 # Function to plot the SPBC model results.
 #
 def plot_grid(sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    # create MODFLOW 6 head object
-    head = gwf.output.head().get_data()
+        # create MODFLOW 6 head object
+        head = gwf.output.head().get_data()
 
-    # create MODFLOW 6 cell-by-cell budget object
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf,
-    )
-
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    # pxs.plot_grid()
-    pxs.plot_bc(name="CHD")
-    pxs.plot_array(head, cmap="jet")
-    levels = np.arange(-1, 1, 0.1)
-    cs = pxs.contour_array(
-        head, levels=levels, colors="k", linewidths=1.0, linestyles="-"
-    )
-    pxs.plot_vector(qx, qy, qz, normalize=False, kstep=5, hstep=5)
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("z position (m)")
-    ax.set_ylim(-3, 0)
-    fs.remove_edge_ticks(ax)
-    plt.clabel(cs, fmt="%3.1f", fontsize=5)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget object
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
         )
-        fig.savefig(fpth)
-    return
+
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+        # pxs.plot_grid()
+        pxs.plot_bc(name="CHD")
+        pxs.plot_array(head, cmap="jet")
+        levels = np.arange(-1, 1, 0.1)
+        cs = pxs.contour_array(
+            head, levels=levels, colors="k", linewidths=1.0, linestyles="-"
+        )
+        pxs.plot_vector(qx, qy, qz, normalize=False, kstep=5, hstep=5)
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("z position (m)")
+        ax.set_ylim(-3, 0)
+        styles.remove_edge_ticks(ax)
+        plt.clabel(cs, fmt="%3.1f", fontsize=5)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
     if config.plotModel:
         plot_grid(sim)
-    return
 
 
 # Function that wraps all of the steps for the SPBC model

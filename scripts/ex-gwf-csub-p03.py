@@ -28,7 +28,7 @@ sys.path.append(os.path.join("..", "common"))
 
 from modflow_devtools.latex import int_format, float_format, exp_format, build_table
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the problem
 
@@ -1022,700 +1022,690 @@ def constant_heads(ax, annotate=False, fontsize=6, xrange=(0, 1)):
 
 
 def plot_grid(silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-    name = list(parameters.keys())[0]
+    with styles.USGSMap() as fs:
+        # # load the model
+        # sim = flopy.mf6.MFSimulation.load(sim_name=name, sim_ws=sim_ws)
+        # gwf = sim.get_model(name)
 
-    # # load the model
-    # sim = flopy.mf6.MFSimulation.load(sim_name=name, sim_ws=sim_ws)
-    # gwf = sim.get_model(name)
+        xrange = (0, 1)
+        chds = (5, 10, 12)
 
-    xrange = (0, 1)
-    chds = (5, 10, 12)
+        fig, axes = plt.subplots(nrows=1, ncols=3, sharey=True, figsize=(5.1, 4.0))
 
-    fig, axes = plt.subplots(nrows=1, ncols=3, sharey=True, figsize=(5.1, 4.0))
+        for idx, ax in enumerate(axes):
+            ax.set_xlim(xrange)
+            ax.set_ylim(edges[-1][0], 0)
+            for edge in edges:
+                ax.plot(xrange, edge, lw=0.5, color="black")
+            ax.tick_params(
+                axis="x", which="both", bottom=False, top=False, labelbottom=False
+            )
+            ax.tick_params(axis="y", which="both", right=False, labelright=False)
 
-    for idx, ax in enumerate(axes):
-        ax.set_xlim(xrange)
-        ax.set_ylim(edges[-1][0], 0)
-        for edge in edges:
-            ax.plot(xrange, edge, lw=0.5, color="black")
-        ax.tick_params(
-            axis="x", which="both", bottom=False, top=False, labelbottom=False
-        )
-        ax.tick_params(axis="y", which="both", right=False, labelright=False)
-
-    ax = axes[0]
-    ax.fill_between(
-        xrange,
-        edges[0],
-        y2=edges[1],
-        color="green",
-        lw=0,
-        label="Upper aquifer",
-    )
-
-    label = ""
-    for k in (1, 2, 3):
-        label = set_label(label, text="Confining unit")
-        ax.fill_between(
-            xrange, edges[k], y2=edges[k + 1], color="brown", lw=0, label=label
-        )
-
-    label = ""
-    for k in (7, 8, 9):
-        label = set_label(label, text="Thick aquitard")
-        ax.fill_between(
-            xrange, edges[k], y2=edges[k + 1], color="tan", lw=0, label=label
-        )
-
-    # middle aquifer
-    midz = 825.0 / 3.8081
-    midz = [edges[4], edges[7], edges[10], (midz, midz)]
-    ax.fill_between(
-        xrange, midz[0], y2=midz[1], color="cyan", lw=0, label="Middle aquifer"
-    )
-    ax.fill_between(xrange, midz[2], y2=midz[3], color="cyan", lw=0)
-
-    # lower aquifer
-    ax.fill_between(
-        xrange,
-        midz[-1],
-        y2=edges[-1],
-        color="blue",
-        lw=0,
-        label="Lower aquifer",
-    )
-
-    fs.graph_legend(ax, loc="lower right", frameon=True, framealpha=1)
-    fs.heading(ax=ax, letter="A", heading="Hydrostratigraphy")
-    fs.remove_edge_ticks(ax)
-    ax.set_ylabel("Depth below land surface, in meters")
-
-    # csub interbeds
-    ax = axes[1]
-
-    nodelay = (1, 2, 3, 6, 7, 8, 9)
-    label = ""
-    for k in nodelay:
-        label = set_label(label, text="No-delay")
-        ax.fill_between(
-            xrange, edges[k], y2=edges[k + 1], color="0.5", lw=0, label=label
-        )
-
-    comb = [4, 11, 13]
-    label = ""
-    for k in comb:
-        label = set_label(label, text="No-delay\nand delay")
-        ax.fill_between(
-            xrange, edges[k], y2=edges[k + 1], color="brown", lw=0, label=label
-        )
-
-    for k in chds:
+        ax = axes[0]
         ax.fill_between(
             xrange,
-            edges[k],
-            y2=edges[k + 1],
-            color="white",
-            lw=0.75,
-            zorder=100,
+            edges[0],
+            y2=edges[1],
+            color="green",
+            lw=0,
+            label="Upper aquifer",
         )
 
-    leg = fs.graph_legend(ax, loc="lower right", frameon=True, framealpha=1)
-    leg.set_zorder(100)
-    fs.heading(ax=ax, letter="B", heading="Interbed types")
-    fs.remove_edge_ticks(ax)
+        label = ""
+        for k in (1, 2, 3):
+            label = set_label(label, text="Confining unit")
+            ax.fill_between(
+                xrange, edges[k], y2=edges[k + 1], color="brown", lw=0, label=label
+            )
 
-    # boundary conditions
-    ax = axes[2]
-    constant_heads(ax)
+        label = ""
+        for k in (7, 8, 9):
+            label = set_label(label, text="Thick aquitard")
+            ax.fill_between(
+                xrange, edges[k], y2=edges[k + 1], color="tan", lw=0, label=label
+            )
 
-    for k in llabels:
-        print_label(ax, edges, k)
-
-    fs.graph_legend(ax, loc="lower left")
-    fs.heading(ax=ax, letter="C", heading="Boundary conditions")
-    fs.remove_edge_ticks(ax)
-
-    fig.tight_layout(pad=0.5)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        # middle aquifer
+        midz = 825.0 / 3.8081
+        midz = [edges[4], edges[7], edges[10], (midz, midz)]
+        ax.fill_between(
+            xrange, midz[0], y2=midz[1], color="cyan", lw=0, label="Middle aquifer"
         )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        ax.fill_between(xrange, midz[2], y2=midz[3], color="cyan", lw=0)
+
+        # lower aquifer
+        ax.fill_between(
+            xrange,
+            midz[-1],
+            y2=edges[-1],
+            color="blue",
+            lw=0,
+            label="Lower aquifer",
+        )
+
+        styles.graph_legend(ax, loc="lower right", frameon=True, framealpha=1)
+        styles.heading(ax=ax, letter="A", heading="Hydrostratigraphy")
+        styles.remove_edge_ticks(ax)
+        ax.set_ylabel("Depth below land surface, in meters")
+
+        # csub interbeds
+        ax = axes[1]
+
+        nodelay = (1, 2, 3, 6, 7, 8, 9)
+        label = ""
+        for k in nodelay:
+            label = set_label(label, text="No-delay")
+            ax.fill_between(
+                xrange, edges[k], y2=edges[k + 1], color="0.5", lw=0, label=label
+            )
+
+        comb = [4, 11, 13]
+        label = ""
+        for k in comb:
+            label = set_label(label, text="No-delay\nand delay")
+            ax.fill_between(
+                xrange, edges[k], y2=edges[k + 1], color="brown", lw=0, label=label
+            )
+
+        for k in chds:
+            ax.fill_between(
+                xrange,
+                edges[k],
+                y2=edges[k + 1],
+                color="white",
+                lw=0.75,
+                zorder=100,
+            )
+
+        leg = styles.graph_legend(ax, loc="lower right", frameon=True, framealpha=1)
+        leg.set_zorder(100)
+        styles.heading(ax=ax, letter="B", heading="Interbed types")
+        styles.remove_edge_ticks(ax)
+
+        # boundary conditions
+        ax = axes[2]
+        constant_heads(ax)
+
+        for k in llabels:
+            print_label(ax, edges, k)
+
+        styles.graph_legend(ax, loc="lower left")
+        styles.heading(ax=ax, letter="C", heading="Boundary conditions")
+        styles.remove_edge_ticks(ax)
+
+        fig.tight_layout(pad=0.5)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the boundary heads
 
 
 def plot_boundary_heads(silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
+    with styles.USGSPlot():
+        def process_dtw_obs(fpth):
+            v = flopy.utils.Mf6Obs(fpth).data
+            v["totim"] /= 365.25
+            v["totim"] += 1908.353182752
+            for key in v.dtype.names[1:]:
+                v[key] *= -1.0
+            return v
 
-    def process_dtw_obs(fpth):
-        v = flopy.utils.Mf6Obs(fpth).data
-        v["totim"] /= 365.25
-        v["totim"] += 1908.353182752
-        for key in v.dtype.names[1:]:
-            v[key] *= -1.0
-        return v
+        name = list(parameters.keys())[0]
+        pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
+        hdata = process_dtw_obs(pth)
 
-    name = list(parameters.keys())[0]
-    pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
-    hdata = process_dtw_obs(pth)
+        pheads = ("HD01", "HD12", "HD14")
+        hlabels = ("Upper aquifer", "Middle aquifer", "Lower aquifer")
+        hcolors = ("green", "cyan", "blue")
 
-    pheads = ("HD01", "HD12", "HD14")
-    hlabels = ("Upper aquifer", "Middle aquifer", "Lower aquifer")
-    hcolors = ("green", "cyan", "blue")
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6.8, 6.8 / 3))
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6.8, 6.8 / 3))
+        ax.set_xlim(1907, 2007)
+        ax.set_xticks(xticks)
+        ax.set_ylim(50.0, -10.0)
+        ax.set_yticks(sorted([50.0, 40.0, 30.0, 20.0, 10.0, 0.0, -10.0]))
 
-    ax.set_xlim(1907, 2007)
-    ax.set_xticks(xticks)
-    ax.set_ylim(50.0, -10.0)
-    ax.set_yticks(sorted([50.0, 40.0, 30.0, 20.0, 10.0, 0.0, -10.0]))
+        ax.plot([1907, 2007], [0, 0], lw=0.5, color="0.5")
+        for idx, key in enumerate(pheads):
+            ax.plot(
+                hdata["totim"],
+                hdata[key],
+                lw=0.75,
+                color=hcolors[idx],
+                label=hlabels[idx],
+            )
 
-    ax.plot([1907, 2007], [0, 0], lw=0.5, color="0.5")
-    for idx, key in enumerate(pheads):
-        ax.plot(
-            hdata["totim"],
-            hdata[key],
-            lw=0.75,
-            color=hcolors[idx],
-            label=hlabels[idx],
-        )
+        styles.graph_legend(ax=ax, frameon=False)
+        ax.set_ylabel(f"Depth to water, in {length_units}")
+        ax.set_xlabel("Year")
 
-    fs.graph_legend(ax=ax, frameon=False)
-    ax.set_ylabel(f"Depth to water, in {length_units}")
-    ax.set_xlabel("Year")
+        styles.remove_edge_ticks(ax=ax)
 
-    fs.remove_edge_ticks(ax=ax)
+        fig.tight_layout()
 
-    fig.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-01{config.figure_ext}"
-        )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+            )
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the head and effective stress based results
 
 
 def plot_head_es_comparison(silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = list(parameters.keys())[0]
-    pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
-    hb = process_csub_obs(pth)
+    with styles.USGSPlot() as fs:
+        name = list(parameters.keys())[0]
+        pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
+        hb = process_csub_obs(pth)
 
-    name = list(parameters.keys())[1]
-    pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
-    es = process_csub_obs(pth)
+        name = list(parameters.keys())[1]
+        pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
+        es = process_csub_obs(pth)
 
-    ymin = (2.0, 1, 1, 1, 0.1, 0.1)
+        ymin = (2.0, 1, 1, 1, 0.1, 0.1)
 
-    me = {}
-    for idx, key in enumerate(pcomp):
-        v = (es[key] - hb[key]).mean()
-        me[key] = v
+        me = {}
+        for idx, key in enumerate(pcomp):
+            v = (es[key] - hb[key]).mean()
+            me[key] = v
 
-    fig, axes = plt.subplots(nrows=6, ncols=1, sharex=True, figsize=(6.8, 4.7))
-    for idx, key in enumerate(pcomp):
-        label = clabels[idx]
-        ax = axes[idx]
-        ax.set_xlim(1907, 2007)
-        ax.set_ylim(0, ymin[idx])
-        ax.set_xticks(xticks)
-        stext = "none"
-        otext = "none"
-        if idx == 0:
-            stext = "Effective stress-based"
-            otext = "Head-based"
-        mtext = f"mean error = {me[key]:7.4f} {length_units}"
-        ax.plot(hb["totim"], hb[key], color="#238A8DFF", lw=1.25, label=otext)
-        ax.plot(
-            es["totim"],
-            es[key],
-            color="black",
-            lw=0.75,
-            label=stext,
-            zorder=101,
+        fig, axes = plt.subplots(nrows=6, ncols=1, sharex=True, figsize=(6.8, 4.7))
+        for idx, key in enumerate(pcomp):
+            label = clabels[idx]
+            ax = axes[idx]
+            ax.set_xlim(1907, 2007)
+            ax.set_ylim(0, ymin[idx])
+            ax.set_xticks(xticks)
+            stext = "none"
+            otext = "none"
+            if idx == 0:
+                stext = "Effective stress-based"
+                otext = "Head-based"
+            mtext = f"mean error = {me[key]:7.4f} {length_units}"
+            ax.plot(hb["totim"], hb[key], color="#238A8DFF", lw=1.25, label=otext)
+            ax.plot(
+                es["totim"],
+                es[key],
+                color="black",
+                lw=0.75,
+                label=stext,
+                zorder=101,
+            )
+            ltext = chr(ord("A") + idx)
+            htext = f"{label}"
+            styles.heading(ax, letter=ltext, heading=htext)
+            va = "bottom"
+            ym = 0.15
+            if idx in [2, 3]:
+                va = "top"
+                ym = 0.85
+            ax.text(
+                0.99,
+                ym,
+                mtext,
+                ha="right",
+                va=va,
+                transform=ax.transAxes,
+                fontsize=7,
+            )
+            styles.remove_edge_ticks(ax=ax)
+            if idx == 0:
+                styles.graph_legend(ax, loc="center left", ncol=2)
+            if idx == 5:
+                ax.set_xlabel("Year")
+
+        axp1 = fig.add_subplot(1, 1, 1, frameon=False)
+        axp1.tick_params(
+            labelcolor="none", top="off", bottom="off", left="off", right="off"
         )
-        ltext = chr(ord("A") + idx)
-        htext = f"{label}"
-        fs.heading(ax, letter=ltext, heading=htext)
-        va = "bottom"
-        ym = 0.15
-        if idx in [2, 3]:
-            va = "top"
-            ym = 0.85
-        ax.text(
-            0.99,
-            ym,
-            mtext,
-            ha="right",
-            va=va,
-            transform=ax.transAxes,
-            fontsize=7,
-        )
-        fs.remove_edge_ticks(ax=ax)
-        if idx == 0:
-            fs.graph_legend(ax, loc="center left", ncol=2)
-        if idx == 5:
-            ax.set_xlabel("Year")
+        axp1.set_xlim(0, 1)
+        axp1.set_xticks([0, 1])
+        axp1.set_ylim(0, 1)
+        axp1.set_yticks([0, 1])
+        axp1.set_ylabel(f"Compaction, in {length_units}")
+        axp1.yaxis.set_label_coords(-0.05, 0.5)
+        styles.remove_edge_ticks(ax)
 
-    axp1 = fig.add_subplot(1, 1, 1, frameon=False)
-    axp1.tick_params(
-        labelcolor="none", top="off", bottom="off", left="off", right="off"
-    )
-    axp1.set_xlim(0, 1)
-    axp1.set_xticks([0, 1])
-    axp1.set_ylim(0, 1)
-    axp1.set_yticks([0, 1])
-    axp1.set_ylabel(f"Compaction, in {length_units}")
-    axp1.yaxis.set_label_coords(-0.05, 0.5)
-    fs.remove_edge_ticks(ax)
+        fig.tight_layout(pad=0.0001)
 
-    fig.tight_layout(pad=0.0001)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-02{config.figure_ext}"
-        )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-02{config.figure_ext}"
+            )
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 def plot_calibration(silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
+    with styles.USGSPlot() as fs:
+        name = list(parameters.keys())[1]
+        pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
+        df_sim = get_sim_dataframe(pth)
+        df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
-    name = list(parameters.keys())[1]
-    pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
-    df_sim = get_sim_dataframe(pth)
-    df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
+        pth = os.path.join("..", "data", sim_name, "boundary_heads.csv")
+        df_obs_heads, col_list = process_sim_csv(pth)
 
-    pth = os.path.join("..", "data", sim_name, "boundary_heads.csv")
-    df_obs_heads, col_list = process_sim_csv(pth)
+        ccolors = (
+            "black",
+            "tan",
+            "cyan",
+            "brown",
+            "blue",
+            "violet",
+        )
 
-    ccolors = (
-        "black",
-        "tan",
-        "cyan",
-        "brown",
-        "blue",
-        "violet",
-    )
+        xf0 = datetime.datetime(1907, 1, 1, 0, 0, 0)
+        xf1 = datetime.datetime(2007, 1, 1, 0, 0, 0)
+        xf0s = datetime.datetime(1990, 1, 1, 0, 0, 0)
+        xf1s = datetime.datetime(2007, 1, 1, 0, 0, 0)
+        xc0 = datetime.datetime(1992, 10, 1, 0, 0, 0)
+        xc1 = datetime.datetime(2006, 9, 4, 0, 0, 0)
+        dx = xc1 - xc0
+        xca = xc0 + dx / 2
 
-    xf0 = datetime.datetime(1907, 1, 1, 0, 0, 0)
-    xf1 = datetime.datetime(2007, 1, 1, 0, 0, 0)
-    xf0s = datetime.datetime(1990, 1, 1, 0, 0, 0)
-    xf1s = datetime.datetime(2007, 1, 1, 0, 0, 0)
-    xc0 = datetime.datetime(1992, 10, 1, 0, 0, 0)
-    xc1 = datetime.datetime(2006, 9, 4, 0, 0, 0)
-    dx = xc1 - xc0
-    xca = xc0 + dx / 2
+        # get observation data
+        df = get_obs_dataframe(file_name="008N010W01Q005S_obs.csv")
+        ix0 = df.index.get_loc("2006-09-04 00:00:00")
+        offset = df_sim["simulated"].values[-1] - df.observed.values[ix0]
+        df.observed += offset
 
-    # get observation data
-    df = get_obs_dataframe(file_name="008N010W01Q005S_obs.csv")
-    ix0 = df.index.get_loc("2006-09-04 00:00:00")
-    offset = df_sim["simulated"].values[-1] - df.observed.values[ix0]
-    df.observed += offset
+        # -- subplot a -----------------------------------------------------------
+        # build box for subplot B
+        o = datetime.timedelta(31)
+        ix = (xf0s, xf0s, xf1s - o, xf1s - o, xf0s)
+        iy = (1.15, 1.45, 1.45, 1.15, 1.15)
+        # -- subplot a -----------------------------------------------------------
 
-    # -- subplot a -----------------------------------------------------------
-    # build box for subplot B
-    o = datetime.timedelta(31)
-    ix = (xf0s, xf0s, xf1s - o, xf1s - o, xf0s)
-    iy = (1.15, 1.45, 1.45, 1.15, 1.15)
-    # -- subplot a -----------------------------------------------------------
+        # -- subplot c -----------------------------------------------------------
+        # get observations
+        df_pc = get_obs_dataframe()
 
-    # -- subplot c -----------------------------------------------------------
-    # get observations
-    df_pc = get_obs_dataframe()
+        # get index for start of calibration period for subplot c
+        ix0 = df_sim.index.get_loc("1992-10-01 12:00:00")
 
-    # get index for start of calibration period for subplot c
-    ix0 = df_sim.index.get_loc("1992-10-01 12:00:00")
+        # get initial simulated compaction
+        cstart = df_sim.simulated[ix0]
 
-    # get initial simulated compaction
-    cstart = df_sim.simulated[ix0]
+        # cut off initial portion of simulated compaction
+        df_sim_pc = df_sim[ix0:].copy()
 
-    # cut off initial portion of simulated compaction
-    df_sim_pc = df_sim[ix0:].copy()
+        # reset initial compaction to 0.
+        df_sim_pc.simulated -= cstart
 
-    # reset initial compaction to 0.
-    df_sim_pc.simulated -= cstart
+        # reset simulated so maximum compaction is the same
+        offset = df_pc.observed.values.max() - df_sim_pc.simulated.values[-1]
+        df_sim.simulated += offset
 
-    # reset simulated so maximum compaction is the same
-    offset = df_pc.observed.values.max() - df_sim_pc.simulated.values[-1]
-    df_sim.simulated += offset
+        # interpolate subsidence observations to the simulation index for subplot c
+        df_iobs_pc = dataframe_interp(df_pc, df_sim_pc.index)
 
-    # interpolate subsidence observations to the simulation index for subplot c
-    df_iobs_pc = dataframe_interp(df_pc, df_sim_pc.index)
+        # truncate head to start of observations
+        head_pc = dataframe_interp(df_obs_heads, df_sim_pc.index)
 
-    # truncate head to start of observations
-    head_pc = dataframe_interp(df_obs_heads, df_sim_pc.index)
+        # calculate geostatic stress
+        gs = sgm * (0.0 - head_pc.CHD_L01.values) + sgs * (
+            head_pc.CHD_L01.values - botm[-1]
+        )
 
-    # calculate geostatic stress
-    gs = sgm * (0.0 - head_pc.CHD_L01.values) + sgs * (
-        head_pc.CHD_L01.values - botm[-1]
-    )
+        # calculate hydrostatic stress for subplot c
+        u = head_pc.CHD_L13.values - botm[-1]
 
-    # calculate hydrostatic stress for subplot c
-    u = head_pc.CHD_L13.values - botm[-1]
+        # calculate effective stress
+        es_obs = gs - u
 
-    # calculate effective stress
-    es_obs = gs - u
+        # set up indices for date text for plot c
+        locs = [f"{yr:04d}-10-01 12:00:00" for yr in range(1992, 2006)]
+        locs += [f"{yr:04d}-04-01 12:00:00" for yr in range(1993, 2007)]
+        locs += ["2006-09-04 12:00:00"]
 
-    # set up indices for date text for plot c
-    locs = [f"{yr:04d}-10-01 12:00:00" for yr in range(1992, 2006)]
-    locs += [f"{yr:04d}-04-01 12:00:00" for yr in range(1993, 2007)]
-    locs += ["2006-09-04 12:00:00"]
+        ixs = [head_pc.index.get_loc(loc) for loc in locs]
+        # -- subplot c -----------------------------------------------------------
 
-    ixs = [head_pc.index.get_loc(loc) for loc in locs]
-    # -- subplot c -----------------------------------------------------------
+        ctext = "Calibration period\n{} to {}".format(
+            xc0.strftime("%B %d, %Y"), xc1.strftime("%B %d, %Y")
+        )
 
-    ctext = "Calibration period\n{} to {}".format(
-        xc0.strftime("%B %d, %Y"), xc1.strftime("%B %d, %Y")
-    )
+        fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(6.8, 6.8))
 
-    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(6.8, 6.8))
+        # -- plot a --------------------------------------------------------------
+        ax = axes.flat[0]
+        ax.set_xlim(xf0, xf1)
+        ax.plot([xf0, xf1], [0, 0], lw=0.5, color="0.5")
+        ax.plot(
+            [
+                xf0,
+            ],
+            [
+                -10,
+            ],
+            marker=".",
+            ms=1,
+            lw=0,
+            color="red",
+            label="Holly site (8N/10W-1Q)",
+        )
+        for idx, key in enumerate(pcomp):
+            if key == "TOTAL":
+                key = "simulated"
+            color = ccolors[idx]
+            label = clabels[idx]
+            ax.plot(
+                df_sim.index.values,
+                df_sim[key].values,
+                color=color,
+                label=label,
+                lw=0.75,
+            )
+        ax.plot(ix, iy, lw=1.0, color="red", zorder=200)
+        styles.add_text(ax=ax, text="B", x=xf0s, y=1.14, transform=False)
 
-    # -- plot a --------------------------------------------------------------
-    ax = axes.flat[0]
-    ax.set_xlim(xf0, xf1)
-    ax.plot([xf0, xf1], [0, 0], lw=0.5, color="0.5")
-    ax.plot(
-        [
-            xf0,
-        ],
-        [
-            -10,
-        ],
-        marker=".",
-        ms=1,
-        lw=0,
-        color="red",
-        label="Holly site (8N/10W-1Q)",
-    )
-    for idx, key in enumerate(pcomp):
-        if key == "TOTAL":
-            key = "simulated"
-        color = ccolors[idx]
-        label = clabels[idx]
+        ax.set_ylim(1.5, -0.1)
+        ax.xaxis.set_ticks(df_xticks)
+        ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%m/%d/%Y"))
+
+        ax.set_ylabel(f"Compaction, in {length_units}")
+        ax.set_xlabel("Year")
+
+        styles.graph_legend(ax=ax, frameon=False)
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax=ax)
+
+        # -- plot b --------------------------------------------------------------
+        ax = axes.flat[1]
+        ax.set_xlim(xf0s, xf1s)
+        ax.set_ylim(1.45, 1.15)
+        ax.plot(
+            df.index.values,
+            df["observed"].values,
+            marker=".",
+            ms=1,
+            lw=0,
+            color="red",
+        )
         ax.plot(
             df_sim.index.values,
-            df_sim[key].values,
-            color=color,
+            df_sim["simulated"].values,
+            color="black",
             label=label,
             lw=0.75,
         )
-    ax.plot(ix, iy, lw=1.0, color="red", zorder=200)
-    fs.add_text(ax=ax, text="B", x=xf0s, y=1.14, transform=False)
 
-    ax.set_ylim(1.5, -0.1)
-    ax.xaxis.set_ticks(df_xticks)
-    ax.xaxis.set_major_formatter(mpl.dates.DateFormatter("%m/%d/%Y"))
-
-    ax.set_ylabel(f"Compaction, in {length_units}")
-    ax.set_xlabel("Year")
-
-    fs.graph_legend(ax=ax, frameon=False)
-    fs.heading(ax, letter="A")
-    fs.remove_edge_ticks(ax=ax)
-
-    # -- plot b --------------------------------------------------------------
-    ax = axes.flat[1]
-    ax.set_xlim(xf0s, xf1s)
-    ax.set_ylim(1.45, 1.15)
-    ax.plot(
-        df.index.values,
-        df["observed"].values,
-        marker=".",
-        ms=1,
-        lw=0,
-        color="red",
-    )
-    ax.plot(
-        df_sim.index.values,
-        df_sim["simulated"].values,
-        color="black",
-        label=label,
-        lw=0.75,
-    )
-
-    # plot lines for calibration
-    ax.plot([xc0, xc0], [1.45, 1.15], color="black", lw=0.5, ls=":")
-    ax.plot([xc1, xc1], [1.45, 1.15], color="black", lw=0.5, ls=":")
-    fs.add_annotation(
-        ax=ax,
-        text=ctext,
-        italic=False,
-        bold=False,
-        xy=(xc0 - o, 1.2),
-        xytext=(xca, 1.2),
-        ha="center",
-        va="center",
-        arrowprops=dict(arrowstyle="-|>", fc="black", lw=0.5),
-        color="none",
-        bbox=dict(boxstyle="square,pad=-0.07", fc="none", ec="none"),
-    )
-    fs.add_annotation(
-        ax=ax,
-        text=ctext,
-        italic=False,
-        bold=False,
-        xy=(xc1 + o, 1.2),
-        xytext=(xca, 1.2),
-        ha="center",
-        va="center",
-        arrowprops=dict(arrowstyle="-|>", fc="black", lw=0.5),
-        bbox=dict(boxstyle="square,pad=-0.07", fc="none", ec="none"),
-    )
-
-    ax.yaxis.set_ticks(np.linspace(1.15, 1.45, 7))
-    ax.xaxis.set_ticks(df_xticks1)
-
-    ax.xaxis.set_major_locator(mpl.dates.YearLocator())
-    ax.xaxis.set_minor_locator(mpl.dates.YearLocator(month=6, day=15))
-
-    ax.xaxis.set_major_formatter(mpl.ticker.NullFormatter())
-    ax.xaxis.set_minor_formatter(mpl.dates.DateFormatter("%Y"))
-    ax.tick_params(axis="x", which="minor", length=0)
-
-    ax.set_ylabel(f"Compaction, in {length_units}")
-    ax.set_xlabel("Year")
-    fs.heading(ax, letter="B")
-    fs.remove_edge_ticks(ax=ax)
-
-    # -- plot c --------------------------------------------------------------
-    ax = axes.flat[2]
-    ax.set_xlim(-0.01, 0.2)
-    ax.set_ylim(368, 376)
-
-    ax.plot(
-        df_iobs_pc.observed.values,
-        es_obs,
-        marker=".",
-        ms=1,
-        color="red",
-        lw=0,
-        label="Holly site (8N/10W-1Q)",
-    )
-    ax.plot(
-        df_sim_pc.simulated.values,
-        df_sim_pc.ES14.values,
-        color="black",
-        lw=0.75,
-        label="Simulated",
-    )
-
-    for idx, ixc in enumerate(ixs):
-        text = "{}".format(df_iobs_pc.index[ixc].strftime("%m/%d/%Y"))
-        if df_iobs_pc.index[ixc].month == 4:
-            dxc = -0.001
-            dyc = -1
-        elif df_iobs_pc.index[ixc].month == 9:
-            dxc = 0.002
-            dyc = 0.75
-        else:
-            dxc = 0.001
-            dyc = 1
-        xc = df_iobs_pc.observed[ixc]
-        yc = es_obs[ixc]
-        fs.add_annotation(
+        # plot lines for calibration
+        ax.plot([xc0, xc0], [1.45, 1.15], color="black", lw=0.5, ls=":")
+        ax.plot([xc1, xc1], [1.45, 1.15], color="black", lw=0.5, ls=":")
+        styles.add_annotation(
             ax=ax,
-            text=text,
+            text=ctext,
             italic=False,
             bold=False,
-            xy=(xc, yc),
-            xytext=(xc + dxc, yc + dyc),
+            xy=(xc0 - o, 1.2),
+            xytext=(xca, 1.2),
             ha="center",
             va="center",
-            fontsize=7,
-            arrowprops=dict(arrowstyle="-", color="red", fc="red", lw=0.5),
-            bbox=dict(boxstyle="square,pad=-0.15", fc="none", ec="none"),
+            arrowprops=dict(arrowstyle="-|>", fc="black", lw=0.5),
+            color="none",
+            bbox=dict(boxstyle="square,pad=-0.07", fc="none", ec="none"),
+        )
+        styles.add_annotation(
+            ax=ax,
+            text=ctext,
+            italic=False,
+            bold=False,
+            xy=(xc1 + o, 1.2),
+            xytext=(xca, 1.2),
+            ha="center",
+            va="center",
+            arrowprops=dict(arrowstyle="-|>", fc="black", lw=0.5),
+            bbox=dict(boxstyle="square,pad=-0.07", fc="none", ec="none"),
         )
 
-    xtext = "Total compaction since {}, in {}".format(
-        df_sim_pc.index[0].strftime("%B %d, %Y"), length_units
-    )
-    ytext = (
-        "Effective stress at the bottom of\nthe lower aquifer, in "
-        + f"{length_units} of water"
-    )
-    ax.set_xlabel(xtext)
-    ax.set_ylabel(ytext)
-    fs.heading(ax, letter="C")
-    fs.remove_edge_ticks(ax=ax)
-    fs.remove_edge_ticks(ax)
+        ax.yaxis.set_ticks(np.linspace(1.15, 1.45, 7))
+        ax.xaxis.set_ticks(df_xticks1)
 
-    # finalize figure
-    fig.tight_layout(pad=0.01)
+        ax.xaxis.set_major_locator(mpl.dates.YearLocator())
+        ax.xaxis.set_minor_locator(mpl.dates.YearLocator(month=6, day=15))
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-03{config.figure_ext}"
+        ax.xaxis.set_major_formatter(mpl.ticker.NullFormatter())
+        ax.xaxis.set_minor_formatter(mpl.dates.DateFormatter("%Y"))
+        ax.tick_params(axis="x", which="minor", length=0)
+
+        ax.set_ylabel(f"Compaction, in {length_units}")
+        ax.set_xlabel("Year")
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax=ax)
+
+        # -- plot c --------------------------------------------------------------
+        ax = axes.flat[2]
+        ax.set_xlim(-0.01, 0.2)
+        ax.set_ylim(368, 376)
+
+        ax.plot(
+            df_iobs_pc.observed.values,
+            es_obs,
+            marker=".",
+            ms=1,
+            color="red",
+            lw=0,
+            label="Holly site (8N/10W-1Q)",
         )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        ax.plot(
+            df_sim_pc.simulated.values,
+            df_sim_pc.ES14.values,
+            color="black",
+            lw=0.75,
+            label="Simulated",
+        )
+
+        for idx, ixc in enumerate(ixs):
+            text = "{}".format(df_iobs_pc.index[ixc].strftime("%m/%d/%Y"))
+            if df_iobs_pc.index[ixc].month == 4:
+                dxc = -0.001
+                dyc = -1
+            elif df_iobs_pc.index[ixc].month == 9:
+                dxc = 0.002
+                dyc = 0.75
+            else:
+                dxc = 0.001
+                dyc = 1
+            xc = df_iobs_pc.observed[ixc]
+            yc = es_obs[ixc]
+            styles.add_annotation(
+                ax=ax,
+                text=text,
+                italic=False,
+                bold=False,
+                xy=(xc, yc),
+                xytext=(xc + dxc, yc + dyc),
+                ha="center",
+                va="center",
+                fontsize=7,
+                arrowprops=dict(arrowstyle="-", color="red", fc="red", lw=0.5),
+                bbox=dict(boxstyle="square,pad=-0.15", fc="none", ec="none"),
+            )
+
+        xtext = "Total compaction since {}, in {}".format(
+            df_sim_pc.index[0].strftime("%B %d, %Y"), length_units
+        )
+        ytext = (
+            "Effective stress at the bottom of\nthe lower aquifer, in "
+            + f"{length_units} of water"
+        )
+        ax.set_xlabel(xtext)
+        ax.set_ylabel(ytext)
+        styles.heading(ax, letter="C")
+        styles.remove_edge_ticks(ax=ax)
+        styles.remove_edge_ticks(ax)
+
+        # finalize figure
+        fig.tight_layout(pad=0.01)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-03{config.figure_ext}"
+            )
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot vertical head profiles
 
 
 def plot_vertical_head(silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-
-    name = list(parameters.keys())[1]
-    pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
-    df_heads, col_list = process_sim_csv(
-        pth, origin_str="1908-05-09 00:00:00.000000"
-    )
-    df_heads_year = df_heads.groupby(df_heads.index.year).mean()
-
-    def get_colors(vmax=6):
-        # set color
-        cmap = plt.get_cmap("viridis")
-        cNorm = mpl.colors.Normalize(vmin=0, vmax=vmax)
-        scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
-        colors = []
-        for ic in range(vmax):
-            colors.append(scalarMap.to_rgba(ic))
-        return colors
-
-    def build_head_data(df, year=1908):
-        dfr = df.loc[df.index == year]
-        xlabel = None
-        x = []
-        y = []
-        for k in range(14):
-            tag = f"HD{k + 1:02d}"
-            h = dfr[tag].values[0]
-            if k == 0:
-                z0 = -25.0
-                xlabel = -1.0 * h
-            else:
-                z0 = zelevs[k]
-            z1 = zelevs[k + 1]
-            h *= -1.0
-            x += [h, h]
-            y += [-z0, -z1]
-        return xlabel, x, y
-
-    iyears = (1908, 1916, 1926, 1936, 1946, 1956, 1966, 1976, 1986, 1996, 2006)
-    colors = get_colors(vmax=len(iyears) - 1)
-
-    xrange = (-10, 50)
-    fig, ax = plt.subplots(
-        nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0)
-    )
-
-    ax.set_xlim(xrange)
-    ax.set_ylim(-botm[-1], 0)
-
-    for z in botm:
-        ax.axhline(y=-z, xmin=-30, xmax=160, lw=0.5, color="0.5")
-
-    # add confining units
-    label = ""
-    for k in (1, 2, 3):
-        label = set_label(label, text="Confining unit")
-        ax.fill_between(
-            xrange, edges[k], y2=edges[k + 1], color="brown", lw=0, label=label
+    with styles.USGSPlot() as fs:
+        name = list(parameters.keys())[1]
+        pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
+        df_heads, col_list = process_sim_csv(
+            pth, origin_str="1908-05-09 00:00:00.000000"
         )
-    ypos = -0.5 * (zelevs[2] + zelevs[3])
-    ax.text(
-        40,
-        ypos,
-        "Confining unit",
-        ha="left",
-        va="center",
-        size=8,
-        color="white",
-    )
+        df_heads_year = df_heads.groupby(df_heads.index.year).mean()
 
-    label = ""
-    for k in (7, 8, 9):
-        label = set_label(label, text="Thick aquitard")
-        ax.fill_between(
-            xrange, edges[k], y2=edges[k + 1], color="tan", lw=0, label=label
-        )
-    ypos = -0.5 * (zelevs[8] + zelevs[9])
-    ax.text(
-        40,
-        ypos,
-        "Thick aquitard",
-        ha="left",
-        va="center",
-        size=8,
-        color="white",
-    )
+        def get_colors(vmax=6):
+            # set color
+            cmap = plt.get_cmap("viridis")
+            cNorm = mpl.colors.Normalize(vmin=0, vmax=vmax)
+            scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
+            colors = []
+            for ic in range(vmax):
+                colors.append(scalarMap.to_rgba(ic))
+            return colors
 
-    zo = 105
-    for idx, iyear in enumerate(iyears[:-1]):
-        xlabel, x, y = build_head_data(df_heads_year, year=iyear)
-        xlabel1, x1, y1 = build_head_data(df_heads_year, year=iyears[idx + 1])
-        ax.fill_betweenx(
-            y, x, x2=x1, color=colors[idx], zorder=zo, step="mid", lw=0
+        def build_head_data(df, year=1908):
+            dfr = df.loc[df.index == year]
+            xlabel = None
+            x = []
+            y = []
+            for k in range(14):
+                tag = f"HD{k + 1:02d}"
+                h = dfr[tag].values[0]
+                if k == 0:
+                    z0 = -25.0
+                    xlabel = -1.0 * h
+                else:
+                    z0 = zelevs[k]
+                z1 = zelevs[k + 1]
+                h *= -1.0
+                x += [h, h]
+                y += [-z0, -z1]
+            return xlabel, x, y
+
+        iyears = (1908, 1916, 1926, 1936, 1946, 1956, 1966, 1976, 1986, 1996, 2006)
+        colors = get_colors(vmax=len(iyears) - 1)
+
+        xrange = (-10, 50)
+        fig, ax = plt.subplots(
+            nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0)
         )
-        ax.plot(x, y, lw=0.5, color="black", zorder=201)
+
+        ax.set_xlim(xrange)
+        ax.set_ylim(-botm[-1], 0)
+
+        for z in botm:
+            ax.axhline(y=-z, xmin=-30, xmax=160, lw=0.5, color="0.5")
+
+        # add confining units
+        label = ""
+        for k in (1, 2, 3):
+            label = set_label(label, text="Confining unit")
+            ax.fill_between(
+                xrange, edges[k], y2=edges[k + 1], color="brown", lw=0, label=label
+            )
+        ypos = -0.5 * (zelevs[2] + zelevs[3])
         ax.text(
-            xlabel,
-            24,
-            f"{iyear}",
-            ha="center",
-            va="bottom",
-            rotation=90,
-            size=7,
+            40,
+            ypos,
+            "Confining unit",
+            ha="left",
+            va="center",
+            size=8,
+            color="white",
         )
-        if iyear == 1996:
-            ax.plot(x1, y1, lw=0.5, color="black", zorder=zo)
+
+        label = ""
+        for k in (7, 8, 9):
+            label = set_label(label, text="Thick aquitard")
+            ax.fill_between(
+                xrange, edges[k], y2=edges[k + 1], color="tan", lw=0, label=label
+            )
+        ypos = -0.5 * (zelevs[8] + zelevs[9])
+        ax.text(
+            40,
+            ypos,
+            "Thick aquitard",
+            ha="left",
+            va="center",
+            size=8,
+            color="white",
+        )
+
+        zo = 105
+        for idx, iyear in enumerate(iyears[:-1]):
+            xlabel, x, y = build_head_data(df_heads_year, year=iyear)
+            xlabel1, x1, y1 = build_head_data(df_heads_year, year=iyears[idx + 1])
+            ax.fill_betweenx(
+                y, x, x2=x1, color=colors[idx], zorder=zo, step="mid", lw=0
+            )
+            ax.plot(x, y, lw=0.5, color="black", zorder=201)
             ax.text(
-                xlabel1,
+                xlabel,
                 24,
-                f"{iyears[idx + 1]}",
+                f"{iyear}",
                 ha="center",
                 va="bottom",
                 rotation=90,
                 size=7,
             )
-        zo += 1
+            if iyear == 1996:
+                ax.plot(x1, y1, lw=0.5, color="black", zorder=zo)
+                ax.text(
+                    xlabel1,
+                    24,
+                    f"{iyears[idx + 1]}",
+                    ha="center",
+                    va="bottom",
+                    rotation=90,
+                    size=7,
+                )
+            zo += 1
 
-    # add layer labels
-    for k in llabels:
-        print_label(ax, edges, k)
+        # add layer labels
+        for k in llabels:
+            print_label(ax, edges, k)
 
-    constant_heads(ax, annotate=True, xrange=xrange)
+        constant_heads(ax, annotate=True, xrange=xrange)
 
-    ax.set_xlabel("Depth to water, in meters below land surface")
-    ax.set_ylabel("Depth below land surface, in meters")
+        ax.set_xlabel("Depth to water, in meters below land surface")
+        ax.set_ylabel("Depth below land surface, in meters")
 
-    fs.remove_edge_ticks(ax)
+        styles.remove_edge_ticks(ax)
 
-    fig.tight_layout(pad=0.5)
+        fig.tight_layout(pad=0.5)
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-04{config.figure_ext}"
-        )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-04{config.figure_ext}"
+            )
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the model results.

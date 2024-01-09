@@ -21,7 +21,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties
 
@@ -258,9 +258,10 @@ def plot_results(silent=True):
     else:
         verbosity_level = 0
 
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=verbose)
+    if not config.plotModel:
+        return
 
+    with styles.USGSMap() as fs:
         # load the newton model
         name = list(parameters.keys())[0]
         sim_ws = os.path.join(ws, name)
@@ -358,7 +359,7 @@ def plot_results(silent=True):
                     mfc="cyan",
                     label="Constant head",
                 )
-                fs.graph_legend(
+                styles.graph_legend(
                     ax,
                     loc="upper right",
                     ncol=2,
@@ -367,9 +368,9 @@ def plot_results(silent=True):
                     edgecolor="none",
                 )
             letter = chr(ord("@") + idx + 1)
-            fs.heading(letter=letter, ax=ax)
-            fs.add_text(ax, text=me_text, x=1, y=1.01, ha="right", bold=False)
-            fs.remove_edge_ticks(ax)
+            styles.heading(letter=letter, ax=ax)
+            styles.add_text(ax, text=me_text, x=1, y=1.01, ha="right", bold=False)
+            styles.remove_edge_ticks(ax)
 
             # set fake y-axis label
             ax.set_ylabel(" ")
@@ -387,7 +388,7 @@ def plot_results(silent=True):
         ax.set_ylim(0, 1)
         ax.set_yticks([0, 1])
         ax.set_ylabel("Water-table elevation above arbitrary datum, in meters")
-        fs.remove_edge_ticks(ax)
+        styles.remove_edge_ticks(ax)
 
         # save figure
         if config.plotSave:

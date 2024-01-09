@@ -18,7 +18,7 @@ import flopy
 import flopy.utils.binaryfile as bf
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
 
 mf6exe = "mf6"
@@ -870,10 +870,12 @@ def run_model(sim, silent=True):
 
 
 def plot_results(mf6, idx):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_name = mf6.name
-        fs = USGSFigure(figure_type="graph", verbose=False)
+    if not config.plotModel:
+        return
+
+    print("Plotting model results...")
+    sim_name = mf6.name
+    with styles.USGSPlot() as fs:
 
         # Start by retrieving some output
         mf6_out_pth = mf6.simulation_data.mfpath.get_sim_path()
@@ -1103,7 +1105,7 @@ def plot_results(mf6, idx):
 
         title = "River conditions with steady flow"
         letter = chr(ord("@") + idx + 1)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         # save figure
         if config.plotSave:

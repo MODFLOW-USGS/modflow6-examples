@@ -29,7 +29,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -244,82 +244,80 @@ def run_model(sim, silent=False):
 # Function to plot the DISVMESH model results.
 #
 def plot_grid(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid(linewidth=1)
-    pmv.plot_bc(name="GHB")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid(linewidth=1)
+        pmv.plot_bc(name="GHB")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_head(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=(7.5, 5))
-    fig.tight_layout()
+        fig = plt.figure(figsize=(7.5, 5))
+        fig.tight_layout()
 
-    head = gwf.output.head().get_data()[:, 0, :]
+        head = gwf.output.head().get_data()[:, 0, :]
 
-    # create MODFLOW 6 cell-by-cell budget object
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf,
-    )
-
-    ax = fig.add_subplot(1, 2, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="A", heading="Layer 1")
-
-    ax = fig.add_subplot(1, 2, 2, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
-    cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="B", heading="Layer 2")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget object
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
         )
-        fig.savefig(fpth)
-    return
+
+        ax = fig.add_subplot(1, 2, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="A", heading="Layer 1")
+
+        ax = fig.add_subplot(1, 2, 2, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
+        cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="B", heading="Layer 2")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
@@ -327,7 +325,6 @@ def plot_results(idx, sim, silent=True):
         if idx == 0:
             plot_grid(idx, sim)
         plot_head(idx, sim)
-    return
 
 
 # Function that wraps all of the steps for the FHB model

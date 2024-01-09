@@ -24,7 +24,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -309,9 +309,12 @@ def plot_analytical(ax, levels):
 
 def plot_results(sims):
     if config.plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        fs = USGSFigure(figure_type="map", verbose=False)
+        return
+
+    print("Plotting model results...")
+    _, sim_mf6gwt = sims
+
+    with styles.USGSMap() as fs:
 
         conc = sim_mf6gwt.trans.output.concentration().get_data()
 

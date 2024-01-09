@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -461,153 +461,147 @@ def run_model(sim, silent=False):
 #
 def plot_grid(sim):
     print(f"Plotting grid for {sim.name}...")
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = sim.simulation_data.mfpath.get_sim_path()
-    sim_name = sim.name
-    gwf = sim.get_model("parent")
-    gwfc = None
-    if "child" in list(sim.model_names):
-        gwfc = sim.get_model("child")
+    with styles.USGSMap() as fs:
+        sim_name = sim.name
+        gwf = sim.get_model("parent")
+        gwfc = None
+        if "child" in list(sim.model_names):
+            gwfc = sim.get_model("child")
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    # pmv.plot_grid()
-    idomain = gwf.dis.idomain.array
-    tp = np.ma.masked_where(idomain[0] == 0, gwf.dis.top.array)
-    vmin = tp.min()
-    vmax = tp.max()
-    if gwfc is not None:
-        tpc = gwfc.dis.top.array
-        vmin = min(vmin, tpc.min())
-        vmax = max(vmax, tpc.max())
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        # pmv.plot_grid()
+        idomain = gwf.dis.idomain.array
+        tp = np.ma.masked_where(idomain[0] == 0, gwf.dis.top.array)
+        vmin = tp.min()
+        vmax = tp.max()
+        if gwfc is not None:
+            tpc = gwfc.dis.top.array
+            vmin = min(vmin, tpc.min())
+            vmax = max(vmax, tpc.max())
 
-    cb = pmv.plot_array(tp, cmap="jet", alpha=0.25, vmin=vmin, vmax=vmax)
-    pmv.plot_bc(name="RIV")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    cbar = plt.colorbar(cb, shrink=0.5)
-    cbar.ax.set_xlabel(r"Top, ($m$)")
-    if gwfc is not None:
-        pmv = flopy.plot.PlotMapView(model=gwfc, ax=ax, layer=0)
-        _ = pmv.plot_array(
-            tpc,
-            cmap="jet",
-            alpha=0.25,
-            masked_values=[1e30],
-            vmin=vmin,
-            vmax=vmax,
-        )
+        cb = pmv.plot_array(tp, cmap="jet", alpha=0.25, vmin=vmin, vmax=vmax)
         pmv.plot_bc(name="RIV")
-    if gwfc is not None:
-        xmin, xmax, ymin, ymax = child_domain
-        ax.plot(
-            [xmin, xmax, xmax, xmin, xmin],
-            [ymin, ymin, ymax, ymax, ymin],
-            "k--",
-        )
-    xmin, xmax, ymin, ymax = model_domain
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        cbar = plt.colorbar(cb, shrink=0.5)
+        cbar.ax.set_xlabel(r"Top, ($m$)")
+        if gwfc is not None:
+            pmv = flopy.plot.PlotMapView(model=gwfc, ax=ax, layer=0)
+            _ = pmv.plot_array(
+                tpc,
+                cmap="jet",
+                alpha=0.25,
+                masked_values=[1e30],
+                vmin=vmin,
+                vmax=vmax,
+            )
+            pmv.plot_bc(name="RIV")
+        if gwfc is not None:
+            xmin, xmax, ymin, ymax = child_domain
+            ax.plot(
+                [xmin, xmax, xmax, xmin, xmin],
+                [ymin, ymin, ymax, ymax, ymin],
+                "k--",
+            )
+        xmin, xmax, ymin, ymax = model_domain
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_xsect(sim):
     print(f"Plotting cross section for {sim.name}...")
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = sim.simulation_data.mfpath.get_sim_path()
-    sim_name = sim.name
-    gwf = sim.get_model("parent")
+    with styles.USGSMap() as fs:
+        sim_name = sim.name
+        gwf = sim.get_model("parent")
 
-    fig = plt.figure(figsize=(5, 2.5))
-    fig.tight_layout()
+        fig = plt.figure(figsize=(5, 2.5))
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1)
-    irow, icol = gwf.modelgrid.intersect(3000.0, 3000.0)
-    pmv = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"column": icol})
-    pmv.plot_grid(linewidth=0.5)
-    hyc = np.log(gwf.npf.k.array)
-    cb = pmv.plot_array(hyc, cmap="jet", alpha=0.25)
-    ax.set_xlabel("y position (m)")
-    ax.set_ylabel("z position (m)")
-    cbar = plt.colorbar(cb, shrink=0.5)
-    cbar.ax.set_xlabel(r"K, ($m/s$)")
+        ax = fig.add_subplot(1, 1, 1)
+        irow, icol = gwf.modelgrid.intersect(3000.0, 3000.0)
+        pmv = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"column": icol})
+        pmv.plot_grid(linewidth=0.5)
+        hyc = np.log(gwf.npf.k.array)
+        cb = pmv.plot_array(hyc, cmap="jet", alpha=0.25)
+        ax.set_xlabel("y position (m)")
+        ax.set_ylabel("z position (m)")
+        cbar = plt.colorbar(cb, shrink=0.5)
+        cbar.ax.set_xlabel(r"K, ($m/s$)")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-xsect{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-xsect{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_heads(sim):
     print(f"Plotting results for {sim.name} ...")
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = sim.simulation_data.mfpath.get_sim_path()
-    sim_name = sim.name
-    gwf = sim.get_model("parent")
-    modelname = gwf.name
-    gwfc = None
-    if "child" in list(sim.model_names):
-        gwfc = sim.get_model("child")
+    with styles.USGSMap() as fs:
+        sim_name = sim.name
+        gwf = sim.get_model("parent")
+        modelname = gwf.name
+        gwfc = None
+        if "child" in list(sim.model_names):
+            gwfc = sim.get_model("child")
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    print("  Loading heads...")
-    layer = 0
-    head = gwf.output.head().get_data()
-    head = np.ma.masked_where(head > 1e29, head)
-    vmin = head[layer].min()
-    vmax = head[layer].max()
-    if gwfc is not None:
-        headc = gwfc.output.head().get_data()
-        vmin = min(vmin, headc.min())
-        vmax = max(vmax, headc.max())
+        print("  Loading heads...")
+        layer = 0
+        head = gwf.output.head().get_data()
+        head = np.ma.masked_where(head > 1e29, head)
+        vmin = head[layer].min()
+        vmax = head[layer].max()
+        if gwfc is not None:
+            headc = gwfc.output.head().get_data()
+            vmin = min(vmin, headc.min())
+            vmax = max(vmax, headc.max())
 
-    print("  Making figure...")
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    cb = pmv.plot_array(
-        head, cmap="jet", masked_values=[1e30], vmin=vmin, vmax=vmax
-    )
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    cbar = plt.colorbar(cb, shrink=0.5)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    if gwfc is not None:
-        pmv = flopy.plot.PlotMapView(model=gwfc, ax=ax, layer=0)
+        print("  Making figure...")
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
         cb = pmv.plot_array(
-            headc, cmap="jet", masked_values=[1e30], vmin=vmin, vmax=vmax
+            head, cmap="jet", masked_values=[1e30], vmin=vmin, vmax=vmax
         )
-        xmin, xmax, ymin, ymax = child_domain
-        ax.plot(
-            [xmin, xmax, xmax, xmin, xmin],
-            [ymin, ymin, ymax, ymax, ymin],
-            "k--",
-        )
-    xmin, xmax, ymin, ymax = model_domain
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        cbar = plt.colorbar(cb, shrink=0.5)
+        cbar.ax.set_xlabel(r"Head, ($m$)")
+        if gwfc is not None:
+            pmv = flopy.plot.PlotMapView(model=gwfc, ax=ax, layer=0)
+            cb = pmv.plot_array(
+                headc, cmap="jet", masked_values=[1e30], vmin=vmin, vmax=vmax
+            )
+            xmin, xmax, ymin, ymax = child_domain
+            ax.plot(
+                [xmin, xmax, xmax, xmin, xmin],
+                [ymin, ymin, ymax, ymax, ymin],
+                "k--",
+            )
+        xmin, xmax, ymin, ymax = model_domain
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):

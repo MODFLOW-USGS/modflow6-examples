@@ -35,7 +35,7 @@ import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 from scipy.special import erf, erfc
 
 mf6exe = "mf6"
@@ -943,65 +943,65 @@ def plot_results(
         y_150_mf6_sln = conc_mf6[-1, 6, (42 - 1), 22:]
 
         # Create figure for scenario
-        fs = USGSFigure(figure_type="graph", verbose=False)
-        sim_name = sim_mf6gwt.name
-        plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
+        with styles.USGSPlot() as fs:
+            sim_name = sim_mf6gwt.name
+            plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
-        if ax is None:
-            fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
-            ax = fig.add_subplot(1, 1, 1)
+            if ax is None:
+                fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
+                ax = fig.add_subplot(1, 1, 1)
 
-        for xc in avlines:
-            ax.axvline(x=xc, color="k", linestyle=":", alpha=0.1)
+            for xc in avlines:
+                ax.axvline(x=xc, color="k", linestyle=":", alpha=0.1)
 
-        ss_ln = ax.plot(
-            x_pos,
-            y_ss_anly_sln,
-            "r-",
-            label="Steady state analytical solution",
-        )
-        tr_ln = ax.plot(
-            x_pos, y_tr_anly_sln, "b-", label="Transient analytical solution"
-        )
-
-        if mt3d is not None:
-            mt_ss_ln = ax.plot(
-                x_pos, y_150_mt_sln, "r+", label="Steady state MT3DMS, TVD"
+            ss_ln = ax.plot(
+                x_pos,
+                y_ss_anly_sln,
+                "r-",
+                label="Steady state analytical solution",
             )
-            mt_tr_ln = ax.plot(
-                x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS"
+            tr_ln = ax.plot(
+                x_pos, y_tr_anly_sln, "b-", label="Transient analytical solution"
             )
 
-        mf6_ss_ln = ax.plot(
-            x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
-        )
-        mf6_tr_ln = ax.plot(
-            x_pos,
-            y_10_mf6_sln,
-            "bo",
-            markerfacecolor="none",
-            label="Transient MF6-GWT",
-        )
-        ax.set_xlim(1, 100)
-        ax.set_ylim(285.15 - 2.1, 285.15 + 0.5)
-        ax.set_xscale("log")
-        ax.set_xlabel("x-coordinate, in meters")
-        ax.set_ylabel("temperature, in Kelvins")
-        ax.legend()
-        plt.tight_layout()
+            if mt3d is not None:
+                mt_ss_ln = ax.plot(
+                    x_pos, y_150_mt_sln, "r+", label="Steady state MT3DMS, TVD"
+                )
+                mt_tr_ln = ax.plot(
+                    x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS"
+                )
 
-        # save figure
-        if config.plotSave:
-            letter = chr(ord("@") + idx + 1)
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}{}".format(
-                    "ex-" + sim_name + "-" + letter,
-                    config.figure_ext,
-                ),
+            mf6_ss_ln = ax.plot(
+                x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
             )
-            fig.savefig(fpth)
+            mf6_tr_ln = ax.plot(
+                x_pos,
+                y_10_mf6_sln,
+                "bo",
+                markerfacecolor="none",
+                label="Transient MF6-GWT",
+            )
+            ax.set_xlim(1, 100)
+            ax.set_ylim(285.15 - 2.1, 285.15 + 0.5)
+            ax.set_xscale("log")
+            ax.set_xlabel("x-coordinate, in meters")
+            ax.set_ylabel("temperature, in Kelvins")
+            ax.legend()
+            plt.tight_layout()
+
+            # save figure
+            if config.plotSave:
+                letter = chr(ord("@") + idx + 1)
+                fpth = os.path.join(
+                    "..",
+                    "figures",
+                    "{}{}".format(
+                        "ex-" + sim_name + "-" + letter,
+                        config.figure_ext,
+                    ),
+                )
+                fig.savefig(fpth)
 
 
 # ### Function that wraps all of the steps for each MT3DMS Example 10 Problem scenario

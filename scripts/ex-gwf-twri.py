@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -295,8 +295,10 @@ def run_model(sim, mf, silent=True):
 
 
 def plot_results(sim, mf, silent=True):
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=False)
+    if not config.plotModel:
+        return
+
+    with styles.USGSMap() as fs:
         sim_ws = os.path.join(ws, sim_name)
         gwf = sim.get_model(sim_name)
 
@@ -390,7 +392,7 @@ def plot_results(sim, mf, silent=True):
             fmp.plot_vector(qx, qy, normalize=True, color="0.75")
             title = titles[idx]
             letter = chr(ord("@") + idx + 1)
-            fs.heading(letter=letter, heading=title, ax=ax)
+            styles.heading(letter=letter, heading=title, ax=ax)
 
         for idx, ax in enumerate(axes.flatten()[3:6]):
             fmp = flopy.plot.PlotMapView(
@@ -413,7 +415,7 @@ def plot_results(sim, mf, silent=True):
             fmp.plot_vector(sqx, sqy, normalize=True, color="0.75")
             title = titles[idx]
             letter = chr(ord("@") + idx + 4)
-            fs.heading(letter=letter, heading=title, ax=ax)
+            styles.heading(letter=letter, heading=title, ax=ax)
 
         # create legend
         ax = plt.subplot(313)
@@ -455,7 +457,7 @@ def plot_results(sim, mf, silent=True):
         ax.plot(
             -10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$"
         )
-        fs.graph_legend(ax, loc="upper center")
+        styles.graph_legend(ax, loc="upper center")
 
         # plot colorbar
         cax = plt.axes([0.325, 0.125, 0.35, 0.025])

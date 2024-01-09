@@ -37,7 +37,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -531,23 +531,25 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mt3d, mf6, idx, ax=None):
-    if config.plotModel:
-        mt3d_out_path = mt3d.model_ws
-        mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
-        mf6.simulation_data.mfpath.get_sim_path()
+    if not config.plotModel:
+        return 
 
-        # Get the MT3DMS concentration output
-        fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
-        ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
-        conc_mt3d = ucnobj_mt3d.get_alldata()
+    mt3d_out_path = mt3d.model_ws
+    mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
+    mf6.simulation_data.mfpath.get_sim_path()
 
-        # Get the MF6 concentration output
-        gwt = mf6.get_model(list(mf6.model_names)[1])
-        ucnobj_mf6 = gwt.output.concentration()
-        conc_mf6 = ucnobj_mf6.get_alldata()
+    # Get the MT3DMS concentration output
+    fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
+    ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
+    conc_mt3d = ucnobj_mt3d.get_alldata()
+
+    # Get the MF6 concentration output
+    gwt = mf6.get_model(list(mf6.model_names)[1])
+    ucnobj_mf6 = gwt.output.concentration()
+    conc_mf6 = ucnobj_mf6.get_alldata()
 
         # Create figure for scenario
-        fs = USGSFigure(figure_type="graph", verbose=False)
+    with styles.USGSPlot() as fs:
         sim_name = mf6.name
         if ax is None:
             fig, ax = plt.subplots(
@@ -580,7 +582,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         )
         ax.legend()
         letter = chr(ord("@") + idx + 1)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         # save figure
         if config.plotSave:

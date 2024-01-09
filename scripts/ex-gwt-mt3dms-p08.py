@@ -34,7 +34,7 @@ import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
 
 mf6exe = "mf6"
@@ -560,24 +560,26 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
-    if config.plotModel:
-        print("Plotting model results...")
-        mt3d_out_path = mt3d.model_ws
-        mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
-        mf6.simulation_data.mfpath.get_sim_path()
+    if not config.plotModel:
+        return 
 
-        # Get the MT3DMS concentration output
-        fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
-        ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
-        conc_mt3d = ucnobj_mt3d.get_alldata()
+    print("Plotting model results...")
+    mt3d_out_path = mt3d.model_ws
+    mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
+    mf6.simulation_data.mfpath.get_sim_path()
 
-        # Get the MF6 concentration output
-        gwt = mf6.get_model(list(mf6.model_names)[1])
-        ucnobj_mf6 = gwt.output.concentration()
-        conc_mf6 = ucnobj_mf6.get_alldata()
+    # Get the MT3DMS concentration output
+    fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
+    ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
+    conc_mt3d = ucnobj_mt3d.get_alldata()
 
-        # Create figure for scenario
-        fs = USGSFigure(figure_type="graph", verbose=False)
+    # Get the MF6 concentration output
+    gwt = mf6.get_model(list(mf6.model_names)[1])
+    ucnobj_mf6 = gwt.output.concentration()
+    conc_mf6 = ucnobj_mf6.get_alldata()
+
+    # Create figure for scenario
+    with styles.USGSPlot() as fs:
         sim_name = mf6.name
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
@@ -608,7 +610,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
         )
         letter = chr(ord("@") + idx + 1)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         if axWasNone:
             ax = fig.add_subplot(2, 1, 2)
@@ -626,7 +628,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
         )
         letter = chr(ord("@") + idx + 2)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         # save figure
         if config.plotSave:
@@ -660,7 +662,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
         )
         letter = chr(ord("@") + idx + 3)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         if axWasNone:
             ax = fig.add_subplot(2, 1, 2)
@@ -678,7 +680,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
         )
         letter = chr(ord("@") + idx + 4)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         # save figure
         if config.plotSave:
@@ -712,7 +714,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
         )
         letter = chr(ord("@") + idx + 5)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         if axWasNone:
             ax = fig.add_subplot(2, 1, 2)
@@ -730,7 +732,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
         )
         letter = chr(ord("@") + idx + 6)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         # save figure
         if config.plotSave:

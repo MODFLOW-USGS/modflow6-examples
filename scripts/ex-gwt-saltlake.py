@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -251,108 +251,106 @@ def run_model(sim, silent=True):
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    # make bc figure
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pxs.plot_grid(linewidth=0.1)
-    pxs.plot_bc("RCH-1", color="red")
-    pxs.plot_bc("CHD-1", color="blue")
-    ax.set_ylabel("z position (m)")
-    ax.set_xlabel("x position (m)")
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-bc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    plt.close("all")
-
-    # make results plot
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
-
-    # create MODFLOW 6 head object
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-
-    # plot times in the original publication
-    plot_times = [
-        2581.0,
-        15485.0,
-        5162.0,
-        18053.0,
-        10311.0,
-        20634.0,
-        12904.0,
-        23215.0,
-    ]
-
-    nplots = len(plot_times)
-    for iplot in range(nplots):
-        time_in_pub = plot_times[iplot]
-        idx_conc = (np.abs(times - time_in_pub)).argmin()
-        time_this_plot = times[idx_conc]
-        conc = cobj.get_data(totim=time_this_plot)
-
-        ax = fig.add_subplot(4, 2, iplot + 1)
+        # make bc figure
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-        pxs.plot_array(conc, cmap="jet", vmin=conc_inflow, vmax=conc_sat)
-        ax.set_xlim(0, 75.0)
+        pxs.plot_grid(linewidth=0.1)
+        pxs.plot_bc("RCH-1", color="red")
+        pxs.plot_bc("CHD-1", color="blue")
         ax.set_ylabel("z position (m)")
-        if iplot in [6, 7]:
-            ax.set_xlabel("x position (m)")
-        ax.set_title(f"Time = {time_this_plot} seconds")
-    plt.tight_layout()
+        ax.set_xlabel("x position (m)")
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-bc{config.figure_ext}"
+            )
+            fig.savefig(fpth)
+        plt.close("all")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # make results plot
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
+
+        # create MODFLOW 6 head object
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+
+        # plot times in the original publication
+        plot_times = [
+            2581.0,
+            15485.0,
+            5162.0,
+            18053.0,
+            10311.0,
+            20634.0,
+            12904.0,
+            23215.0,
+        ]
+
+        nplots = len(plot_times)
+        for iplot in range(nplots):
+            time_in_pub = plot_times[iplot]
+            idx_conc = (np.abs(times - time_in_pub)).argmin()
+            time_this_plot = times[idx_conc]
+            conc = cobj.get_data(totim=time_this_plot)
+
+            ax = fig.add_subplot(4, 2, iplot + 1)
+            pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+            pxs.plot_array(conc, cmap="jet", vmin=conc_inflow, vmax=conc_sat)
+            ax.set_xlim(0, 75.0)
+            ax.set_ylabel("z position (m)")
+            if iplot in [6, 7]:
+                ax.set_xlabel("x position (m)")
+            ax.set_title(f"Time = {time_this_plot} seconds")
+        plt.tight_layout()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def make_animated_gif(sim, idx):
     from matplotlib.animation import FuncAnimation, PillowWriter
 
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-    conc = cobj.get_alldata()
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+        conc = cobj.get_alldata()
 
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pc = pxs.plot_array(conc[0], cmap="jet", vmin=conc_inflow, vmax=conc_sat)
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+        pc = pxs.plot_array(conc[0], cmap="jet", vmin=conc_inflow, vmax=conc_sat)
 
-    def init():
-        ax.set_xlim(0, 75.0)
-        ax.set_ylim(0, 75.0)
-        ax.set_title(f"Time = {times[0]} seconds")
+        def init():
+            ax.set_xlim(0, 75.0)
+            ax.set_ylim(0, 75.0)
+            ax.set_title(f"Time = {times[0]} seconds")
 
-    def update(i):
-        pc.set_array(conc[i].flatten())
-        ax.set_title(f"Time = {times[i]} seconds")
+        def update(i):
+            pc.set_array(conc[i].flatten())
+            ax.set_title(f"Time = {times[i]} seconds")
 
-    ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
-    writer = PillowWriter(fps=50)
-    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
-    ani.save(fpth, writer=writer)
-    return
+        ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
+        writer = PillowWriter(fps=50)
+        fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+        ani.save(fpth, writer=writer)
 
 
 def plot_results(sim, idx):
@@ -360,7 +358,6 @@ def plot_results(sim, idx):
         plot_conc(sim, idx)
         if config.plotSave and config.createGif:
             make_animated_gif(sim, idx)
-    return
 
 
 # Function that wraps all of the steps for each scenario

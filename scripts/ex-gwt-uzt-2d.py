@@ -18,7 +18,7 @@ import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mfnwt"
@@ -797,73 +797,75 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
-    if config.plotModel:
-        print("Plotting model results...")
-        mt3d_out_path = mt3d.model_ws
-        mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
-        mf6.simulation_data.mfpath.get_sim_path()
+    if not config.plotModel:
+        return
 
-        # Get the MF-NWT heads
-        fname_mfnwt = os.path.join(mt3d_out_path, "uzt-2d-mf.hds")
-        hds_mfnwt = flopy.utils.HeadFile(fname_mfnwt)
-        hds = hds_mfnwt.get_alldata()
-        # Make list of verticies for plotting the saturated zone as a polygon
-        # Start by adding fixed locations
-        satzn = []
-        satzn.append([40 * delr, 0])
-        satzn.append([0 * delr, 0])
+    print("Plotting model results...")
+    mt3d_out_path = mt3d.model_ws
+    mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
+    mf6.simulation_data.mfpath.get_sim_path()
+
+    # Get the MF-NWT heads
+    fname_mfnwt = os.path.join(mt3d_out_path, "uzt-2d-mf.hds")
+    hds_mfnwt = flopy.utils.HeadFile(fname_mfnwt)
+    hds = hds_mfnwt.get_alldata()
+    # Make list of verticies for plotting the saturated zone as a polygon
+    # Start by adding fixed locations
+    satzn = []
+    satzn.append([40 * delr, 0])
+    satzn.append([0 * delr, 0])
+    for j in range(ncol):
+        hd_in_col = hds[0, :, 0, j].max()
+        if j == 0:
+            satzn.append([j * delr, hd_in_col])
+        elif j == ncol - 1:
+            satzn.append([(j + 1) * delr, hd_in_col])
+        else:
+            satzn.append([(j * delr) + (delr / 2), hd_in_col])
+
+    poly_pts = np.array(satzn)
+
+    # Get the MT3DMS concentration output
+    fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
+    ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
+    times_mt3d = ucnobj_mt3d.get_times()
+    conc_mt3d = ucnobj_mt3d.get_alldata()
+
+    # get the MODFLOW 6 results from the UZF package and the GWT model
+    gwt = mf6.get_model("gwt-uzt-2d-mf6")
+    uzconc_mf6 = gwt.uzf.output.concentration().get_alldata()
+    mf6_satconc = gwt.output.concentration().get_alldata()
+
+    uzconc_mf6_shpd = []
+    for i in np.arange(0, uzconc_mf6.shape[0]):
+        tmp = uzconc_mf6[i, 0, 0, :].reshape((20, 1, 38))
+        # insert column of np.nan on left and right sides of reshaped array
+        tmp2 = np.insert(tmp, 0, np.nan, axis=2)
+        tmp_apnd = np.empty((tmp2.shape[0], 1, 1))
+        tmp_apnd[:] = np.nan
+        tmp3 = np.append(tmp2, tmp_apnd, axis=2)
+        uzconc_mf6_shpd.append(tmp3)
+
+    uzconc_mf6_shpd = np.array(uzconc_mf6_shpd)
+    i = 0
+    hds_bool = np.zeros_like(hds[0, :, i, :])
+    for k in range(nlay):
         for j in range(ncol):
-            hd_in_col = hds[0, :, 0, j].max()
-            if j == 0:
-                satzn.append([j * delr, hd_in_col])
-            elif j == ncol - 1:
-                satzn.append([(j + 1) * delr, hd_in_col])
-            else:
-                satzn.append([(j * delr) + (delr / 2), hd_in_col])
+            if hds[0, k, i, j] > ((nlay - 1) - k) * 0.25:
+                hds_bool[k, j] = 1
 
-        poly_pts = np.array(satzn)
+    combined_concs = np.where(
+        hds_bool > 0,
+        mf6_satconc[-1, :, 0, :],
+        uzconc_mf6_shpd[-1, :, 0, :],
+    )
 
-        # Get the MT3DMS concentration output
-        fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
-        ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
-        times_mt3d = ucnobj_mt3d.get_times()
-        conc_mt3d = ucnobj_mt3d.get_alldata()
+    combined_conc_3d = combined_concs[np.newaxis, :, np.newaxis, :]
 
-        # get the MODFLOW 6 results from the UZF package and the GWT model
-        gwt = mf6.get_model("gwt-uzt-2d-mf6")
-        uzconc_mf6 = gwt.uzf.output.concentration().get_alldata()
-        mf6_satconc = gwt.output.concentration().get_alldata()
+    contourLevels = np.arange(0.2, 1.01, 0.2)
 
-        uzconc_mf6_shpd = []
-        for i in np.arange(0, uzconc_mf6.shape[0]):
-            tmp = uzconc_mf6[i, 0, 0, :].reshape((20, 1, 38))
-            # insert column of np.nan on left and right sides of reshaped array
-            tmp2 = np.insert(tmp, 0, np.nan, axis=2)
-            tmp_apnd = np.empty((tmp2.shape[0], 1, 1))
-            tmp_apnd[:] = np.nan
-            tmp3 = np.append(tmp2, tmp_apnd, axis=2)
-            uzconc_mf6_shpd.append(tmp3)
-
-        uzconc_mf6_shpd = np.array(uzconc_mf6_shpd)
-        i = 0
-        hds_bool = np.zeros_like(hds[0, :, i, :])
-        for k in range(nlay):
-            for j in range(ncol):
-                if hds[0, k, i, j] > ((nlay - 1) - k) * 0.25:
-                    hds_bool[k, j] = 1
-
-        combined_concs = np.where(
-            hds_bool > 0,
-            mf6_satconc[-1, :, 0, :],
-            uzconc_mf6_shpd[-1, :, 0, :],
-        )
-
-        combined_conc_3d = combined_concs[np.newaxis, :, np.newaxis, :]
-
-        contourLevels = np.arange(0.2, 1.01, 0.2)
-
-        # Create figure for scenario
-        fs = USGSFigure(figure_type="graph", verbose=False)
+    # Create figure for scenario
+    with styles.USGSPlot() as fs:
         sim_name = mf6.name
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
@@ -941,7 +943,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
 
         title = "Unsaturated/saturated zone concentration X-section, time = 60 days"
         letter = chr(ord("@") + idx + 1)
-        # fs.heading(letter=letter, heading=title)
+        # styles.heading(letter=letter, heading=title)
         plt.tight_layout()
 
         # save figure

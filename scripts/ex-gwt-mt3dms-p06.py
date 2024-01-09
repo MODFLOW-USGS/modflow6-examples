@@ -34,7 +34,7 @@ import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -499,26 +499,28 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mt3d, mf6, idx, ax=None):
-    if config.plotModel:
-        mt3d_out_path = mt3d.model_ws
-        mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
-        mf6.simulation_data.mfpath.get_sim_path()
+    if not config.plotModel:
+        return
 
-        # Get the MT3DMS observation output file
-        fname = os.path.join(mt3d_out_path, "MT3D001.OBS")
-        if os.path.isfile(fname):
-            cvt = mt3d.load_obs(fname)
-        else:
-            cvt = None
+    mt3d_out_path = mt3d.model_ws
+    mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
+    mf6.simulation_data.mfpath.get_sim_path()
 
-        # Get the MODFLOW 6 concentration observation output file
-        fname = os.path.join(
-            mf6_out_path, list(mf6.model_names)[1] + ".obs.csv"
-        )
-        mf6cobs = flopy.utils.Mf6Obs(fname).data
+    # Get the MT3DMS observation output file
+    fname = os.path.join(mt3d_out_path, "MT3D001.OBS")
+    if os.path.isfile(fname):
+        cvt = mt3d.load_obs(fname)
+    else:
+        cvt = None
 
-        # Create figure for scenario
-        fs = USGSFigure(figure_type="graph", verbose=False)
+    # Get the MODFLOW 6 concentration observation output file
+    fname = os.path.join(
+        mf6_out_path, list(mf6.model_names)[1] + ".obs.csv"
+    )
+    mf6cobs = flopy.utils.Mf6Obs(fname).data
+
+    # Create figure for scenario
+    with styles.USGSPlot() as fs:
         sim_name = mf6.name
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
         if ax is None:
@@ -553,7 +555,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         title = "Calculated Concentration at an Injection/Pumping Well"
 
         letter = chr(ord("@") + idx + 1)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
         # save figure
         if config.plotSave:

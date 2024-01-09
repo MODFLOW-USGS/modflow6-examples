@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -220,7 +220,6 @@ def build_model(sim_folder, inflow):
 def write_model(sim, silent=True):
     if config.writeModel:
         sim.write_simulation(silent=silent)
-    return
 
 
 # Function to run the model
@@ -242,42 +241,40 @@ def run_model(sim, silent=True):
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    # get MODFLOW 6 concentration
-    conc = gwt.output.concentration().get_data()
+        # get MODFLOW 6 concentration
+        conc = gwt.output.concentration().get_data()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pxs.plot_array(conc, cmap="jet")
-    levels = [35 * f for f in [0.01, 0.1, 0.5, 0.9, 0.99]]
-    cs = pxs.contour_array(
-        conc, levels=levels, colors="w", linewidths=1.0, linestyles="-"
-    )
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("z position (m)")
-    plt.clabel(cs, fmt="%4.2f", fontsize=5)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+        pxs.plot_array(conc, cmap="jet")
+        levels = [35 * f for f in [0.01, 0.1, 0.5, 0.9, 0.99]]
+        cs = pxs.contour_array(
+            conc, levels=levels, colors="w", linewidths=1.0, linestyles="-"
         )
-        fig.savefig(fpth)
-    return
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("z position (m)")
+        plt.clabel(cs, fmt="%4.2f", fontsize=5)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(sim, idx):
     if config.plotModel:
         plot_conc(sim, idx)
-    return
 
 
 # Function that wraps all of the steps for each scenario
@@ -314,9 +311,7 @@ if __name__ == "__main__":
     # ### Henry Problem
 
     # Scenario 1 - Classic henry problem
-
     scenario(0)
 
     # Scenario 2 - Modified Henry problem with half the inflow rate
-
     scenario(1)

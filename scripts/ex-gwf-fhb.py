@@ -24,7 +24,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -219,65 +219,62 @@ def run_model(sim, silent=False):
 # Function to plot the FHB model results.
 #
 def plot_grid(sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=(4, 3.0))
-    fig.tight_layout()
+        fig = plt.figure(figsize=(4, 3.0))
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    pmv.plot_bc(name="CHD")
-    pmv.plot_bc(name="WEL")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        pmv.plot_bc(name="CHD")
+        pmv.plot_bc(name="WEL")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_ts(sim):
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
-    obsnames = gwf.obs.output.obs_names
-    obs_list = [
-        gwf.obs.output.obs(f=obsnames[0]),
-        gwf.obs.output.obs(f=obsnames[1]),
-    ]
-    ylabel = ["head (m)", "flow ($m^3/d$)"]
-    obs_fig = ("obs-head", "obs-flow", "ghb-obs")
-    for iplot, obstype in enumerate(obs_list):
-        fig = plt.figure(figsize=(5, 3))
-        ax = fig.add_subplot()
-        tsdata = obstype.data
-        for name in tsdata.dtype.names[1:]:
-            ax.plot(tsdata["totim"], tsdata[name], label=name, marker="o")
-        ax.set_xlabel("time (d)")
-        ax.set_ylabel(ylabel[iplot])
-        fs.graph_legend(ax)
-        if config.plotSave:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
-            )
-            fig.savefig(fpth)
-    return
+    with styles.USGSPlot() as fs:
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
+        obsnames = gwf.obs.output.obs_names
+        obs_list = [
+            gwf.obs.output.obs(f=obsnames[0]),
+            gwf.obs.output.obs(f=obsnames[1]),
+        ]
+        ylabel = ["head (m)", "flow ($m^3/d$)"]
+        obs_fig = ("obs-head", "obs-flow", "ghb-obs")
+        for iplot, obstype in enumerate(obs_list):
+            fig = plt.figure(figsize=(5, 3))
+            ax = fig.add_subplot()
+            tsdata = obstype.data
+            for name in tsdata.dtype.names[1:]:
+                ax.plot(tsdata["totim"], tsdata[name], label=name, marker="o")
+            ax.set_xlabel("time (d)")
+            ax.set_ylabel(ylabel[iplot])
+            styles.graph_legend(ax)
+            if config.plotSave:
+                fpth = os.path.join(
+                    "..",
+                    "figures",
+                    "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
+                )
+                fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
     if config.plotModel:
         plot_grid(sim)
         plot_ts(sim)
-    return
 
 
 # Function that wraps all of the steps for the FHB model

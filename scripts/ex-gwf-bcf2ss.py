@@ -24,7 +24,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -234,167 +234,168 @@ def run_model(sim, silent=True):
 
 def plot_simulated_results(num, gwf, ho, co, silent=True):
     verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
 
-    botm_arr = gwf.dis.botm.array
+    with styles.USGSMap():
+        botm_arr = gwf.dis.botm.array
 
-    fig = plt.figure(figsize=(6.8, 6), constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
+        fig = plt.figure(figsize=(6.8, 6), constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
 
-    ax1 = fig.add_subplot(gs[:3, :5])
-    ax2 = fig.add_subplot(gs[:3, 5:], sharey=ax1)
-    ax3 = fig.add_subplot(gs[3:6, :5], sharex=ax1)
-    ax4 = fig.add_subplot(gs[3:6, 5:], sharex=ax1, sharey=ax1)
-    ax5 = fig.add_subplot(gs[6, :])
-    axes = [ax1, ax2, ax3, ax4, ax5]
+        ax1 = fig.add_subplot(gs[:3, :5])
+        ax2 = fig.add_subplot(gs[:3, 5:], sharey=ax1)
+        ax3 = fig.add_subplot(gs[3:6, :5], sharex=ax1)
+        ax4 = fig.add_subplot(gs[3:6, 5:], sharex=ax1, sharey=ax1)
+        ax5 = fig.add_subplot(gs[6, :])
+        axes = [ax1, ax2, ax3, ax4, ax5]
 
-    labels = ("A", "B", "C", "D")
-    aquifer = ("Upper aquifer", "Lower aquifer")
-    cond = ("natural conditions", "pumping conditions")
-    vmin, vmax = -10, 140
-    masked_values = [1e30, -1e30]
-    levels = [
-        np.arange(0, 130, 10),
-        (10, 20, 30, 40, 50, 55, 60),
-    ]
-    plot_number = 0
-    for idx, totim in enumerate(
-        (
-            1,
-            2,
-        )
-    ):
-        head = ho.get_data(totim=totim)
-        head[head < botm_arr] = -1e30
-        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            co.get_data(text="DATA-SPDIS", kstpkper=(0, totim - 1))[0],
-            gwf,
-        )
-
-        for k in range(nlay):
-            ax = axes[plot_number]
-            ax.set_aspect("equal")
-            mm = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=k)
-            mm.plot_grid(lw=0.5, color="0.5")
-            cm = mm.plot_array(
-                head, masked_values=masked_values, vmin=vmin, vmax=vmax
+        labels = ("A", "B", "C", "D")
+        aquifer = ("Upper aquifer", "Lower aquifer")
+        cond = ("natural conditions", "pumping conditions")
+        vmin, vmax = -10, 140
+        masked_values = [1e30, -1e30]
+        levels = [
+            np.arange(0, 130, 10),
+            (10, 20, 30, 40, 50, 55, 60),
+        ]
+        plot_number = 0
+        for idx, totim in enumerate(
+            (
+                1,
+                2,
             )
-            mm.plot_bc(ftype="WEL", kper=totim - 1)
-            mm.plot_bc(ftype="RIV", color="green", kper=0)
-            mm.plot_vector(qx, qy, normalize=True, color="0.75")
-            cn = mm.contour_array(
-                head,
-                masked_values=masked_values,
-                levels=levels[idx],
-                colors="black",
-                linewidths=0.5,
+        ):
+            head = ho.get_data(totim=totim)
+            head[head < botm_arr] = -1e30
+            qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+                co.get_data(text="DATA-SPDIS", kstpkper=(0, totim - 1))[0],
+                gwf,
             )
-            plt.clabel(cn, fmt="%3.0f")
-            heading = f"{aquifer[k]} under {cond[totim - 1]}"
-            fs.heading(ax, letter=labels[plot_number], heading=heading)
-            fs.remove_edge_ticks(ax)
 
-            plot_number += 1
+            for k in range(nlay):
+                ax = axes[plot_number]
+                ax.set_aspect("equal")
+                mm = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=k)
+                mm.plot_grid(lw=0.5, color="0.5")
+                cm = mm.plot_array(
+                    head, masked_values=masked_values, vmin=vmin, vmax=vmax
+                )
+                mm.plot_bc(ftype="WEL", kper=totim - 1)
+                mm.plot_bc(ftype="RIV", color="green", kper=0)
+                mm.plot_vector(qx, qy, normalize=True, color="0.75")
+                cn = mm.contour_array(
+                    head,
+                    masked_values=masked_values,
+                    levels=levels[idx],
+                    colors="black",
+                    linewidths=0.5,
+                )
+                plt.clabel(cn, fmt="%3.0f")
+                heading = f"{aquifer[k]} under {cond[totim - 1]}"
+                styles.heading(ax, letter=labels[plot_number], heading=heading)
+                styles.remove_edge_ticks(ax)
 
-    # set axis labels
-    ax1.set_ylabel("y-coordinate, in feet")
-    ax3.set_ylabel("y-coordinate, in feet")
-    ax3.set_xlabel("x-coordinate, in feet")
-    ax4.set_xlabel("x-coordinate, in feet")
+                plot_number += 1
 
-    # legend
-    ax = axes[-1]
-    ax.set_ylim(1, 0)
-    ax.set_xlim(-5, 5)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
+        # set axis labels
+        ax1.set_ylabel("y-coordinate, in feet")
+        ax3.set_ylabel("y-coordinate, in feet")
+        ax3.set_xlabel("x-coordinate, in feet")
+        ax4.set_xlabel("x-coordinate, in feet")
 
-    # items for legend
-    ax.plot(
-        -1000,
-        -1000,
-        "s",
-        ms=5,
-        color="green",
-        mec="black",
-        mew=0.5,
-        label="River",
-    )
-    ax.plot(
-        -1000,
-        -1000,
-        "s",
-        ms=5,
-        color="red",
-        mec="black",
-        mew=0.5,
-        label="Well",
-    )
-    ax.plot(
-        -1000,
-        -1000,
-        "s",
-        ms=5,
-        color="none",
-        mec="black",
-        mew=0.5,
-        label="Dry cell",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="$\u2192$",
-        ms=10,
-        mfc="0.75",
-        mec="0.75",
-        label="Normalized specific discharge",
-    )
-    ax.plot(
-        -1000,
-        -1000,
-        lw=0.5,
-        color="black",
-        label="Head, in feet",
-    )
-    fs.graph_legend(
-        ax,
-        ncol=5,
-        frameon=False,
-        loc="upper center",
-    )
+        # legend
+        ax = axes[-1]
+        ax.set_ylim(1, 0)
+        ax.set_xlim(-5, 5)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
-    cbar = plt.colorbar(cm, ax=ax, shrink=0.5, orientation="horizontal")
-    cbar.ax.set_xlabel("Head, in feet")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-{num:02d}{config.figure_ext}",
+        # items for legend
+        ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="green",
+            mec="black",
+            mew=0.5,
+            label="River",
         )
-        fig.savefig(fpth)
+        ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="red",
+            mec="black",
+            mew=0.5,
+            label="Well",
+        )
+        ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="none",
+            mec="black",
+            mew=0.5,
+            label="Dry cell",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        ax.plot(
+            -1000,
+            -1000,
+            lw=0.5,
+            color="black",
+            label="Head, in feet",
+        )
+        styles.graph_legend(
+            ax,
+            ncol=5,
+            frameon=False,
+            loc="upper center",
+        )
+
+        cbar = plt.colorbar(cm, ax=ax, shrink=0.5, orientation="horizontal")
+        cbar.ax.set_xlabel("Head, in feet")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-{num:02d}{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot simulated results for a simulation
 
 
 def plot_results(silent=True):
-    if config.plotModel:
-        verbose = not silent
-        if silent:
-            verbosity_level = 0
-        else:
-            verbosity_level = 1
+    if not config.plotModel:
+        return
 
-        fs = USGSFigure(figure_type="map", verbose=verbose)
+    if silent:
+        verbosity_level = 0
+    else:
+        verbosity_level = 1
+
+    with styles.USGSMap() as fs:
         name = list(parameters.keys())[0]
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation.load(
@@ -424,8 +425,8 @@ def plot_results(silent=True):
         mm.plot_grid(lw=0.5, color="0.5")
         ax.set_ylabel("y-coordinate, in feet")
         ax.set_xlabel("x-coordinate, in feet")
-        fs.heading(ax, letter="A", heading="Map view")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="A", heading="Map view")
+        styles.remove_edge_ticks(ax)
 
         ax = fig.add_subplot(gs[:5, 7:])
         mm = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 7})
@@ -435,8 +436,8 @@ def plot_results(silent=True):
         mm.plot_grid(lw=0.5, color="0.5")
         ax.set_ylabel("Elevation, in feet")
         ax.set_xlabel("x-coordinate along model row 8, in feet")
-        fs.heading(ax, letter="B", heading="Cross-section view")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="B", heading="Cross-section view")
+        styles.remove_edge_ticks(ax)
 
         # items for legend
         ax = fig.add_subplot(gs[7, :])
@@ -479,7 +480,7 @@ def plot_results(silent=True):
             mew=0.5,
             label="Steady-state water table",
         )
-        fs.graph_legend(
+        styles.graph_legend(
             ax,
             ncol=3,
             frameon=False,
@@ -506,7 +507,7 @@ def plot_results(silent=True):
         cbar.ax.set_ylabel("WETDRY parameter")
         ax.set_ylabel("y-coordinate, in feet")
         ax.set_xlabel("x-coordinate, in feet")
-        fs.remove_edge_ticks(ax)
+        styles.remove_edge_ticks(ax)
 
         # save figure
         if config.plotSave:

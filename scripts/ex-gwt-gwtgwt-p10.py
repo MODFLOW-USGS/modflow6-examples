@@ -17,7 +17,7 @@ import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
 
 mf6exe = "mf6"
@@ -924,98 +924,96 @@ def plot_difference_conc(sim):
     conc_mf6_outer = ucnobj_mf6_outer.get_alldata()
 
     # Create figure for scenario
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
-    fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
+    with styles.USGSPlot() as fs:
+        plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
+        fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
 
-    # Difference in concentration @ 1 day
-    ax = fig.add_subplot(2, 2, 1, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 0
-    ilayer = 2
-    c_1day = conc_mf6_outer[istep]
-    c_1day[:, 8:53, 6:34] = conc_mf6[istep]
-    c_1day_singlemodel_lay3 = conc_singlemodel_lay3[istep]
-    pa = mm.plot_array(c_1day[ilayer] - c_1day_singlemodel_lay3)
-    xc, yc = gwt.modelgrid.xycenters
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
+        # Difference in concentration @ 1 day
+        ax = fig.add_subplot(2, 2, 1, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 0
+        ilayer = 2
+        c_1day = conc_mf6_outer[istep]
+        c_1day[:, 8:53, 6:34] = conc_mf6[istep]
+        c_1day_singlemodel_lay3 = conc_singlemodel_lay3[istep]
+        pa = mm.plot_array(c_1day[ilayer] - c_1day_singlemodel_lay3)
+        xc, yc = gwt.modelgrid.xycenters
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
 
-    # Plot the wells as well
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 1 day"
-    fs.heading(letter="A", heading=title)
+        # Plot the wells as well
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 1 day"
+        styles.heading(letter="A", heading=title)
 
-    # Difference in concentration @ 500 days
-    ax = fig.add_subplot(2, 2, 2, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 1
-    ilayer = 2
-    c_500days = conc_mf6_outer[istep]
-    c_500days[:, 8:53, 6:34] = conc_mf6[istep]
-    c_500days_singlemodel_lay3 = conc_singlemodel_lay3[istep]
-    pa = mm.plot_array(c_500days[ilayer] - c_500days_singlemodel_lay3)
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 500 days"
-    fs.heading(letter="B", heading=title)
+        # Difference in concentration @ 500 days
+        ax = fig.add_subplot(2, 2, 2, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 1
+        ilayer = 2
+        c_500days = conc_mf6_outer[istep]
+        c_500days[:, 8:53, 6:34] = conc_mf6[istep]
+        c_500days_singlemodel_lay3 = conc_singlemodel_lay3[istep]
+        pa = mm.plot_array(c_500days[ilayer] - c_500days_singlemodel_lay3)
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 500 days"
+        styles.heading(letter="B", heading=title)
 
-    # Difference in concentration @ 750 days
-    ax = fig.add_subplot(2, 2, 3, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 2
-    ilayer = 2
-    c_750days = conc_mf6_outer[istep]
-    c_750days[:, 8:53, 6:34] = conc_mf6[istep]
-    c_750days_singlemodel_lay3 = conc_singlemodel_lay3[istep]
-    pa = mm.plot_array(c_750days[ilayer] - c_750days_singlemodel_lay3)
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 750 days"
-    fs.heading(letter="C", heading=title)
+        # Difference in concentration @ 750 days
+        ax = fig.add_subplot(2, 2, 3, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 2
+        ilayer = 2
+        c_750days = conc_mf6_outer[istep]
+        c_750days[:, 8:53, 6:34] = conc_mf6[istep]
+        c_750days_singlemodel_lay3 = conc_singlemodel_lay3[istep]
+        pa = mm.plot_array(c_750days[ilayer] - c_750days_singlemodel_lay3)
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 750 days"
+        styles.heading(letter="C", heading=title)
 
-    # Difference in concentration @ 1000 days
-    ax = fig.add_subplot(2, 2, 4, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 3
-    ilayer = 2
-    c_1000days = conc_mf6_outer[istep]
-    c_1000days[:, 8:53, 6:34] = conc_mf6[istep]
-    c_1000days_singlemodel_lay3 = conc_singlemodel_lay3[istep]
-    pa = mm.plot_array(c_1000days[ilayer] - c_1000days_singlemodel_lay3)
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
+        # Difference in concentration @ 1000 days
+        ax = fig.add_subplot(2, 2, 4, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 3
+        ilayer = 2
+        c_1000days = conc_mf6_outer[istep]
+        c_1000days[:, 8:53, 6:34] = conc_mf6[istep]
+        c_1000days_singlemodel_lay3 = conc_singlemodel_lay3[istep]
+        pa = mm.plot_array(c_1000days[ilayer] - c_1000days_singlemodel_lay3)
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
 
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 1000 days"
-    fs.heading(letter="D", heading=title)
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 1000 days"
+        styles.heading(letter="D", heading=title)
 
-    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffconc.png")
-    fig.savefig(fpath)
-
-    return
+        fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffconc.png")
+        fig.savefig(fpath)
 
 
 # Plot the difference in head after 1,500,750,1000 days
@@ -1033,98 +1031,96 @@ def plot_difference_heads(sim):
     head_mf6_outer = hobj_mf6_outer.get_alldata()
 
     # Create figure for scenario
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
-    fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
+    with styles.USGSPlot() as fs:
+        plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
+        fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
 
-    # Difference in heads @ 1 day
-    ax = fig.add_subplot(2, 2, 1, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwf_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 0
-    ilayer = 2
-    h_1day = head_mf6_outer[istep]
-    h_1day[:, 8:53, 6:34] = head_mf6[istep]
-    h_1day_singlemodel_lay3 = head_singlemodel_lay3[istep]
-    pa = mm.plot_array(h_1day[ilayer] - h_1day_singlemodel_lay3)
-    xc, yc = gwf.modelgrid.xycenters
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
+        # Difference in heads @ 1 day
+        ax = fig.add_subplot(2, 2, 1, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwf_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 0
+        ilayer = 2
+        h_1day = head_mf6_outer[istep]
+        h_1day[:, 8:53, 6:34] = head_mf6[istep]
+        h_1day_singlemodel_lay3 = head_singlemodel_lay3[istep]
+        pa = mm.plot_array(h_1day[ilayer] - h_1day_singlemodel_lay3)
+        xc, yc = gwf.modelgrid.xycenters
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
 
-    # Plot the wells as well
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 1 day"
-    fs.heading(letter="A", heading=title)
+        # Plot the wells as well
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 1 day"
+        styles.heading(letter="A", heading=title)
 
-    # Difference in heads @ 500 days
-    ax = fig.add_subplot(2, 2, 2, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwf_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 1
-    ilayer = 2
-    h_500days = head_mf6_outer[istep]
-    h_500days[:, 8:53, 6:34] = head_mf6[istep]
-    h_500days_singlemodel_lay3 = head_singlemodel_lay3[istep]
-    pa = mm.plot_array(h_500days[ilayer] - h_500days_singlemodel_lay3)
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 500 days"
-    fs.heading(letter="B", heading=title)
+        # Difference in heads @ 500 days
+        ax = fig.add_subplot(2, 2, 2, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwf_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 1
+        ilayer = 2
+        h_500days = head_mf6_outer[istep]
+        h_500days[:, 8:53, 6:34] = head_mf6[istep]
+        h_500days_singlemodel_lay3 = head_singlemodel_lay3[istep]
+        pa = mm.plot_array(h_500days[ilayer] - h_500days_singlemodel_lay3)
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 500 days"
+        styles.heading(letter="B", heading=title)
 
-    # Difference in heads @ 750 days
-    ax = fig.add_subplot(2, 2, 3, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwf_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 2
-    ilayer = 2
-    h_750days = head_mf6_outer[istep]
-    h_750days[:, 8:53, 6:34] = head_mf6[istep]
-    h_750days_singlemodel_lay3 = head_singlemodel_lay3[istep]
-    pa = mm.plot_array(h_750days[ilayer] - h_750days_singlemodel_lay3)
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 750 days"
-    fs.heading(letter="C", heading=title)
+        # Difference in heads @ 750 days
+        ax = fig.add_subplot(2, 2, 3, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwf_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 2
+        ilayer = 2
+        h_750days = head_mf6_outer[istep]
+        h_750days[:, 8:53, 6:34] = head_mf6[istep]
+        h_750days_singlemodel_lay3 = head_singlemodel_lay3[istep]
+        pa = mm.plot_array(h_750days[ilayer] - h_750days_singlemodel_lay3)
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 750 days"
+        styles.heading(letter="C", heading=title)
 
-    # Difference in heads @ 1000 days
-    ax = fig.add_subplot(2, 2, 4, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwf_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    istep = 3
-    ilayer = 2
-    h_1000days = head_mf6_outer[istep]
-    h_1000days[:, 8:53, 6:34] = head_mf6[istep]
-    h_1000days_singlemodel_lay3 = head_singlemodel_lay3[istep]
-    pa = mm.plot_array(h_1000days[ilayer] - h_1000days_singlemodel_lay3)
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.colorbar(pa, shrink=0.5)
+        # Difference in heads @ 1000 days
+        ax = fig.add_subplot(2, 2, 4, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwf_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        istep = 3
+        ilayer = 2
+        h_1000days = head_mf6_outer[istep]
+        h_1000days[:, 8:53, 6:34] = head_mf6[istep]
+        h_1000days_singlemodel_lay3 = head_singlemodel_lay3[istep]
+        pa = mm.plot_array(h_1000days[ilayer] - h_1000days_singlemodel_lay3)
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.colorbar(pa, shrink=0.5)
 
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Difference Layer 3 Time = 1000 days"
-    fs.heading(letter="D", heading=title)
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Difference Layer 3 Time = 1000 days"
+        styles.heading(letter="D", heading=title)
 
-    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffhead.png")
-    fig.savefig(fpath)
-
-    return
+        fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffhead.png")
+        fig.savefig(fpath)
 
 
 # Plot the concentration, this figure should be compared to the same figure in MT3DMS problem 10
@@ -1139,82 +1135,80 @@ def plot_concentration(sim):
     conc_mf6_outer = ucnobj_mf6_outer.get_alldata()
 
     # Create figure for scenario
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
+    with styles.USGSPlot() as fs:
+        plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
-    xc, yc = gwt.modelgrid.xycenters
+        xc, yc = gwt.modelgrid.xycenters
 
-    # Plot init. concentration (lay=3)
-    fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
+        # Plot init. concentration (lay=3)
+        fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
 
-    ax = fig.add_subplot(2, 2, 1, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
+        ax = fig.add_subplot(2, 2, 1, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
 
-    cs = mm.contour_array(sconc[2], levels=np.arange(20, 200, 20))
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.clabel(cs, fmt=r"%3d")
-    # Plot the wells as well
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Layer 3 Initial Concentration"
-    fs.heading(letter="A", heading=title)
+        cs = mm.contour_array(sconc[2], levels=np.arange(20, 200, 20))
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.clabel(cs, fmt=r"%3d")
+        # Plot the wells as well
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Layer 3 Initial Concentration"
+        styles.heading(letter="A", heading=title)
 
-    ax = fig.add_subplot(2, 2, 2, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    c_500days = conc_mf6_outer[1]
-    c_500days[:, 8:53, 6:34] = conc_mf6[1]  # Concentration @ 500 days
-    cs = mm.contour_array(c_500days[2], levels=np.arange(10, 200, 10))
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.clabel(cs, fmt=r"%3d")
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Layer 3 Time = 500 days"
-    fs.heading(letter="B", heading=title)
+        ax = fig.add_subplot(2, 2, 2, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        c_500days = conc_mf6_outer[1]
+        c_500days[:, 8:53, 6:34] = conc_mf6[1]  # Concentration @ 500 days
+        cs = mm.contour_array(c_500days[2], levels=np.arange(10, 200, 10))
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.clabel(cs, fmt=r"%3d")
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Layer 3 Time = 500 days"
+        styles.heading(letter="B", heading=title)
 
-    ax = fig.add_subplot(2, 2, 3, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    c_750days = conc_mf6_outer[2]
-    c_750days[:, 8:53, 6:34] = conc_mf6[2]  # Concentration @ 750 days
-    cs = mm.contour_array(c_750days[2], levels=np.arange(10, 200, 10))
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.clabel(cs, fmt=r"%3d")
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Layer 3 Time = 750 days"
-    fs.heading(letter="C", heading=title)
+        ax = fig.add_subplot(2, 2, 3, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        c_750days = conc_mf6_outer[2]
+        c_750days[:, 8:53, 6:34] = conc_mf6[2]  # Concentration @ 750 days
+        cs = mm.contour_array(c_750days[2], levels=np.arange(10, 200, 10))
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.clabel(cs, fmt=r"%3d")
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Layer 3 Time = 750 days"
+        styles.heading(letter="C", heading=title)
 
-    ax = fig.add_subplot(2, 2, 4, aspect="equal")
-    mm = flopy.plot.PlotMapView(model=gwt_outer)
-    mm.plot_grid(color=".5", alpha=0.2)
-    c_1000days = conc_mf6_outer[3]
-    c_1000days[:, 8:53, 6:34] = conc_mf6[3]  # Concentration @ 1000 days
-    cs = mm.contour_array(c_1000days[2], levels=np.arange(10, 200, 10))
-    plt.xlim(5100, 5100 + 28 * 50)
-    plt.ylim(9100, 9100 + 45 * 50)
-    plt.xlabel("Distance Along X-Axis, in meters")
-    plt.ylabel("Distance Along Y-Axis, in meters")
-    plt.clabel(cs, fmt=r"%3d")
-    for cid, f, c in welspd_mf6:
-        plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
-    title = "Layer 3 Time = 1000 days"
-    fs.heading(letter="D", heading=title)
+        ax = fig.add_subplot(2, 2, 4, aspect="equal")
+        mm = flopy.plot.PlotMapView(model=gwt_outer)
+        mm.plot_grid(color=".5", alpha=0.2)
+        c_1000days = conc_mf6_outer[3]
+        c_1000days[:, 8:53, 6:34] = conc_mf6[3]  # Concentration @ 1000 days
+        cs = mm.contour_array(c_1000days[2], levels=np.arange(10, 200, 10))
+        plt.xlim(5100, 5100 + 28 * 50)
+        plt.ylim(9100, 9100 + 45 * 50)
+        plt.xlabel("Distance Along X-Axis, in meters")
+        plt.ylabel("Distance Along Y-Axis, in meters")
+        plt.clabel(cs, fmt=r"%3d")
+        for cid, f, c in welspd_mf6:
+            plt.plot(xshift + xc[cid[2]], yshift + yc[cid[1]], "ks")
+        title = "Layer 3 Time = 1000 days"
+        styles.heading(letter="D", heading=title)
 
-    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-concentration.png")
-    fig.savefig(fpath)
-
-    return
+        fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-concentration.png")
+        fig.savefig(fpath)
 
 
 # Generates all plots

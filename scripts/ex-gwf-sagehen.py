@@ -17,7 +17,7 @@ import flopy.utils.binaryfile as bf
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Imports
 
@@ -961,11 +961,13 @@ def run_model(sim, silent=True):
 
 
 def plot_results(mf6, idx):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_name = mf6.name
-        fs = USGSFigure(figure_type="graph", verbose=False)
+    if not config.plotModel:
+        return
 
+    print("Plotting model results...")
+    sim_name = mf6.name
+
+    with styles.USGSPlot() as fs:
         # Generate a plot of FINF distribution
         finf_plt = finf_grad.copy()
         finf_plt[idomain1 == 0] = np.nan
@@ -978,7 +980,7 @@ def plot_results(mf6, idx):
         cbar.ax.set_title("Infiltration\nrate\nfactor", pad=20)
         plt.xlabel("Column Number")
         plt.ylabel("Row Number")
-        fs.heading(heading=title)
+        styles.heading(heading=title)
 
         # save figure
         if config.plotSave:
@@ -1019,7 +1021,7 @@ def plot_results(mf6, idx):
         plt.xlabel("Column Number")
         plt.ylabel("Row Number")
         title = "Depth To Groundwater"
-        fs.heading(heading=title)
+        styles.heading(heading=title)
 
         # save figure
         if config.plotSave:
@@ -1164,9 +1166,9 @@ def plot_results(mf6, idx):
         )  # labels along the bottom edge are off
         ax.set_xlabel("Month")
         ax.set_ylabel("Volumetric Rate, $m^3$ per day")
-        fs.graph_legend(ax)
+        styles.graph_legend(ax)
         title = "Unsaturated Zone Flow Budget"
-        fs.heading(heading=title)
+        styles.heading(heading=title)
 
         # save figure
         if config.plotSave:
@@ -1218,9 +1220,9 @@ def plot_results(mf6, idx):
         )  # labels along the bottom edge are off
         ax.set_xlabel("Month")
         ax.set_ylabel("Volumetric Rate, $m^3$ per day")
-        fs.graph_legend(ax)
+        styles.graph_legend(ax)
         title = "Surface Water Flow"
-        fs.heading(heading=title)
+        styles.heading(heading=title)
 
         # save figure
         if config.plotSave:

@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -549,56 +549,56 @@ def plot_gwf_results(sims):
         print("Plotting model results...")
         sim_mf6gwf, sim_mf6gwt = sims
         gwf = sim_mf6gwf.flow
-        fs = USGSFigure(figure_type="map", verbose=False)
+        with styles.USGSMap() as fs:
+            sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
 
-        sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
+            head = gwf.output.head().get_data()
+            stage = gwf.lak.output.stage().get_data().flatten()
 
-        head = gwf.output.head().get_data()
-        stage = gwf.lak.output.stage().get_data().flatten()
+            il, jl = np.where(lakibd > 0)
+            for i, j in zip(il, jl):
+                ilak = lakibd[i, j] - 1
+                lake_stage = stage[ilak]
+                head[0, i, j] = lake_stage
 
-        il, jl = np.where(lakibd > 0)
-        for i, j in zip(il, jl):
-            ilak = lakibd[i, j] - 1
-            lake_stage = stage[ilak]
-            head[0, i, j] = lake_stage
-
-        fig, axs = plt.subplots(
-            1, 2, figsize=figure_size, dpi=300, tight_layout=True
-        )
-
-        for ilay in [0, 1]:
-            ax = axs[ilay]
-            pmv = plot_bcmap(ax, gwf, ilay)
-            levels = np.arange(20, 60, 1)
-            cs = pmv.contour_array(
-                head,
-                colors="blue",
-                linestyles="-",
-                levels=levels,
-                masked_values=[1.0e30],
+            fig, axs = plt.subplots(
+                1, 2, figsize=figure_size, dpi=300, tight_layout=True
             )
-            ax.clabel(cs, cs.levels[::5], fmt="%1.0f", colors="b")
-            title = f"Model Layer {ilay + 1}"
-            letter = chr(ord("@") + ilay + 1)
-            fs.heading(letter=letter, heading=title, ax=ax)
 
-        # save figure
-        if config.plotSave:
-            sim_folder = os.path.split(sim_ws)[0]
-            sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-head{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
-            fig.savefig(fpth)
+            for ilay in [0, 1]:
+                ax = axs[ilay]
+                pmv = plot_bcmap(ax, gwf, ilay)
+                levels = np.arange(20, 60, 1)
+                cs = pmv.contour_array(
+                    head,
+                    colors="blue",
+                    linestyles="-",
+                    levels=levels,
+                    masked_values=[1.0e30],
+                )
+                ax.clabel(cs, cs.levels[::5], fmt="%1.0f", colors="b")
+                title = f"Model Layer {ilay + 1}"
+                letter = chr(ord("@") + ilay + 1)
+                styles.heading(letter=letter, heading=title, ax=ax)
+
+            # save figure
+            if config.plotSave:
+                sim_folder = os.path.split(sim_ws)[0]
+                sim_folder = os.path.basename(sim_folder)
+                fname = f"{sim_folder}-head{config.figure_ext}"
+                fpth = os.path.join(ws, "..", "figures", fname)
+                fig.savefig(fpth)
 
 
 def plot_gwt_results(sims):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        gwf = sim_mf6gwf.flow
-        gwt = sim_mf6gwt.trans
-        fs = USGSFigure(figure_type="map", verbose=False)
+    if not config.plotModel:
+        return
+    print("Plotting model results...")
+    sim_mf6gwf, sim_mf6gwt = sims
+    gwf = sim_mf6gwf.flow
+    gwt = sim_mf6gwt.trans
 
+    with styles.USGSMap() as fs:
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
 
         conc = gwt.output.concentration().get_data()
@@ -643,7 +643,7 @@ def plot_gwt_results(sims):
             ax.clabel(cs, cs.levels[::1], fmt="%1.0f", colors="b")
             title = f"Model Layer {ilay + 1}"
             letter = chr(ord("@") + iplot + 1)
-            fs.heading(letter=letter, heading=title, ax=ax)
+            styles.heading(letter=letter, heading=title, ax=ax)
 
         # save figure
         if config.plotSave:
@@ -659,45 +659,45 @@ def plot_gwt_results(sims):
         sfaconc = bobj.get_alldata()[:, 0, 0, :]
         times = bobj.times
 
-        fs = USGSFigure(figure_type="graph", verbose=False)
-        fig, axs = plt.subplots(
-            1, 1, figsize=(5, 3), dpi=300, tight_layout=True
-        )
-        ax = axs
-        times = np.array(times) / 365.0
-        ax.plot(
-            times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2"
-        )
-        ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
-        ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
+        with styles.USGSPlot() as fs:
+            fig, axs = plt.subplots(
+                1, 1, figsize=(5, 3), dpi=300, tight_layout=True
+            )
+            ax = axs
+            times = np.array(times) / 365.0
+            ax.plot(
+                times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2"
+            )
+            ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
+            ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
 
-        fname = os.path.join(data_ws, "teststrm.sg2")
-        sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
+            fname = os.path.join(data_ws, "teststrm.sg2")
+            sg = np.genfromtxt(fname, comments='"')
+            ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
 
-        fname = os.path.join(data_ws, "teststrm.sg3")
-        sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
+            fname = os.path.join(data_ws, "teststrm.sg3")
+            sg = np.genfromtxt(fname, comments='"')
+            ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
 
-        fname = os.path.join(data_ws, "teststrm.sg4")
-        sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")
+            fname = os.path.join(data_ws, "teststrm.sg4")
+            sg = np.genfromtxt(fname, comments='"')
+            ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")
 
-        fs.graph_legend()
-        ax.set_ylim(0, 50)
-        ax.set_xlim(0, 25)
-        ax.set_xlabel("TIME, IN YEARS")
-        ax.set_ylabel(
-            "SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER"
-        )
+            styles.graph_legend()
+            ax.set_ylim(0, 50)
+            ax.set_xlim(0, 25)
+            ax.set_xlabel("TIME, IN YEARS")
+            ax.set_ylabel(
+                "SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER"
+            )
 
-        # save figure
-        if config.plotSave:
-            sim_folder = os.path.split(sim_ws)[0]
-            sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-cvt{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
-            fig.savefig(fpth)
+            # save figure
+            if config.plotSave:
+                sim_folder = os.path.split(sim_ws)[0]
+                sim_folder = os.path.basename(sim_folder)
+                fname = f"{sim_folder}-cvt{config.figure_ext}"
+                fpth = os.path.join(ws, "..", "figures", fname)
+                fig.savefig(fpth)
 
 
 # Function that wraps all of the steps for each scenario

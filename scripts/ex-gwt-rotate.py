@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -318,185 +318,183 @@ def run_model(sim, silent=True):
 
 
 def plot_velocity_profile(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
-    print("Creating velocity profile plot...")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
+        print("Creating velocity profile plot...")
 
-    # find line of cells on left side of first interface
-    cstrt = gwt.ic.strt.array
-    cstrt = cstrt.reshape((nlay, ncol))
-    interface_coords = []
-    for k in range(nlay):
-        crow = cstrt[k]
-        j = (np.abs(crow - c2)).argmin() - 1
-        interface_coords.append((k, j))
+        # find line of cells on left side of first interface
+        cstrt = gwt.ic.strt.array
+        cstrt = cstrt.reshape((nlay, ncol))
+        interface_coords = []
+        for k in range(nlay):
+            crow = cstrt[k]
+            j = (np.abs(crow - c2)).argmin() - 1
+            interface_coords.append((k, j))
 
-    # plot velocity
-    xc, yc, zc = gwt.modelgrid.xyzcellcenters
-    xg = []
-    zg = []
-    for k, j in interface_coords:
-        x = xc[0, j]
-        z = zc[k, 0, j]
-        xg.append(x)
-        zg.append(z)
-    xg = np.array(xg)
-    zg = np.array(zg)
+        # plot velocity
+        xc, yc, zc = gwt.modelgrid.xyzcellcenters
+        xg = []
+        zg = []
+        for k, j in interface_coords:
+            x = xc[0, j]
+            z = zc[k, 0, j]
+            xg.append(x)
+            zg.append(z)
+        xg = np.array(xg)
+        zg = np.array(zg)
 
-    # set up plot
-    fig = plt.figure(figsize=(4, 6))
-    ax = fig.add_subplot(1, 1, 1)
+        # set up plot
+        fig = plt.figure(figsize=(4, 6))
+        ax = fig.add_subplot(1, 1, 1)
 
-    # plot analytical solution
-    qx1, qz1 = BakkerRotatingInterface.get_w(
-        xg, zg, hydraulic_conductivity, rho1, rho2, a1, b, x1
-    )
-    qx2, qz2 = BakkerRotatingInterface.get_w(
-        xg, zg, hydraulic_conductivity, rho2, rho3, a2, b, x2
-    )
-    qx = qx1 + qx2
-    qz = qz1 + qz2
-    vh = qx + qz * a1 / b
-    vh = vh / porosity
-    ax.plot(vh, zg, "k-")
-
-    # plot numerical results
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    bobj = flopy.utils.CellBudgetFile(fpth, precision="double")
-    kstpkper = bobj.get_kstpkper()
-    spdis = bobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0]
-    qxsim = spdis["qx"].reshape((nlay, ncol))
-    qzsim = spdis["qz"].reshape((nlay, ncol))
-    qx = []
-    qz = []
-    for k, j in interface_coords:
-        qx.append(qxsim[k, j])
-        qz.append(qzsim[k, j])
-    qx = np.array(qx)
-    qz = np.array(qz)
-    vh = qx + qz * a1 / b
-    vh = vh / porosity
-    ax.plot(vh, zg, "bo", mfc="none")
-
-    # configure plot and save
-    ax.plot([0, 0], [-b, b], "k--", linewidth=0.5)
-    ax.set_xlim(-0.1, 0.1)
-    ax.set_ylim(-b, b)
-    ax.set_ylabel("z location of left interface (m)")
-    ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-vh{config.figure_ext}"
+        # plot analytical solution
+        qx1, qz1 = BakkerRotatingInterface.get_w(
+            xg, zg, hydraulic_conductivity, rho1, rho2, a1, b, x1
         )
-        fig.savefig(fpth)
+        qx2, qz2 = BakkerRotatingInterface.get_w(
+            xg, zg, hydraulic_conductivity, rho2, rho3, a2, b, x2
+        )
+        qx = qx1 + qx2
+        qz = qz1 + qz2
+        vh = qx + qz * a1 / b
+        vh = vh / porosity
+        ax.plot(vh, zg, "k-")
+
+        # plot numerical results
+        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
+        bobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        kstpkper = bobj.get_kstpkper()
+        spdis = bobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0]
+        qxsim = spdis["qx"].reshape((nlay, ncol))
+        qzsim = spdis["qz"].reshape((nlay, ncol))
+        qx = []
+        qz = []
+        for k, j in interface_coords:
+            qx.append(qxsim[k, j])
+            qz.append(qzsim[k, j])
+        qx = np.array(qx)
+        qz = np.array(qz)
+        vh = qx + qz * a1 / b
+        vh = vh / porosity
+        ax.plot(vh, zg, "bo", mfc="none")
+
+        # configure plot and save
+        ax.plot([0, 0], [-b, b], "k--", linewidth=0.5)
+        ax.set_xlim(-0.1, 0.1)
+        ax.set_ylim(-b, b)
+        ax.set_ylabel("z location of left interface (m)")
+        ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-vh{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    # make initial conditions figure
-    print("Creating initial conditions figure...")
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pxs.plot_array(gwt.ic.strt.array, cmap="jet", vmin=c1, vmax=c3)
-    pxs.plot_grid(linewidth=0.1)
-    ax.set_ylabel("z position (m)")
-    ax.set_xlabel("x position (m)")
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-bc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    plt.close("all")
-
-    # make results plot
-    print("Making results plot...")
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
-
-    # create MODFLOW 6 head object
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-
-    # plot times in the original publication
-    plot_times = [
-        2000.0,
-        10000.0,
-    ]
-
-    nplots = len(plot_times)
-    for iplot in range(nplots):
-        time_in_pub = plot_times[iplot]
-        idx_conc = (np.abs(times - time_in_pub)).argmin()
-        time_this_plot = times[idx_conc]
-        conc = cobj.get_data(totim=time_this_plot)
-
-        ax = fig.add_subplot(2, 1, iplot + 1)
+        # make initial conditions figure
+        print("Creating initial conditions figure...")
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-        pxs.plot_array(conc, cmap="jet", vmin=c1, vmax=c3)
-        ax.set_xlim(0, length)
-        ax.set_ylim(-height / 2.0, height / 2.0)
+        pxs.plot_array(gwt.ic.strt.array, cmap="jet", vmin=c1, vmax=c3)
+        pxs.plot_grid(linewidth=0.1)
         ax.set_ylabel("z position (m)")
         ax.set_xlabel("x position (m)")
-        ax.set_title(f"Time = {time_this_plot} days")
-    plt.tight_layout()
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-bc{config.figure_ext}"
+            )
+            fig.savefig(fpth)
+        plt.close("all")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # make results plot
+        print("Making results plot...")
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
+
+        # create MODFLOW 6 head object
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+
+        # plot times in the original publication
+        plot_times = [
+            2000.0,
+            10000.0,
+        ]
+
+        nplots = len(plot_times)
+        for iplot in range(nplots):
+            time_in_pub = plot_times[iplot]
+            idx_conc = (np.abs(times - time_in_pub)).argmin()
+            time_this_plot = times[idx_conc]
+            conc = cobj.get_data(totim=time_this_plot)
+
+            ax = fig.add_subplot(2, 1, iplot + 1)
+            pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+            pxs.plot_array(conc, cmap="jet", vmin=c1, vmax=c3)
+            ax.set_xlim(0, length)
+            ax.set_ylim(-height / 2.0, height / 2.0)
+            ax.set_ylabel("z position (m)")
+            ax.set_xlabel("x position (m)")
+            ax.set_title(f"Time = {time_this_plot} days")
+        plt.tight_layout()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def make_animated_gif(sim, idx):
     from matplotlib.animation import FuncAnimation, PillowWriter
 
     print("Creating animation...")
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-    conc = cobj.get_alldata()
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+        conc = cobj.get_alldata()
 
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pc = pxs.plot_array(conc[0], cmap="jet", vmin=c1, vmax=c3)
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+        pc = pxs.plot_array(conc[0], cmap="jet", vmin=c1, vmax=c3)
 
-    def init():
-        ax.set_xlim(0, length)
-        ax.set_ylim(-height / 2, height / 2)
-        ax.set_title(f"Time = {times[0]} seconds")
+        def init():
+            ax.set_xlim(0, length)
+            ax.set_ylim(-height / 2, height / 2)
+            ax.set_title(f"Time = {times[0]} seconds")
 
-    def update(i):
-        pc.set_array(conc[i].flatten())
-        ax.set_title(f"Time = {times[i]} days")
+        def update(i):
+            pc.set_array(conc[i].flatten())
+            ax.set_title(f"Time = {times[i]} days")
 
-    ani = FuncAnimation(
-        fig, update, range(1, times.shape[0], 5), init_func=init
-    )
-    writer = PillowWriter(fps=50)
-    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
-    ani.save(fpth, writer=writer)
-    return
+        ani = FuncAnimation(
+            fig, update, range(1, times.shape[0], 5), init_func=init
+        )
+        writer = PillowWriter(fps=50)
+        fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+        ani.save(fpth, writer=writer)
 
 
 def plot_results(sim, idx):

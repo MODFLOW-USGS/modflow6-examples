@@ -26,7 +26,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -256,9 +256,10 @@ def run_model(sim, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=False)
-        sim_ws = os.path.join(ws, sim_name)
+    if not config.plotModel:
+        return
+    
+    with styles.USGSMap() as fs:
         gwf = sim.get_model(sim_name)
 
         # plot the grid
@@ -288,8 +289,8 @@ def plot_results(sim, silent=True):
                 facecolor="black", shrink=0.05, headwidth=5, width=1.5
             ),
         )
-        fs.heading(ax, letter="A", heading="Map view")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="A", heading="Map view")
+        styles.remove_edge_ticks(ax)
         ax.axes.get_xaxis().set_ticks([])
 
         idx += 1
@@ -325,8 +326,8 @@ def plot_results(sim, silent=True):
         )
         ax.set_ylabel("Elevation, in meters")
         ax.set_xlabel("x-coordinate, in meters")
-        fs.heading(ax, letter="B", heading="Cross-section view")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="B", heading="Cross-section view")
+        styles.remove_edge_ticks(ax)
 
         fig.align_ylabels()
 
@@ -361,61 +362,61 @@ def plot_results(sim, silent=True):
         t0, t1 = obs_date[0], obs_date[-1]
 
         # plot the results
-        fs = USGSFigure(figure_type="graph", verbose=False)
-        fig = plt.figure(figsize=(6.8, 4.0))
-        gs = mpl.gridspec.GridSpec(2, 1, figure=fig)
+        with styles.USGSPlot() as fs:
+            fig = plt.figure(figsize=(6.8, 4.0))
+            gs = mpl.gridspec.GridSpec(2, 1, figure=fig)
 
-        axe = fig.add_subplot(gs[-1])
+            axe = fig.add_subplot(gs[-1])
 
-        idx = 0
-        ax = fig.add_subplot(gs[idx], sharex=axe)
-        ax.set_ylim(0, 3.25)
-        ax.set_yticks(np.arange(0, 3.5, 0.5))
-        ax.fill_between(
-            date_list, csv_load["load"], y2=0, color="cyan", lw=0.5, alpha=0.5
-        )
-        ax.set_ylabel("Load, in meters\nof water")
-        plt.setp(ax.get_xticklabels(), visible=False)
-        fs.heading(ax, letter="A")
-        fs.remove_edge_ticks(ax)
-
-        ax = axe
-        ax.plot(
-            sim_date,
-            sim_obs["W3_1_1"],
-            color="black",
-            lw=0.75,
-            label="Simulated",
-        )
-        ax.plot(
-            obs_date,
-            obs_head["dz_m"],
-            color="red",
-            lw=0,
-            ms=4,
-            marker=".",
-            label="Offset S-201",
-        )
-        ax.axhline(0, lw=0.5, color="0.5")
-        ax.set_ylabel("Water level fluctuation,\nin meters")
-        fs.heading(ax, letter="B")
-        leg = fs.graph_legend(ax, loc="upper right", ncol=1)
-
-        ax.set_xlabel("Time")
-        ax.set_ylim(-0.004, 0.008)
-        axe.set_xlim(t0, t1)
-        fs.remove_edge_ticks(ax)
-
-        fig.align_ylabels()
-
-        plt.tight_layout(pad=1, h_pad=0.001, rect=(0.005, -0.02, 0.99, 0.99))
-
-        # save figure
-        if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+            idx = 0
+            ax = fig.add_subplot(gs[idx], sharex=axe)
+            ax.set_ylim(0, 3.25)
+            ax.set_yticks(np.arange(0, 3.5, 0.5))
+            ax.fill_between(
+                date_list, csv_load["load"], y2=0, color="cyan", lw=0.5, alpha=0.5
             )
-            fig.savefig(fpth)
+            ax.set_ylabel("Load, in meters\nof water")
+            plt.setp(ax.get_xticklabels(), visible=False)
+            styles.heading(ax, letter="A")
+            styles.remove_edge_ticks(ax)
+
+            ax = axe
+            ax.plot(
+                sim_date,
+                sim_obs["W3_1_1"],
+                color="black",
+                lw=0.75,
+                label="Simulated",
+            )
+            ax.plot(
+                obs_date,
+                obs_head["dz_m"],
+                color="red",
+                lw=0,
+                ms=4,
+                marker=".",
+                label="Offset S-201",
+            )
+            ax.axhline(0, lw=0.5, color="0.5")
+            ax.set_ylabel("Water level fluctuation,\nin meters")
+            styles.heading(ax, letter="B")
+            leg = styles.graph_legend(ax, loc="upper right", ncol=1)
+
+            ax.set_xlabel("Time")
+            ax.set_ylim(-0.004, 0.008)
+            axe.set_xlim(t0, t1)
+            styles.remove_edge_ticks(ax)
+
+            fig.align_ylabels()
+
+            plt.tight_layout(pad=1, h_pad=0.001, rect=(0.005, -0.02, 0.99, 0.99))
+
+            # save figure
+            if config.plotSave:
+                fpth = os.path.join(
+                    "..", "figures", f"{sim_name}-01{config.figure_ext}"
+                )
+                fig.savefig(fpth)
 
 
 # Function that wraps all of the steps for the model

@@ -25,7 +25,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the problem
 
@@ -435,435 +435,432 @@ def plot_compaction_values(ax, sim, tagbase="W1L"):
 
 
 def plot_grid(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-    name = sim.name
-    gwf = sim.get_model(name)
-    extents = gwf.modelgrid.extent
+    with styles.USGSMap() as fs:
+        name = sim.name
+        gwf = sim.get_model(name)
+        extents = gwf.modelgrid.extent
 
-    # read simulated heads
-    hobj = gwf.output.head()
-    h0 = hobj.get_data(kstpkper=(0, 0))
-    h1 = hobj.get_data(kstpkper=(59, 1))
-    hsxs0 = h0[0, 8, :]
-    hsxs1 = h1[0, 8, :]
+        # read simulated heads
+        hobj = gwf.output.head()
+        h0 = hobj.get_data(kstpkper=(0, 0))
+        h1 = hobj.get_data(kstpkper=(59, 1))
+        hsxs0 = h0[0, 8, :]
+        hsxs1 = h1[0, 8, :]
 
-    # get delr array
-    dx = gwf.dis.delr.array
+        # get delr array
+        dx = gwf.dis.delr.array
 
-    # create x-axis for cross-section
-    hxloc = np.arange(1000, 2000.0 * 15, 2000.0)
+        # create x-axis for cross-section
+        hxloc = np.arange(1000, 2000.0 * 15, 2000.0)
 
-    # set cross-section location
-    y = 2000.0 * 11.5
-    xsloc = [(extents[0], extents[1]), (y, y)]
+        # set cross-section location
+        y = 2000.0 * 11.5
+        xsloc = [(extents[0], extents[1]), (y, y)]
 
-    # well locations
-    w1loc = (9.5 * 2000.0, 11.75 * 2000.0)
-    w2loc = (6.5 * 2000.0, 8.5 * 2000.0)
+        # well locations
+        w1loc = (9.5 * 2000.0, 11.75 * 2000.0)
+        w2loc = (6.5 * 2000.0, 8.5 * 2000.0)
 
-    fig = plt.figure(figsize=(6.8, 5), constrained_layout=True)
-    gs = mpl.gridspec.GridSpec(7, 10, figure=fig, wspace=5)
-    plt.axis("off")
+        fig = plt.figure(figsize=(6.8, 5), constrained_layout=True)
+        gs = mpl.gridspec.GridSpec(7, 10, figure=fig, wspace=5)
+        plt.axis("off")
 
-    ax = fig.add_subplot(gs[:, 0:6])
-    # ax.set_aspect('equal')
-    mm = flopy.plot.PlotMapView(model=gwf, ax=ax, extent=extents)
-    mm.plot_grid(lw=0.5, color="0.5")
-    mm.plot_bc(ftype="WEL", kper=1, plotAll=True)
-    mm.plot_bc(ftype="CHD", color="blue")
-    mm.plot_bc(ftype="RCH", color="green")
-    mm.plot_inactive(color_noflow="0.75")
-    mm.ax.plot(xsloc[0], xsloc[1], color="orange", lw=1.5)
-    # contour steady state heads
-    cl = mm.contour_array(
-        h0,
-        masked_values=[1.0e30],
-        levels=np.arange(115, 200, 5),
-        colors="black",
-        linestyles="dotted",
-        linewidths=0.75,
-    )
-    ax.clabel(cl, fmt="%3i", inline_spacing=0.1)
-    # well text
-    fs.add_annotation(
-        ax=ax,
-        text="Well 1, layer 2",
-        bold=False,
-        italic=False,
-        xy=w1loc,
-        xytext=(w1loc[0] - 3200, w1loc[1] + 1500),
-        ha="right",
-        va="center",
-        zorder=100,
-        arrowprops=arrow_props,
-    )
-    fs.add_annotation(
-        ax=ax,
-        text="Well 2, layer 4",
-        bold=False,
-        italic=False,
-        xy=w2loc,
-        xytext=(w2loc[0] + 3000, w2loc[1]),
-        ha="left",
-        va="center",
-        zorder=100,
-        arrowprops=arrow_props,
-    )
-    ax.set_ylabel("y-coordinate, in meters")
-    ax.set_xlabel("x-coordinate, in meters")
-    fs.heading(ax, letter="A", heading="Map view")
-    fs.remove_edge_ticks(ax)
-
-    ax = fig.add_subplot(gs[0:5, 6:])
-    mm = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 8})
-    mm.plot_grid(lw=0.5, color="0.5")
-    # items for legend
-    mm.ax.plot(
-        -1000,
-        -1000,
-        "s",
-        ms=5,
-        color="green",
-        mec="black",
-        mew=0.5,
-        label="Recharge",
-    )
-    mm.ax.plot(
-        -1000,
-        -1000,
-        "s",
-        ms=5,
-        color="red",
-        mec="black",
-        mew=0.5,
-        label="Well",
-    )
-    mm.ax.plot(
-        -1000,
-        -1000,
-        "s",
-        ms=5,
-        color="blue",
-        mec="black",
-        mew=0.5,
-        label="Constant head",
-    )
-    mm.ax.plot(
-        -1000,
-        -1000,
-        "s",
-        ms=5,
-        color="0.75",
-        mec="black",
-        mew=0.5,
-        label="Inactive",
-    )
-    mm.ax.plot(
-        [-1000, -1001],
-        [-1000, -1000],
-        color="orange",
-        lw=1.5,
-        label="Cross-section line",
-    )
-    # aquifer coloring
-    ax.fill_between([0, dx.sum()], y1=150, y2=-100, color="cyan", alpha=0.5)
-    ax.fill_between(
-        [0, dx.sum()], y1=-100, y2=-150, color="#D2B48C", alpha=0.5
-    )
-    ax.fill_between(
-        [0, dx.sum()], y1=-150, y2=-350, color="#00BFFF", alpha=0.5
-    )
-    # well coloring
-    ax.fill_between(
-        [dx.cumsum()[8], dx.cumsum()[9]], y1=50, y2=-100, color="red", lw=0
-    )
-    # labels
-    fs.add_text(
-        ax=ax,
-        transform=False,
-        bold=False,
-        italic=False,
-        x=300,
-        y=-97,
-        text="Upper aquifer",
-        va="bottom",
-        ha="left",
-        fontsize=9,
-    )
-    fs.add_text(
-        ax=ax,
-        transform=False,
-        bold=False,
-        italic=False,
-        x=300,
-        y=-147,
-        text="Confining unit",
-        va="bottom",
-        ha="left",
-        fontsize=9,
-    )
-    fs.add_text(
-        ax=ax,
-        transform=False,
-        bold=False,
-        italic=False,
-        x=300,
-        y=-347,
-        text="Lower aquifer",
-        va="bottom",
-        ha="left",
-        fontsize=9,
-    )
-    fs.add_text(
-        ax=ax,
-        transform=False,
-        bold=False,
-        italic=False,
-        x=29850,
-        y=53,
-        text="Layer 1",
-        va="bottom",
-        ha="right",
-        fontsize=9,
-    )
-    fs.add_text(
-        ax=ax,
-        transform=False,
-        bold=False,
-        italic=False,
-        x=29850,
-        y=-97,
-        text="Layer 2",
-        va="bottom",
-        ha="right",
-        fontsize=9,
-    )
-    fs.add_text(
-        ax=ax,
-        transform=False,
-        bold=False,
-        italic=False,
-        x=29850,
-        y=-147,
-        text="Layer 3",
-        va="bottom",
-        ha="right",
-        fontsize=9,
-    )
-    fs.add_text(
-        ax=ax,
-        transform=False,
-        bold=False,
-        italic=False,
-        x=29850,
-        y=-347,
-        text="Layer 4",
-        va="bottom",
-        ha="right",
-        fontsize=9,
-    )
-    ax.plot(
-        hxloc,
-        hsxs0,
-        lw=0.75,
-        color="black",
-        ls="dotted",
-        label="Steady-state\nwater level",
-    )
-    ax.plot(
-        hxloc,
-        hsxs1,
-        lw=0.75,
-        color="black",
-        ls="dashed",
-        label="Water-level at the end\nof stress-period 2",
-    )
-    ax.set_ylabel("Elevation, in meters")
-    ax.set_xlabel("x-coordinate along model row 9, in meters")
-    fs.graph_legend(
-        mm.ax,
-        ncol=2,
-        bbox_to_anchor=(0.5, -0.6),
-        borderaxespad=0,
-        frameon=False,
-        loc="lower center",
-    )
-    fs.heading(ax, letter="B", heading="Cross-section view")
-    fs.remove_edge_ticks(ax)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        ax = fig.add_subplot(gs[:, 0:6])
+        # ax.set_aspect('equal')
+        mm = flopy.plot.PlotMapView(model=gwf, ax=ax, extent=extents)
+        mm.plot_grid(lw=0.5, color="0.5")
+        mm.plot_bc(ftype="WEL", kper=1, plotAll=True)
+        mm.plot_bc(ftype="CHD", color="blue")
+        mm.plot_bc(ftype="RCH", color="green")
+        mm.plot_inactive(color_noflow="0.75")
+        mm.ax.plot(xsloc[0], xsloc[1], color="orange", lw=1.5)
+        # contour steady state heads
+        cl = mm.contour_array(
+            h0,
+            masked_values=[1.0e30],
+            levels=np.arange(115, 200, 5),
+            colors="black",
+            linestyles="dotted",
+            linewidths=0.75,
         )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        ax.clabel(cl, fmt="%3i", inline_spacing=0.1)
+        # well text
+        styles.add_annotation(
+            ax=ax,
+            text="Well 1, layer 2",
+            bold=False,
+            italic=False,
+            xy=w1loc,
+            xytext=(w1loc[0] - 3200, w1loc[1] + 1500),
+            ha="right",
+            va="center",
+            zorder=100,
+            arrowprops=arrow_props,
+        )
+        styles.add_annotation(
+            ax=ax,
+            text="Well 2, layer 4",
+            bold=False,
+            italic=False,
+            xy=w2loc,
+            xytext=(w2loc[0] + 3000, w2loc[1]),
+            ha="left",
+            va="center",
+            zorder=100,
+            arrowprops=arrow_props,
+        )
+        ax.set_ylabel("y-coordinate, in meters")
+        ax.set_xlabel("x-coordinate, in meters")
+        styles.heading(ax, letter="A", heading="Map view")
+        styles.remove_edge_ticks(ax)
+
+        ax = fig.add_subplot(gs[0:5, 6:])
+        mm = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 8})
+        mm.plot_grid(lw=0.5, color="0.5")
+        # items for legend
+        mm.ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="green",
+            mec="black",
+            mew=0.5,
+            label="Recharge",
+        )
+        mm.ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="red",
+            mec="black",
+            mew=0.5,
+            label="Well",
+        )
+        mm.ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="blue",
+            mec="black",
+            mew=0.5,
+            label="Constant head",
+        )
+        mm.ax.plot(
+            -1000,
+            -1000,
+            "s",
+            ms=5,
+            color="0.75",
+            mec="black",
+            mew=0.5,
+            label="Inactive",
+        )
+        mm.ax.plot(
+            [-1000, -1001],
+            [-1000, -1000],
+            color="orange",
+            lw=1.5,
+            label="Cross-section line",
+        )
+        # aquifer coloring
+        ax.fill_between([0, dx.sum()], y1=150, y2=-100, color="cyan", alpha=0.5)
+        ax.fill_between(
+            [0, dx.sum()], y1=-100, y2=-150, color="#D2B48C", alpha=0.5
+        )
+        ax.fill_between(
+            [0, dx.sum()], y1=-150, y2=-350, color="#00BFFF", alpha=0.5
+        )
+        # well coloring
+        ax.fill_between(
+            [dx.cumsum()[8], dx.cumsum()[9]], y1=50, y2=-100, color="red", lw=0
+        )
+        # labels
+        styles.add_text(
+            ax=ax,
+            transform=False,
+            bold=False,
+            italic=False,
+            x=300,
+            y=-97,
+            text="Upper aquifer",
+            va="bottom",
+            ha="left",
+            fontsize=9,
+        )
+        styles.add_text(
+            ax=ax,
+            transform=False,
+            bold=False,
+            italic=False,
+            x=300,
+            y=-147,
+            text="Confining unit",
+            va="bottom",
+            ha="left",
+            fontsize=9,
+        )
+        styles.add_text(
+            ax=ax,
+            transform=False,
+            bold=False,
+            italic=False,
+            x=300,
+            y=-347,
+            text="Lower aquifer",
+            va="bottom",
+            ha="left",
+            fontsize=9,
+        )
+        styles.add_text(
+            ax=ax,
+            transform=False,
+            bold=False,
+            italic=False,
+            x=29850,
+            y=53,
+            text="Layer 1",
+            va="bottom",
+            ha="right",
+            fontsize=9,
+        )
+        styles.add_text(
+            ax=ax,
+            transform=False,
+            bold=False,
+            italic=False,
+            x=29850,
+            y=-97,
+            text="Layer 2",
+            va="bottom",
+            ha="right",
+            fontsize=9,
+        )
+        styles.add_text(
+            ax=ax,
+            transform=False,
+            bold=False,
+            italic=False,
+            x=29850,
+            y=-147,
+            text="Layer 3",
+            va="bottom",
+            ha="right",
+            fontsize=9,
+        )
+        styles.add_text(
+            ax=ax,
+            transform=False,
+            bold=False,
+            italic=False,
+            x=29850,
+            y=-347,
+            text="Layer 4",
+            va="bottom",
+            ha="right",
+            fontsize=9,
+        )
+        ax.plot(
+            hxloc,
+            hsxs0,
+            lw=0.75,
+            color="black",
+            ls="dotted",
+            label="Steady-state\nwater level",
+        )
+        ax.plot(
+            hxloc,
+            hsxs1,
+            lw=0.75,
+            color="black",
+            ls="dashed",
+            label="Water-level at the end\nof stress-period 2",
+        )
+        ax.set_ylabel("Elevation, in meters")
+        ax.set_xlabel("x-coordinate along model row 9, in meters")
+        styles.graph_legend(
+            mm.ax,
+            ncol=2,
+            bbox_to_anchor=(0.5, -0.6),
+            borderaxespad=0,
+            frameon=False,
+            loc="lower center",
+        )
+        styles.heading(ax, letter="B", heading="Cross-section view")
+        styles.remove_edge_ticks(ax)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the stresses
 
 
 def plot_stresses(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
+    with styles.USGSPlot() as fs:
+        name = sim.name
 
-    cd = get_csub_observations(sim)
-    tmax = cd["totim"][-1]
+        cd = get_csub_observations(sim)
+        tmax = cd["totim"][-1]
 
-    fig, axes = plt.subplots(
-        ncols=1,
-        nrows=4,
-        figsize=figure_size,
-        sharex=True,
-        constrained_layout=True,
-    )
+        fig, axes = plt.subplots(
+            ncols=1,
+            nrows=4,
+            figsize=figure_size,
+            sharex=True,
+            constrained_layout=True,
+        )
 
-    idx = 0
-    ax = axes[idx]
-    ax.set_xlim(0, tmax)
-    ax.set_ylim(110, 150)
-    ax.plot(
-        cd["totim"],
-        cd["PC1"],
-        color="blue",
-        lw=1,
-        label="Preconsolidation stress",
-    )
-    ax.plot(
-        cd["totim"], cd["ES1"], color="red", lw=1, label="Effective stress"
-    )
-    fs.heading(ax, letter="A", heading="Model layer 1, row 9, column 10")
-    fs.remove_edge_ticks(ax)
+        idx = 0
+        ax = axes[idx]
+        ax.set_xlim(0, tmax)
+        ax.set_ylim(110, 150)
+        ax.plot(
+            cd["totim"],
+            cd["PC1"],
+            color="blue",
+            lw=1,
+            label="Preconsolidation stress",
+        )
+        ax.plot(
+            cd["totim"], cd["ES1"], color="red", lw=1, label="Effective stress"
+        )
+        styles.heading(ax, letter="A", heading="Model layer 1, row 9, column 10")
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = axes[idx]
-    ax.set_ylim(185, 205)
-    ax.plot(cd["totim"], cd["GS1"], color="black", lw=1)
-    fs.heading(ax, letter="B", heading="Model layer 1, row 9, column 10")
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = axes[idx]
+        ax.set_ylim(185, 205)
+        ax.plot(cd["totim"], cd["GS1"], color="black", lw=1)
+        styles.heading(ax, letter="B", heading="Model layer 1, row 9, column 10")
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = axes[idx]
-    ax.set_ylim(270, 310)
-    ax.plot(cd["totim"], cd["PC2"], color="blue", lw=1)
-    ax.plot(cd["totim"], cd["ES2"], color="red", lw=1)
-    fs.heading(ax, letter="C", heading="Model layer 2, row 9, column 10")
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = axes[idx]
+        ax.set_ylim(270, 310)
+        ax.plot(cd["totim"], cd["PC2"], color="blue", lw=1)
+        ax.plot(cd["totim"], cd["ES2"], color="red", lw=1)
+        styles.heading(ax, letter="C", heading="Model layer 2, row 9, column 10")
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = axes[idx]
-    ax.set_ylim(495, 515)
-    ax.plot(
-        [-100, -50],
-        [-100, -100],
-        color="blue",
-        lw=1,
-        label="Preconsolidation stress",
-    )
-    ax.plot(
-        [-100, -50], [-100, -100], color="red", lw=1, label="Effective stress"
-    )
-    ax.plot(
-        cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress"
-    )
-    fs.graph_legend(ax, ncol=3, loc="upper center")
-    fs.heading(ax, letter="D", heading="Model layer 2, row 9, column 10")
-    fs.remove_edge_ticks(ax)
-    ax.set_xlabel("Simulation time, in years")
-    ax.set_ylabel(" ")
+        idx += 1
+        ax = axes[idx]
+        ax.set_ylim(495, 515)
+        ax.plot(
+            [-100, -50],
+            [-100, -100],
+            color="blue",
+            lw=1,
+            label="Preconsolidation stress",
+        )
+        ax.plot(
+            [-100, -50], [-100, -100], color="red", lw=1, label="Effective stress"
+        )
+        ax.plot(
+            cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress"
+        )
+        styles.graph_legend(ax, ncol=3, loc="upper center")
+        styles.heading(ax, letter="D", heading="Model layer 2, row 9, column 10")
+        styles.remove_edge_ticks(ax)
+        ax.set_xlabel("Simulation time, in years")
+        ax.set_ylabel(" ")
 
-    ax = fig.add_subplot(111, frame_on=False, xticks=[], yticks=[])
-    ax.set_ylabel("Stress, in meters of water")
+        ax = fig.add_subplot(111, frame_on=False, xticks=[], yticks=[])
+        ax.set_ylabel("Stress, in meters of water")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 def plot_compaction(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
+    with styles.USGSPlot() as fs:
+        name = sim.name
 
-    fig, axes = plt.subplots(
-        ncols=2,
-        nrows=3,
-        figsize=figure_size,
-        sharex=True,
-        constrained_layout=True,
-    )
-    axes = axes.flatten()
+        fig, axes = plt.subplots(
+            ncols=2,
+            nrows=3,
+            figsize=figure_size,
+            sharex=True,
+            constrained_layout=True,
+        )
+        axes = axes.flatten()
 
-    idx = 0
-    ax = axes[idx]
-    ax.set_xlim(0, 120)
-    ax.set_ylim(0, 1)
-    plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-    ht = "{} {}".format("Interbed compaction", compaction_heading[0])
-    fs.heading(ax, letter="A", heading=ht)
-    fs.remove_edge_ticks(ax)
+        idx = 0
+        ax = axes[idx]
+        ax.set_xlim(0, 120)
+        ax.set_ylim(0, 1)
+        plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
+        ht = "{} {}".format("Interbed compaction", compaction_heading[0])
+        styles.heading(ax, letter="A", heading=ht)
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = axes[idx]
-    ax.set_ylim(0, 1)
-    plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-    fs.graph_legend(ax, ncol=2, loc="upper center")
-    ht = "{} {}".format("Interbed compaction", compaction_heading[1])
-    fs.heading(ax, letter="B", heading=ht)
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = axes[idx]
+        ax.set_ylim(0, 1)
+        plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
+        styles.graph_legend(ax, ncol=2, loc="upper center")
+        ht = "{} {}".format("Interbed compaction", compaction_heading[1])
+        styles.heading(ax, letter="B", heading=ht)
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = axes[idx]
-    ax.set_ylim(0, 1)
-    plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-    ht = "{} {}".format("Coarse-grained compaction", compaction_heading[0])
-    fs.heading(ax, letter="C", heading=ht)
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = axes[idx]
+        ax.set_ylim(0, 1)
+        plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
+        ht = "{} {}".format("Coarse-grained compaction", compaction_heading[0])
+        styles.heading(ax, letter="C", heading=ht)
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = axes[idx]
-    ax.set_ylim(0, 1)
-    plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-    ht = "{} {}".format("Coarse-grained compaction", compaction_heading[1])
-    fs.heading(ax, letter="D", heading=ht)
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = axes[idx]
+        ax.set_ylim(0, 1)
+        plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
+        ht = "{} {}".format("Coarse-grained compaction", compaction_heading[1])
+        styles.heading(ax, letter="D", heading=ht)
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = axes[idx]
-    ax.set_ylim(0, 1)
-    plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-    ht = "{} {}".format("Total compaction", compaction_heading[0])
-    fs.heading(ax, letter="E", heading=ht)
-    fs.remove_edge_ticks(ax)
-    ax.set_ylabel(" ")
-    ax.set_xlabel(" ")
+        idx += 1
+        ax = axes[idx]
+        ax.set_ylim(0, 1)
+        plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
+        ht = "{} {}".format("Total compaction", compaction_heading[0])
+        styles.heading(ax, letter="E", heading=ht)
+        styles.remove_edge_ticks(ax)
+        ax.set_ylabel(" ")
+        ax.set_xlabel(" ")
 
-    idx += 1
-    ax = axes.flat[idx]
-    ax.set_ylim(0, 1)
-    plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-    ht = "{} {}".format("Total compaction", compaction_heading[1])
-    fs.heading(ax, letter="F", heading=ht)
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = axes.flat[idx]
+        ax.set_ylim(0, 1)
+        plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
+        ht = "{} {}".format("Total compaction", compaction_heading[1])
+        styles.heading(ax, letter="F", heading=ht)
+        styles.remove_edge_ticks(ax)
 
-    ax = fig.add_subplot(111, frame_on=False, xticks=[], yticks=[])
-    ax.set_ylabel(
-        "Downward vertical displacement at the top of the model layer, in meters"
-    )
-    ax.set_xlabel("Simulation time, in years")
+        ax = fig.add_subplot(111, frame_on=False, xticks=[], yticks=[])
+        ax.set_ylabel(
+            "Downward vertical displacement at the top of the model layer, in meters"
+        )
+        ax.set_xlabel("Simulation time, in years")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 # Function to plot the model results.

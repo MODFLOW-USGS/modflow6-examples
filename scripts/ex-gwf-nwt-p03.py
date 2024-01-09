@@ -21,7 +21,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties
 
@@ -260,171 +260,163 @@ def create_figure(nsubs=1, size=(4, 4)):
 
 
 def plot_grid(gwf, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
+    with styles.USGSMap() as fs:
+        bot = gwf.dis.botm.array
 
-    bot = gwf.dis.botm.array
-
-    fig, axes = create_figure(size=(3.15, 4))
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    bot_coll = mm.plot_array(bot, vmin=bmin, vmax=bmax)
-    mm.plot_bc("CHD", color="cyan")
-    cv = mm.contour_array(
-        bot,
-        levels=blevels,
-        linewidths=0.5,
-        linestyles="-",
-        colors=bcolor,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    ax.set_xlabel("x-coordinate, in meters")
-    ax.set_ylabel("y-coordinate, in meters")
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="cyan",
-        mec="cyan",
-        label="Constant Head",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls="-",
-        color=bcolor,
-        label="Bottom elevation contour, m",
-    )
-    fs.graph_legend(ax, loc="center", ncol=2)
-
-    cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-    cbar = plt.colorbar(
-        bot_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        cax=cax,
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Bottom Elevation, $m$")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+        fig, axes = create_figure(size=(3.15, 4))
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        bot_coll = mm.plot_array(bot, vmin=bmin, vmax=bmax)
+        mm.plot_bc("CHD", color="cyan")
+        cv = mm.contour_array(
+            bot,
+            levels=blevels,
+            linewidths=0.5,
+            linestyles="-",
+            colors=bcolor,
         )
-        fig.savefig(fpth)
+        plt.clabel(cv, fmt="%1.0f")
+        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("y-coordinate, in meters")
+        styles.remove_edge_ticks(ax)
 
-    return
+        # legend
+        ax = axes[1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="cyan",
+            mec="cyan",
+            label="Constant Head",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color=bcolor,
+            label="Bottom elevation contour, m",
+        )
+        styles.graph_legend(ax, loc="center", ncol=2)
+
+        cax = plt.axes([0.275, 0.125, 0.45, 0.025])
+        cbar = plt.colorbar(
+            bot_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            cax=cax,
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Bottom Elevation, $m$")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 def plot_recharge(gwf, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-
-    fig, axes = create_figure(nsubs=2, size=figure_size)
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    rch_coll = mm.plot_array(rch_high)
-    mm.plot_bc("CHD", color="cyan")
-    cv = mm.contour_array(
-        rch_high,
-        levels=[1e-6, 2e-6, 3e-6, 4e-6, 5e-6, 6e-6, 7e-6],
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-    )
-    plt.clabel(cv, fmt="%1.0e")
-    cbar = plt.colorbar(
-        rch_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0e",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
-    ax.set_xlabel("x-coordinate, in meters")
-    ax.set_ylabel("y-coordinate, in meters")
-    fs.heading(ax, letter="A")
-    fs.remove_edge_ticks(ax)
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    rch_coll = mm.plot_array(rch_low)
-    mm.plot_bc("CHD", color="cyan")
-    cv = mm.contour_array(
-        rch_low,
-        levels=[1e-9, 2e-9, 3e-9, 4e-9, 5e-9, 6e-9, 7e-9],
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-    )
-    plt.clabel(cv, fmt="%1.0e")
-    cbar = plt.colorbar(
-        rch_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0e",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
-    ax.set_xlabel("x-coordinate, in meters")
-    fs.heading(ax, letter="B")
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="cyan",
-        mec="cyan",
-        label="Constant Head",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls="-",
-        color=bcolor,
-        label=r"Recharge rate contour, $m/day$",
-    )
-    fs.graph_legend(ax, loc="center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+    with styles.USGSMap() as fs:
+        fig, axes = create_figure(nsubs=2, size=figure_size)
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        rch_coll = mm.plot_array(rch_high)
+        mm.plot_bc("CHD", color="cyan")
+        cv = mm.contour_array(
+            rch_high,
+            levels=[1e-6, 2e-6, 3e-6, 4e-6, 5e-6, 6e-6, 7e-6],
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
         )
-        fig.savefig(fpth)
+        plt.clabel(cv, fmt="%1.0e")
+        cbar = plt.colorbar(
+            rch_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0e",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
+        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("y-coordinate, in meters")
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
-    return
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        rch_coll = mm.plot_array(rch_low)
+        mm.plot_bc("CHD", color="cyan")
+        cv = mm.contour_array(
+            rch_low,
+            levels=[1e-9, 2e-9, 3e-9, 4e-9, 5e-9, 6e-9, 7e-9],
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+        )
+        plt.clabel(cv, fmt="%1.0e")
+        cbar = plt.colorbar(
+            rch_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0e",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
+        ax.set_xlabel("x-coordinate, in meters")
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
+
+        # legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="cyan",
+            mec="cyan",
+            label="Constant Head",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color=bcolor,
+            label=r"Recharge rate contour, $m/day$",
+        )
+        styles.graph_legend(ax, loc="center", ncol=2)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the model results.
 
 
 def plot_results(idx, sim, silent=True):
-    verbose = not silent
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=verbose)
+    if not config.plotModel:
+        return
+
+    with styles.USGSMap() as fs:
         name = list(parameters.keys())[idx]
-        sim_ws = os.path.join(ws, name)
         gwf = sim.get_model(sim_name)
 
         bot = gwf.dis.botm.array
@@ -476,8 +468,8 @@ def plot_results(idx, sim, silent=True):
         cbar.ax.set_xlabel(r"Water level, $m$")
         ax.set_xlabel("x-coordinate, in meters")
         ax.set_ylabel("y-coordinate, in meters")
-        fs.heading(ax, letter="A")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
         ax = axes[1]
         mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
@@ -510,8 +502,8 @@ def plot_results(idx, sim, silent=True):
         cbar.ax.set_xlabel(r"Saturated thickness, $m$")
         ax.set_xlabel("x-coordinate, in meters")
         # ax.set_ylabel("y-coordinate, in meters")
-        fs.heading(ax, letter="B")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
 
         # create legend
         ax = axes[-1]
@@ -541,7 +533,7 @@ def plot_results(idx, sim, silent=True):
             color=scolor,
             label="Saturated thickness contour, m",
         )
-        fs.graph_legend(ax, loc="center", ncol=3)
+        styles.graph_legend(ax, loc="center", ncol=3)
 
         # save figure
         if config.plotSave:

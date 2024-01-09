@@ -24,7 +24,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -178,39 +178,36 @@ def run_model(sim, silent=False):
 
 
 def plot_spdis(sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    # create MODFLOW 6 cell-by-cell budget object
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf,
-    )
-
-    ax = fig.add_subplot(1, 1, 1)
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"column": 0})
-    pxs.plot_grid(linewidth=0.5)
-    pxs.plot_vector(qx, qy, qz, normalize=True)
-    ax.set_xlabel("y position (m)")
-    ax.set_ylabel("z position (m)")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-spdis{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget object
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
         )
-        fig.savefig(fpth)
-    return
+
+        ax = fig.add_subplot(1, 1, 1)
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"column": 0})
+        pxs.plot_grid(linewidth=0.5)
+        pxs.plot_vector(qx, qy, qz, normalize=True)
+        ax.set_xlabel("y position (m)")
+        ax.set_ylabel("z position (m)")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-spdis{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
     if config.plotModel:
         plot_spdis(sim)
-    return
 
 
 # Function that wraps all of the steps for the FHB model
@@ -241,5 +238,4 @@ if __name__ == "__main__":
     # ### Whirl Simulation
     #
     # Simulated heads in the Whirl model with anisotropy in x direction.
-
     simulation(0)

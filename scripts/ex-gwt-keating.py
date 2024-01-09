@@ -26,7 +26,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -346,101 +346,103 @@ def plot_results(sims, idx):
 
 def plot_head_results(sims, idx):
     print("Plotting head model results...")
-    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf, _, _, _ = sims
     gwf = sim_mf6gwf.flow
     botm = gwf.dis.botm.array
     # gwt = sim_mf6gwt.trans
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
-    head = gwf.output.head().get_data()
-    head = np.where(head > botm, head, np.nan)
-    fig, ax = plt.subplots(
-        1, 1, figsize=figure_size, dpi=300, tight_layout=True
-    )
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pa = pxs.plot_array(head, head=head, cmap="jet")
-    pxs.plot_bc(ftype="RCH", color="red")
-    pxs.plot_bc(ftype="CHD")
-    plt.colorbar(pa, shrink=0.5)
-    confining_rect = matplotlib.patches.Rectangle(
-        (3000, 1000), 3000, 100, color="gray", alpha=0.5
-    )
-    ax.add_patch(confining_rect)
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("elevation (m)")
-    ax.set_aspect(plotaspect)
 
-    # save figure
-    if config.plotSave:
-        sim_folder = os.path.split(sim_ws)[0]
-        sim_folder = os.path.basename(sim_folder)
-        fname = f"{sim_folder}-head{config.figure_ext}"
-        fpth = os.path.join(ws, "..", "figures", fname)
-        fig.savefig(fpth)
-
-
-def plot_conc_results(sims, idx):
-    print("Plotting conc model results...")
-    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-    gwf = sim_mf6gwf.flow
-    gwt = sim_mf6gwt.trans
-    botm = gwf.dis.botm.array
-    fs = USGSFigure(figure_type="map", verbose=False)
-    head = gwf.output.head().get_data()
-    head = np.where(head > botm, head, np.nan)
-    sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-    cobj = gwt.output.concentration()
-    conc_times = cobj.get_times()
-    conc_times = np.array(conc_times)
-    fig, axes = plt.subplots(
-        3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True
-    )
-    xgrid, _, zgrid = gwt.modelgrid.xyzcellcenters
-    # Desired plot times
-    plot_times = [100.0, 1000.0, 3000.0]
-    nplots = len(plot_times)
-    for iplot in range(nplots):
-        print(f"  Plotting conc {iplot + 1}")
-        time_in_pub = plot_times[iplot]
-        idx_conc = (np.abs(conc_times - time_in_pub)).argmin()
-        totim = conc_times[idx_conc]
-        ax = axes[iplot]
+    with styles.USGSMap() as fs:
+        sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
+        head = gwf.output.head().get_data()
+        head = np.where(head > botm, head, np.nan)
+        fig, ax = plt.subplots(
+            1, 1, figsize=figure_size, dpi=300, tight_layout=True
+        )
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-        conc = cobj.get_data(totim=totim)
-        conc = np.where(head > botm, conc, np.nan)
-        pa = pxs.plot_array(conc, head=head, cmap="jet", vmin=0, vmax=1.0)
+        pa = pxs.plot_array(head, head=head, cmap="jet")
         pxs.plot_bc(ftype="RCH", color="red")
         pxs.plot_bc(ftype="CHD")
+        plt.colorbar(pa, shrink=0.5)
         confining_rect = matplotlib.patches.Rectangle(
             (3000, 1000), 3000, 100, color="gray", alpha=0.5
         )
         ax.add_patch(confining_rect)
-        if iplot == 2:
-            ax.set_xlabel("x position (m)")
+        ax.set_xlabel("x position (m)")
         ax.set_ylabel("elevation (m)")
-        title = f"Time = {totim}"
-        letter = chr(ord("@") + iplot + 1)
-        fs.heading(letter=letter, heading=title, ax=ax)
         ax.set_aspect(plotaspect)
 
-        for k, i, j in [obs1, obs2]:
-            x = xgrid[i, j]
-            z = zgrid[k, i, j]
-            ax.plot(
-                x,
-                z,
-                markerfacecolor="yellow",
-                markeredgecolor="black",
-                marker="o",
-                markersize="4",
+        # save figure
+        if config.plotSave:
+            sim_folder = os.path.split(sim_ws)[0]
+            sim_folder = os.path.basename(sim_folder)
+            fname = f"{sim_folder}-head{config.figure_ext}"
+            fpth = os.path.join(ws, "..", "figures", fname)
+            fig.savefig(fpth)
+
+
+def plot_conc_results(sims, idx):
+    print("Plotting conc model results...")
+    sim_mf6gwf, sim_mf6gwt, _, _ = sims
+    gwf = sim_mf6gwf.flow
+    gwt = sim_mf6gwt.trans
+    botm = gwf.dis.botm.array
+
+    with styles.USGSMap() as fs:
+        head = gwf.output.head().get_data()
+        head = np.where(head > botm, head, np.nan)
+        sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
+        cobj = gwt.output.concentration()
+        conc_times = cobj.get_times()
+        conc_times = np.array(conc_times)
+        fig, axes = plt.subplots(
+            3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True
+        )
+        xgrid, _, zgrid = gwt.modelgrid.xyzcellcenters
+        # Desired plot times
+        plot_times = [100.0, 1000.0, 3000.0]
+        nplots = len(plot_times)
+        for iplot in range(nplots):
+            print(f"  Plotting conc {iplot + 1}")
+            time_in_pub = plot_times[iplot]
+            idx_conc = (np.abs(conc_times - time_in_pub)).argmin()
+            totim = conc_times[idx_conc]
+            ax = axes[iplot]
+            pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+            conc = cobj.get_data(totim=totim)
+            conc = np.where(head > botm, conc, np.nan)
+            pa = pxs.plot_array(conc, head=head, cmap="jet", vmin=0, vmax=1.0)
+            pxs.plot_bc(ftype="RCH", color="red")
+            pxs.plot_bc(ftype="CHD")
+            confining_rect = matplotlib.patches.Rectangle(
+                (3000, 1000), 3000, 100, color="gray", alpha=0.5
             )
-    # save figure
-    if config.plotSave:
-        sim_folder = os.path.split(sim_ws)[0]
-        sim_folder = os.path.basename(sim_folder)
-        fname = f"{sim_folder}-conc{config.figure_ext}"
-        fpth = os.path.join(ws, "..", "figures", fname)
-        fig.savefig(fpth)
+            ax.add_patch(confining_rect)
+            if iplot == 2:
+                ax.set_xlabel("x position (m)")
+            ax.set_ylabel("elevation (m)")
+            title = f"Time = {totim}"
+            letter = chr(ord("@") + iplot + 1)
+            styles.heading(letter=letter, heading=title, ax=ax)
+            ax.set_aspect(plotaspect)
+
+            for k, i, j in [obs1, obs2]:
+                x = xgrid[i, j]
+                z = zgrid[k, i, j]
+                ax.plot(
+                    x,
+                    z,
+                    markerfacecolor="yellow",
+                    markeredgecolor="black",
+                    marker="o",
+                    markersize="4",
+                )
+        # save figure
+        if config.plotSave:
+            sim_folder = os.path.split(sim_ws)[0]
+            sim_folder = os.path.basename(sim_folder)
+            fname = f"{sim_folder}-conc{config.figure_ext}"
+            fpth = os.path.join(ws, "..", "figures", fname)
+            fig.savefig(fpth)
 
 
 def make_animated_gif(sims, idx):
@@ -451,128 +453,128 @@ def make_animated_gif(sims, idx):
 
     print("Animating conc model results...")
     sim_name = example_name
-    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf, sim_mf6gwt, _, _ = sims
     gwf = sim_mf6gwf.flow
     gwt = sim_mf6gwt.trans
     botm = gwf.dis.botm.array
 
     # load head
-    fs = USGSFigure(figure_type="map", verbose=False)
-    head = gwf.output.head().get_data()
-    head = np.where(head > botm, head, np.nan)
+    with styles.USGSMap() as fs:
+        head = gwf.output.head().get_data()
+        head = np.where(head > botm, head, np.nan)
 
-    # load concentration
-    cobj = gwt.output.concentration()
-    conc_times = cobj.get_times()
-    conc_times = np.array(conc_times)
-    conc = cobj.get_alldata()
+        # load concentration
+        cobj = gwt.output.concentration()
+        conc_times = cobj.get_times()
+        conc_times = np.array(conc_times)
+        conc = cobj.get_alldata()
 
-    # set up the figure
-    fig = plt.figure(figsize=(7.5, 3))
-    ax = fig.add_subplot(1, 1, 1)
-    pxs = flopy.plot.PlotCrossSection(
-        model=gwf,
-        ax=ax,
-        line={"row": 0},
-        extent=(0, 10000, 0, 2000),
-    )
+        # set up the figure
+        fig = plt.figure(figsize=(7.5, 3))
+        ax = fig.add_subplot(1, 1, 1)
+        pxs = flopy.plot.PlotCrossSection(
+            model=gwf,
+            ax=ax,
+            line={"row": 0},
+            extent=(0, 10000, 0, 2000),
+        )
 
-    cmap = copy.copy(mpl.cm.get_cmap("jet"))
-    cmap.set_bad("white")
-    nodata = -999.0
-    a = np.where(head > botm, conc[0], nodata)
-    a = np.ma.masked_where(a < 0, a)
-    pc = pxs.plot_array(a, head=head, cmap=cmap, vmin=0, vmax=1)
-    pxs.plot_bc(ftype="RCH", color="red")
-    pxs.plot_bc(ftype="CHD")
-
-    def init():
-        ax.set_title(f"Time = {conc_times[0]} days")
-
-    def update(i):
-        a = np.where(head > botm, conc[i], nodata)
+        cmap = copy.copy(mpl.cm.get_cmap("jet"))
+        cmap.set_bad("white")
+        nodata = -999.0
+        a = np.where(head > botm, conc[0], nodata)
         a = np.ma.masked_where(a < 0, a)
-        a = a[~a.mask]
-        pc.set_array(a.flatten())
-        ax.set_title(f"Time = {conc_times[i]} days")
+        pc = pxs.plot_array(a, head=head, cmap=cmap, vmin=0, vmax=1)
+        pxs.plot_bc(ftype="RCH", color="red")
+        pxs.plot_bc(ftype="CHD")
 
-    # Stop the animation at 18,000 days
-    idx_end = (np.abs(conc_times - 18000.0)).argmin()
-    ani = FuncAnimation(fig, update, range(1, idx_end), init_func=init)
-    writer = PillowWriter(fps=25)
-    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
-    ani.save(fpth, writer=writer)
-    return
+        def init():
+            ax.set_title(f"Time = {conc_times[0]} days")
+
+        def update(i):
+            a = np.where(head > botm, conc[i], nodata)
+            a = np.ma.masked_where(a < 0, a)
+            a = a[~a.mask]
+            pc.set_array(a.flatten())
+            ax.set_title(f"Time = {conc_times[i]} days")
+
+        # Stop the animation at 18,000 days
+        idx_end = (np.abs(conc_times - 18000.0)).argmin()
+        ani = FuncAnimation(fig, update, range(1, idx_end), init_func=init)
+        writer = PillowWriter(fps=25)
+        fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+        ani.save(fpth, writer=writer)
 
 
 def plot_cvt_results(sims, idx):
     print("Plotting cvt model results...")
-    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf, sim_mf6gwt, _, _= sims
     gwf = sim_mf6gwf.flow
     gwt = sim_mf6gwt.trans
     botm = gwf.dis.botm.array
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
-    mf6gwt_ra = gwt.obs.output.obs().data
-    dt = [("totim", "f8"), ("obs", "f8")]
-    fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs1.csv")
-    obs1ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
-    fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs2.csv")
-    obs2ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
-    fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
-    ax = axes[0]
-    ax.plot(
-        mf6gwt_ra["totim"],
-        mf6gwt_ra["OBS1"],
-        "b-",
-        alpha=1.0,
-        label="MODFLOW 6",
-    )
-    ax.plot(
-        obs1ra["totim"],
-        obs1ra["obs"],
-        markerfacecolor="None",
-        markeredgecolor="k",
-        marker="o",
-        markersize="4",
-        linestyle="None",
-        label="Keating and Zyvolosky (2009)",
-    )
-    ax.set_xlim(0, 8000)
-    ax.set_ylim(0, 0.80)
-    ax.set_xlabel("time, in days")
-    ax.set_ylabel("normalized concentration, unitless")
-    fs.graph_legend(ax)
-    ax = axes[1]
-    ax.plot(
-        mf6gwt_ra["totim"],
-        mf6gwt_ra["OBS2"],
-        "b-",
-        alpha=1.0,
-        label="MODFLOW 6",
-    )
-    ax.plot(
-        obs2ra["totim"],
-        obs2ra["obs"],
-        markerfacecolor="None",
-        markeredgecolor="k",
-        marker="o",
-        markersize="4",
-        linestyle="None",
-        label="Keating and Zyvolosky (2009)",
-    )
-    ax.set_xlim(0, 30000)
-    ax.set_ylim(0, 0.20)
-    ax.set_xlabel("time, in days")
-    ax.set_ylabel("normalized concentration, unitless")
-    fs.graph_legend(ax)
-    # save figure
-    if config.plotSave:
-        sim_folder = os.path.split(sim_ws)[0]
-        sim_folder = os.path.basename(sim_folder)
-        fname = f"{sim_folder}-cvt{config.figure_ext}"
-        fpth = os.path.join(ws, "..", "figures", fname)
-        fig.savefig(fpth)
+
+    with styles.USGSMap() as fs:
+        sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
+        mf6gwt_ra = gwt.obs.output.obs().data
+        dt = [("totim", "f8"), ("obs", "f8")]
+        fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs1.csv")
+        obs1ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
+        fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs2.csv")
+        obs2ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
+        fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
+        ax = axes[0]
+        ax.plot(
+            mf6gwt_ra["totim"],
+            mf6gwt_ra["OBS1"],
+            "b-",
+            alpha=1.0,
+            label="MODFLOW 6",
+        )
+        ax.plot(
+            obs1ra["totim"],
+            obs1ra["obs"],
+            markerfacecolor="None",
+            markeredgecolor="k",
+            marker="o",
+            markersize="4",
+            linestyle="None",
+            label="Keating and Zyvolosky (2009)",
+        )
+        ax.set_xlim(0, 8000)
+        ax.set_ylim(0, 0.80)
+        ax.set_xlabel("time, in days")
+        ax.set_ylabel("normalized concentration, unitless")
+        styles.graph_legend(ax)
+        ax = axes[1]
+        ax.plot(
+            mf6gwt_ra["totim"],
+            mf6gwt_ra["OBS2"],
+            "b-",
+            alpha=1.0,
+            label="MODFLOW 6",
+        )
+        ax.plot(
+            obs2ra["totim"],
+            obs2ra["obs"],
+            markerfacecolor="None",
+            markeredgecolor="k",
+            marker="o",
+            markersize="4",
+            linestyle="None",
+            label="Keating and Zyvolosky (2009)",
+        )
+        ax.set_xlim(0, 30000)
+        ax.set_ylim(0, 0.20)
+        ax.set_xlabel("time, in days")
+        ax.set_ylabel("normalized concentration, unitless")
+        styles.graph_legend(ax)
+        # save figure
+        if config.plotSave:
+            sim_folder = os.path.split(sim_ws)[0]
+            sim_folder = os.path.basename(sim_folder)
+            fname = f"{sim_folder}-cvt{config.figure_ext}"
+            fpth = os.path.join(ws, "..", "figures", fname)
+            fig.savefig(fpth)
 
 
 # Function that wraps all of the steps for each scenario

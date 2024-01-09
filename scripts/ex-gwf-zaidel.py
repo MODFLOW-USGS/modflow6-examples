@@ -22,7 +22,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -175,10 +175,10 @@ def run_model(sim, silent=True):
 
 
 def plot_results(idx, sim, silent=True):
-    verbose = not silent
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=verbose)
-        sim_ws = os.path.join(ws, sim_name)
+    if not config.plotModel:
+        return
+
+    with styles.USGSMap() as fs:
         gwf = sim.get_model(sim_name)
         xedge = gwf.modelgrid.xvertices[0]
         zedge = np.array([botm[0, 0, 0]] + botm.flatten().tolist())
@@ -234,7 +234,7 @@ def plot_results(idx, sim, silent=True):
             mec="0.75",
             label="Model Base",
         )
-        fs.graph_legend(ax, ncol=2, loc="upper right")
+        styles.graph_legend(ax, ncol=2, loc="upper right")
 
         # plot colorbar
         cax = plt.axes([0.62, 0.76, 0.325, 0.025])

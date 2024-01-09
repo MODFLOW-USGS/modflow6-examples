@@ -39,7 +39,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Function to get keyword arguments for radial grid
 
@@ -1860,171 +1860,168 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
             1.800648435,
         ]
 
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
+    with styles.USGSPlot() as fs:
+        obs_fig = "obs-head"
+        fig = plt.figure(figsize=(5, 3))
+        ax = fig.add_subplot()
+        ax.set_xlabel("time (d)")
+        ax.set_ylabel("head (ft)")
+        for name in tsdata.dtype.names[1:]:
+            ax.plot(
+                tsdata["totim"],
+                tsdata[name],
+                fmt[name],
+                label=obsnames[name],
+                markerfacecolor="none",
+            )
+            # , markersize=3
 
-    obs_fig = "obs-head"
-    fig = plt.figure(figsize=(5, 3))
-    ax = fig.add_subplot()
-    ax.set_xlabel("time (d)")
-    ax.set_ylabel("head (ft)")
-    for name in tsdata.dtype.names[1:]:
-        ax.plot(
-            tsdata["totim"],
-            tsdata[name],
-            fmt[name],
-            label=obsnames[name],
-            markerfacecolor="none",
-        )
-        # , markersize=3
+        for name in analytical:
+            n = len(analytical[name])
+            if solve_analytical_solution:
+                ana_times = ana_prop[name][0]
+            else:
+                ana_times = analytical_time
 
-    for name in analytical:
-        n = len(analytical[name])
-        if solve_analytical_solution:
-            ana_times = ana_prop[name][0]
-        else:
-            ana_times = analytical_time
+            ax.plot(
+                ana_times[:n],
+                [50.0 - h for h in analytical[name]],
+                fmt[name],
+                label=obsnames[name],
+            )
 
-        ax.plot(
-            ana_times[:n],
-            [50.0 - h for h in analytical[name]],
-            fmt[name],
-            label=obsnames[name],
-        )
+        styles.graph_legend(ax)
 
-    fs.graph_legend(ax)
+        fig.tight_layout()
 
-    fig.tight_layout()
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
+            )
+            fig.savefig(fpth)
 
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
-        )
-        fig.savefig(fpth)
+        obs_fig = "obs-dimensionless"
+        fig = plt.figure(figsize=(5, 3))
+        fig.tight_layout()
+        ax = fig.add_subplot()
+        ax.set_xlim(0.001, 100.0)
+        ax.set_ylim(0.001, 100.0)
+        ax.grid(visible=True, which="major", axis="both")
+        ax.set_ylabel("Dimensionless Drawdown, $s_d$")
+        ax.set_xlabel("Dimensionless Time, $t_y$")
+        for name in tsdata.dtype.names[1:]:
+            q = ana_prop[obs2ana[name]][3]
+            r = ana_prop[obs2ana[name]][4]
+            b = ana_prop[obs2ana[name]][5]
+            ax.loglog(
+                [k11 * b * ts / (sy * r * r) for ts in tsdata["totim"]],
+                [4 * pi * k11 * b * (initial_head - h) / q for h in tsdata[name]],
+                fmt[name],
+                label=obsnames[name],
+                markerfacecolor="none",
+            )
 
-    obs_fig = "obs-dimensionless"
-    fig = plt.figure(figsize=(5, 3))
-    fig.tight_layout()
-    ax = fig.add_subplot()
-    ax.set_xlim(0.001, 100.0)
-    ax.set_ylim(0.001, 100.0)
-    ax.grid(visible=True, which="major", axis="both")
-    ax.set_ylabel("Dimensionless Drawdown, $s_d$")
-    ax.set_xlabel("Dimensionless Time, $t_y$")
-    for name in tsdata.dtype.names[1:]:
-        q = ana_prop[obs2ana[name]][3]
-        r = ana_prop[obs2ana[name]][4]
-        b = ana_prop[obs2ana[name]][5]
-        ax.loglog(
-            [k11 * b * ts / (sy * r * r) for ts in tsdata["totim"]],
-            [4 * pi * k11 * b * (initial_head - h) / q for h in tsdata[name]],
-            fmt[name],
-            label=obsnames[name],
-            markerfacecolor="none",
-        )
+        for name in analytical:
+            q = ana_prop[name][3]
+            b = ana_prop[name][5]  # [pump, radius, sat_thick, model_bottom]
+            if solve_analytical_solution:
+                ana_times = ana_prop[name][0]
+            else:
+                ana_times = analytical_time
 
-    for name in analytical:
-        q = ana_prop[name][3]
-        b = ana_prop[name][5]  # [pump, radius, sat_thick, model_bottom]
-        if solve_analytical_solution:
-            ana_times = ana_prop[name][0]
-        else:
-            ana_times = analytical_time
+            n = len(analytical[name])
+            time_sy = [k11 * b * ts / (sy * r * r) for ts in ana_times[:n]]
+            ana = [4 * pi * k11 * b * s / q for s in analytical[name]]
+            ax.plot(time_sy, ana, fmt[name], label=obsnames[name])
 
-        n = len(analytical[name])
-        time_sy = [k11 * b * ts / (sy * r * r) for ts in ana_times[:n]]
-        ana = [4 * pi * k11 * b * s / q for s in analytical[name]]
-        ax.plot(time_sy, ana, fmt[name], label=obsnames[name])
+        styles.graph_legend(ax)
 
-    fs.graph_legend(ax)
+        fig.tight_layout()
 
-    fig.tight_layout()
-
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
-        )
-        fig.savefig(fpth)
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the model radial bands.
 
 
 def plot_grid(verbose=False):
-    fs = USGSFigure(figure_type="map", verbose=verbose)
+    with styles.USGSMap() as fs:
+        # Print all radial bands
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(6.4, 3.1))
+        # fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4.5))
+        ax = axs[0]
 
-    # Print all radial bands
-    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(6.4, 3.1))
-    # fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4.5))
-    ax = axs[0]
+        max_rad = radius_outer[-1]
+        max_rad = max_rad + (max_rad * 0.1)
+        ax.set_xlim(-max_rad, max_rad)
+        ax.set_ylim(-max_rad, max_rad)
+        ax.set_aspect("equal", adjustable="box")
 
-    max_rad = radius_outer[-1]
-    max_rad = max_rad + (max_rad * 0.1)
-    ax.set_xlim(-max_rad, max_rad)
-    ax.set_ylim(-max_rad, max_rad)
-    ax.set_aspect("equal", adjustable="box")
+        circle_center = (0.0, 0.0)
+        for r in radius_outer:
+            circle = Circle(circle_center, r, color="black", fill=False, lw=0.3)
+            ax.add_artist(circle)
 
-    circle_center = (0.0, 0.0)
-    for r in radius_outer:
-        circle = Circle(circle_center, r, color="black", fill=False, lw=0.3)
-        ax.add_artist(circle)
-
-    ax.set_xlabel("x-position (ft)")
-    ax.set_ylabel("y-position (ft)")
-    ax.annotate(
-        "A",
-        (-0.11, 1.02),
-        xycoords="axes fraction",
-        fontweight="black",
-        fontsize="xx-large",
-    )
-
-    # Print first 5 radial bands
-    nband = 5
-    ax = axs[1]
-
-    radius_subset = radius_outer[:nband]
-    max_rad = radius_subset[-1]
-    max_rad = max_rad + (max_rad * 0.3)
-
-    ax.set_xlim(-max_rad, max_rad)
-    ax.set_ylim(-max_rad, max_rad)
-    ax.set_aspect("equal", adjustable="box")
-
-    circle_center = (0.0, 0.0)
-
-    r = radius_subset[0]
-    circle = Circle(circle_center, r, color="red", label="Well")
-    ax.add_artist(circle)
-    for r in radius_subset:
-        circle = Circle(circle_center, r, color="black", lw=1, fill=False)
-        ax.add_artist(circle)
-
-    ax.set_xlabel("x-position (ft)")
-    ax.set_ylabel("y-position (ft)")
-
-    ax.annotate(
-        "B",
-        (-0.06, 1.02),
-        xycoords="axes fraction",
-        fontweight="black",
-        fontsize="xx-large",
-    )
-
-    fs.graph_legend(ax)
-
-    fig.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
+        ax.set_xlabel("x-position (ft)")
+        ax.set_ylabel("y-position (ft)")
+        ax.annotate(
+            "A",
+            (-0.11, 1.02),
+            xycoords="axes fraction",
+            fontweight="black",
+            fontsize="xx-large",
         )
-        fig.savefig(fpth)
-    return
+
+        # Print first 5 radial bands
+        nband = 5
+        ax = axs[1]
+
+        radius_subset = radius_outer[:nband]
+        max_rad = radius_subset[-1]
+        max_rad = max_rad + (max_rad * 0.3)
+
+        ax.set_xlim(-max_rad, max_rad)
+        ax.set_ylim(-max_rad, max_rad)
+        ax.set_aspect("equal", adjustable="box")
+
+        circle_center = (0.0, 0.0)
+
+        r = radius_subset[0]
+        circle = Circle(circle_center, r, color="red", label="Well")
+        ax.add_artist(circle)
+        for r in radius_subset:
+            circle = Circle(circle_center, r, color="black", lw=1, fill=False)
+            ax.add_artist(circle)
+
+        ax.set_xlabel("x-position (ft)")
+        ax.set_ylabel("y-position (ft)")
+
+        ax.annotate(
+            "B",
+            (-0.06, 1.02),
+            xycoords="axes fraction",
+            fontweight="black",
+            fontsize="xx-large",
+        )
+
+        styles.graph_legend(ax)
+
+        fig.tight_layout()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the model results.
@@ -2051,7 +2048,6 @@ def plot_results(silent=True):
         plot_ts(
             sim, verbose, solve_analytical_solution=solve_analytical_solution
         )
-    return
 
 
 # Function that wraps all of the steps for the Axisymmetric model

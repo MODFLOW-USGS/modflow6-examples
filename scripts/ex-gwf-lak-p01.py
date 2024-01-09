@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -336,250 +336,245 @@ def plot_grid(gwf, silent=True):
     p1 = (xcenters[3], ycenters[3])
     p2 = (xcenters[13], ycenters[13])
 
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(
-        figsize=(4, 6.9),
-        tight_layout=True,
-    )
-    plt.axis("off")
-
-    nrows, ncols = 10, 1
-    axes = [fig.add_subplot(nrows, ncols, (1, 5))]
-    axes.append(fig.add_subplot(nrows, ncols, (6, 8), sharex=axes[0]))
-
-    for idx, ax in enumerate(axes):
-        ax.set_xlim(extents[:2])
-        if idx == 0:
-            ax.set_ylim(extents[2:])
-            ax.set_aspect("equal")
-
-    # legend axis
-    axes.append(fig.add_subplot(nrows, ncols, (9, 10)))
-
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
-
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    mm.plot_bc("CHD", color="cyan")
-    mm.plot_inactive(color_noflow="#5DBB63")
-    mm.plot_grid(lw=0.5, color="black")
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(140, 160, 2),
-        linewidths=0.75,
-        linestyles="-",
-        colors="blue",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    ax.plot(p1[0], p1[1], marker="o", mfc="red", mec="black", ms=4)
-    ax.plot(p2[0], p2[1], marker="o", mfc="red", mec="black", ms=4)
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Map view", idx=0)
-    fs.add_text(
-        ax,
-        "A",
-        x=p1[0] + 150,
-        y=p1[1] + 150,
-        transform=False,
-        bold=False,
-        color="red",
-        ha="left",
-        va="bottom",
-    )
-    fs.add_text(
-        ax,
-        "B",
-        x=p2[0] + 150,
-        y=p2[1] + 150,
-        transform=False,
-        bold=False,
-        color="red",
-        ha="left",
-        va="bottom",
-    )
-    fs.remove_edge_ticks(ax)
-
-    ax = axes[1]
-    xs = flopy.plot.PlotCrossSection(gwf, ax=ax, line={"row": 8})
-    xs.plot_array(np.ones(shape3d), head=head, cmap="jet")
-    xs.plot_bc("CHD", color="cyan", head=head)
-    xs.plot_ibound(color_noflow="#5DBB63", head=head)
-    xs.plot_grid(lw=0.5, color="black")
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylim(67, 160)
-    ax.set_ylabel("Elevation, in feet")
-    fs.heading(ax, heading="Cross-section view", idx=1)
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="#5DBB63",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Lake boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="cyan",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Constant-head boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="blue",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Water table",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="o",
-        ms=4,
-        mfc="red",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Observation well",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.75,
-        ls="-",
-        color="blue",
-        label=r"Head contour, $ft$",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="$\u2192$",
-        ms=10,
-        mfc="0.75",
-        mec="0.75",
-        label="Normalized specific discharge",
-    )
-    fs.graph_legend(ax, loc="lower center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+    with styles.USGSMap() as fs:
+        fig = plt.figure(
+            figsize=(4, 6.9),
+            tight_layout=True,
         )
-        fig.savefig(fpth)
+        plt.axis("off")
 
-    return
+        nrows, ncols = 10, 1
+        axes = [fig.add_subplot(nrows, ncols, (1, 5))]
+        axes.append(fig.add_subplot(nrows, ncols, (6, 8), sharex=axes[0]))
+
+        for idx, ax in enumerate(axes):
+            ax.set_xlim(extents[:2])
+            if idx == 0:
+                ax.set_ylim(extents[2:])
+                ax.set_aspect("equal")
+
+        # legend axis
+        axes.append(fig.add_subplot(nrows, ncols, (9, 10)))
+
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        mm.plot_bc("CHD", color="cyan")
+        mm.plot_inactive(color_noflow="#5DBB63")
+        mm.plot_grid(lw=0.5, color="black")
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(140, 160, 2),
+            linewidths=0.75,
+            linestyles="-",
+            colors="blue",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        ax.plot(p1[0], p1[1], marker="o", mfc="red", mec="black", ms=4)
+        ax.plot(p2[0], p2[1], marker="o", mfc="red", mec="black", ms=4)
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.heading(ax, heading="Map view", idx=0)
+        styles.add_text(
+            ax,
+            "A",
+            x=p1[0] + 150,
+            y=p1[1] + 150,
+            transform=False,
+            bold=False,
+            color="red",
+            ha="left",
+            va="bottom",
+        )
+        styles.add_text(
+            ax,
+            "B",
+            x=p2[0] + 150,
+            y=p2[1] + 150,
+            transform=False,
+            bold=False,
+            color="red",
+            ha="left",
+            va="bottom",
+        )
+        styles.remove_edge_ticks(ax)
+
+        ax = axes[1]
+        xs = flopy.plot.PlotCrossSection(gwf, ax=ax, line={"row": 8})
+        xs.plot_array(np.ones(shape3d), head=head, cmap="jet")
+        xs.plot_bc("CHD", color="cyan", head=head)
+        xs.plot_ibound(color_noflow="#5DBB63", head=head)
+        xs.plot_grid(lw=0.5, color="black")
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylim(67, 160)
+        ax.set_ylabel("Elevation, in feet")
+        styles.heading(ax, heading="Cross-section view", idx=1)
+        styles.remove_edge_ticks(ax)
+
+        # legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="#5DBB63",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Lake boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="cyan",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Constant-head boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="blue",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Water table",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="o",
+            ms=4,
+            mfc="red",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Observation well",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.75,
+            ls="-",
+            color="blue",
+            label=r"Head contour, $ft$",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        styles.graph_legend(ax, loc="lower center", ncol=2)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the lake results
 
 
 def plot_lak_results(gwf, silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
+    with styles.USGSPlot() as fs:
+        # load the observations
+        lak_results = gwf.lak.output.obs().data
+        gwf_results = gwf.obs[0].output.obs().data
 
-    # load the observations
-    lak_results = gwf.lak.output.obs().data
-    gwf_results = gwf.obs[0].output.obs().data
+        dtype = [
+            ("time", float),
+            ("STAGE", float),
+            ("A", float),
+            ("B", float),
+        ]
 
-    dtype = [
-        ("time", float),
-        ("STAGE", float),
-        ("A", float),
-        ("B", float),
-    ]
+        results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)
+        results["time"][1:] = lak_results["totim"]
+        results["STAGE"][0] = 110.0
+        results["STAGE"][1:] = lak_results["STAGE"]
+        results["A"][0] = 115.0
+        results["A"][1:] = gwf_results["A"]
+        results["B"][0] = 115.0
+        results["B"][1:] = gwf_results["B"]
 
-    results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)
-    results["time"][1:] = lak_results["totim"]
-    results["STAGE"][0] = 110.0
-    results["STAGE"][1:] = lak_results["STAGE"]
-    results["A"][0] = 115.0
-    results["A"][1:] = gwf_results["A"]
-    results["B"][0] = 115.0
-    results["B"][1:] = gwf_results["B"]
-
-    # create the figure
-    fig, ax = plt.subplots(
-        ncols=1,
-        nrows=1,
-        sharex=True,
-        figsize=(6.3, 3.15),
-        constrained_layout=True,
-    )
-
-    ax.set_xlim(0, 3000)
-    ax.set_ylim(110, 160)
-    ax.plot(
-        results["time"],
-        results["STAGE"],
-        lw=0.75,
-        ls="--",
-        color="black",
-        label="Lake stage",
-    )
-    ax.plot(
-        results["time"],
-        results["A"],
-        lw=0.75,
-        ls="-",
-        color="0.5",
-        label="Point A",
-    )
-    ax.plot(
-        results["time"],
-        results["B"],
-        lw=0.75,
-        ls="-",
-        color="black",
-        label="Point B",
-    )
-    ax.set_xlabel("Simulation time, in days")
-    ax.set_ylabel("Head or stage, in feet")
-    fs.graph_legend(ax, loc="lower right")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+        # create the figure
+        fig, ax = plt.subplots(
+            ncols=1,
+            nrows=1,
+            sharex=True,
+            figsize=(6.3, 3.15),
+            constrained_layout=True,
         )
-        fig.savefig(fpth)
 
-    return
+        ax.set_xlim(0, 3000)
+        ax.set_ylim(110, 160)
+        ax.plot(
+            results["time"],
+            results["STAGE"],
+            lw=0.75,
+            ls="--",
+            color="black",
+            label="Lake stage",
+        )
+        ax.plot(
+            results["time"],
+            results["A"],
+            lw=0.75,
+            ls="-",
+            color="0.5",
+            label="Point A",
+        )
+        ax.plot(
+            results["time"],
+            results["B"],
+            lw=0.75,
+            ls="-",
+            color="black",
+            label="Point B",
+        )
+        ax.set_xlabel("Simulation time, in days")
+        ax.set_ylabel("Head or stage, in feet")
+        styles.graph_legend(ax, loc="lower right")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the LAK Package Problem 1 model results.

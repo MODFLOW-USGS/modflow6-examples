@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 mf6exe = "mf6"
 
@@ -278,70 +278,69 @@ def run_model(sim, silent=True):
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    # create MODFLOW 6 head object
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
+        # create MODFLOW 6 head object
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
 
-    time_in_pub = 284349600.0
-    idx_conc = (np.abs(times - time_in_pub)).argmin()
-    time_this_plot = times[idx_conc]
-    conc = cobj.get_data(totim=time_this_plot)
+        time_in_pub = 284349600.0
+        idx_conc = (np.abs(times - time_in_pub)).argmin()
+        time_this_plot = times[idx_conc]
+        conc = cobj.get_data(totim=time_this_plot)
 
-    zconc = np.zeros(nlay)
-    zbotm = np.zeros(nlay)
-    for i in range(len(zconc)):
-        zconc[i] = conc[i][0][0]
-        if i != (nlay - 1):
-            zbotm[i + 1] = -(60 - botm[i])
+        zconc = np.zeros(nlay)
+        zbotm = np.zeros(nlay)
+        for i in range(len(zconc)):
+            zconc[i] = conc[i][0][0]
+            if i != (nlay - 1):
+                zbotm[i + 1] = -(60 - botm[i])
 
-    # Analytical solution - Stallman analysis
-    tau = 365 * 86400
-    # t =  283824000.0
-    t = 284349600.0
-    c_w = 4174
-    rho_w = 1000
-    c_r = 800
-    rho_r = bulk_dens
-    c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
-    darcy_flux = 5.00e-07
-    ko = 1.503
-    zanal = Stallman(
-        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
-    )
-
-    # make conc figure
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1)
-
-    # configure plot and save
-    ax.plot(zconc, zbotm, "bo", mfc="none", label="MODFLOW6-GWT")
-    ax.plot(
-        zanal[:, 1],
-        zanal[:, 0],
-        "k--",
-        linewidth=1.0,
-        label="Analytical solution",
-    )
-    ax.set_xlim(T_az - dT, T_az + dT)
-    ax.set_ylim(-top, 0)
-    ax.set_ylabel("Depth (m)")
-    ax.set_xlabel("Temperature (deg C)")
-    ax.legend()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+        # Analytical solution - Stallman analysis
+        tau = 365 * 86400
+        # t =  283824000.0
+        t = 284349600.0
+        c_w = 4174
+        rho_w = 1000
+        c_r = 800
+        rho_r = bulk_dens
+        c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
+        darcy_flux = 5.00e-07
+        ko = 1.503
+        zanal = Stallman(
+            T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
         )
-        fig.savefig(fpth)
-    return
+
+        # make conc figure
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1)
+
+        # configure plot and save
+        ax.plot(zconc, zbotm, "bo", mfc="none", label="MODFLOW6-GWT")
+        ax.plot(
+            zanal[:, 1],
+            zanal[:, 0],
+            "k--",
+            linewidth=1.0,
+            label="Analytical solution",
+        )
+        ax.set_xlim(T_az - dT, T_az + dT)
+        ax.set_ylim(-top, 0)
+        ax.set_ylabel("Depth (m)")
+        ax.set_xlabel("Temperature (deg C)")
+        ax.legend()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 # Function to make animation

@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -833,304 +833,299 @@ def plot_grid(gwf, silent=True):
     pl1 = (xcenters[8], ycenters[8])
     pl2 = (xcenters[8], ycenters[18])
 
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(
-        figsize=(4, 6.9),
-        tight_layout=True,
-    )
-    plt.axis("off")
-
-    nrows, ncols = 10, 1
-    axes = [fig.add_subplot(nrows, ncols, (1, 8))]
-
-    for idx, ax in enumerate(axes):
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
-
-    # legend axis
-    axes.append(fig.add_subplot(nrows, ncols, (9, 10)))
-
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
-
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    mm.plot_bc("CHD", color="cyan")
-    for shape in sfr.shapeRecords():
-        x = [i[0] for i in shape.shape.points[:]]
-        y = [i[1] for i in shape.shape.points[:]]
-        ax.plot(x, y, color="#3BB3D0", lw=1.5, zorder=1)
-    mm.plot_inactive(color_noflow="#5DBB63")
-    mm.plot_grid(lw=0.5, color="black")
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(120, 160, 5),
-        linewidths=0.75,
-        linestyles="-",
-        colors="blue",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    ax.plot(p1[0], p1[1], marker="o", mfc="red", mec="black", ms=4)
-    ax.plot(p2[0], p2[1], marker="o", mfc="red", mec="black", ms=4)
-    ax.plot(p3[0], p3[1], marker="o", mfc="red", mec="black", ms=4)
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.add_text(
-        ax,
-        "A",
-        x=p1[0] + 150,
-        y=p1[1] + 150,
-        transform=False,
-        bold=False,
-        color="red",
-        ha="left",
-        va="bottom",
-    )
-    fs.add_text(
-        ax,
-        "B",
-        x=p2[0] + 150,
-        y=p2[1] + 150,
-        transform=False,
-        bold=False,
-        color="red",
-        ha="left",
-        va="bottom",
-    )
-    fs.add_text(
-        ax,
-        "C",
-        x=p3[0] + 150,
-        y=p3[1] + 150,
-        transform=False,
-        bold=False,
-        color="red",
-        ha="left",
-        va="bottom",
-    )
-    fs.add_text(
-        ax,
-        "Lake 1",
-        x=pl1[0],
-        y=pl1[1],
-        transform=False,
-        italic=False,
-        color="white",
-        ha="center",
-        va="center",
-    )
-    fs.add_text(
-        ax,
-        "Lake 2",
-        x=pl2[0],
-        y=pl2[1],
-        transform=False,
-        italic=False,
-        color="white",
-        ha="center",
-        va="center",
-    )
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="#5DBB63",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Lake boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="cyan",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Constant-head boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=1.5,
-        color="#3BB3D0",
-        label="Stream network",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="o",
-        ms=4,
-        mfc="red",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Observation well",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.75,
-        ls="-",
-        color="blue",
-        label=r"Head contour, $ft$",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="$\u2192$",
-        ms=10,
-        mfc="0.75",
-        mec="0.75",
-        label="Normalized specific discharge",
-    )
-    fs.graph_legend(ax, loc="lower center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+    with styles.USGSMap() as fs:
+        fig = plt.figure(
+            figsize=(4, 6.9),
+            tight_layout=True,
         )
-        fig.savefig(fpth)
+        plt.axis("off")
 
-    return
+        nrows, ncols = 10, 1
+        axes = [fig.add_subplot(nrows, ncols, (1, 8))]
+
+        for idx, ax in enumerate(axes):
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
+
+        # legend axis
+        axes.append(fig.add_subplot(nrows, ncols, (9, 10)))
+
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        mm.plot_bc("CHD", color="cyan")
+        for shape in sfr.shapeRecords():
+            x = [i[0] for i in shape.shape.points[:]]
+            y = [i[1] for i in shape.shape.points[:]]
+            ax.plot(x, y, color="#3BB3D0", lw=1.5, zorder=1)
+        mm.plot_inactive(color_noflow="#5DBB63")
+        mm.plot_grid(lw=0.5, color="black")
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(120, 160, 5),
+            linewidths=0.75,
+            linestyles="-",
+            colors="blue",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        ax.plot(p1[0], p1[1], marker="o", mfc="red", mec="black", ms=4)
+        ax.plot(p2[0], p2[1], marker="o", mfc="red", mec="black", ms=4)
+        ax.plot(p3[0], p3[1], marker="o", mfc="red", mec="black", ms=4)
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.add_text(
+            ax,
+            "A",
+            x=p1[0] + 150,
+            y=p1[1] + 150,
+            transform=False,
+            bold=False,
+            color="red",
+            ha="left",
+            va="bottom",
+        )
+        styles.add_text(
+            ax,
+            "B",
+            x=p2[0] + 150,
+            y=p2[1] + 150,
+            transform=False,
+            bold=False,
+            color="red",
+            ha="left",
+            va="bottom",
+        )
+        styles.add_text(
+            ax,
+            "C",
+            x=p3[0] + 150,
+            y=p3[1] + 150,
+            transform=False,
+            bold=False,
+            color="red",
+            ha="left",
+            va="bottom",
+        )
+        styles.add_text(
+            ax,
+            "Lake 1",
+            x=pl1[0],
+            y=pl1[1],
+            transform=False,
+            italic=False,
+            color="white",
+            ha="center",
+            va="center",
+        )
+        styles.add_text(
+            ax,
+            "Lake 2",
+            x=pl2[0],
+            y=pl2[1],
+            transform=False,
+            italic=False,
+            color="white",
+            ha="center",
+            va="center",
+        )
+        styles.remove_edge_ticks(ax)
+
+        # legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="#5DBB63",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Lake boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="cyan",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Constant-head boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=1.5,
+            color="#3BB3D0",
+            label="Stream network",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="o",
+            ms=4,
+            mfc="red",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Observation well",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.75,
+            ls="-",
+            color="blue",
+            label=r"Head contour, $ft$",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        styles.graph_legend(ax, loc="lower center", ncol=2)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the lake results
 
 
 def plot_lak_results(gwf, silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
+    with styles.USGSPlot() as fs:
+        # load the observations
+        lak_results = gwf.lak.output.obs().data
+        gwf_results = gwf.obs[0].output.obs().data
 
-    # load the observations
-    lak_results = gwf.lak.output.obs().data
-    gwf_results = gwf.obs[0].output.obs().data
+        dtype = [
+            ("time", float),
+            ("LAKE1", float),
+            ("LAKE2", float),
+            ("A", float),
+            ("B", float),
+            ("C", float),
+        ]
 
-    dtype = [
-        ("time", float),
-        ("LAKE1", float),
-        ("LAKE2", float),
-        ("A", float),
-        ("B", float),
-        ("C", float),
-    ]
+        results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)
+        results["time"][1:] = lak_results["totim"]
+        results["LAKE1"][0] = lak_strt
+        results["LAKE1"][1:] = lak_results["LAKE1"]
+        results["LAKE2"][0] = lak_strt
+        results["LAKE2"][1:] = lak_results["LAKE2"]
+        results["A"][0] = strt
+        results["A"][1:] = gwf_results["A"]
+        results["B"][0] = strt
+        results["B"][1:] = gwf_results["B"]
+        results["C"][0] = strt
+        results["C"][1:] = gwf_results["C"]
 
-    results = np.zeros((lak_results.shape[0] + 1), dtype=dtype)
-    results["time"][1:] = lak_results["totim"]
-    results["LAKE1"][0] = lak_strt
-    results["LAKE1"][1:] = lak_results["LAKE1"]
-    results["LAKE2"][0] = lak_strt
-    results["LAKE2"][1:] = lak_results["LAKE2"]
-    results["A"][0] = strt
-    results["A"][1:] = gwf_results["A"]
-    results["B"][0] = strt
-    results["B"][1:] = gwf_results["B"]
-    results["C"][0] = strt
-    results["C"][1:] = gwf_results["C"]
-
-    # create the figure
-    fig, axes = plt.subplots(
-        ncols=1,
-        nrows=2,
-        sharex=True,
-        figsize=(6.3, 4.3),
-        constrained_layout=True,
-    )
-
-    ax = axes[0]
-    ax.set_xlim(0, 1500)
-    ax.set_ylim(110, 130)
-    ax.plot(
-        results["time"],
-        results["LAKE1"],
-        lw=0.75,
-        ls="--",
-        color="black",
-        label="Lake 1 stage",
-    )
-    ax.plot(
-        results["time"],
-        results["LAKE2"],
-        lw=0.75,
-        ls="-.",
-        color="black",
-        label="Lake 2 stage",
-    )
-    ax.set_xticks([0, 250, 500, 750, 1000, 1250, 1500])
-    ax.set_yticks([110, 115, 120, 125, 130])
-    ax.set_ylabel("Lake stage, in feet")
-    fs.graph_legend(ax, loc="upper right")
-    fs.heading(ax, idx=0)
-
-    ax = axes[1]
-    ax.set_xlim(0, 1500)
-    ax.set_ylim(110, 160)
-    ax.plot(
-        results["time"],
-        results["A"],
-        lw=0.75,
-        ls="-",
-        color="0.5",
-        label="Point A",
-    )
-    ax.plot(
-        results["time"],
-        results["B"],
-        lw=0.75,
-        ls="-",
-        color="black",
-        label="Point B",
-    )
-    ax.plot(
-        results["time"],
-        results["C"],
-        lw=0.75,
-        ls="-.",
-        color="black",
-        label="Point C",
-    )
-    ax.set_xticks([0, 250, 500, 750, 1000, 1250, 1500])
-    ax.set_xlabel("Simulation time, in days")
-    ax.set_yticks([110, 120, 130, 140, 150, 160])
-    ax.set_ylabel("Head, in feet")
-    fs.graph_legend(ax, loc="upper left")
-    fs.heading(ax, idx=1)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+        # create the figure
+        fig, axes = plt.subplots(
+            ncols=1,
+            nrows=2,
+            sharex=True,
+            figsize=(6.3, 4.3),
+            constrained_layout=True,
         )
-        fig.savefig(fpth)
 
-    return
+        ax = axes[0]
+        ax.set_xlim(0, 1500)
+        ax.set_ylim(110, 130)
+        ax.plot(
+            results["time"],
+            results["LAKE1"],
+            lw=0.75,
+            ls="--",
+            color="black",
+            label="Lake 1 stage",
+        )
+        ax.plot(
+            results["time"],
+            results["LAKE2"],
+            lw=0.75,
+            ls="-.",
+            color="black",
+            label="Lake 2 stage",
+        )
+        ax.set_xticks([0, 250, 500, 750, 1000, 1250, 1500])
+        ax.set_yticks([110, 115, 120, 125, 130])
+        ax.set_ylabel("Lake stage, in feet")
+        styles.graph_legend(ax, loc="upper right")
+        styles.heading(ax, idx=0)
+
+        ax = axes[1]
+        ax.set_xlim(0, 1500)
+        ax.set_ylim(110, 160)
+        ax.plot(
+            results["time"],
+            results["A"],
+            lw=0.75,
+            ls="-",
+            color="0.5",
+            label="Point A",
+        )
+        ax.plot(
+            results["time"],
+            results["B"],
+            lw=0.75,
+            ls="-",
+            color="black",
+            label="Point B",
+        )
+        ax.plot(
+            results["time"],
+            results["C"],
+            lw=0.75,
+            ls="-.",
+            color="black",
+            label="Point C",
+        )
+        ax.set_xticks([0, 250, 500, 750, 1000, 1250, 1500])
+        ax.set_xlabel("Simulation time, in days")
+        ax.set_yticks([110, 120, 130, 140, 150, 160])
+        ax.set_ylabel("Head, in feet")
+        styles.graph_legend(ax, loc="upper left")
+        styles.heading(ax, idx=1)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the LAK Package problem 2 model results.
@@ -1139,9 +1134,7 @@ def plot_lak_results(gwf, silent=True):
 def plot_results(sim, silent=True):
     if config.plotModel:
         gwf = sim.get_model(sim_name)
-
         plot_grid(gwf, silent=silent)
-
         plot_lak_results(gwf, silent=silent)
 
 

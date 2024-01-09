@@ -23,7 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -220,110 +220,107 @@ def run_model(sim, silent=True):
 
 
 def plot_maw_results(silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
+    with styles.USGSPlot() as fs:
+        # load the observations
+        fpth = os.path.join(ws, sim_name, f"{sim_name}.maw.obs.csv")
+        maw = flopy.utils.Mf6Obs(fpth).data
 
-    # load the observations
-    fpth = os.path.join(ws, sim_name, f"{sim_name}.maw.obs.csv")
-    maw = flopy.utils.Mf6Obs(fpth).data
+        time = maw["totim"] * 86400.0
 
-    time = maw["totim"] * 86400.0
+        tmin = time[0]
+        tmax = time[-1]
 
-    tmin = time[0]
-    tmax = time[-1]
-
-    # create the figure
-    fig, axes = plt.subplots(
-        ncols=1,
-        nrows=2,
-        sharex=True,
-        figsize=figure_size,
-        constrained_layout=True,
-    )
-
-    ax = axes[0]
-    ax.set_xlim(tmin, tmax)
-    ax.set_ylim(0, 4500)
-    ax.semilogx(
-        time,
-        maw["Q1"],
-        lw=0.75,
-        ls="-",
-        color="blue",
-        label="Upper aquifer",
-    )
-    ax.semilogx(
-        time,
-        maw["Q2"],
-        lw=0.75,
-        ls="-",
-        color="red",
-        label="Lower aquifer",
-    )
-    ax.axhline(0, lw=0.5, color="0.5")
-    ax.set_ylabel(" ")
-    fs.heading(ax, idx=0)
-    # fs.graph_legend(ax, loc="upper right", ncol=2)
-
-    ax = axes[1]
-    ax.set_xlim(tmin, tmax)
-    ax.set_ylim(-4500, 0)
-    ax.axhline(
-        10.0,
-        lw=0.75,
-        ls="-",
-        color="blue",
-        label="Upper aquifer",
-    )
-    ax.axhline(
-        10.0,
-        lw=0.75,
-        ls="-",
-        color="red",
-        label="Lower aquifer",
-    )
-    ax.semilogx(
-        time,
-        maw["FW"],
-        lw=0.75,
-        ls="-",
-        color="black",
-        label="Flowing well discharge",
-    )
-    ax.set_xlabel(" ")
-    ax.set_ylabel(" ")
-    for axis in (ax.xaxis,):
-        axis.set_major_formatter(mpl.ticker.ScalarFormatter())
-    fs.heading(ax, idx=1)
-    fs.graph_legend(ax, loc="upper left", ncol=1)
-
-    # add y-axis label that spans both subplots
-    ax = fig.add_subplot(1, 1, 1)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-
-    # get rid of ticks and spines for legend area
-    # ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
-
-    ax.set_xlabel("Simulation time, in seconds")
-    ax.set_ylabel("Discharge rate, in cubic meters per day")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+        # create the figure
+        fig, axes = plt.subplots(
+            ncols=1,
+            nrows=2,
+            sharex=True,
+            figsize=figure_size,
+            constrained_layout=True,
         )
-        fig.savefig(fpth)
 
-    return
+        ax = axes[0]
+        ax.set_xlim(tmin, tmax)
+        ax.set_ylim(0, 4500)
+        ax.semilogx(
+            time,
+            maw["Q1"],
+            lw=0.75,
+            ls="-",
+            color="blue",
+            label="Upper aquifer",
+        )
+        ax.semilogx(
+            time,
+            maw["Q2"],
+            lw=0.75,
+            ls="-",
+            color="red",
+            label="Lower aquifer",
+        )
+        ax.axhline(0, lw=0.5, color="0.5")
+        ax.set_ylabel(" ")
+        styles.heading(ax, idx=0)
+        # styles.graph_legend(ax, loc="upper right", ncol=2)
+
+        ax = axes[1]
+        ax.set_xlim(tmin, tmax)
+        ax.set_ylim(-4500, 0)
+        ax.axhline(
+            10.0,
+            lw=0.75,
+            ls="-",
+            color="blue",
+            label="Upper aquifer",
+        )
+        ax.axhline(
+            10.0,
+            lw=0.75,
+            ls="-",
+            color="red",
+            label="Lower aquifer",
+        )
+        ax.semilogx(
+            time,
+            maw["FW"],
+            lw=0.75,
+            ls="-",
+            color="black",
+            label="Flowing well discharge",
+        )
+        ax.set_xlabel(" ")
+        ax.set_ylabel(" ")
+        for axis in (ax.xaxis,):
+            axis.set_major_formatter(mpl.ticker.ScalarFormatter())
+        styles.heading(ax, idx=1)
+        styles.graph_legend(ax, loc="upper left", ncol=1)
+
+        # add y-axis label that spans both subplots
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+
+        # get rid of ticks and spines for legend area
+        # ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+
+        ax.set_xlabel("Simulation time, in seconds")
+        ax.set_ylabel("Discharge rate, in cubic meters per day")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Plot the grid
@@ -331,79 +328,79 @@ def plot_maw_results(silent=True):
 
 def plot_grid(sim, silent=True):
     gwf = sim.get_model(sim_name)
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(
-        figsize=(4, 4.3),
-        tight_layout=True,
-    )
-    plt.axis("off")
-
-    nrows, ncols = 10, 1
-    axes = [fig.add_subplot(nrows, ncols, (1, 8))]
-
-    for idx, ax in enumerate(axes):
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
-
-    # legend axis
-    axes.append(fig.add_subplot(nrows, ncols, (9, 10)))
-
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
-
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    mm.plot_bc("MAW", color="red")
-    mm.plot_inactive(color_noflow="black")
-    ax.set_xticks([0, extents[1] / 2, extents[1]])
-    ax.set_yticks([0, extents[1] / 2, extents[1]])
-
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="black",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Inactive cells",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="red",
-        mec="red",
-        markeredgewidth=0.5,
-        label="Multi-aquifer well",
-    )
-    fs.graph_legend(ax, loc="lower center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+    with styles.USGSMap() as fs:
+        fig = plt.figure(
+            figsize=(4, 4.3),
+            tight_layout=True,
         )
-        fig.savefig(fpth)
+        plt.axis("off")
+
+        nrows, ncols = 10, 1
+        axes = [fig.add_subplot(nrows, ncols, (1, 8))]
+
+        for idx, ax in enumerate(axes):
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
+
+        # legend axis
+        axes.append(fig.add_subplot(nrows, ncols, (9, 10)))
+
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        mm.plot_bc("MAW", color="red")
+        mm.plot_inactive(color_noflow="black")
+        ax.set_xticks([0, extents[1] / 2, extents[1]])
+        ax.set_yticks([0, extents[1] / 2, extents[1]])
+
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="black",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Inactive cells",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="red",
+            mec="red",
+            markeredgewidth=0.5,
+            label="Multi-aquifer well",
+        )
+        styles.graph_legend(ax, loc="lower center", ncol=2)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the Flowing Well Problem model results.
@@ -426,7 +423,6 @@ def plot_results(sim, silent=True):
 
 def simulation(silent=True):
     sim = build_model()
-
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
@@ -445,5 +441,4 @@ def test_01():
 
 if __name__ == "__main__":
     # ### Flowing Well Problem Simulation
-
     simulation()

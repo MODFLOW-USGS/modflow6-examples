@@ -30,7 +30,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 from DisvCurvilinearBuilder import DisvCurvilinearBuilder
 from DisvStructuredGridBuilder import DisvStructuredGridBuilder
@@ -336,190 +336,187 @@ def run_model(sim, silent=True):
 
 
 def plot_grid(sim, verbose=False):
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size_grid)
+        fig = plt.figure(figsize=figure_size_grid)
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    pmv.plot_bc(name="CHD-LEFT", alpha=0.75, color="blue")
-    pmv.plot_bc(name="CHD-RIGHT", alpha=0.75, color="blue")
-    ax.set_xlabel("x position (ft)")
-    ax.set_ylabel("y position (ft)")
-    for i, (x, y) in enumerate(
-        zip(gwf.modelgrid.xcellcenters, gwf.modelgrid.ycellcenters)
-    ):
-        ax.text(
-            x,
-            y,
-            f"{i + 1}",
-            fontsize=3,
-            horizontalalignment="center",
-            verticalalignment="center",
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        pmv.plot_bc(name="CHD-LEFT", alpha=0.75, color="blue")
+        pmv.plot_bc(name="CHD-RIGHT", alpha=0.75, color="blue")
+        ax.set_xlabel("x position (ft)")
+        ax.set_ylabel("y position (ft)")
+        for i, (x, y) in enumerate(
+            zip(gwf.modelgrid.xcellcenters, gwf.modelgrid.ycellcenters)
+        ):
+            ax.text(
+                x,
+                y,
+                f"{i + 1}",
+                fontsize=3,
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
+        v = gwf.disv.vertices.array
+        vert_size = 2
+        ax.plot(v["xv"], v["yv"], "yo", markersize=vert_size)
+        for i in range(v.shape[0]):
+            x, y = v["xv"][i], v["yv"][i]
+            ax.text(
+                x,
+                y,
+                f"{i + 1}",
+                fontsize=vert_size,
+                color="red",
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
+
+        fig.tight_layout()
+
+        # Save components that made up the main grid
+        fig2, ax2 = plt.subplots(
+            1,
+            3,
+            figsize=figure_size_grid_com,
         )
-    v = gwf.disv.vertices.array
-    vert_size = 2
-    ax.plot(v["xv"], v["yv"], "yo", markersize=vert_size)
-    for i in range(v.shape[0]):
-        x, y = v["xv"][i], v["yv"][i]
-        ax.text(
-            x,
-            y,
-            f"{i + 1}",
-            fontsize=vert_size,
-            color="red",
-            horizontalalignment="center",
-            verticalalignment="center",
+
+        curvlin1.plot_grid(
+            "Left Curvilinear Grid",
+            ax_override=ax2[0],
+            cell_dot=False,
+            cell_num=False,
+            vertex_dot=True,
+            vertex_num=False,
+            vertex_dot_size=3,
+            vertex_dot_color="y",
         )
 
-    fig.tight_layout()
-
-    # Save components that made up the main grid
-    fig2, ax2 = plt.subplots(
-        1,
-        3,
-        figsize=figure_size_grid_com,
-    )
-
-    curvlin1.plot_grid(
-        "Left Curvilinear Grid",
-        ax_override=ax2[0],
-        cell_dot=False,
-        cell_num=False,
-        vertex_dot=True,
-        vertex_num=False,
-        vertex_dot_size=3,
-        vertex_dot_color="y",
-    )
-
-    rectgrid.plot_grid(
-        "Center Rectangular Grid",
-        ax_override=ax2[1],
-        cell_dot=False,
-        cell_num=False,
-        vertex_dot=True,
-        vertex_num=False,
-        vertex_dot_size=3,
-        vertex_dot_color="y",
-    )
-
-    curvlin2.plot_grid(
-        "Right Curvilinear Grid",
-        ax_override=ax2[2],
-        cell_dot=False,
-        cell_num=False,
-        vertex_dot=True,
-        vertex_num=False,
-        vertex_dot_size=3,
-        vertex_dot_color="y",
-    )
-
-    for ax_tmp in ax2:
-        ax_tmp.set_xlabel("x position (ft)")
-        ax_tmp.set_ylabel("y position (ft)")
-
-    xshift, yshift = 0.0, 0.0
-    for ax_tmp in ax2:
-        xmin, xmax = ax_tmp.get_xlim()
-        ymin, ymax = ax_tmp.get_ylim()
-        if xshift < xmax - xmin:
-            xshift = xmax - xmin
-        if yshift < ymax - ymin:
-            yshift = ymax - ymin
-
-    for ax_tmp in ax2:
-        xmin, xmax = ax_tmp.get_xlim()
-        ymin, ymax = ax_tmp.get_ylim()
-        ax_tmp.set_xlim(xmin, xmin + xshift)
-        ax_tmp.set_ylim(ymin, ymin + yshift)
-
-    ax2[0].annotate(
-        "A",
-        (-0.05, 1.05),
-        xycoords="axes fraction",
-        fontweight="black",
-        fontsize="xx-large",
-    )
-
-    ax2[1].annotate(
-        "B",
-        (-0.05, 1.05),
-        xycoords="axes fraction",
-        fontweight="black",
-        fontsize="xx-large",
-    )
-
-    ax2[2].annotate(
-        "C",
-        (-0.05, 1.05),
-        xycoords="axes fraction",
-        fontweight="black",
-        fontsize="xx-large",
-    )
-
-    fig2.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+        rectgrid.plot_grid(
+            "Center Rectangular Grid",
+            ax_override=ax2[1],
+            cell_dot=False,
+            cell_num=False,
+            vertex_dot=True,
+            vertex_num=False,
+            vertex_dot_size=3,
+            vertex_dot_color="y",
         )
-        fig.savefig(fpth, dpi=600)
 
-        fpth2 = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid-components{config.figure_ext}",
+        curvlin2.plot_grid(
+            "Right Curvilinear Grid",
+            ax_override=ax2[2],
+            cell_dot=False,
+            cell_num=False,
+            vertex_dot=True,
+            vertex_num=False,
+            vertex_dot_size=3,
+            vertex_dot_color="y",
         )
-        fig2.savefig(fpth2, dpi=300)
 
-    return
+        for ax_tmp in ax2:
+            ax_tmp.set_xlabel("x position (ft)")
+            ax_tmp.set_ylabel("y position (ft)")
+
+        xshift, yshift = 0.0, 0.0
+        for ax_tmp in ax2:
+            xmin, xmax = ax_tmp.get_xlim()
+            ymin, ymax = ax_tmp.get_ylim()
+            if xshift < xmax - xmin:
+                xshift = xmax - xmin
+            if yshift < ymax - ymin:
+                yshift = ymax - ymin
+
+        for ax_tmp in ax2:
+            xmin, xmax = ax_tmp.get_xlim()
+            ymin, ymax = ax_tmp.get_ylim()
+            ax_tmp.set_xlim(xmin, xmin + xshift)
+            ax_tmp.set_ylim(ymin, ymin + yshift)
+
+        ax2[0].annotate(
+            "A",
+            (-0.05, 1.05),
+            xycoords="axes fraction",
+            fontweight="black",
+            fontsize="xx-large",
+        )
+
+        ax2[1].annotate(
+            "B",
+            (-0.05, 1.05),
+            xycoords="axes fraction",
+            fontweight="black",
+            fontsize="xx-large",
+        )
+
+        ax2[2].annotate(
+            "C",
+            (-0.05, 1.05),
+            xycoords="axes fraction",
+            fontweight="black",
+            fontsize="xx-large",
+        )
+
+        fig2.tight_layout()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid{config.figure_ext}",
+            )
+            fig.savefig(fpth, dpi=600)
+
+            fpth2 = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid-components{config.figure_ext}",
+            )
+            fig2.savefig(fpth2, dpi=300)
 
 
 # Function to plot the curvilinear model results.
 
 
 def plot_head(sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size_head)
+        fig = plt.figure(figsize=figure_size_head)
 
-    head = gwf.output.head().get_data()[:, 0, :]
+        head = gwf.output.head().get_data()[:, 0, :]
 
-    # create MODFLOW 6 cell-by-cell budget object
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf,
-    )
-
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($ft$)")
-    ax.set_xlabel("x position (ft)")
-    ax.set_ylabel("y position (ft)")
-
-    fig.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget object
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
         )
-        fig.savefig(fpth, dpi=300)
-    return
+
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($ft$)")
+        ax.set_xlabel("x position (ft)")
+        ax.set_ylabel("y position (ft)")
+
+        fig.tight_layout()
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+            )
+            fig.savefig(fpth, dpi=300)
 
 
 # Function to plot the model results.

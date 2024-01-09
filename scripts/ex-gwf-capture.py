@@ -30,7 +30,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -312,14 +312,15 @@ def run_model():
 
 
 def plot_results(silent=True):
-    if config.plotModel:
-        verbose = not silent
-        if silent:
-            verbosity_level = 0
-        else:
-            verbosity_level = 1
+    if not config.plotModel:
+        return
 
-        fs = USGSFigure(figure_type="map", verbose=verbose)
+    if silent:
+        verbosity_level = 0
+    else:
+        verbosity_level = 1
+
+    with styles.USGSMap() as fs:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
@@ -353,7 +354,7 @@ def plot_results(silent=True):
         mm.plot_ibound()
         ax.set_ylabel("y-coordinate, in feet")
         ax.set_xlabel("x-coordinate, in feet")
-        fs.remove_edge_ticks(ax)
+        styles.remove_edge_ticks(ax)
 
         ax = fig.add_subplot(gs[0, 1])
         ax.set_xlim(0, 1)
@@ -404,7 +405,7 @@ def plot_results(silent=True):
             mew=0.5,
             label="Inactive cell",
         )
-        fs.graph_legend(
+        styles.graph_legend(
             ax,
             ncol=1,
             frameon=False,

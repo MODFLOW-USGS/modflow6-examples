@@ -27,7 +27,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
@@ -4068,182 +4068,178 @@ def run_model(sim, silent=True):
 
 
 def plot_grid(gwf, silent=True):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
+    with styles.USGSMap() as fs:
+        fig = plt.figure(figsize=figure_size, constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
 
-    axes = []
-    axes.append(fig.add_subplot(gs[:6, :5]))
-    axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
+        axes = []
+        axes.append(fig.add_subplot(gs[:6, :5]))
+        axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
 
-    for ax in axes:
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
+        for ax in axes:
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
 
-    # legend axis
-    axes.append(fig.add_subplot(gs[6:, :]))
+        # legend axis
+        axes.append(fig.add_subplot(gs[6:, :]))
 
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    top_coll = mm.plot_array(
-        top, vmin=1000, vmax=1120, masked_values=masked_values, alpha=0.5
-    )
-    mm.plot_bc("SFR", color="green")
-    cv = mm.contour_array(
-        top,
-        levels=np.arange(1000, 1100, 20),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    cbar = plt.colorbar(
-        top_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Land surface elevation, $ft$")
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Land surface elevation", idx=0)
-    fs.remove_edge_ticks(ax)
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    bot_coll = mm.plot_array(
-        botm, vmin=950, vmax=1100, masked_values=masked_values, alpha=0.5
-    )
-    mm.plot_bc("GHB", color="purple")
-    mm.plot_bc("WEL", color="red", kper=1)
-    cv = mm.contour_array(
-        botm,
-        levels=np.arange(950, 1100, 20),
-        linewidths=0.5,
-        linestyles=":",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    cbar = plt.colorbar(
-        bot_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Bottom elevation, $ft$")
-    ax.set_xlabel("x-coordinate, in feet")
-    fs.heading(ax, heading="Bottom elevation", idx=1)
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="0.5",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Inactive cells",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="green",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Stream boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="purple",
-        mec="black",
-        markeredgewidth=0.5,
-        label="General head boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="red",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Well boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls="-",
-        color="black",
-        label=r"Land surface elevation contour, $ft$",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls=":",
-        color="black",
-        label=r"Bottom elevation contour, $ft$",
-    )
-    fs.graph_legend(ax, loc="center", ncol=3)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        top_coll = mm.plot_array(
+            top, vmin=1000, vmax=1120, masked_values=masked_values, alpha=0.5
         )
-        fig.savefig(fpth)
+        mm.plot_bc("SFR", color="green")
+        cv = mm.contour_array(
+            top,
+            levels=np.arange(1000, 1100, 20),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        cbar = plt.colorbar(
+            top_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Land surface elevation, $ft$")
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.heading(ax, heading="Land surface elevation", idx=0)
+        styles.remove_edge_ticks(ax)
 
-    return
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        bot_coll = mm.plot_array(
+            botm, vmin=950, vmax=1100, masked_values=masked_values, alpha=0.5
+        )
+        mm.plot_bc("GHB", color="purple")
+        mm.plot_bc("WEL", color="red", kper=1)
+        cv = mm.contour_array(
+            botm,
+            levels=np.arange(950, 1100, 20),
+            linewidths=0.5,
+            linestyles=":",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        cbar = plt.colorbar(
+            bot_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Bottom elevation, $ft$")
+        ax.set_xlabel("x-coordinate, in feet")
+        styles.heading(ax, heading="Bottom elevation", idx=1)
+        styles.remove_edge_ticks(ax)
+
+        # legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="0.5",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Inactive cells",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="green",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Stream boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="purple",
+            mec="black",
+            markeredgewidth=0.5,
+            label="General head boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="red",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Well boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color="black",
+            label=r"Land surface elevation contour, $ft$",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls=":",
+            color="black",
+            label=r"Bottom elevation contour, $ft$",
+        )
+        styles.graph_legend(ax, loc="center", ncol=3)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot grid
 
 
 def plot_head_results(gwf, silent=True):
-    sim_ws = os.path.join(ws, sim_name)
-
     # create MODFLOW 6 head object
     hobj = gwf.output.head()
 
@@ -4252,322 +4248,316 @@ def plot_head_results(gwf, silent=True):
 
     kstpkper = hobj.get_kstpkper()
 
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
+    with styles.USGSMap() as fs:
+        fig = plt.figure(figsize=figure_size, constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
 
-    axes = [fig.add_subplot(gs[:6, :5])]
-    axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
+        axes = [fig.add_subplot(gs[:6, :5])]
+        axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
 
-    for ax in axes:
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
+        for ax in axes:
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
 
-    # legend axis
-    axes.append(fig.add_subplot(gs[6:, :]))
+        # legend axis
+        axes.append(fig.add_subplot(gs[6:, :]))
 
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
-    # extract heads and specific discharge for first stress period
-    head = hobj.get_data(kstpkper=kstpkper[0])
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
-        gwf,
-    )
-
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(900, 1100, 10),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Steady-state", idx=0)
-    fs.remove_edge_ticks(ax)
-
-    # extract heads and specific discharge for second stress period
-    head = hobj.get_data(kstpkper=kstpkper[1])
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
-        gwf,
-    )
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(900, 1100, 10),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    ax.set_xlabel("x-coordinate, in feet")
-    fs.heading(ax, heading="Pumping", idx=1)
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    cbar = plt.colorbar(
-        head_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Head, $ft$")
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="$\u2192$",
-        ms=10,
-        mfc="0.75",
-        mec="0.75",
-        label="Normalized specific discharge",
-    )
-    ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
-    fs.graph_legend(ax, loc="upper center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+        # extract heads and specific discharge for first stress period
+        head = hobj.get_data(kstpkper=kstpkper[0])
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+            gwf,
         )
-        fig.savefig(fpth)
 
-    return
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        head_coll = mm.plot_array(
+            head, vmin=900, vmax=1120, masked_values=masked_values
+        )
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(900, 1100, 10),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.heading(ax, heading="Steady-state", idx=0)
+        styles.remove_edge_ticks(ax)
+
+        # extract heads and specific discharge for second stress period
+        head = hobj.get_data(kstpkper=kstpkper[1])
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
+            gwf,
+        )
+
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        head_coll = mm.plot_array(
+            head, vmin=900, vmax=1120, masked_values=masked_values
+        )
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(900, 1100, 10),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        ax.set_xlabel("x-coordinate, in feet")
+        styles.heading(ax, heading="Pumping", idx=1)
+        styles.remove_edge_ticks(ax)
+
+        # legend
+        ax = axes[-1]
+        cbar = plt.colorbar(
+            head_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Head, $ft$")
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
+        styles.graph_legend(ax, loc="upper center", ncol=2)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the mvr results
 
 
 def plot_mvr_results(idx, gwf, silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSPlot() as fs:
+        # load the observations
+        mvr = gwf.get_package("MVR-1")
+        mvr_Q = mvr.output.budget()
+        # This retrieves all of the MOVER fluxes:
+        mvr_all = mvr_Q.get_data(text="      MOVER-FLOW")
 
-    # load the observations
-    mvr = gwf.get_package("MVR-1")
-    mvr_Q = mvr.output.budget()
-    # This retrieves all of the MOVER fluxes:
-    mvr_all = mvr_Q.get_data(text="      MOVER-FLOW")
+        ckstpkper = mvr_Q.get_kstpkper()
 
-    ckstpkper = mvr_Q.get_kstpkper()
-
-    # The following will tell us the contents of MVR recarrays
-    # mvr_Q.list_records()
-    # Connections specified in MVR input include:
-    # SFR -> LAK
-    # LAK -> SFR
-    # UZF -> SFR
-    # UZF -> LAK
-    # WEL -> UZF
-    provider = b"WEL-1           "
-    receiver1 = b"UZF-1           "
-    gwirrig = []
-    for i, kstpkper in enumerate(ckstpkper):
-        # The following gets the actual indexes of where the conditions are
-        # satisfied, which is what the recarray needs
-        mvr_idxs = np.where(
-            np.all(
-                (
-                    np.array(mvr_Q.recordarray["kper"] == i),
-                    np.array(
-                        mvr_Q.recordarray["paknam"] == provider
-                    ),  # Provider
-                    np.array(mvr_Q.recordarray["paknam2"] == receiver1),
-                ),
-                axis=0,
-            )
-        )  # Receiver
-
-        tot_stp_gwirrig = 0
-        if len(mvr_idxs[0]) > 0:
-            mvr_welirrig = mvr_all[mvr_idxs[0][0]]
-            # Loop through each row of the mvr_welirrig recarray for tallying
-            # gw irrigation events on a cell-by-cell basis
-
-            for k, itm in enumerate(mvr_welirrig):
-                # itm[1]: the receiver identifier. 2.6280e6: len of stress
-                # period - about 1 month
-                tot_stp_gwirrig += itm[2]
-
-        gwirrig.append(
-            abs(tot_stp_gwirrig) * 2.6280e6 / 43560
-        )  # results in ac*ft
-
-    # Get all groundwater discharge:
-    provider = b"UZF-1           "
-    receiver1 = b"SFR-1           "
-    receiver2 = b"LAK-1           "
-    tot_mvr_runoff = []
-    for i, kstpkper in enumerate(ckstpkper):
-        mvr_runoff = 0  # Initialize
-        # The following gets the actual indexes of where the conditions are satisfied, which is what the recarray needs
-        mvr_idxs = np.where(
-            np.all(
-                (
-                    np.array(mvr_Q.recordarray["kper"] == i),
-                    np.array(
-                        mvr_Q.recordarray["paknam"] == provider
-                    ),  # Provider
-                    np.logical_or(
-                        mvr_Q.recordarray["paknam2"] == receiver1,  # Receiver
-                        mvr_Q.recordarray["paknam2"] == receiver2,
+        # The following will tell us the contents of MVR recarrays
+        # mvr_Q.list_records()
+        # Connections specified in MVR input include:
+        # SFR -> LAK
+        # LAK -> SFR
+        # UZF -> SFR
+        # UZF -> LAK
+        # WEL -> UZF
+        provider = b"WEL-1           "
+        receiver1 = b"UZF-1           "
+        gwirrig = []
+        for i, kstpkper in enumerate(ckstpkper):
+            # The following gets the actual indexes of where the conditions are
+            # satisfied, which is what the recarray needs
+            mvr_idxs = np.where(
+                np.all(
+                    (
+                        np.array(mvr_Q.recordarray["kper"] == i),
+                        np.array(
+                            mvr_Q.recordarray["paknam"] == provider
+                        ),  # Provider
+                        np.array(mvr_Q.recordarray["paknam2"] == receiver1),
                     ),
-                ),
-                axis=0,
+                    axis=0,
+                )
+            )  # Receiver
+
+            tot_stp_gwirrig = 0
+            if len(mvr_idxs[0]) > 0:
+                mvr_welirrig = mvr_all[mvr_idxs[0][0]]
+                # Loop through each row of the mvr_welirrig recarray for tallying
+                # gw irrigation events on a cell-by-cell basis
+
+                for k, itm in enumerate(mvr_welirrig):
+                    # itm[1]: the receiver identifier. 2.6280e6: len of stress
+                    # period - about 1 month
+                    tot_stp_gwirrig += itm[2]
+
+            gwirrig.append(
+                abs(tot_stp_gwirrig) * 2.6280e6 / 43560
+            )  # results in ac*ft
+
+        # Get all groundwater discharge:
+        provider = b"UZF-1           "
+        receiver1 = b"SFR-1           "
+        receiver2 = b"LAK-1           "
+        tot_mvr_runoff = []
+        for i, kstpkper in enumerate(ckstpkper):
+            mvr_runoff = 0  # Initialize
+            # The following gets the actual indexes of where the conditions are satisfied, which is what the recarray needs
+            mvr_idxs = np.where(
+                np.all(
+                    (
+                        np.array(mvr_Q.recordarray["kper"] == i),
+                        np.array(
+                            mvr_Q.recordarray["paknam"] == provider
+                        ),  # Provider
+                        np.logical_or(
+                            mvr_Q.recordarray["paknam2"] == receiver1,  # Receiver
+                            mvr_Q.recordarray["paknam2"] == receiver2,
+                        ),
+                    ),
+                    axis=0,
+                )
             )
+            # For each index (there will be two in this case because there are two receivers)
+            for j in range(len(mvr_idxs[0])):
+                mvr_rnf2sw = mvr_all[mvr_idxs[0][j]]
+                # Loop through each row of the mvr_uzf2sw for tallying flow totals
+                for k, itm in enumerate(mvr_rnf2sw):
+                    mvr_runoff += itm[2]
+            # Tally the result
+            tot_mvr_runoff.append(abs(mvr_runoff) * 2.6280e6 / 43560)
+
+        # Barplot of pumping and runoff
+        # set width of bar
+        barWidth = 0.25
+        fig, ax = plt.subplots(figsize=figure_size)
+
+        # set height of bar
+        bardat = [gwirrig, tot_mvr_runoff]
+
+        # Set position of bar on X axis
+        br1 = np.arange(len(gwirrig)) + 1
+        br2 = [x + barWidth for x in br1]
+
+        # Make the plot
+        plt.bar(
+            br1,
+            gwirrig,
+            color="r",
+            width=barWidth,
+            edgecolor="grey",
+            label="GW Irrig",
         )
-        # For each index (there will be two in this case because there are two receivers)
-        for j in range(len(mvr_idxs[0])):
-            mvr_rnf2sw = mvr_all[mvr_idxs[0][j]]
-            # Loop through each row of the mvr_uzf2sw for tallying flow totals
-            for k, itm in enumerate(mvr_rnf2sw):
-                mvr_runoff += itm[2]
-        # Tally the result
-        tot_mvr_runoff.append(abs(mvr_runoff) * 2.6280e6 / 43560)
-
-    # Barplot of pumping and runoff
-    # set width of bar
-    barWidth = 0.25
-    fig, ax = plt.subplots(figsize=figure_size)
-
-    # set height of bar
-    bardat = [gwirrig, tot_mvr_runoff]
-
-    # Set position of bar on X axis
-    br1 = np.arange(len(gwirrig)) + 1
-    br2 = [x + barWidth for x in br1]
-
-    # Make the plot
-    plt.bar(
-        br1,
-        gwirrig,
-        color="r",
-        width=barWidth,
-        edgecolor="grey",
-        label="GW Irrig",
-    )
-    plt.bar(
-        br2,
-        tot_mvr_runoff,
-        color="g",
-        width=barWidth,
-        edgecolor="grey",
-        label="Runoff",
-    )
-
-    # Adding Xticks
-    plt.xlabel("Month")
-    plt.ylabel("Acre-feet")
-    plt.legend()
-
-    title = "Total monthly mvr flux"
-    letter = chr(ord("@") + idx + 1)
-    fs.heading(letter=letter, heading=title)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-mvr{config.figure_ext}",
+        plt.bar(
+            br2,
+            tot_mvr_runoff,
+            color="g",
+            width=barWidth,
+            edgecolor="grey",
+            label="Runoff",
         )
-        fig.savefig(fpth)
 
-    return
+        # Adding Xticks
+        plt.xlabel("Month")
+        plt.ylabel("Acre-feet")
+        plt.legend()
+
+        title = "Total monthly mvr flux"
+        letter = chr(ord("@") + idx + 1)
+        styles.heading(letter=letter, heading=title)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-mvr{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the mvr results
 
 
 def plot_uzfcolumn_results(idx, gwf, silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    fname = os.path.join(sim_ws, "obs_uzf_column.csv")
-    uzf_dat = pd.read_csv(fname, header=0)
-    uzf_dat["time_days"] = uzf_dat["time"] / 86400
-    x = uzf_dat["time_days"]
-    finf = uzf_dat["ID26_INFIL"] * 86400 / 43560
-    wc = uzf_dat["ID26_DPTH=20"]
-    rch = (uzf_dat["ID26_RCH"] + uzf_dat["ID126_RCH"]) * 86400 / 43560
-    gwet = (uzf_dat["ID26_GWET"] + uzf_dat["ID126_GWET"]) * 86400 / 43560
-    uzet = (uzf_dat["ID26_UZET"] + uzf_dat["ID126_UZET"]) * 86400 / 43560
-    gwdisq = (
-        (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
-    )
-    rejinf = (uzf_dat["ID26_REJINF"] + uzf_dat["ID126_REJINF"]) * 86400 / 43560
-
-    fig = plt.figure(figsize=figure_size)
-    ax1 = fig.add_subplot(1, 1, 1)
-
-    ln1 = ax1.plot(x, finf, color="b", label="Infiltration")
-    ln2 = ax1.plot(x, rch, color="g", label="Recharge")
-    ax2 = ax1.twinx()
-    ln3 = ax2.plot(x, wc, "r--", label="Water Content")
-
-    ax1.set_xlabel("Days")
-    ax1.set_ylabel("UZ Fluxes - Row 5, Column 2,  in ac*ft")
-    ax1.set_xlim(0, 740)
-    ax1.set_ylim(0, 16)
-    ax2.set_ylim(0.14, 0.3)
-    ax2.set_ylabel("Water Content")
-    ax1.yaxis.grid("on")
-
-    lns = ln1 + ln2 + ln3
-    labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs, loc="upper left")
-
-    title = "Time series of UZ fluxes for row 5, column 2"
-    letter = chr(ord("@") + idx + 2)
-    fs.heading(letter=letter, heading=title)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-uz{config.figure_ext}",
+    with styles.USGSPlot() as fs:
+        sim_ws = os.path.join(ws, sim_name)
+        fname = os.path.join(sim_ws, "obs_uzf_column.csv")
+        uzf_dat = pd.read_csv(fname, header=0)
+        uzf_dat["time_days"] = uzf_dat["time"] / 86400
+        x = uzf_dat["time_days"]
+        finf = uzf_dat["ID26_INFIL"] * 86400 / 43560
+        wc = uzf_dat["ID26_DPTH=20"]
+        rch = (uzf_dat["ID26_RCH"] + uzf_dat["ID126_RCH"]) * 86400 / 43560
+        gwet = (uzf_dat["ID26_GWET"] + uzf_dat["ID126_GWET"]) * 86400 / 43560
+        uzet = (uzf_dat["ID26_UZET"] + uzf_dat["ID126_UZET"]) * 86400 / 43560
+        gwdisq = (
+            (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
         )
-        fig.savefig(fpth)
+        rejinf = (uzf_dat["ID26_REJINF"] + uzf_dat["ID126_REJINF"]) * 86400 / 43560
+
+        fig = plt.figure(figsize=figure_size)
+        ax1 = fig.add_subplot(1, 1, 1)
+
+        ln1 = ax1.plot(x, finf, color="b", label="Infiltration")
+        ln2 = ax1.plot(x, rch, color="g", label="Recharge")
+        ax2 = ax1.twinx()
+        ln3 = ax2.plot(x, wc, "r--", label="Water Content")
+
+        ax1.set_xlabel("Days")
+        ax1.set_ylabel("UZ Fluxes - Row 5, Column 2,  in ac*ft")
+        ax1.set_xlim(0, 740)
+        ax1.set_ylim(0, 16)
+        ax2.set_ylim(0.14, 0.3)
+        ax2.set_ylabel("Water Content")
+        ax1.yaxis.grid("on")
+
+        lns = ln1 + ln2 + ln3
+        labs = [l.get_label() for l in lns]
+        ax1.legend(lns, labs, loc="upper left")
+
+        title = "Time series of UZ fluxes for row 5, column 2"
+        letter = chr(ord("@") + idx + 2)
+        styles.heading(letter=letter, heading=title)
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-uz{config.figure_ext}",
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the SFR Package Problem 1 model results.

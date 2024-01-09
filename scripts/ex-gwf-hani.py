@@ -25,7 +25,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -174,58 +174,56 @@ def run_model(sim, silent=False):
 # Function to plot the Hani model results.
 #
 def plot_grid(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    pmv.plot_bc(name="CHD")
-    pmv.plot_bc(name="WEL")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        pmv.plot_bc(name="CHD")
+        pmv.plot_bc(name="WEL")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_head(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    head = gwf.output.head().get_data()
+        head = gwf.output.head().get_data()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    cb = pmv.plot_array(0 - head, cmap="jet", alpha=0.25)
-    cs = pmv.contour_array(0 - head, levels=np.arange(0.1, 1, 0.1))
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Drawdown, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        cb = pmv.plot_array(0 - head, cmap="jet", alpha=0.25)
+        cs = pmv.contour_array(0 - head, levels=np.arange(0.1, 1, 0.1))
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Drawdown, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
@@ -233,7 +231,6 @@ def plot_results(idx, sim, silent=True):
         if idx == 0:
             plot_grid(idx, sim)
         plot_head(idx, sim)
-    return
 
 
 # Function that wraps all of the steps for the FHB model

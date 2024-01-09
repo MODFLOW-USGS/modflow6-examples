@@ -25,7 +25,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from modflow_devtools.figspec import USGSFigure
+from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -213,108 +213,106 @@ def run_model(sim, silent=False):
 # Function to plot the USG1DISV model results.
 #
 def plot_grid(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    pmv.plot_bc(name="CHD-LEFT", alpha=0.75)
-    pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    for i, (x, y) in enumerate(
-        zip(gwf.modelgrid.xcellcenters, gwf.modelgrid.ycellcenters)
-    ):
-        ax.text(
-            x,
-            y,
-            f"{i + 1}",
-            fontsize=6,
-            horizontalalignment="center",
-            verticalalignment="center",
-        )
-    v = gwf.disv.vertices.array
-    ax.plot(v["xv"], v["yv"], "yo")
-    for i in range(v.shape[0]):
-        x, y = v["xv"][i], v["yv"][i]
-        ax.text(
-            x,
-            y,
-            f"{i + 1}",
-            fontsize=5,
-            color="red",
-            horizontalalignment="center",
-            verticalalignment="center",
-        )
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        pmv.plot_bc(name="CHD-LEFT", alpha=0.75)
+        pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        for i, (x, y) in enumerate(
+            zip(gwf.modelgrid.xcellcenters, gwf.modelgrid.ycellcenters)
+        ):
+            ax.text(
+                x,
+                y,
+                f"{i + 1}",
+                fontsize=6,
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
+        v = gwf.disv.vertices.array
+        ax.plot(v["xv"], v["yv"], "yo")
+        for i in range(v.shape[0]):
+            x, y = v["xv"][i], v["yv"][i]
+            ax.text(
+                x,
+                y,
+                f"{i + 1}",
+                fontsize=5,
+                color="red",
+                horizontalalignment="center",
+                verticalalignment="center",
+            )
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_head(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap() as fs:
+        sim_name = list(parameters.keys())[idx]
+        sim_ws = os.path.join(ws, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=(7.5, 5))
-    fig.tight_layout()
+        fig = plt.figure(figsize=(7.5, 5))
+        fig.tight_layout()
 
-    head = gwf.output.head().get_data()[:, 0, :]
+        head = gwf.output.head().get_data()[:, 0, :]
 
-    # create MODFLOW 6 cell-by-cell budget object
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf,
-    )
-
-    ax = fig.add_subplot(1, 2, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    cb = pmv.plot_array(head, cmap="jet")
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="A", heading="Simulated Head")
-
-    ax = fig.add_subplot(1, 2, 2, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid()
-    x = np.array(gwf.modelgrid.xcellcenters) - 50.0
-    slp = (1.0 - 0.0) / (50.0 - 650.0)
-    heada = slp * x + 1.0
-    cb = pmv.plot_array(head - heada, cmap="jet")
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Error, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="B", heading="Error")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget object
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
         )
-        fig.savefig(fpth)
-    return
+
+        ax = fig.add_subplot(1, 2, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        cb = pmv.plot_array(head, cmap="jet")
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="A", heading="Simulated Head")
+
+        ax = fig.add_subplot(1, 2, 2, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid()
+        x = np.array(gwf.modelgrid.xcellcenters) - 50.0
+        slp = (1.0 - 0.0) / (50.0 - 650.0)
+        heada = slp * x + 1.0
+        cb = pmv.plot_array(head - heada, cmap="jet")
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Error, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="B", heading="Error")
+
+        # save figure
+        if config.plotSave:
+            fpth = os.path.join(
+                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
@@ -322,7 +320,6 @@ def plot_results(idx, sim, silent=True):
         if idx == 0:
             plot_grid(idx, sim)
         plot_head(idx, sim)
-    return
 
 
 # Function that wraps all of the steps for the FHB model
