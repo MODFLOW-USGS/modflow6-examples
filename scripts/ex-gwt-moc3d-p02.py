@@ -15,6 +15,7 @@ import sys
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.special import erf, erfc
 
 # Append to system path to include the common subdirectory
 
@@ -22,9 +23,8 @@ sys.path.append(os.path.join("..", "common"))
 
 # Import common functionality
 
-import analytical
 import config
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -68,6 +68,56 @@ source_location = (1, 12, 8)  # Source location (layer, row, column)
 botm = [-(k + 1) * delv for k in range(nlay)]
 specific_discharge = velocity_x * porosity
 source_location0 = tuple([idx - 1 for idx in source_location])
+
+# Wexler 3D analytical solution
+
+class Wexler3d:
+    """
+    Analytical solution for 3D transport with inflow at a well with a
+    specified concentration.
+    Wexler Page 47
+    """
+
+    def calcgamma(self, x, y, z, xc, yc, zc, dx, dy, dz):
+        gam = np.sqrt((x - xc) ** 2 + dx / dy * (y - yc) ** 2 + dx / dz * (z - zc) ** 2)
+        return gam
+
+    def calcbeta(self, v, dx, gam, lam):
+        beta = np.sqrt(v**2 + 4.0 * dx * gam * lam)
+        return beta
+
+    def analytical(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam=0.0, c0=1.0):
+        gam = self.calcgamma(x, y, z, xc, yc, zc, dx, dy, dz)
+        beta = self.calcbeta(v, dx, gam, lam)
+        term1 = (
+            c0
+            * q
+            * np.exp(v * (x - xc) / 2.0 / dx)
+            / 8.0
+            / n
+            / np.pi
+            / gam
+            / np.sqrt(dy * dz)
+        )
+        term2 = np.exp(gam * beta / 2.0 / dx) * erfc(
+            (gam + beta * t) / 2.0 / np.sqrt(dx * t)
+        )
+        term3 = np.exp(-gam * beta / 2.0 / dx) * erfc(
+            (gam - beta * t) / 2.0 / np.sqrt(dx * t)
+        )
+        return term1 * (term2 + term3)
+
+    def multiwell(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, ql, lam=0.0, c0=1.0):
+        shape = self.analytical(
+            x, y, z, t, v, xc[0], yc[0], zc[0], dx, dy, dz, n, ql[0], lam
+        ).shape
+        result = np.zeros(shape)
+        for xx, yy, zz, q in zip(xc, yc, zc, ql):
+            result += self.analytical(
+                x, y, z, t, v, xx, yy, zz, dx, dy, dz, n, q, lam, c0
+            )
+        return result
+
 
 # ### Functions to build, write, run, and plot models
 #
@@ -250,7 +300,7 @@ def plot_analytical(ax, levels):
     x, y = np.meshgrid(x, y)
     z = 0
     t = 400.0
-    c400 = analytical.Wexler3d().multiwell(
+    c400 = Wexler3d().multiwell(
         x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam, c0
     )
     cs = ax.contour(x, y, c400, levels=levels, colors="k")

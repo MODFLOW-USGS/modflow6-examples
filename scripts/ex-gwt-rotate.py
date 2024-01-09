@@ -23,8 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from analytical import BakkerRotatingInterface
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -79,6 +78,84 @@ botm = [top - k * delv for k in range(1, nlay + 1)]
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+
+# Bakker rotating interface analytical solution
+
+class BakkerRotatingInterface:
+    """
+    Analytical solution for rotating interfaces (Bakker et al. 2004)
+
+    """
+
+    @staticmethod
+    def get_s(k, rhoa, rhob, alpha):
+        return k * (rhob - rhoa) / rhoa * np.sin(alpha)
+
+    @staticmethod
+    def get_F(z, zeta1, omega1, s):
+        l = (zeta1.real - omega1.real) ** 2 + (zeta1.imag - omega1.imag) ** 2
+        l = np.sqrt(l)
+        try:
+            v = (
+                s
+                * l
+                * complex(0, 1)
+                / 2
+                / np.pi
+                / (zeta1 - omega1)
+                * np.log((z - zeta1) / (z - omega1))
+            )
+        except:
+            v = 0.0
+        return v
+
+    @staticmethod
+    def get_Fgrid(xg, yg, zeta1, omega1, s):
+        qxg = []
+        qyg = []
+        for x, y in zip(xg.flatten(), yg.flatten()):
+            z = complex(x, y)
+            W = BakkerRotatingInterface.get_F(z, zeta1, omega1, s)
+            qx = W.real
+            qy = -W.imag
+            qxg.append(qx)
+            qyg.append(qy)
+        qxg = np.array(qxg)
+        qyg = np.array(qyg)
+        qxg = qxg.reshape(xg.shape)
+        qyg = qyg.reshape(yg.shape)
+        return qxg, qyg
+
+    @staticmethod
+    def get_zetan(n, x0, a, b):
+        return complex(x0 + (-1) ** n * a, (2 * n - 1) * b)
+
+    @staticmethod
+    def get_omegan(n, x0, a, b):
+        return complex(x0 + (-1) ** (1 + n) * a, -(2 * n - 1) * b)
+
+    @staticmethod
+    def get_w(xg, yg, k, rhoa, rhob, a, b, x0):
+        zeta1 = BakkerRotatingInterface.get_zetan(1, x0, a, b)
+        omega1 = BakkerRotatingInterface.get_omegan(1, x0, a, b)
+        alpha = np.arctan2(b, a)
+        s = BakkerRotatingInterface.get_s(k, rhoa, rhob, alpha)
+        qxg, qyg = BakkerRotatingInterface.get_Fgrid(xg, yg, zeta1, omega1, s)
+        for n in range(1, 5):
+            zetan = BakkerRotatingInterface.get_zetan(n, x0, a, b)
+            zetanp1 = BakkerRotatingInterface.get_zetan(n + 1, x0, a, b)
+            qx1, qy1 = BakkerRotatingInterface.get_Fgrid(
+                xg, yg, zetan, zetanp1, (-1) ** n * s
+            )
+            omegan = BakkerRotatingInterface.get_omegan(n, x0, a, b)
+            omeganp1 = BakkerRotatingInterface.get_omegan(n + 1, x0, a, b)
+            qx2, qy2 = BakkerRotatingInterface.get_Fgrid(
+                xg, yg, omegan, omeganp1, (-1) ** n * s
+            )
+            qxg += qx1 + qx2
+            qyg += qy1 + qy2
+        return qxg, qyg
+
 
 
 # ### Functions to build, write, run, and plot models

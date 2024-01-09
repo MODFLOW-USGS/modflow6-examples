@@ -18,7 +18,7 @@ import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 mf6exe = "mf6"
 exe_name_mf = "mfnwt"

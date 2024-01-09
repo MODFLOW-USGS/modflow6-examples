@@ -33,7 +33,7 @@ sys.path.append(os.path.join("..", "common"))
 # import common functionality
 
 import config
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 # Set default figure properties
 

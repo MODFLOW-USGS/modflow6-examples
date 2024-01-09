@@ -18,7 +18,7 @@ import flopy
 import flopy.utils.binaryfile as bf
 import matplotlib.pyplot as plt
 import numpy as np
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 from flopy.utils.lgrutil import Lgr
 
 mf6exe = "mf6"

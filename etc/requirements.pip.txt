@@ -19,4 +19,3 @@ rasterio
 rasterstats
 jupyter
 jupytext
-modflow-devtools

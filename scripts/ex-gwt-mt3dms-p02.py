@@ -22,9 +22,8 @@ sys.path.append(os.path.join("..", "common"))
 
 # Import common functionality
 
-import analytical
 import config
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 mf6exe = "mf6"
 

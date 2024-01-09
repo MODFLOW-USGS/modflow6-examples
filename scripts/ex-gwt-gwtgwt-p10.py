@@ -17,7 +17,7 @@ import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 from flopy.utils.util_array import read1d
 
 mf6exe = "mf6"

@@ -59,7 +59,7 @@ import fnmatch
 import flopy
 
 sys.path.append(os.path.join("..", "common"))
-import build_table as bt
+from modflow_devtools.latex import get_header, get_footer
 
 # path to the example files
 ex_pth = os.path.join("..", "examples")
@@ -145,7 +145,7 @@ def table_standard_header(caption, label):
         "Parameter",
         "Value",
     )
-    return bt.get_header(
+    return get_header(
         caption, label, headings, col_widths=col_widths, center=False
     )
 
@@ -163,13 +163,13 @@ def table_scenario_header(caption, label):
         "Parameter",
         "Value",
     )
-    return bt.get_header(
+    return get_header(
         caption, label, headings, col_widths=col_widths, center=False
     )
 
 
 def table_footer():
-    return bt.get_footer()
+    return get_footer()
 
 
 def make_tables():
@@ -667,7 +667,7 @@ def build_tex_tables(ex_dict):
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
-    lines = bt.get_header(
+    lines = get_header(
         caption, label, headings, col_widths=col_widths, firsthead=True
     )
 
@@ -724,7 +724,7 @@ def build_tex_tables(ex_dict):
                 pak_line.append(pak.upper())
             lines += " ".join(pak_line) + " \\\\\n"
 
-    lines += bt.get_footer()
+    lines += get_footer()
 
     # create table
     pth = os.path.join("..", "tables", "ex-table.tex")

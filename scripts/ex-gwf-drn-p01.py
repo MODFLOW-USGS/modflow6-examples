@@ -22,9 +22,9 @@ sys.path.append(os.path.join("..", "common"))
 
 # import common functionality
 
-import build_table as bt
+from modflow_devtools.latex import int_format, float_format, exp_format, build_table
 import config
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 # Set figure properties specific to the
 
@@ -1273,13 +1273,13 @@ def export_tables(silent=True):
         ]
         arr = np.zeros(nper, dtype=dtype)
         for n in range(nper):
-            arr["nper"][n] = bt.int_format(n + 1)
-            arr["infilt"][n] = bt.exp_format(infiltration[n])
-            arr["rate"][n] = bt.float_format(well_rates[n])
+            arr["nper"][n] = int_format(n + 1)
+            arr["infilt"][n] = exp_format(infiltration[n])
+            arr["rate"][n] = float_format(well_rates[n])
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.30, 0.30)
-        bt.build_table(
+        build_table(
             caption, fpth, arr, headings=headings, col_widths=col_widths
         )
 

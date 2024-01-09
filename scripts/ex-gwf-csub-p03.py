@@ -26,9 +26,9 @@ sys.path.append(os.path.join("..", "common"))
 
 # import common functionality
 
-import build_table as bt
+from modflow_devtools.latex import int_format, float_format, exp_format, build_table
 import config
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 # Set figure properties specific to the problem
 
@@ -707,14 +707,14 @@ def export_tables(silent=True):
         ]
         arr = np.zeros(nlay, dtype=dtype)
         for k in range(nlay):
-            arr["k"][k] = bt.int_format(k + 1)
-            arr["thickness"][k] = bt.float_format(zelevs[k] - zelevs[k + 1])
-            arr["k33"][k] = bt.exp_format(k33[k])
-            arr["h0"][k] = bt.float_format(strt[k])
+            arr["k"][k] = int_format(k + 1)
+            arr["thickness"][k] = float_format(zelevs[k] - zelevs[k + 1])
+            arr["k33"][k] = exp_format(k33[k])
+            arr["h0"][k] = float_format(strt[k])
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.15, 0.30, 0.25)
-        bt.build_table(
+        build_table(
             caption, fpth, arr, headings=headings, col_widths=col_widths
         )
 
@@ -734,17 +734,17 @@ def export_tables(silent=True):
         ]
         arr = np.zeros(len(ib_ctype), dtype=dtype)
         for idx, ctype in enumerate(ib_ctype):
-            arr["ib"][idx] = bt.int_format(idx + 1)
-            arr["k"][idx] = bt.int_format(ib_cellid[idx][0] + 1)
+            arr["ib"][idx] = int_format(idx + 1)
+            arr["k"][idx] = int_format(ib_cellid[idx][0] + 1)
             if ctype == "nodelay":
-                arr["thickness"][idx] = bt.float_format(ib_thickness[idx])
+                arr["thickness"][idx] = float_format(ib_thickness[idx])
             else:
                 b = ib_thickness[idx] * ib_rnb[idx]
-                arr["thickness"][idx] = bt.float_format(b)
-            arr["pcs0"][idx] = bt.float_format(parameters[name]["pcs0"][idx])
+                arr["thickness"][idx] = float_format(b)
+            arr["pcs0"][idx] = float_format(parameters[name]["pcs0"][idx])
         if not silent:
             print(f"creating...'{fpth}'")
-        bt.build_table(caption, fpth, arr, headings=headings)
+        build_table(caption, fpth, arr, headings=headings)
 
         caption = f"Aquifer storage properties for example {sim_name}."
         headings = (
@@ -755,12 +755,12 @@ def export_tables(silent=True):
         dtype = [("k", "U30"), ("ss", "U30")]
         arr = np.zeros(4, dtype=dtype)
         for idx, k in enumerate((4, 6, 11, 13)):
-            arr["k"][idx] = bt.int_format(k + 1)
-            arr["ss"][idx] = bt.exp_format(parameters[name]["cg_ske"][k])
+            arr["k"][idx] = int_format(k + 1)
+            arr["ss"][idx] = exp_format(parameters[name]["cg_ske"][k])
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.25)
-        bt.build_table(
+        build_table(
             caption, fpth, arr, headings=headings, col_widths=col_widths
         )
 
@@ -782,14 +782,14 @@ def export_tables(silent=True):
         ]
         arr = np.zeros(len(ib_ctype), dtype=dtype)
         for idx, ctype in enumerate(ib_ctype):
-            arr["ib"][idx] = bt.int_format(idx + 1)
-            arr["k"][idx] = bt.int_format(ib_cellid[idx][0] + 1)
-            arr["ssv"][idx] = bt.exp_format(parameters[name]["ssv"][idx])
-            arr["sse"][idx] = bt.exp_format(parameters[name]["sse"][idx])
+            arr["ib"][idx] = int_format(idx + 1)
+            arr["k"][idx] = int_format(ib_cellid[idx][0] + 1)
+            arr["ssv"][idx] = exp_format(parameters[name]["ssv"][idx])
+            arr["sse"][idx] = exp_format(parameters[name]["sse"][idx])
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.2, 0.2, 0.2, 0.2)
-        bt.build_table(
+        build_table(
             caption,
             fpth,
             arr,

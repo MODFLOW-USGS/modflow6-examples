@@ -23,8 +23,7 @@ sys.path.append(os.path.join("..", "common"))
 # Import common functionality
 
 import config
-from analytical import Stallman
-from figspecs import USGSFigure
+from modflow_devtools.figspec import USGSFigure
 
 mf6exe = "mf6"
 
@@ -100,6 +99,25 @@ cnc_mf6 = cnc_data
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+
+
+# Analytical solution for Stallman analysis (Stallman 1965, JGR)
+def Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay):
+    zstallman = np.zeros((nlay, 2))
+    K = np.pi * c_rho / ko / tau
+    V = darcy_flux * c_w * rho_w / 2 / ko
+    a = ((K**2 + V**4 / 4) ** 0.5 + V**2 / 2) ** 0.5 - V
+    b = ((K**2 + V**4 / 4) ** 0.5 - V**2 / 2) ** 0.5
+    for i in range(len(zstallman)):
+        zstallman[i, 0] = zbotm[i]
+        zstallman[i, 1] = (
+            dT
+            * np.exp(-a * (-zstallman[i, 0]))
+            * np.sin(2 * np.pi * t / tau - b * (-zstallman[i, 0]))
+            + T_az
+        )
+    return zstallman
+
 
 # ### Functions to build, write, run, and plot models
 #
