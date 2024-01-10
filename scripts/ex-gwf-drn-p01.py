@@ -10,16 +10,16 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
-from modflow_devtools.latex import int_format, float_format, exp_format, build_table
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.latex import (build_table, exp_format, float_format,
+                                    int_format)
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
@@ -956,12 +956,8 @@ rclose = 1e-6
 def build_model(name, uzf_gwseep=None):
     if buildModel:
         sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -972,9 +968,7 @@ def build_model(name, uzf_gwseep=None):
             inner_dvclose=hclose,
             rcloserecord=f"{rclose} strict",
         )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="newton"
-        )
+        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
         flopy.mf6.ModflowGwfdis(
             gwf,
             length_units=length_units,
@@ -1193,9 +1187,7 @@ def plot_gwseep_results(silent=True):
         styles.heading(ax, idx=0)
 
         ax.set_xlabel("Simulation time, in days")
-        ax.set_ylabel(
-            "Infiltration to the unsaturated zone,\nin cubic feet per second"
-        )
+        ax.set_ylabel("Infiltration to the unsaturated zone,\nin cubic feet per second")
 
         ax = axes[-1]
         ax.set_xlim(0, 365)
@@ -1256,9 +1248,7 @@ def plot_gwseep_results(silent=True):
 
 def export_tables(silent=True):
     if plotSave:
-        caption = "Infiltration and pumping rates for example {}.".format(
-            sim_name
-        )
+        caption = "Infiltration and pumping rates for example {}.".format(sim_name)
         headings = (
             "Stress period",
             "Infiltration rate",
@@ -1278,9 +1268,7 @@ def export_tables(silent=True):
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.30, 0.30)
-        build_table(
-            caption, fpth, arr, headings=headings, col_widths=col_widths
-        )
+        build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
 
 # Function to plot the UZF Package Problem 2 model results.

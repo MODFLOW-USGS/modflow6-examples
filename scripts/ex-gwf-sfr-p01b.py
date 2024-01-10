@@ -11,16 +11,16 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
@@ -3548,9 +3548,7 @@ for tm in range(len(tdis_ds)):
     sp = []
     iuzno = 0
     for i in range(len(extwc)):
-        sp.append(
-            (iuzno, finf[tm][i], pET, extdp, extwc[i], ha, hroot, rootact)
-        )
+        sp.append((iuzno, finf[tm][i], pET, extdp, extwc[i], ha, hroot, rootact))
         iuzno += 1
     uzf_spd.update({int(tm): sp})
 
@@ -3762,12 +3760,8 @@ rclose = 1e-6
 def build_model():
     if buildModel:
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -3955,9 +3949,7 @@ def build_model():
                 ("LAK2_FROM-MVR", "FROM-MVR", 2),
             ]
         }
-        lak.obs.initialize(
-            filename=lak_obs_file, digits=10, continuous=lak_obs_dict
-        )
+        lak.obs.initialize(filename=lak_obs_file, digits=10, continuous=lak_obs_dict)
         uzf = flopy.mf6.ModflowGwfuzf(
             gwf,
             nuzfcells=len(uzf_pakdata),
@@ -4400,9 +4392,7 @@ def plot_mvr_results(idx, gwf, silent=True):
                 np.all(
                     (
                         np.array(mvr_Q.recordarray["kper"] == i),
-                        np.array(
-                            mvr_Q.recordarray["paknam"] == provider
-                        ),  # Provider
+                        np.array(mvr_Q.recordarray["paknam"] == provider),  # Provider
                         np.array(mvr_Q.recordarray["paknam2"] == receiver1),
                     ),
                     axis=0,
@@ -4420,9 +4410,7 @@ def plot_mvr_results(idx, gwf, silent=True):
                     # period - about 1 month
                     tot_stp_gwirrig += itm[2]
 
-            gwirrig.append(
-                abs(tot_stp_gwirrig) * 2.6280e6 / 43560
-            )  # results in ac*ft
+            gwirrig.append(abs(tot_stp_gwirrig) * 2.6280e6 / 43560)  # results in ac*ft
 
         # Get all groundwater discharge:
         provider = b"UZF-1           "
@@ -4436,9 +4424,7 @@ def plot_mvr_results(idx, gwf, silent=True):
                 np.all(
                     (
                         np.array(mvr_Q.recordarray["kper"] == i),
-                        np.array(
-                            mvr_Q.recordarray["paknam"] == provider
-                        ),  # Provider
+                        np.array(mvr_Q.recordarray["paknam"] == provider),  # Provider
                         np.logical_or(
                             mvr_Q.recordarray["paknam2"] == receiver1,  # Receiver
                             mvr_Q.recordarray["paknam2"] == receiver2,
@@ -4520,9 +4506,7 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
         rch = (uzf_dat["ID26_RCH"] + uzf_dat["ID126_RCH"]) * 86400 / 43560
         gwet = (uzf_dat["ID26_GWET"] + uzf_dat["ID126_GWET"]) * 86400 / 43560
         uzet = (uzf_dat["ID26_UZET"] + uzf_dat["ID126_UZET"]) * 86400 / 43560
-        gwdisq = (
-            (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
-        )
+        gwdisq = (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
         rejinf = (uzf_dat["ID26_REJINF"] + uzf_dat["ID126_REJINF"]) * 86400 / 43560
 
         fig = plt.figure(figsize=figure_size)

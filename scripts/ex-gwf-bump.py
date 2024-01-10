@@ -22,15 +22,15 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties
 
@@ -148,12 +148,8 @@ def build_model(
 ):
     if buildModel:
         sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         if newton:
             linear_acceleration = "bicgstab"
             newtonoptions = "newton under_relaxation"
@@ -457,9 +453,7 @@ def plot_results(idx, sim, silent=True):
         styles.graph_legend(ax, loc="center", ncol=2)
 
         cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-        cbar = plt.colorbar(
-            h_coll, shrink=0.8, orientation="horizontal", cax=cax
-        )
+        cbar = plt.colorbar(h_coll, shrink=0.8, orientation="horizontal", cax=cax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
 
@@ -507,5 +501,5 @@ simulation(1, silent=False)
 
 
 # Simulated heads in the flow diversion model with Newton-Raphson and
-    # cylinderical topography.
+# cylinderical topography.
 simulation(2, silent=False)

@@ -10,14 +10,13 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
-
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 
@@ -124,9 +123,7 @@ def build_mf6gwf(sim_folder):
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     htol = 1.0e-8
     flopy.mf6.ModflowIms(
         sim, print_option="summary", outer_dvclose=htol, inner_dvclose=htol
@@ -199,9 +196,7 @@ def build_mf6gwt(
         (period1, int(period1 / delta_time), 1.0),
         (period2, int(period2 / delta_time), 1.0),
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     ctol = 1.0e-8
     flopy.mf6.ModflowIms(
         sim,
@@ -247,9 +242,7 @@ def build_mf6gwt(
         sp2=sp2,
     )
     flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=dispersivity, ath1=dispersivity
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=dispersivity, ath1=dispersivity)
     if beta is not None:
         if beta > 0:
             porosity_im = bulk_density / volfracim
@@ -285,9 +278,7 @@ def build_mf2005(sim_folder):
     print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
-    mf = flopy.modflow.Modflow(
-        modelname=name, model_ws=sim_ws, exe_name="mf2005"
-    )
+    mf = flopy.modflow.Modflow(modelname=name, model_ws=sim_ws, exe_name="mf2005")
     perlen = [period1, period2]
     dis = flopy.modflow.ModflowDis(
         mf,
@@ -426,16 +417,14 @@ def run_model(sims, silent=True):
 def plot_results_ct(sims, idx, **kwargs):
     if not plotModel:
         return
-    
+
     print("Plotting C versus t model results...")
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
 
     with styles.USGSPlot() as fs:
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
 
         sim_ws = sim_mt3dms.model_ws
         fname = os.path.join(sim_ws, "MT3D001.OBS")
@@ -483,9 +472,7 @@ def plot_results():
     print("Plotting model results...")
 
     with styles.USGSPlot() as fs:
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
 
         case_colors = ["blue", "green", "red", "yellow"]
         pkeys = list(parameters.keys())

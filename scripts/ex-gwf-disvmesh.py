@@ -12,18 +12,18 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import flopy.utils.cvfdutil
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
 from flopy.utils.geometry import get_polygon_area
 from flopy.utils.gridintersect import GridIntersect
+from modflow_devtools.misc import is_in_ci, timed
 from shapely.geometry import Polygon
-from modflow_devtools.misc import timed, is_in_ci
-from flopy.plot.styles import styles
 
 # Set default figure properties
 
@@ -138,12 +138,8 @@ rclose = 1e-6
 def build_model(sim_name):
     if buildModel:
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -187,9 +183,7 @@ def build_model(sim_name):
         ghb_cellids = np.array(result["cellids"], dtype=int)
 
         ghb_spd = []
-        ghb_spd += [
-            [0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids
-        ]
+        ghb_spd += [[0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids]
         ghb_spd = {0: ghb_spd}
         flopy.mf6.ModflowGwfghb(
             gwf,
@@ -200,9 +194,7 @@ def build_model(sim_name):
         ncpl = gridprops["ncpl"]
         rchcells = np.array(list(range(ncpl)), dtype=int)
         rchcells[ghb_cellids] = -1
-        rch_spd = [
-            (0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0
-        ]
+        rch_spd = [(0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0]
         rch_spd = {0: rch_spd}
         flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd, pname="RCH")
 
@@ -261,9 +253,7 @@ def plot_grid(idx, sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
 
 
@@ -315,9 +305,7 @@ def plot_head(idx, sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-head.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
             fig.savefig(fpth)
 
 

@@ -7,15 +7,14 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties
 
@@ -133,12 +132,8 @@ def build_model(
 ):
     if buildModel:
         sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         if newton:
             newtonoptions = "newton"
             no_ptc = "ALL"

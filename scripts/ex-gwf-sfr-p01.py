@@ -10,15 +10,15 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
@@ -784,12 +784,8 @@ rclose = 1e-6
 def build_model():
     if buildModel:
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -833,9 +829,7 @@ def build_model():
         flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
         flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(
-            gwf, surface=surf, rate=evap_rate, depth=ext_depth
-        )
+        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=evap_rate, depth=ext_depth)
         sfr = flopy.mf6.ModflowGwfsfr(
             gwf,
             length_conversion=3.28081,

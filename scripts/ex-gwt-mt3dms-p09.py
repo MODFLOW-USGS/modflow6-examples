@@ -23,15 +23,14 @@
 
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from flopy.utils.util_array import read1d
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -95,9 +94,7 @@ icbund = 1
 # MF2K5 pumping info
 qwell1 = 0.001
 qwell2 = -0.0189
-welspd = {
-    0: [[0, 3, 6, qwell1], [0, 10, 6, qwell2]]
-}  # Well pumping info for MF2K5
+welspd = {0: [[0, 3, 6, qwell1], [0, 10, 6, qwell2]]}  # Well pumping info for MF2K5
 cwell1 = 57.87
 cwell0 = 0.0
 spd = {
@@ -258,17 +255,13 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p09-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -371,9 +364,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -596,7 +587,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "figures",
                 "{}{}".format(
                     sim_name,
-                    '.png',
+                    ".png",
                 ),
             )
             fig.savefig(fpth)

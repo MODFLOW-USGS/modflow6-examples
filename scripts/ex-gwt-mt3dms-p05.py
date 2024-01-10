@@ -23,14 +23,14 @@
 
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -247,17 +247,13 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p05-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -344,9 +340,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -441,9 +435,7 @@ def build_model(sim_name, mixelm=0, silent=False):
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
         sourcerecarray = [("WEL-1", "AUX", "CONCENTRATION")]
-        flopy.mf6.ModflowGwtssm(
-            gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm"
-        )
+        flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm")
 
         # Instantiating MODFLOW 6 transport output control package
         flopy.mf6.ModflowGwtoc(
@@ -525,10 +517,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
 
         conc1 = conc_mt3d[0, 0, :, :]
         conc2 = conc_mf6[0, 0, :, :]
-        x = (
-            mt3d.modelgrid.xcellcenters[15, 15:]
-            - mt3d.modelgrid.xcellcenters[15, 15]
-        )
+        x = mt3d.modelgrid.xcellcenters[15, 15:] - mt3d.modelgrid.xcellcenters[15, 15]
         y_mt3d = conc1[15, 15:]
         y_mf6 = conc2[15, 15:]
 
@@ -550,7 +539,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-xsec", '.png'),
+                "{}{}".format(sim_name + "-xsec", ".png"),
             )
             fig.savefig(fpth)
 
@@ -566,9 +555,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         mm.plot_ibound()
         cs1 = mm.contour_array(conc_mt3d[0], levels=levels, colors="r")
         plt.clabel(cs1, inline=1, fontsize=10)
-        cs2 = mm.contour_array(
-            conc_mf6[0], levels=levels, colors="k", linestyles=":"
-        )
+        cs2 = mm.contour_array(conc_mf6[0], levels=levels, colors="k", linestyles=":")
         plt.clabel(cs2, inline=1, fontsize=10)
         labels = ["MT3DMS", "MODFLOW 6"]
         lines = [cs1.collections[0], cs2.collections[0]]
@@ -593,7 +580,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-planView", '.png'),
+                "{}{}".format(sim_name + "-planView", ".png"),
             )
             fig.savefig(fpth)
 

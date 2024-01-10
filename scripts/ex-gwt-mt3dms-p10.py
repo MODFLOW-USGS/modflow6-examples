@@ -23,15 +23,15 @@
 
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -85,11 +85,7 @@ sp1 = 0.176  # Distribution coefficient ($cm^3/g$)
 perlen = 1000.0  # Simulation time ($days$)
 
 # Additional model input
-delr = (
-    [2000, 1600, 800, 400, 200, 100]
-    + 28 * [50]
-    + [100, 200, 400, 800, 1600, 2000]
-)
+delr = [2000, 1600, 800, 400, 200, 100] + 28 * [50] + [100, 200, 400, 800, 1600, 2000]
 delc = (
     [2000, 2000, 2000, 1600, 800, 400, 200, 100]
     + 45 * [50]
@@ -323,9 +319,7 @@ def build_model(sim_name, mixelm=0, silent=False):
         flopy.mt3d.Mt3dSsm(mt, crch=crch, stress_period_data=ssmspd)
 
         # Instantiate the recharge package
-        flopy.mt3d.Mt3dRct(
-            mt, isothm=isothm, igetsc=0, rhob=rhob, sp1=sp1, sp2=sp2
-        )
+        flopy.mt3d.Mt3dRct(mt, isothm=isothm, igetsc=0, rhob=rhob, sp1=sp1, sp2=sp2)
 
         # Instantiate the GCG solver in MT3DMS
         flopy.mt3d.Mt3dGcg(mt)
@@ -336,16 +330,12 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p10-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         tdis_rc.append((perlen, 500, 1.0))
-        flopy.mf6.ModflowTdis(
-            sim, nper=1, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=1, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -414,18 +404,12 @@ def build_model(sim_name, mixelm=0, silent=False):
             for i in np.arange(nrow):
                 #              (l, r,      c),               head, conc
                 chdspd.append([(k, i, 0), strt[k, i, 0], 0.0])  # left
-                chdspd.append(
-                    [(k, i, ncol - 1), strt[k, i, ncol - 1], 0.0]
-                )  # right
+                chdspd.append([(k, i, ncol - 1), strt[k, i, ncol - 1], 0.0])  # right
 
-            for j in np.arange(
-                1, ncol - 1
-            ):  # skip corners, already added above
+            for j in np.arange(1, ncol - 1):  # skip corners, already added above
                 #              (l,      r, c),               head, conc
                 chdspd.append([(k, 0, j), strt[k, 0, j], 0.0])  # top
-                chdspd.append(
-                    [(k, nrow - 1, j), strt[k, nrow - 1, j], 0.0]
-                )  # bottom
+                chdspd.append([(k, nrow - 1, j), strt[k, nrow - 1, j], 0.0])  # bottom
 
         chdspd = {0: chdspd}
 
@@ -465,9 +449,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[
                 ("HEAD", "LAST"),
                 ("HEAD", "STEPS", "1", "250", "375", "500"),
@@ -684,9 +666,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         c = conc_mt3d[1, 2]  # Layer 3 @ 500 days (2nd specified output time)
         mm = flopy.plot.PlotMapView(model=mf2k5)
         mm.plot_grid(color=".5", alpha=0.2)
-        cs1 = mm.contour_array(
-            c, levels=np.arange(10, 200, 10), colors="black"
-        )
+        cs1 = mm.contour_array(c, levels=np.arange(10, 200, 10), colors="black")
         plt.clabel(cs1, fmt=r"%3d")
         c_mf6 = conc_mf6[1, 2]  # Layer 3 @ 500 days
         cs2 = mm.contour_array(
@@ -714,9 +694,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         c = conc_mt3d[2, 2]
         mm = flopy.plot.PlotMapView(model=mf2k5)
         mm.plot_grid(color=".5", alpha=0.2)
-        cs1 = mm.contour_array(
-            c, levels=np.arange(10, 200, 10), colors="black"
-        )
+        cs1 = mm.contour_array(c, levels=np.arange(10, 200, 10), colors="black")
         plt.clabel(cs1, fmt=r"%3d")
         c_mf6 = conc_mf6[2, 2]
         cs2 = mm.contour_array(
@@ -739,9 +717,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         c = conc_mt3d[3, 2]
         mm = flopy.plot.PlotMapView(model=mf2k5)
         mm.plot_grid(color=".5", alpha=0.2)
-        cs1 = mm.contour_array(
-            c, levels=np.arange(10, 200, 10), colors="black"
-        )
+        cs1 = mm.contour_array(c, levels=np.arange(10, 200, 10), colors="black")
         plt.clabel(cs1, fmt=r"%3d")
         c_mf6 = conc_mf6[3, 2]
         cs2 = mm.contour_array(
@@ -767,7 +743,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "figures",
                 "{}{}".format(
                     sim_name,
-                    '.pjg',
+                    ".pjg",
                 ),
             )
             fig.savefig(fpth)

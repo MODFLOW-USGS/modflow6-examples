@@ -10,15 +10,15 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.special import erfc
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
+from scipy.special import erfc
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -73,6 +73,7 @@ specific_discharge = velocity_x * porosity
 source_location0 = tuple([idx - 1 for idx in source_location])
 
 # Wexler 3D analytical solution
+
 
 class Wexler3d:
     """
@@ -134,9 +135,7 @@ def build_mf6gwf(sim_folder):
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, print_option="summary", inner_maximum=300)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -188,9 +187,7 @@ def build_mf6gwt(sim_folder):
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 400, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -302,9 +299,7 @@ def plot_analytical(ax, levels):
     x, y = np.meshgrid(x, y)
     z = 0
     t = 400.0
-    c400 = Wexler3d().multiwell(
-        x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam, c0
-    )
+    c400 = Wexler3d().multiwell(x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam, c0)
     cs = ax.contour(x, y, c400, levels=levels, colors="k")
     return cs
 
@@ -317,20 +312,15 @@ def plot_results(sims):
     _, sim_mf6gwt = sims
 
     with styles.USGSMap() as fs:
-
         conc = sim_mf6gwt.trans.output.concentration().get_data()
 
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
 
         gwt = sim_mf6gwt.trans
         pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
         levels = [1, 3, 10, 30, 100, 300]
         cs1 = plot_analytical(axs, levels)
-        cs2 = pmv.contour_array(
-            conc, colors="blue", linestyles="--", levels=levels
-        )
+        cs2 = pmv.contour_array(conc, colors="blue", linestyles="--", levels=levels)
         axs.set_xlabel("x position (m)")
         axs.set_ylabel("y position (m)")
         axs.set_aspect(4.0)

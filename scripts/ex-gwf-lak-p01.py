@@ -9,14 +9,14 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
@@ -52,9 +52,7 @@ top = 500.0  # Top of the model ($ft$)
 botm_str = "107., 97., 87., 77., 67."  # Bottom elevations ($ft$)
 strt = 115.0  # Starting head ($ft$)
 k11 = 30.0  # Horizontal hydraulic conductivity ($ft/d$)
-k33_str = (
-    "1179., 30., 30., 30., 30."  # Vertical hydraulic conductivity ($ft/d$)
-)
+k33_str = "1179., 30., 30., 30., 30."  # Vertical hydraulic conductivity ($ft/d$)
 ss = 3e-4  # Specific storage ($1/d$)
 sy = 0.2  # Specific yield (unitless)
 H1 = 160.0  # Constant head on left side of model ($ft$)
@@ -177,12 +175,8 @@ rclose = 1e-6
 def build_model():
     if buildModel:
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -235,9 +229,7 @@ def build_model():
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
         flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
         flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(
-            gwf, surface=surf, rate=etvrate, depth=etvdepth
-        )
+        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=etvrate, depth=etvdepth)
         (
             idomain_wlakes,
             pakdata_dict,

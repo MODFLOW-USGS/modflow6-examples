@@ -23,15 +23,15 @@
 
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -271,17 +271,13 @@ def build_model(sim_name, mixelm=0, silent=False):
         name = "p08_mf6"
         gwfname = "gwf_" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
         # Instantiating MODFLOW 6 time discretization
         tdis_rc = []
         for i in range(nper):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -376,9 +372,7 @@ def build_model(sim_name, mixelm=0, silent=False):
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.bud",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -472,9 +466,7 @@ def build_model(sim_name, mixelm=0, silent=False):
 
         # Instantiating MODFLOW 6 transport source-sink mixing package
         sourcerecarray = [("CHD-1", "AUX", "CONCENTRATION")]
-        flopy.mf6.ModflowGwtssm(
-            gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm"
-        )
+        flopy.mf6.ModflowGwtssm(gwt, sources=sourcerecarray, filename=f"{gwtname}.ssm")
 
         # Instantiating MODFLOW 6 transport output control package
         flopy.mf6.ModflowGwtoc(
@@ -566,7 +558,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
     if not plotModel:
-        return 
+        return
 
     print("Plotting model results...")
     mt3d_out_path = mt3d.model_ws
@@ -611,9 +603,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = (
-            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
-        )
+        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
         letter = chr(ord("@") + idx + 1)
         styles.heading(letter=letter, heading=title)
 
@@ -629,9 +619,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = (
-            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
-        )
+        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
         letter = chr(ord("@") + idx + 2)
         styles.heading(letter=letter, heading=title)
 
@@ -642,7 +630,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "figures",
                 "{}{}".format(
                     sim_name + "-" + str(yr_idx[i] + 1) + "yrs",
-                    '.png',
+                    ".png",
                 ),
             )
             fig.savefig(fpth)
@@ -663,9 +651,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = (
-            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
-        )
+        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
         letter = chr(ord("@") + idx + 3)
         styles.heading(letter=letter, heading=title)
 
@@ -681,9 +667,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = (
-            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
-        )
+        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
         letter = chr(ord("@") + idx + 4)
         styles.heading(letter=letter, heading=title)
 
@@ -694,7 +678,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "figures",
                 "{}{}".format(
                     sim_name + "-" + str(yr_idx[i] + 1) + "yrs",
-                    '.png',
+                    ".png",
                 ),
             )
             fig.savefig(fpth)
@@ -715,9 +699,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = (
-            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
-        )
+        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MT3D-USGS"
         letter = chr(ord("@") + idx + 5)
         styles.heading(letter=letter, heading=title)
 
@@ -733,9 +715,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         )
         plt.clabel(cs, fmt=r"%4.2f")
 
-        title = (
-            "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
-        )
+        title = "Migrating plume after " + str(yr_idx[i] + 1) + " years, MODFLOW 6"
         letter = chr(ord("@") + idx + 6)
         styles.heading(letter=letter, heading=title)
 
@@ -746,7 +726,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "figures",
                 "{}{}".format(
                     sim_name + "-" + str(yr_idx[i] + 1) + "yrs",
-                    '.png',
+                    ".png",
                 ),
             )
             fig.savefig(fpth)

@@ -9,14 +9,14 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
@@ -72,9 +72,7 @@ def build_mf6gwf(sim_folder):
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -178,9 +176,7 @@ def build_mf6gwt(sim_folder):
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 20, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -264,9 +260,7 @@ def build_mf2005(sim_folder):
     print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
-    mf = flopy.modflow.Modflow(
-        modelname=name, model_ws=sim_ws, exe_name="mf2005"
-    )
+    mf = flopy.modflow.Modflow(modelname=name, model_ws=sim_ws, exe_name="mf2005")
     perlen = [total_time]
     dis = flopy.modflow.ModflowDis(
         mf,
@@ -400,9 +394,7 @@ def plot_results(sims, idx):
         cobjmt = flopy.utils.UcnFile(fname)
         concmt = cobjmt.get_data()
 
-        fig, ax = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, ax = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
         pmv.plot_bc(ftype="MAW", color="red")
         pmv.plot_bc(ftype="CHD")
@@ -415,9 +407,7 @@ def plot_results(sims, idx):
         levels = [0.01, 0.1, 1, 10, 100]
         cs1 = pmv.contour_array(concmt, levels=levels, colors="r")
 
-        cs2 = pmv.contour_array(
-            conc, levels=levels, colors="b", linestyles="--"
-        )
+        cs2 = pmv.contour_array(conc, levels=levels, colors="b", linestyles="--")
         ax.clabel(cs2, cs2.levels[::1], fmt="%3.2f", colors="b")
 
         labels = ["MT3DMS", "MODFLOW 6"]

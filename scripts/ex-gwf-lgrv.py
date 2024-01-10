@@ -9,15 +9,15 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import flopy.utils.lgrutil
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set default figure properties
 
@@ -100,9 +100,7 @@ rivdat = np.loadtxt(fname, dtype=dt)
 rivdat["k"] -= 1
 rivdat["i"] -= 1
 rivdat["j"] -= 1
-riv_spd = [
-    [(k, i, j), stage, cond, rbot] for k, i, j, stage, cond, rbot in rivdat
-]
+riv_spd = [[(k, i, j), stage, cond, rbot] for k, i, j, stage, cond, rbot in rivdat]
 
 botm = [30 - k * delv for k in range(nlay)]
 botm = np.array(botm)
@@ -213,12 +211,8 @@ def riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan):
 
 def build_lgr_model(sim_name):
     sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-    )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
         sim,
         outer_maximum=nouter,
@@ -413,9 +407,7 @@ def build_model(
         strt = nlayc * [topc]
         flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        rivdatc = riv_resample(
-            icoarsen, nrow, ncol, rivdat, idomain, rowcolspan
-        )
+        rivdatc = riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan)
         riv_spd = {0: rivdatc}
         flopy.mf6.ModflowGwfriv(
             gwf,
@@ -516,9 +508,7 @@ def plot_grid(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
 
 
@@ -544,9 +534,7 @@ def plot_xsect(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-xsect.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-xsect.png")
             fig.savefig(fpth)
 
 
@@ -601,9 +589,7 @@ def plot_heads(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-head.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
             fig.savefig(fpth)
 
 

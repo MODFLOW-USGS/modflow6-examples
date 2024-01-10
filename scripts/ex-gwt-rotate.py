@@ -10,14 +10,14 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -83,6 +83,7 @@ nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
 
 # Bakker rotating interface analytical solution
+
 
 class BakkerRotatingInterface:
     """
@@ -160,7 +161,6 @@ class BakkerRotatingInterface:
         return qxg, qyg
 
 
-
 # ### Functions to build, write, run, and plot models
 #
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
@@ -196,9 +196,7 @@ def build_model(sim_folder):
         continue_=True,
     )
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -281,9 +279,7 @@ def build_model(sim_folder):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -392,9 +388,7 @@ def plot_velocity_profile(sim, idx):
         ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-vh.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-vh.png")
             fig.savefig(fpth)
 
 
@@ -415,9 +409,7 @@ def plot_conc(sim, idx):
         ax.set_ylabel("z position (m)")
         ax.set_xlabel("x position (m)")
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-bc.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-bc.png")
             fig.savefig(fpth)
         plt.close("all")
 
@@ -456,9 +448,7 @@ def plot_conc(sim, idx):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-conc.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
             fig.savefig(fpth)
 
 
@@ -491,9 +481,7 @@ def make_animated_gif(sim, idx):
             pc.set_array(conc[i].flatten())
             ax.set_title(f"Time = {times[i]} days")
 
-        ani = FuncAnimation(
-            fig, update, range(1, times.shape[0], 5), init_func=init
-        )
+        ani = FuncAnimation(fig, update, range(1, times.shape[0], 5), init_func=init)
         writer = PillowWriter(fps=50)
         fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
         ani.save(fpth, writer=writer)

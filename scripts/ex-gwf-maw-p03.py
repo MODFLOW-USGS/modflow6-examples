@@ -8,23 +8,20 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
 figure_size = (6.3, 4.3)
 masked_values = (0, 1e30, -1e30)
-arrow_props = dict(
-    facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1
-)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1)
 
 # Simulation name and workspace
 
@@ -265,12 +262,8 @@ def build_model(name, simulation="regional"):
 
 def build_regional(name):
     sim_ws = os.path.join(ws, name)
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-    )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",
@@ -345,12 +338,8 @@ def build_local(name, simulation):
                 chd_spd.append([k, il, ncol - 1, hi2])
 
     sim_ws = os.path.join(ws, name)
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-    )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",

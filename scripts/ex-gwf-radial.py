@@ -16,27 +16,25 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-import flopy
 from math import sqrt
-from modflow_devtools.misc import timed, is_in_ci
+from os import environ
 
-# Find a root of a function using Brent's method within a bracketed range
-from scipy.optimize import brentq
-
+import flopy
+import matplotlib.pyplot as plt
+import numpy as np
+from flopy.plot.styles import styles
+from matplotlib.patches import Circle
+from modflow_devtools.misc import is_in_ci, timed
 # Solve definite integral using Fortran library QUADPACK
 from scipy.integrate import quad
-
+# Find a root of a function using Brent's method within a bracketed range
+from scipy.optimize import brentq
 # Zero Order Bessel Function
 from scipy.special import j0, jn_zeros
 
-from flopy.plot.styles import styles
-
 # Function to get keyword arguments for radial grid
+
 
 def get_disu_radial_kwargs(
     nlay,
@@ -111,9 +109,7 @@ def get_disu_radial_kwargs(
             ja.append(n)
             iac[n] += 1
             if rad > 0:
-                area[n] = pi * (
-                    radius_outer[rad] ** 2 - radius_outer[rad - 1] ** 2
-                )
+                area[n] = pi * (radius_outer[rad] ** 2 - radius_outer[rad - 1] ** 2)
             else:
                 area[n] = pi * radius_outer[rad] ** 2
             ihc.append(n + 1)
@@ -141,9 +137,7 @@ def get_disu_radial_kwargs(
                 ihc.append(1)
                 hwva.append(2.0 * pi * radius_outer[rad])
                 if rad > 0:
-                    cl12.append(
-                        0.5 * (radius_outer[rad] - radius_outer[rad - 1])
-                    )
+                    cl12.append(0.5 * (radius_outer[rad] - radius_outer[rad - 1]))
                 else:
                     cl12.append(radius_outer[rad])
             # bottom
@@ -351,10 +345,7 @@ class RadialUnconfinedDrawdown:
         self.well_top = self._float_or_none(well_screen_elevation_top)
         self.well_bot = self._float_or_none(well_screen_elevation_bottom)
 
-        if (
-            water_table_elevation is not None
-            and saturated_thickness is not None
-        ):
+        if water_table_elevation is not None and saturated_thickness is not None:
             raise RuntimeError(
                 "RadialUnconfinedDrawdown() must specify only "
                 + "water_table_elevation or saturated_thickness, but not "
@@ -362,9 +353,7 @@ class RadialUnconfinedDrawdown:
             )
 
         if water_table_elevation is not None:
-            self.saturated_thickness = (
-                float(water_table_elevation) - self.bottom
-            )
+            self.saturated_thickness = float(water_table_elevation) - self.bottom
         elif saturated_thickness is not None:
             self.saturated_thickness = float(saturated_thickness)
         else:
@@ -622,8 +611,7 @@ class RadialUnconfinedDrawdown:
         for stp, ts in enumerate(ts_list):
             if show_progress:
                 print(
-                    f"Solving {stp+1:4d} of {nstp}; "
-                    + f"time = {self.ts2time(ts, r)}",
+                    f"Solving {stp+1:4d} of {nstp}; " + f"time = {self.ts2time(ts, r)}",
                     end="",
                 )
 
@@ -708,9 +696,7 @@ class RadialUnconfinedDrawdown:
             import warnings
 
             root = j0_roots[-1]
-            bad_times = "\n".join(
-                [str(times[it]) for it in bessel_root_limit_reached]
-            )
+            bad_times = "\n".join([str(times[it]) for it in bessel_root_limit_reached])
             warnings.warn(
                 f"\n\nRadialUnconfinedDrawdown.drawdown_times failed to "
                 + f"meet convergence sumrtol = {sumrtol}"
@@ -802,9 +788,7 @@ class RadialUnconfinedDrawdown:
         try:
             a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(
-                gamma0, 0.0, b, (y, σ), 1000
-            )
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
 
         g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
 
@@ -831,9 +815,7 @@ class RadialUnconfinedDrawdown:
         try:
             a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(
-                gammaN, a, b, (y, σ), 1000
-            )
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
 
         g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
 
@@ -848,9 +830,7 @@ class RadialUnconfinedDrawdown:
         return num1 * num2 * num3 / (den1 * den2 * den3)
 
     @staticmethod
-    def neuman1974_integral2(
-        y, σ, β, sqrt_β, ld, dd, ts, z1, z2, uN_tol=1.0e-10
-    ):
+    def neuman1974_integral2(y, σ, β, sqrt_β, ld, dd, ts, z1, z2, uN_tol=1.0e-10):
         """
         Solves equation 20 from
         Neuman, S. P. (1974). Effect of partial penetration on flow in
@@ -884,9 +864,7 @@ class RadialUnconfinedDrawdown:
         try:
             a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(
-                gamma0, 0.0, b, (y, σ), 1000
-            )
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
 
         g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
 
@@ -913,9 +891,7 @@ class RadialUnconfinedDrawdown:
         try:
             a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(
-                gammaN, a, b, (y, σ), 1000
-            )
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
 
         g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
 
@@ -934,18 +910,10 @@ class RadialUnconfinedDrawdown:
         if hasattr(time, "__iter__"):
             # can iterate to get multiple times
             return [
-                self.Kr
-                * self.saturated_thickness
-                * t
-                / (self.Sy * radius * radius)
+                self.Kr * self.saturated_thickness * t / (self.Sy * radius * radius)
                 for t in time
             ]
-        return (
-            self.Kr
-            * self.saturated_thickness
-            * time
-            / (self.Sy * radius * radius)
-        )
+        return self.Kr * self.saturated_thickness * time / (self.Sy * radius * radius)
 
     def time2ts(self, time, radius):
         # dimensionless time with respect to Ss
@@ -959,20 +927,10 @@ class RadialUnconfinedDrawdown:
         if hasattr(ty, "__iter__"):
             # can iterate to get multiple times
             return [
-                t
-                * self.Sy
-                * radius
-                * radius
-                / (self.Kr * self.saturated_thickness)
+                t * self.Sy * radius * radius / (self.Kr * self.saturated_thickness)
                 for t in ty
             ]
-        return (
-            ty
-            * self.Sy
-            * radius
-            * radius
-            / (self.Kr * self.saturated_thickness)
-        )
+        return ty * self.Sy * radius * radius / (self.Kr * self.saturated_thickness)
 
     def ts2time(self, ts, radius):  # dimensionless time with respect to Ss
         if hasattr(ts, "__iter__"):  # can iterate to get multiple times
@@ -982,9 +940,7 @@ class RadialUnconfinedDrawdown:
     def ty2ts(self, ty):
         if hasattr(ty, "__iter__"):
             # can iterate to get multiple times
-            return [
-                t * self.Sy / (self.Ss * self.saturated_thickness) for t in ty
-            ]
+            return [t * self.Sy / (self.Ss * self.saturated_thickness) for t in ty]
         return ty * self.Sy / (self.Ss * self.saturated_thickness)
 
     def drawdown2unitless(self, s, pump):
@@ -1177,9 +1133,7 @@ radius_outer = [
 # This example has the well screen interval from
 # layer 20 to 24 (zero-based index)
 wel_spd = {
-    sp: [
-        [(get_radial_node(0, lay, nradial),), -800.0] for lay in range(20, 25)
-    ]
+    sp: [[(get_radial_node(0, lay, nradial),), -800.0] for lay in range(20, 25)]
     for sp in range(nper)
 }
 
@@ -1214,12 +1168,8 @@ rclose = 1e-4
 def build_model(name):
     if buildModel:
         sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -1241,9 +1191,7 @@ def build_model(name):
             get_vertex=True,
         )
 
-        disu = flopy.mf6.ModflowGwfdisu(
-            gwf, length_units=length_units, **disukwargs
-        )
+        disu = flopy.mf6.ModflowGwfdisu(gwf, length_units=length_units, **disukwargs)
 
         npf = flopy.mf6.ModflowGwfnpf(
             gwf,
@@ -1263,17 +1211,13 @@ def build_model(name):
 
         flopy.mf6.ModflowGwfic(gwf, strt=initial_head)
 
-        flopy.mf6.ModflowGwfwel(
-            gwf, stress_period_data=wel_spd, save_flows=True
-        )
+        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, save_flows=True)
 
         flopy.mf6.ModflowGwfoc(
             gwf,
             budget_filerecord=f"{name}.cbc",
             head_filerecord=f"{name}.hds",
-            headprintrecord=[
-                ("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
             printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
             filename=f"{name}.oc",
@@ -1384,8 +1328,7 @@ def solve_analytical(obs2ana, times=None, no_solve=False):
                 ]
             else:
                 times_sy = [
-                    ty * k11 * sat_thick / (sy * obs_rad * obs_rad)
-                    for ty in times
+                    ty * k11 * sat_thick / (sy * obs_rad * obs_rad) for ty in times
                 ]
 
             times_ss = [ty * k11 / (ss * obs_rad * obs_rad) for ty in times]
@@ -1897,7 +1840,7 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{}{}".format(sim_name, obs_fig, '.png'),
+                "{}-{}{}".format(sim_name, obs_fig, ".png"),
             )
             fig.savefig(fpth)
 
@@ -1943,7 +1886,7 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{}{}".format(sim_name, obs_fig, '.png'),
+                "{}-{}{}".format(sim_name, obs_fig, ".png"),
             )
             fig.savefig(fpth)
 
@@ -2017,9 +1960,7 @@ def plot_grid(verbose=False):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", "{}-grid{}".format(sim_name, '.png')
-            )
+            fpth = os.path.join("..", "figures", "{}-grid{}".format(sim_name, ".png"))
             fig.savefig(fpth)
 
 
@@ -2044,9 +1985,7 @@ def plot_results(silent=True):
 
     if plotModel:
         plot_grid(verbose)
-        plot_ts(
-            sim, verbose, solve_analytical_solution=solve_analytical_solution
-        )
+        plot_ts(sim, verbose, solve_analytical_solution=solve_analytical_solution)
 
 
 # Function that wraps all of the steps for the Axisymmetric model

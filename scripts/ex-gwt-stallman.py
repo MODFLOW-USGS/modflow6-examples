@@ -9,15 +9,15 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 
@@ -137,9 +137,7 @@ def build_model(sim_folder):
         sim_ws=sim_ws,
         exe_name="mf6",
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=per_mf6, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=per_mf6, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -228,9 +226,7 @@ def build_model(sim_folder):
     )
     flopy.mf6.ModflowGwtic(gwt, strt=strt_conc)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc)
     flopy.mf6.ModflowGwtssm(gwt, sources=[[]])
     flopy.mf6.ModflowGwtcnc(
         gwt,
@@ -240,9 +236,7 @@ def build_model(sim_folder):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -340,9 +334,7 @@ def plot_conc(sim, idx):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-conc.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
             fig.savefig(fpth)
 
 
@@ -377,9 +369,7 @@ def make_animated_gif(sim, idx):
     c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
     darcy_flux = 5.00e-07
     ko = 1.503
-    zanal = Stallman(
-        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
-    )
+    zanal = Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay)
 
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.set_ylabel("Depth (m)")

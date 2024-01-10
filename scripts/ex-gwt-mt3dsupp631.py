@@ -9,13 +9,13 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
@@ -74,9 +74,7 @@ def build_mf6gwf(sim_folder):
         (source_duration, 1, 1.0),
         (total_time - source_duration, 1, 1.0),
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -128,9 +126,7 @@ def build_mf6gwt(sim_folder):
     pertim1 = source_duration
     pertim2 = total_time - source_duration
     tdis_ds = ((pertim1, 16, 1.0), (pertim2, 84, 1.0))
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -178,9 +174,7 @@ def build_mf2005(sim_folder):
     print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
     sim_ws = os.path.join(ws, sim_folder, "mf2005")
-    mf = flopy.modflow.Modflow(
-        modelname=name, model_ws=sim_ws, exe_name="mf2005"
-    )
+    mf = flopy.modflow.Modflow(modelname=name, model_ws=sim_ws, exe_name="mf2005")
     pertim1 = source_duration
     pertim2 = total_time - source_duration
     perlen = [pertim1, pertim2]
@@ -200,9 +194,7 @@ def build_mf2005(sim_folder):
     lpf = flopy.modflow.ModflowLpf(mf)
     pcg = flopy.modflow.ModflowPcg(mf)
     lmt = flopy.modflow.ModflowLmt(mf)
-    chd = flopy.modflow.ModflowChd(
-        mf, stress_period_data=[[0, 0, ncol - 1, 1.0, 1.0]]
-    )
+    chd = flopy.modflow.ModflowChd(mf, stress_period_data=[[0, 0, ncol - 1, 1.0, 1.0]])
     wel_spd = {
         0: [[0, 0, 0, specific_discharge * delc * top]],
         1: [[0, 0, 0, specific_discharge * delc * top]],
@@ -299,9 +291,7 @@ def plot_results(sims, idx):
     _, sim_mf6gwt, _, sim_mt3dms = sims
     with styles.USGSPlot() as fs:
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         axs.plot(
             mf6gwt_ra["totim"],
             mf6gwt_ra["MYOBS"],

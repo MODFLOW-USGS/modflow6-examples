@@ -16,18 +16,17 @@
 
 # Imports
 
-import os
-from os import environ
-import pathlib as pl
-
-import numpy as np
-import matplotlib.pyplot as plt
-import flopy
-from math import sqrt
-from modflow_devtools.misc import timed, is_in_ci
-from flopy.plot.styles import styles
 import copy
+import os
+import pathlib as pl
+from math import sqrt
+from os import environ
 
+import flopy
+import matplotlib.pyplot as plt
+import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Curvilinear grid
 
@@ -857,9 +856,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
                 xc, yc = self.get_centroid(icvert, vertices)
                 cell2d.append([ic, xc, yc, 4, *icvert])
 
-        super().__init__(
-            nlay, vertices, cell2d, top, bot, origin_x, origin_y, rotation
-        )
+        super().__init__(nlay, vertices, cell2d, top, bot, origin_x, origin_y, rotation)
 
     def __repr__(self):
         return super().__repr__("DisvStructuredGridBuilder")
@@ -873,9 +870,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
         self.col_width = nul
 
     def property_copy_to(self, DisvStructuredGridBuilderType):
-        if isinstance(
-            DisvStructuredGridBuilderType, DisvStructuredGridBuilder
-        ):
+        if isinstance(DisvStructuredGridBuilderType, DisvStructuredGridBuilder):
             super().property_copy_to(DisvStructuredGridBuilderType)
             DisvStructuredGridBuilderType.nrow = self.nrow
             DisvStructuredGridBuilderType.ncol = self.ncol
@@ -1191,19 +1186,15 @@ class DisvGridMerger:
                 DisvGridMergerType.grids[name] = self.grids[name].copy()
 
             for name in self.snap_vertices:
-                DisvGridMergerType.snap_vertices[name] = dcp(
-                    self.snap_vertices[name]
-                )
+                DisvGridMergerType.snap_vertices[name] = dcp(self.snap_vertices[name])
 
             for name in self.connect_tolerance:
-                DisvGridMergerType.connect_tolerance[
+                DisvGridMergerType.connect_tolerance[name] = self.connect_tolerance[
                     name
-                ] = self.connect_tolerance[name]
+                ]
 
             for name in self.force_snap:
-                DisvGridMergerType.force_snap[name] = dcp(
-                    self.force_snap[name]
-                )
+                DisvGridMergerType.force_snap[name] = dcp(self.force_snap[name])
 
             for name in self.force_snap_drop:
                 DisvGridMergerType.force_snap_drop[name] = dcp(
@@ -1333,8 +1324,7 @@ class DisvGridMerger:
                 vert[2] = yv
                 return
         raise RuntimeError(
-            "DisvGridMerger: Unknown code error - "
-            f"failed to locate vertex {iv}"
+            "DisvGridMerger: Unknown code error - " f"failed to locate vertex {iv}"
         )
 
     def _clear_attribute(self):
@@ -1510,7 +1500,7 @@ class DisvGridMerger:
                     self.force_snap_cellid.add(ic_new)
 
         if len(self.force_snap_cellid) > 0:
-            dist = lambda v1, v2: sqrt((v2[1]-v1[1])**2 + (v2[2]-v1[2])**2)
+            dist = lambda v1, v2: sqrt((v2[1] - v1[1]) ** 2 + (v2[2] - v1[2]) ** 2)
             mg = self.merged
             vert_xy = np.array([(x, y) for _, x, y in mg.vertices])
             for ic in self.force_snap_cellid:
@@ -1550,8 +1540,8 @@ class DisvGridMerger:
                         if d2 < d1:
                             ind = 1
                     else:
-                        d1 = dist(vert_check, mg.vertices[vert[ind-1]])
-                        d2 = dist(vert_check, mg.vertices[vert[ind+1]])
+                        d1 = dist(vert_check, mg.vertices[vert[ind - 1]])
+                        d2 = dist(vert_check, mg.vertices[vert[ind + 1]])
                         if d2 < d1:
                             ind += 1
 
@@ -1760,9 +1750,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
         if angle_stop < 0.0:
             angle_stop += 360.0
         if abs(angle_step) < 1.0e-30:
-            raise RuntimeError(
-                "DisvCurvilinearBuilder: angle_step is near zero"
-            )
+            raise RuntimeError("DisvCurvilinearBuilder: angle_step is near zero")
 
         angle_span = self._get_angle_span(angle_start, angle_stop)
 
@@ -1787,9 +1775,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
         try:
             nradial = len(radii) - 1
         except TypeError:
-            raise RuntimeError(
-                "DisvCurvilinearBuilder: radii must be list-like type"
-            )
+            raise RuntimeError("DisvCurvilinearBuilder: radii must be list-like type")
 
         if nradial < 1:
             raise RuntimeError(
@@ -1931,12 +1917,8 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             DisvCurvilinearBuilderType.angle_stop = self.angle_stop
             DisvCurvilinearBuilderType.angle_step = self.angle_step
             DisvCurvilinearBuilderType.angle_span = self.angle_span
-            DisvCurvilinearBuilderType.inner_vertex_count = (
-                self.inner_vertex_count
-            )
-            DisvCurvilinearBuilderType.single_center_cell = (
-                self.single_center_cell
-            )
+            DisvCurvilinearBuilderType.inner_vertex_count = self.inner_vertex_count
+            DisvCurvilinearBuilderType.single_center_cell = self.single_center_cell
         else:
             raise RuntimeError(
                 "DisvCurvilinearBuilder.property_copy_to "
@@ -1973,9 +1955,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             # Have to account for only one cell at the center
             if rad == 0 and col > 0:
                 if col_check:
-                    raise RuntimeError(
-                        "DisvCurvilinearBuilder: Bad rad and col given"
-                    )
+                    raise RuntimeError("DisvCurvilinearBuilder: Bad rad and col given")
                 return 0
             # if rad == 0, then first cell and pos =  0
             # else account for inner cell, plus each ncol band
@@ -2154,9 +2134,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             The number of columns in the curvilinear grid and the angle_step
             that can reproduce the exact integer number.
         """
-        angle_span = DisvCurvilinearBuilder._get_angle_span(
-            angle_start, angle_stop
-        )
+        angle_span = DisvCurvilinearBuilder._get_angle_span(angle_start, angle_stop)
 
         if angle_step > 0.0:
             ncol = int(angle_span // angle_step)
@@ -2166,7 +2144,6 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             ncol = int(round(-1 * angle_step))
         angle_step = angle_span / ncol
         return ncol, angle_step
-
 
 
 def analytical_model(r1, h1, r2, h2, r):
@@ -2293,12 +2270,8 @@ rclose = 1e-4
 def build_model(name):
     if buildModel:
         sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -2312,9 +2285,7 @@ def build_model(name):
         gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
 
         # **curvlin is an alias for **curvlin.disv_kw
-        disv = flopy.mf6.ModflowGwfdisv(
-            gwf, length_units=length_units, **curvlin
-        )
+        disv = flopy.mf6.ModflowGwfdisv(gwf, length_units=length_units, **curvlin)
 
         npf = flopy.mf6.ModflowGwfnpf(
             gwf,
@@ -2352,9 +2323,7 @@ def build_model(name):
             gwf,
             budget_filerecord=f"{name}.cbc",
             head_filerecord=f"{name}.hds",
-            headprintrecord=[
-                ("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
             printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
             filename=f"{name}.oc",
@@ -2432,9 +2401,7 @@ def plot_grid(sim, verbose=False):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
 
 
@@ -2473,9 +2440,7 @@ def plot_head(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-head.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
             fig.savefig(fpth)
 
 
@@ -2517,7 +2482,7 @@ def plot_analytical(sim, verbose=False):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{}{}".format(sim_name, obs_fig, '.png'),
+                "{}-{}{}".format(sim_name, obs_fig, ".png"),
             )
             fig.savefig(fpth)
 

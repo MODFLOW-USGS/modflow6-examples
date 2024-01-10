@@ -6,8 +6,8 @@
 
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import flopy.utils.binaryfile as bf
@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -548,9 +548,7 @@ def build_model(sim_name, silent=False):
         tdis_rc = []
         for i in range(len(perlen)):
             tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwfname = gwfname + "-parent"
@@ -615,9 +613,7 @@ def build_model(sim_name, silent=False):
             gwf,
             budget_filerecord=f"{gwfname}.bud",
             head_filerecord=f"{gwfname}.hds",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -739,9 +735,7 @@ def build_model(sim_name, silent=False):
             topc - 0.25,
             topc - 0.25,
         ]
-        icc = flopy.mf6.ModflowGwfic(
-            gwfc, strt=strtc, filename=f"{gwfnamec}.ic"
-        )
+        icc = flopy.mf6.ModflowGwfic(gwfc, strt=strtc, filename=f"{gwfnamec}.ic")
 
         # Instantiating MODFLOW 6 node property flow package for child model
         icelltypec = [1, 1, 1, 0, 0, 0]
@@ -761,9 +755,7 @@ def build_model(sim_name, silent=False):
             gwfc,
             budget_filerecord=f"{gwfnamec}.bud",
             head_filerecord=f"{gwfnamec}.hds",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -881,7 +873,6 @@ def plot_results(mf6, idx):
     print("Plotting model results...")
     sim_name = mf6.name
     with styles.USGSPlot() as fs:
-
         # Start by retrieving some output
         mf6_out_pth = mf6.simulation_data.mfpath.get_sim_path()
         sfr_parent_bud_file = list(mf6.model_names)[0] + ".sfr.bud"
@@ -913,22 +904,14 @@ def plot_results(mf6, idx):
             gwswc.append(datc[0])
 
             # No values for some reason?
-            dat_fmp = modobjp.get_data(
-                kstpkper=kstpkper, text="        FROM-MVR"
-            )
-            dat_tmp = modobjp.get_data(
-                kstpkper=kstpkper, text="          TO-MVR"
-            )
+            dat_fmp = modobjp.get_data(kstpkper=kstpkper, text="        FROM-MVR")
+            dat_tmp = modobjp.get_data(kstpkper=kstpkper, text="          TO-MVR")
             toMvrp.append(dat_fmp[0])
             fromMvrp.append(dat_tmp[0])
 
             # No values for some reason?
-            dat_fmc = modobjc.get_data(
-                kstpkper=kstpkper, text="        FROM-MVR"
-            )
-            dat_tmc = modobjc.get_data(
-                kstpkper=kstpkper, text="          TO-MVR"
-            )
+            dat_fmc = modobjc.get_data(kstpkper=kstpkper, text="        FROM-MVR")
+            dat_tmc = modobjc.get_data(kstpkper=kstpkper, text="          TO-MVR")
             toMvrc.append(dat_fmc[0])
             fromMvrc.append(dat_tmc[0])
 
@@ -963,9 +946,7 @@ def plot_results(mf6, idx):
         # Now get center of all the reaches
         rch_lengths = []
         for i in np.arange(len(all_rch_lengths)):
-            rch_lengths.append(
-                np.sum(all_rch_lengths[0:i]) + (all_rch_lengths[i] / 2)
-            )
+            rch_lengths.append(np.sum(all_rch_lengths[0:i]) + (all_rch_lengths[i] / 2))
 
         # Make a continuous vector of the gw-sw exchanges
         gwsw_exg = np.zeros(len(connsp) + len(connsc))
@@ -979,9 +960,7 @@ def plot_results(mf6, idx):
         for j, jtm in enumerate(gwswc[0]):
             gwsw_exg[8 + j] = jtm[2]
 
-        fig, ax1 = plt.subplots(
-            figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, ax1 = plt.subplots(figsize=figure_size, dpi=300, tight_layout=True)
         pts = ax1.plot(rch_lengths, strmQ, "r^", label="Stream Flow", zorder=3)
         ax1.set_zorder(4)
         ax1.set_facecolor("none")
@@ -992,12 +971,8 @@ def plot_results(mf6, idx):
             ha="center",
             fontsize=10,
         )
-        ax1.arrow(
-            1080, 163, -440, 0, head_width=5, head_length=50, fc="k", ec="k"
-        )
-        ax1.arrow(
-            2150, 163, 395, 0, head_width=5, head_length=50, fc="k", ec="k"
-        )
+        ax1.arrow(1080, 163, -440, 0, head_width=5, head_length=50, fc="k", ec="k")
+        ax1.arrow(2150, 163, 395, 0, head_width=5, head_length=50, fc="k", ec="k")
         ax1.arrow(
             525,
             27,
@@ -1114,9 +1089,7 @@ def plot_results(mf6, idx):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}.png")
             fig.savefig(fpth)
 
 

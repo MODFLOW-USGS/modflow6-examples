@@ -24,15 +24,14 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -291,14 +290,10 @@ def build_model(
         name = "p01-mf6"
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 
         # Instantiating MODFLOW 6 time discretization
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
         # Instantiating MODFLOW 6 groundwater flow model
         gwf = flopy.mf6.ModflowGwf(
@@ -370,9 +365,7 @@ def build_model(
             gwf,
             head_filerecord=f"{gwfname}.hds",
             budget_filerecord=f"{gwfname}.cbc",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
+            headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
             saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
             printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
         )
@@ -443,9 +436,7 @@ def build_model(
         if retardation != 1.0:
             sorption = "linear"
             bulk_density = rhob
-            kd = (
-                (retardation - 1.0) * prsity / rhob
-            )  # prsity & rhob defined in
+            kd = (retardation - 1.0) * prsity / rhob  # prsity & rhob defined in
         else:  # global variable section
             sorption = None
             bulk_density = None
@@ -536,7 +527,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 def plot_results(mt3d, mf6, idx, ax=None):
     if not plotModel:
-        return 
+        return
 
     mt3d_out_path = mt3d.model_ws
     mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
@@ -552,7 +543,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
     ucnobj_mf6 = gwt.output.concentration()
     conc_mf6 = ucnobj_mf6.get_alldata()
 
-        # Create figure for scenario
+    # Create figure for scenario
     with styles.USGSPlot() as fs:
         sim_name = mf6.name
         if ax is None:
@@ -581,18 +572,14 @@ def plot_results(mt3d, mf6, idx, ax=None):
         ax.set_xlim(0, 1000)
         ax.set_xlabel("Distance, in m")
         ax.set_ylabel("Concentration")
-        title = "Concentration Profile at Time = 2,000 " + "{}".format(
-            time_units
-        )
+        title = "Concentration Profile at Time = 2,000 " + "{}".format(time_units)
         ax.legend()
         letter = chr(ord("@") + idx + 1)
         styles.heading(letter=letter, heading=title)
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}.png")
             fig.savefig(fpth)
 
 

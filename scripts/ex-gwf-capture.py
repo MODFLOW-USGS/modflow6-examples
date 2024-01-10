@@ -13,18 +13,18 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
 import shutil
 import sys
+from os import environ
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import modflowapi
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Simulation name and workspace
 
@@ -150,9 +150,7 @@ def build_model():
             sim_ws=sim_ws,
             exe_name="mf6",
         )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="BICGSTAB",
@@ -276,9 +274,7 @@ def run_model():
             soext = ".dll"
         if sys.platform.lower() == "darwin":
             soext = ".dylib"
-        libmf6_path = (
-            pl.Path(shutil.which("mf6")).parent / f"libmf6{soext}"
-        )
+        libmf6_path = pl.Path(shutil.which("mf6")).parent / f"libmf6{soext}"
         sim_ws = os.path.join(ws, sim_name)
         mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
         qbase = capture_fraction_iteration(mf6, cf_q)
@@ -298,9 +294,7 @@ def run_model():
                 ireduced_node += 1
 
                 # calculate the perturbed river flow
-                qriv = capture_fraction_iteration(
-                    mf6, cf_q, inode=ireduced_node
-                )
+                qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
 
                 # add the value to the capture array
                 capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
@@ -419,9 +413,7 @@ def plot_results(silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
             fig.savefig(fpth)
 
 

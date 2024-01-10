@@ -10,14 +10,14 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -139,11 +139,7 @@ def get_stream_data():
         iseg = row["seg"] - 1
         rgrd = segment_gradients[iseg]
         emax, emin = emaxmin[iseg]
-        rtp = (
-            distance_along_segment[ireach]
-            / segment_lengths[iseg]
-            * (emax - emin)
-        )
+        rtp = distance_along_segment[ireach] / segment_lengths[iseg] * (emax - emin)
         rtp = emax - rtp
         boundname = f"SEG{iseg + 1}"
         rec = (
@@ -255,9 +251,7 @@ def build_mf6gwf(sim_folder):
         [1, 35.2, lakepakdata_dict[1], "lake2"],
     ]
     # <outletno> <lakein> <lakeout> <couttype> <invert> <width> <rough> <slope>
-    outlets = [
-        [0, 0, -1, "MANNING", 44.5, 3.36493214532915, 0.03, 0.2187500e-02]
-    ]
+    outlets = [[0, 0, -1, "MANNING", 44.5, 3.36493214532915, 0.03, 0.2187500e-02]]
     flopy.mf6.ModflowGwflak(
         gwf,
         time_conversion=86400.000,
@@ -613,9 +607,7 @@ def plot_gwt_results(sims):
             lake_conc = lakconc[ilak]
             conc[0, i, j] = lake_conc
 
-        fig, axs = plt.subplots(
-            2, 2, figsize=(5, 7), dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(2, 2, figsize=(5, 7), dpi=300, tight_layout=True)
 
         for iplot, ilay in enumerate([0, 2, 4, 7]):
             ax = axs.flatten()[iplot]
@@ -663,14 +655,10 @@ def plot_gwt_results(sims):
         times = bobj.times
 
         with styles.USGSPlot() as fs:
-            fig, axs = plt.subplots(
-                1, 1, figsize=(5, 3), dpi=300, tight_layout=True
-            )
+            fig, axs = plt.subplots(1, 1, figsize=(5, 3), dpi=300, tight_layout=True)
             ax = axs
             times = np.array(times) / 365.0
-            ax.plot(
-                times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2"
-            )
+            ax.plot(times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2")
             ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
             ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
 
@@ -690,9 +678,7 @@ def plot_gwt_results(sims):
             ax.set_ylim(0, 50)
             ax.set_xlim(0, 25)
             ax.set_xlabel("TIME, IN YEARS")
-            ax.set_ylabel(
-                "SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER"
-            )
+            ax.set_ylabel("SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER")
 
             # save figure
             if plotSave:

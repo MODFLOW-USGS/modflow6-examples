@@ -11,13 +11,13 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set default figure properties
 
@@ -89,12 +89,8 @@ rclose = 1e-6
 def build_model():
     if buildModel:
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,
@@ -185,9 +181,7 @@ def build_model():
         obsdict[f"{sim_name}.obs.head.csv"] = obslist
         obslist = [["icf1", "flow-ja-face", (0, 1, 1), (0, 1, 0)]]
         obsdict[f"{sim_name}.obs.flow.csv"] = obslist
-        obs = flopy.mf6.ModflowUtlobs(
-            gwf, print_input=False, continuous=obsdict
-        )
+        obs = flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
 
         return sim
     return None
@@ -236,9 +230,7 @@ def plot_grid(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
 
 
@@ -266,7 +258,7 @@ def plot_ts(sim):
                 fpth = os.path.join(
                     "..",
                     "figures",
-                    "{}-{}{}".format(sim_name, obs_fig[iplot], '.png'),
+                    "{}-{}{}".format(sim_name, obs_fig[iplot], ".png"),
                 )
                 fig.savefig(fpth)
 

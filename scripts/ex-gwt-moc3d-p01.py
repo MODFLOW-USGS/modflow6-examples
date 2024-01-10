@@ -10,14 +10,14 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed, is_in_ci
+from modflow_devtools.misc import is_in_ci, timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -99,6 +99,7 @@ source_concentration = 1.0  # Source concentration (unitless)
 initial_concentration = 0.0  # Initial concentration (unitless)
 
 # Wexler 1-dimensional analytical solution
+
 
 class Wexler1d:
     """
@@ -254,6 +255,7 @@ class Wexler1d:
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 #
 
+
 def get_sorption_dict(retardation_factor):
     sorption = None
     bulk_density = None
@@ -293,9 +295,7 @@ def build_mf6gwf(sim_folder):
     sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -347,17 +347,13 @@ def build_mf6gwf(sim_folder):
 # MODFLOW 6 flopy GWF simulation object (sim) is returned
 
 
-def build_mf6gwt(
-    sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate
-):
+def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
     sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 240, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -413,9 +409,7 @@ def build_mf6gwt(
     return sim
 
 
-def build_model(
-    sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
-):
+def build_model(sim_name, longitudinal_dispersivity, retardation_factor, decay_rate):
     sims = None
     if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
@@ -470,9 +464,7 @@ def plot_results_ct(
     with styles.USGSPlot() as fs:
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         alabel = ["ANALYTICAL", "", ""]
         mlabel = ["MODFLOW 6", "", ""]
         iskip = 5
@@ -501,9 +493,7 @@ def plot_results_ct(
                     idx_filter = atimes > 79
             elif idx > 0:
                 idx_filter = atimes > 0
-            axs.plot(
-                atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i]
-            )
+            axs.plot(atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i])
             axs.plot(
                 simtimes[::iskip],
                 mf6gwt_ra[obsnames[i]][::iskip],
@@ -545,9 +535,7 @@ def plot_results_cd(
     with styles.USGSPlot() as fs:
         ucnobj_mf6 = sim_mf6gwt.trans.output.concentration()
 
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         alabel = ["ANALYTICAL", "", ""]
         mlabel = ["MODFLOW 6", "", ""]
         iskip = 5

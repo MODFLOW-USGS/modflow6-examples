@@ -18,18 +18,16 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
-
+from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
 from matplotlib.colors import ListedColormap
-from modflow_devtools.misc import timed, is_in_ci
-
-from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set default figure properties
 
@@ -135,12 +133,8 @@ rclose = 1e-6
 def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
     if buildModel:
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration="bicgstab",
@@ -152,9 +146,7 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
         )
 
         # The coarse, outer model
-        gwf_outer = flopy.mf6.ModflowGwf(
-            sim, modelname=gwfname_outer, save_flows=True
-        )
+        gwf_outer = flopy.mf6.ModflowGwf(sim, modelname=gwfname_outer, save_flows=True)
         flopy.mf6.ModflowGwfdis(
             gwf_outer,
             nlay=nlay,
@@ -177,9 +169,7 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
 
         # constant head boundary LEFT
         left_chd = [
-            [(ilay, irow, 0), h_left]
-            for ilay in range(nlay)
-            for irow in range(nrow)
+            [(ilay, irow, 0), h_left] for ilay in range(nlay) for irow in range(nrow)
         ]
         chd_spd = {0: left_chd}
         flopy.mf6.ModflowGwfchd(
@@ -213,9 +203,7 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
         )
 
         # the refined, inner model
-        gwf_inner = flopy.mf6.ModflowGwf(
-            sim, modelname=gwfname_inner, save_flows=True
-        )
+        gwf_inner = flopy.mf6.ModflowGwf(sim, modelname=gwfname_inner, save_flows=True)
         flopy.mf6.ModflowGwfdis(
             gwf_inner,
             nlay=nlay,
@@ -364,9 +352,7 @@ def plot_grid(idx, sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
 
 
@@ -475,9 +461,7 @@ def plot_stencils(idx, sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-stencils.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-stencils.png")
             fig.savefig(fpth)
 
 
@@ -565,9 +549,7 @@ def plot_head(idx, sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-head.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
             fig.savefig(fpth)
 
 

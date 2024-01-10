@@ -20,9 +20,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from modflow_devtools.misc import timed, is_in_ci
-from modflow_devtools.latex import int_format, float_format, exp_format, build_table
 from flopy.plot.styles import styles
+from modflow_devtools.latex import (build_table, exp_format, float_format,
+                                    int_format)
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the problem
 
@@ -490,12 +491,8 @@ def build_model(
         sim_ws = os.path.join(ws, name)
         if subdir_name is not None:
             sim_ws = os.path.join(sim_ws, subdir_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             print_option="summary",
@@ -715,9 +712,7 @@ def export_tables(silent=True):
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.15, 0.30, 0.25)
-        build_table(
-            caption, fpth, arr, headings=headings, col_widths=col_widths
-        )
+        build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
         caption = f"Interbed properties for example {sim_name}."
         headings = (
@@ -761,13 +756,9 @@ def export_tables(silent=True):
         if not silent:
             print(f"creating...'{fpth}'")
         col_widths = (0.1, 0.25)
-        build_table(
-            caption, fpth, arr, headings=headings, col_widths=col_widths
-        )
+        build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
-        caption = "Interbed storage properties for example {}.".format(
-            sim_name
-        )
+        caption = "Interbed storage properties for example {}.".format(sim_name)
         headings = (
             "Interbed",
             "Layer",
@@ -820,9 +811,7 @@ def process_sim_csv(
 ):
     v = pd.read_csv(fpth, **kwargs)
 
-    v["date"] = pd.to_datetime(
-        v[index_tag].values, unit="d", origin=origin_str
-    )
+    v["date"] = pd.to_datetime(v[index_tag].values, unit="d", origin=origin_str)
     v.set_index("date", inplace=True)
     v.drop(columns=index_tag, inplace=True)
 
@@ -834,12 +823,8 @@ def process_sim_csv(
 # Function to process compaction data and return a pandas dataframe
 
 
-def get_sim_dataframe(
-    fpth, index_tag="time", origin_str="1908-05-09 00:00:00.000000"
-):
-    v, col_list = process_sim_csv(
-        fpth, index_tag=index_tag, origin_str=origin_str
-    )
+def get_sim_dataframe(fpth, index_tag="time", origin_str="1908-05-09 00:00:00.000000"):
+    v, col_list = process_sim_csv(fpth, index_tag=index_tag, origin_str=origin_str)
 
     # calculate total skeletal and total
     shape = v[col_list[0]].values.shape[0]
@@ -967,9 +952,7 @@ def print_label(ax, zelev, k, fontsize=6):
 
 
 def constant_heads(ax, annotate=False, fontsize=6, xrange=(0, 1)):
-    arrowprops = dict(
-        facecolor="black", arrowstyle="-", lw=0.5, shrinkA=0, shrinkB=0
-    )
+    arrowprops = dict(facecolor="black", arrowstyle="-", lw=0.5, shrinkA=0, shrinkB=0)
     label = ""
     for k in [0, 5, 10, 12]:
         label = set_label(label, text="Constant head")
@@ -1139,9 +1122,7 @@ def plot_grid(silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1152,6 +1133,7 @@ def plot_grid(silent=True):
 
 def plot_boundary_heads(silent=True):
     with styles.USGSPlot():
+
         def process_dtw_obs(fpth):
             v = flopy.utils.Mf6Obs(fpth).data
             v["totim"] /= 365.25
@@ -1195,9 +1177,7 @@ def plot_boundary_heads(silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1284,9 +1264,7 @@ def plot_head_es_comparison(silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-02.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-02.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1558,9 +1536,7 @@ def plot_calibration(silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-03.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-03.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1611,9 +1587,7 @@ def plot_vertical_head(silent=True):
         colors = get_colors(vmax=len(iyears) - 1)
 
         xrange = (-10, 50)
-        fig, ax = plt.subplots(
-            nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0)
-        )
+        fig, ax = plt.subplots(nrows=1, ncols=1, sharey=True, figsize=(0.75 * 6.8, 4.0))
 
         ax.set_xlim(xrange)
         ax.set_ylim(-botm[-1], 0)
@@ -1701,9 +1675,7 @@ def plot_vertical_head(silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-04.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-04.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)

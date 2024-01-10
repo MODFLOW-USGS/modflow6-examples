@@ -10,15 +10,15 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Simulation name and workspace
 
@@ -131,17 +131,11 @@ relax = 0.97
 # MODFLOW 6 flopy simulation object (sim) is returned if building the model
 
 
-def build_model(
-    name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton
-):
+def build_model(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton):
     if buildModel:
         sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             linear_acceleration=linear_acceleration,
@@ -510,9 +504,7 @@ def plot_results(silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01.png"
-            )
+            fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
             fig.savefig(fpth)
 
         # plot simulated rewetting results

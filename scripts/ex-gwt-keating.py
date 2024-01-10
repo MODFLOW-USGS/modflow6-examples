@@ -12,15 +12,15 @@
 # Imports
 
 import os
-from os import environ
 import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib.patches
 import matplotlib.pyplot as plt
 import numpy as np
-from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+from modflow_devtools.misc import is_in_ci, timed
 
 # Set figure properties specific to the
 
@@ -244,9 +244,7 @@ def build_mf6gwt(sim_folder):
         ("GWFHEAD", f"../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
-    flopy.mf6.ModflowGwtfmi(
-        gwt, flow_imbalance_correction=True, packagedata=pd
-    )
+    flopy.mf6.ModflowGwtfmi(gwt, flow_imbalance_correction=True, packagedata=pd)
     sourcerecarray = [
         ("RCH-1", "AUX", "CONCENTRATION"),
     ]
@@ -285,9 +283,7 @@ def build_mf6gwt(sim_folder):
             ("obs2", "CONCENTRATION", obs2),
         ],
     }
-    flopy.mf6.ModflowUtlobs(
-        gwt, digits=10, print_input=True, continuous=obs_data
-    )
+    flopy.mf6.ModflowUtlobs(gwt, digits=10, print_input=True, continuous=obs_data)
     return sim
 
 
@@ -357,9 +353,7 @@ def plot_head_results(sims, idx):
         sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
         head = gwf.output.head().get_data()
         head = np.where(head > botm, head, np.nan)
-        fig, ax = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, ax = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
         pa = pxs.plot_array(head, head=head, cmap="jet")
         pxs.plot_bc(ftype="RCH", color="red")
@@ -396,9 +390,7 @@ def plot_conc_results(sims, idx):
         cobj = gwt.output.concentration()
         conc_times = cobj.get_times()
         conc_times = np.array(conc_times)
-        fig, axes = plt.subplots(
-            3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True
-        )
+        fig, axes = plt.subplots(3, 1, figsize=(7.5, 4.5), dpi=300, tight_layout=True)
         xgrid, _, zgrid = gwt.modelgrid.xyzcellcenters
         # Desired plot times
         plot_times = [100.0, 1000.0, 3000.0]
@@ -510,7 +502,7 @@ def make_animated_gif(sims, idx):
 
 def plot_cvt_results(sims, idx):
     print("Plotting cvt model results...")
-    sim_mf6gwf, sim_mf6gwt, _, _= sims
+    sim_mf6gwf, sim_mf6gwt, _, _ = sims
     gwf = sim_mf6gwf.flow
     gwt = sim_mf6gwt.trans
     botm = gwf.dis.botm.array
