@@ -24,20 +24,15 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -47,9 +42,18 @@ exe_name_mt = "mt3dms"
 
 figure_size = (5, 3.5)
 
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
+
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
 
 # Set scenario parameters (make sure there is at least one blank line before next item)
 # This entire dictionary is passed to _build_model()_ using the kwargs argument
@@ -173,7 +177,7 @@ def build_model(
     mixelm=0,
     silent=False,
 ):
-    if config.buildModel:
+    if buildModel:
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
         modelname_mf = "p01-mf"
 
@@ -505,7 +509,7 @@ def build_model(
 
 
 def write_model(mf2k5, mt3d, sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         mf2k5.write_input()
         mt3d.write_input()
         sim.write_simulation(silent=silent)
@@ -515,10 +519,10 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 # _True_ is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = mf2k5.run_model(silent=silent)
         success, buff = mt3d.run_model(silent=silent)
         success, buff = sim.run_simulation(silent=silent)
@@ -531,7 +535,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mt3d, mf6, idx, ax=None):
-    if not config.plotModel:
+    if not plotModel:
         return 
 
     mt3d_out_path = mt3d.model_ws
@@ -585,9 +589,9 @@ def plot_results(mt3d, mf6, idx, ax=None):
         styles.heading(letter=letter, heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}{config.figure_ext}"
+                "..", "figures", f"{sim_name}.png"
             )
             fig.savefig(fpth)
 
@@ -613,38 +617,18 @@ def scenario(idx, silent=True):
         plot_results(mt3d, sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Advection only
 
+scenario(0)
 
-def test_02():
-    scenario(1, silent=False)
+# ### Advection and dispersion
 
+scenario(1)
 
-def test_03():
-    scenario(2, silent=False)
+# ### Advection, dispersion, and retardation
 
+scenario(2)
 
-def test_04():
-    scenario(3, silent=False)
+# ### Advection, dispersion, retardation, and decay
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Advection only
-
-    scenario(0)
-
-    # ### Advection and dispersion
-
-    scenario(1)
-
-    # ### Advection, dispersion, and retardation
-
-    scenario(2)
-
-    # ### Advection, dispersion, retardation, and decay
-
-    scenario(3)
+scenario(3)

@@ -10,21 +10,15 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import flopy.utils.cvfdutil
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.special import erf, erfc
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
+from scipy.special import erfc
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 mf6exe = "mf6"
@@ -37,8 +31,17 @@ figure_size = (6, 4)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
 example_name = "ex-gwt-moc3d-p02tg"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -326,7 +329,7 @@ def build_mf6gwt(sim_folder):
 
 def build_model(sim_name):
     sims = None
-    if config.buildModel:
+    if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
         sim_mf6gwt = build_mf6gwt(sim_name)
         sims = (sim_mf6gwf, sim_mf6gwt)
@@ -337,7 +340,7 @@ def build_model(sim_name):
 
 
 def write_model(sims, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf, sim_mf6gwt = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
@@ -348,10 +351,10 @@ def write_model(sims, silent=True):
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sims, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt = sims
         success, buff = sim_mf6gwf.run_simulation(silent=silent)
@@ -394,7 +397,7 @@ def plot_analytical(ax, levels):
 
 
 def plot_grid(sims):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     print("Plotting model results...")
@@ -413,16 +416,16 @@ def plot_grid(sims):
         axs.set_aspect(4.0)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-grid{config.figure_ext}"
+            fname = f"{sim_folder}-grid.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
 
 def plot_results(sims):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     print("Plotting model results...")
@@ -455,12 +458,12 @@ def plot_results(sims):
         axs.legend(lines, labels, loc="upper left")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(
                 sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             )[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-map{config.figure_ext}"
+            fname = f"{sim_folder}-map.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -483,16 +486,8 @@ def scenario(idx, silent=True):
         plot_results(sims)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Model
 
+# Model run
 
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Model
-
-    # Model run
-
-    scenario(0)
+scenario(0)

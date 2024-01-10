@@ -11,22 +11,15 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
-import flopy.utils.binaryfile as bf
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the
@@ -34,13 +27,19 @@ from flopy.plot.styles import styles
 figure_size = (6.3, 5.6)
 masked_values = (0, 1e30, -1e30)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-sfr-p01b"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -3761,7 +3760,7 @@ rclose = 1e-6
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -4045,7 +4044,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -4054,10 +4053,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -4227,11 +4226,11 @@ def plot_grid(gwf, silent=True):
         styles.graph_legend(ax, loc="center", ncol=3)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-grid{config.figure_ext}",
+                f"{sim_name}-grid.png",
             )
             fig.savefig(fpth)
 
@@ -4361,11 +4360,11 @@ def plot_head_results(gwf, silent=True):
         styles.graph_legend(ax, loc="upper center", ncol=2)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-01{config.figure_ext}",
+                f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
 
@@ -4497,11 +4496,11 @@ def plot_mvr_results(idx, gwf, silent=True):
         styles.heading(letter=letter, heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-mvr{config.figure_ext}",
+                f"{sim_name}-mvr.png",
             )
             fig.savefig(fpth)
 
@@ -4551,11 +4550,11 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
         styles.heading(letter=letter, heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-uz{config.figure_ext}",
+                f"{sim_name}-uz.png",
             )
             fig.savefig(fpth)
 
@@ -4564,7 +4563,7 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
 
 
 def plot_results(idx, sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         gwf = sim.get_model(sim_name)
 
         plot_grid(gwf, silent=silent)
@@ -4597,20 +4596,12 @@ def simulation(idx, silent=True):
         plot_results(idx, sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# ### SFR Package Problem 1 Simulation
+#
+# Simulated heads in model the unconfined, middle, and lower aquifers (model layers
+# 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
+# model are also shown. The location of drain (green) and well (gray) boundary
+# conditions, normalized specific discharge, and head contours (25 ft contour
+# intervals) are also shown.
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### SFR Package Problem 1 Simulation
-    #
-    # Simulated heads in model the unconfined, middle, and lower aquifers (model layers
-    # 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
-    # model are also shown. The location of drain (green) and well (gray) boundary
-    # conditions, normalized specific discharge, and head contours (25 ft contour
-    # intervals) are also shown.
-
-    simulation(0)
+simulation(0)

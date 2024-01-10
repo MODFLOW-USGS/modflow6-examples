@@ -22,21 +22,17 @@
 
 # ### MODFLOW 6 GWT MT3DMS Heat Transport Problem Setup
 
-# Append to system path to include the common subdirectory
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
-sys.path.append(os.path.join("..", "common"))
-
-# Imports
-
-import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from scipy.special import erf, erfc
+from modflow_devtools.misc import timed, is_in_ci
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -46,10 +42,19 @@ exe_name_mt = "mt3dusgs"
 
 figure_size = (5.5, 2.75)
 
-# Base simulation and model name and workspace
+# Simulation name and workspace
 
-ws = config.base_ws
 name = "hecht-mendez"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -373,7 +378,7 @@ def build_mf2k5_flow_model(
     constantheadright=14,
     silent=False,
 ):
-    if config.buildModel:
+    if buildModel:
         print(f"Building mf2005 model...{sim_name}")
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
         modelname_mf = "hecht-mendez"
@@ -446,7 +451,7 @@ def build_mf6_flow_model(
     constantheadright=14,
     silent=False,
 ):
-    if config.buildModel:
+    if buildModel:
         print(f"Building mf6gwf model...{sim_name}")
         gwfname = "gwf-" + name
         sim_ws = os.path.join(ws, sim_name, "mf6gwf")
@@ -576,7 +581,7 @@ def build_mt3d_transport_model(
     constantheadright=14,
     silent=False,
 ):
-    if config.buildModel:
+    if buildModel:
         # Transport
         print(f"Building mt3dms model...{sim_name}")
 
@@ -647,7 +652,7 @@ def build_mf6_transport_model(
     constantheadright=14,
     silent=False,
 ):
-    if config.buildModel:
+    if buildModel:
         # Instantiating MODFLOW 6 groundwater transport package
         print(f"Building mf6gwt model...{sim_name}")
         gwtname = "gwt-" + name
@@ -800,13 +805,13 @@ def build_mf6_transport_model(
 
 
 def write_mf2k5_models(mf2k5, mt3d, silent=True):
-    if config.writeModel:
+    if writeModel:
         mf2k5.write_input()
         mt3d.write_input()
 
 
 def write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
 
@@ -814,10 +819,10 @@ def write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=True):
 # Function to run the model. True is returned if the model runs successfully.
 
 
-@config.timeit
+@timed
 def run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=None, mt3d=None, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         if mf2k5 is not None:
             success, buff = mf2k5.run_model(silent=silent)
 
@@ -846,7 +851,7 @@ def plot_results(
     seepagevelocity=0,
     constantheadright=14,
 ):
-    if config.plotModel:
+    if plotModel:
         print("Plotting model results...")
         if mt3d is not None:
             mt3d_out_path = mt3d.model_ws
@@ -991,14 +996,14 @@ def plot_results(
             plt.tight_layout()
 
             # save figure
-            if config.plotSave:
+            if plotSave:
                 letter = chr(ord("@") + idx + 1)
                 fpth = os.path.join(
                     "..",
                     "figures",
                     "{}{}".format(
                         "ex-" + sim_name + "-" + letter,
-                        config.figure_ext,
+                        '.png',
                     ),
                 )
                 fig.savefig(fpth)
@@ -1050,33 +1055,17 @@ def scenario(idx, runMT3D=False, silent=True):
         )
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-# def test_01():
-#    scenario(0, silent=False)
+# ### Two-Dimensional Transport in a Diagonal Flow Field
+#
+# Compares the standard finite difference solutions between MT3D MF 6
+# when the Peclet number is 0
+# Not simulated because no known analytical solution to compare to
+# scenario(0, silent=False)
 
+# Compares the standard finite difference solutions between MT3D MF 6
+# when the Peclet number is 0
+scenario(1, silent=False)
 
-def test_02():
-    scenario(1, runMT3D=False, silent=False)
-
-
-def test_03():
-    scenario(2, runMT3D=False, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Two-Dimensional Transport in a Diagonal Flow Field
-    #
-    # Compares the standard finite difference solutions between MT3D MF 6
-    # when the Peclet number is 0
-    # Not simulated because no known analytical solution to compare to
-    # scenario(0, silent=False)
-
-    # Compares the standard finite difference solutions between MT3D MF 6
-    # when the Peclet number is 0
-    scenario(1, silent=False)
-
-    # Compares the standard finite difference solutions between MT3D MF 6
-    # when the Peclet number is 0
-    scenario(2, silent=False)
+# Compares the standard finite difference solutions between MT3D MF 6
+# when the Peclet number is 0
+scenario(2, silent=False)

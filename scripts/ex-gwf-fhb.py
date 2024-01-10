@@ -11,32 +11,32 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
-import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set default figure properties
 
 figure_size = (4, 4)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-fhb"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -87,7 +87,7 @@ rclose = 1e-6
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -197,7 +197,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -206,10 +206,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=False):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent, report=True)
         if not success:
             print(buff)
@@ -235,9 +235,9 @@ def plot_grid(sim):
         ax.set_ylabel("y position (m)")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+                "..", "figures", f"{sim_name}-grid.png"
             )
             fig.savefig(fpth)
 
@@ -262,17 +262,17 @@ def plot_ts(sim):
             ax.set_xlabel("time (d)")
             ax.set_ylabel(ylabel[iplot])
             styles.graph_legend(ax)
-            if config.plotSave:
+            if plotSave:
                 fpth = os.path.join(
                     "..",
                     "figures",
-                    "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
+                    "{}-{}{}".format(sim_name, obs_fig[iplot], '.png'),
                 )
                 fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_grid(sim)
         plot_ts(sim)
 
@@ -294,16 +294,8 @@ def simulation(silent=True):
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(silent=False)
+# ### FHB Simulation
+#
+# Model grid and simulation results
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### FHB Simulation
-    #
-    # Model grid and simulation results
-
-    simulation()
+simulation()

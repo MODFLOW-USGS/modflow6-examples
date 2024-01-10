@@ -9,20 +9,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 import shapefile as shp
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the
@@ -30,13 +24,19 @@ from flopy.plot.styles import styles
 figure_size = (6.3, 5.6)
 masked_values = (0, 1e30, -1e30)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-lak-p02"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -593,7 +593,7 @@ rclose = 1e-6
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -732,7 +732,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -741,10 +741,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -1010,11 +1010,11 @@ def plot_grid(gwf, silent=True):
         styles.graph_legend(ax, loc="lower center", ncol=2)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-grid{config.figure_ext}",
+                f"{sim_name}-grid.png",
             )
             fig.savefig(fpth)
 
@@ -1119,11 +1119,11 @@ def plot_lak_results(gwf, silent=True):
         styles.heading(ax, idx=1)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-01{config.figure_ext}",
+                f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
 
@@ -1132,7 +1132,7 @@ def plot_lak_results(gwf, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         gwf = sim.get_model(sim_name)
         plot_grid(gwf, silent=silent)
         plot_lak_results(gwf, silent=silent)
@@ -1159,15 +1159,7 @@ def simulation(silent=True):
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(silent=False)
+# ### LAK Package problem 2 Simulation
+#
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### LAK Package problem 2 Simulation
-    #
-
-    simulation()
+simulation()

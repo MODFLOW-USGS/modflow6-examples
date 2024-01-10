@@ -21,21 +21,17 @@
 
 # ### MODFLOW 6 GWT MT3DMS Example 10 Problem Setup
 
-# Append to system path to include the common subdirectory
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
-sys.path.append(os.path.join("..", "common"))
-
-# Imports
-
-import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
+from modflow_devtools.misc import timed, is_in_ci
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -45,9 +41,19 @@ exe_name_mt = "mt3dusgs"
 
 figure_size = (6, 8)
 
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
+
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
 example_name = "ex-gwt-mt3dms-p10"
 
 # Model units
@@ -92,7 +98,7 @@ delc = (
 hk = [60.0, 60.0, 520.0, 520.0]
 laytyp = icelltype = 0
 # Starting Heads:
-f = open(os.path.join("..", "data", "ex-gwt-mt3dms-p10", "p10shead.dat"))
+f = open(data_ws / "ex-gwt-mt3dms-p10" / "p10shead.dat")
 s0 = np.empty((nrow * ncol), dtype=float)
 s0 = read1d(f, s0).reshape((nrow, ncol))
 f.close()
@@ -147,7 +153,7 @@ wel_mf6_spd = {0: welspd_mf6}
 
 # Transport related
 # Starting concentrations:
-f = open(os.path.join("..", "data", "ex-gwt-mt3dms-p10", "p10cinit.dat"))
+f = open(data_ws / "ex-gwt-mt3dms-p10" / "p10cinit.dat")
 c0 = np.empty((nrow * ncol), dtype=float)
 c0 = read1d(f, c0).reshape((nrow, ncol))
 f.close()
@@ -216,7 +222,7 @@ nadvfd = 1
 
 
 def build_model(sim_name, mixelm=0, silent=False):
-    if config.buildModel:
+    if buildModel:
         print(f"Building mf2005 model...{sim_name}")
         mt3d_ws = os.path.join(ws, sim_name, "mt3d")
         modelname_mf = "p10-mf"
@@ -596,7 +602,7 @@ def build_model(sim_name, mixelm=0, silent=False):
 
 
 def write_model(mf2k5, mt3d, sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         mf2k5.write_input()
         mt3d.write_input()
         sim.write_simulation(silent=silent)
@@ -605,10 +611,10 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 # Function to run the model. True is returned if the model runs successfully.
 
 
-@config.timeit
+@timed
 def run_model(mf2k5, mt3d, sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = mf2k5.run_model(silent=silent)
         success, buff = mt3d.run_model(silent=silent)
         success, buff = sim.run_simulation(silent=silent)
@@ -621,7 +627,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     print("Plotting model results...")
@@ -755,13 +761,13 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         plt.tight_layout()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
                 "{}{}".format(
                     sim_name,
-                    config.figure_ext,
+                    '.pjg',
                 ),
             )
             fig.savefig(fpth)
@@ -783,15 +789,7 @@ def scenario(idx, silent=True):
         plot_results(mf2k5, mt3d, sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=True)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Two-Dimensional Transport in a Diagonal Flow Field
-    #
-    # Compares the standard finite difference solutions between MT3D MF 6
-    scenario(0, silent=True)
+# ### Two-Dimensional Transport in a Diagonal Flow Field
+#
+# Compares the standard finite difference solutions between MT3D MF 6
+scenario(0, silent=True)

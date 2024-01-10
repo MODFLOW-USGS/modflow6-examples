@@ -8,20 +8,15 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 # Set figure properties specific to the
 
@@ -31,13 +26,19 @@ arrow_props = dict(
     facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1
 )
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-maw-p03"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -253,7 +254,7 @@ rclose = 1e-4
 
 
 def build_model(name, simulation="regional"):
-    if config.buildModel:
+    if buildModel:
         if simulation == "regional":
             sim = build_regional(name)
         else:
@@ -440,7 +441,7 @@ def build_local(name, simulation):
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -449,10 +450,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -574,11 +575,11 @@ def plot_maw_results(silent=True):
         ax.set_ylabel("Elevation, in feet")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-01{config.figure_ext}",
+                f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
 
@@ -700,11 +701,11 @@ def plot_regional_grid(silent=True):
         styles.graph_legend(ax, loc="lower center", ncol=4)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-regional-grid{config.figure_ext}",
+                f"{sim_name}-regional-grid.png",
             )
             fig.savefig(fpth)
 
@@ -838,11 +839,11 @@ def plot_local_grid(silent=True):
         styles.graph_legend(ax, loc="lower center", ncol=3)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-local-grid{config.figure_ext}",
+                f"{sim_name}-local-grid.png",
             )
             fig.savefig(fpth)
 
@@ -851,7 +852,7 @@ def plot_local_grid(silent=True):
 
 
 def plot_results(silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_regional_grid(silent=silent)
         plot_local_grid(silent=silent)
         plot_maw_results(silent=silent)
@@ -879,40 +880,20 @@ def simulation(idx=0, silent=True):
     assert success, f"could not run...{sim_name}"
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(idx=0, silent=False)
+# ### Reilly MAW Problem Simulation
+#
+# Regional model
 
+simulation(0)
 
-def test_02():
-    simulation(idx=1, silent=False)
+# Local model with MAW well
 
+simulation(1)
 
-def test_03():
-    simulation(idx=2, silent=False)
+# Local model with high K well
 
+simulation(2)
 
-def test_plot():
-    plot_results()
+# Plot the results
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Reilly MAW Problem Simulation
-    #
-    # Regional model
-
-    simulation(0)
-
-    # Local model with MAW well
-
-    simulation(1)
-
-    # Local model with high K well
-
-    simulation(2)
-
-    # Plot the results
-
-    plot_results()
+plot_results()

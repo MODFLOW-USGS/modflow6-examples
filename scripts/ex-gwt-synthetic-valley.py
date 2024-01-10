@@ -9,8 +9,8 @@
 # Imports
 
 import os
+from os import environ
 import pathlib as pl
-import sys
 
 import flopy
 import flopy.plot.styles as styles
@@ -24,14 +24,16 @@ from flopy.utils.triangle import Triangle
 from flopy.utils.voronoi import VoronoiGrid
 from matplotlib import colors
 from shapely.geometry import LineString, Polygon
+from modflow_devtools.misc import timed, is_in_ci
 
-# Append to system path to include the common subdirectory
+# Configuration
 
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Groundwater 2023 utilities
 
@@ -174,8 +176,9 @@ clay_cmap = colors.ListedColormap(["brown"])
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
 example_name = "ex-gwt-synthetic-valley"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
 
 # Conversion factors
 
@@ -285,7 +288,7 @@ voronoi_grid = VertexGrid(**gridprops, nlay=1, idomain=idomain_vor)
 
 # +
 # load raster data files
-raster_path = pl.Path(config.data_ws) / example_name
+raster_path = data_ws / example_name
 kaq = flopy.utils.Raster.load(raster_path / "k_aq_SI.tif")
 kclay = flopy.utils.Raster.load(raster_path / "k_clay_SI.tif")
 top_base = flopy.utils.Raster.load(raster_path / "top_SI.tif")
@@ -680,7 +683,7 @@ def build_mf6gwt(sim_folder):
 
 def build_model(sim_name):
     sims = None
-    if config.buildModel:
+    if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
         sim_mf6gwt = build_mf6gwt(sim_name)
         sim_mf2005 = None  # build_mf2005(sim_name)
@@ -693,7 +696,7 @@ def build_model(sim_name):
 
 
 def write_model(sims, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
@@ -704,10 +707,10 @@ def write_model(sims, silent=True):
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sims, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         print("Running mf6gwf model...")
@@ -833,7 +836,7 @@ def plot_feature_labels(ax):
 
 
 def plot_results(sims, idx):
-    if config.plotModel:
+    if plotModel:
         print("Plotting model results...")
         plot_river_mapping(sims, idx)
         plot_head_results(sims, idx)
@@ -932,9 +935,9 @@ def plot_river_mapping(sims, idx):
         )
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
-            fname = f"{sim_folder}-river-discretization{config.figure_ext}"
+            fname = f"{sim_folder}-river-discretization.png"
             fig.savefig(os.path.join(ws, "..", "figures", fname))
 
 
@@ -1111,9 +1114,9 @@ def plot_head_results(sims, idx):
         )
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
-            fname = f"{sim_folder}-head{config.figure_ext}"
+            fname = f"{sim_folder}-head.png"
             fig.savefig(os.path.join(ws, "..", "figures", fname))
 
 
@@ -1233,10 +1236,10 @@ def plot_conc_results(sims, idx):
         )
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-conc{config.figure_ext}"
+            fname = f"{sim_folder}-conc.png"
             fig.savefig(os.path.join(ws, "..", "figures", fname))
 
 
@@ -1256,16 +1259,8 @@ def scenario(idx, silent=True):
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Simulate Synthetic Valley Problem (Hughes and others 2023)
 
+# Plot showing MODFLOW 6 results
 
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulate Synthetic Valley Problem (Hughes and others 2023)
-
-    # Plot showing MODFLOW 6 results
-
-    scenario(0)
+scenario(0)

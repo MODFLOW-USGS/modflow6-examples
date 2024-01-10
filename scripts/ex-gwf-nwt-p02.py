@@ -7,34 +7,34 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 # Set figure properties
 
 figure_size = (6.3, 6.3)
 masked_values = (1e30, -1e30)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-nwt-p02"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -131,7 +131,7 @@ def build_model(
     ihdwet=None,
     wetdry=None,
 ):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -220,7 +220,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -228,10 +228,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -258,7 +258,7 @@ def plot_results(silent=True):
     else:
         verbosity_level = 0
 
-    if not config.plotModel:
+    if not plotModel:
         return
 
     with styles.USGSMap() as fs:
@@ -391,11 +391,11 @@ def plot_results(silent=True):
         styles.remove_edge_ticks(ax)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-01{config.figure_ext}",
+                f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
 
@@ -421,26 +421,16 @@ def simulation(idx, silent=True):
     assert success, f"could not run...{key}"
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_and_plot():
-    simulation(0, silent=False)
-    simulation(1, silent=False)
-    plot_results(silent=False)
+# ### MODFLOW-NWT Problem 2 Simulation
+#
+# Newton-Raphson.
 
+simulation(0)
 
-# nosetest end
+# Rewetting.
 
-if __name__ == "__main__":
-    # ### MODFLOW-NWT Problem 2 Simulation
-    #
-    # Newton-Raphson.
+simulation(1)
 
-    simulation(0)
+# Plot results
 
-    # Rewetting.
-
-    simulation(1)
-
-    # Plot results
-
-    plot_results()
+plot_results()

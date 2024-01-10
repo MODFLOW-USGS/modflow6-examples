@@ -16,12 +16,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import flopy
 from math import sqrt
+from modflow_devtools.misc import timed, is_in_ci
 
 # Find a root of a function using Brent's method within a bracketed range
 from scipy.optimize import brentq
@@ -32,13 +34,6 @@ from scipy.integrate import quad
 # Zero Order Bessel Function
 from scipy.special import j0, jn_zeros
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
 from flopy.plot.styles import styles
 
 # Function to get keyword arguments for radial grid
@@ -1100,13 +1095,17 @@ solve_analytical_solution = False
 
 figure_size = (6, 6)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-rad-disu"
+ws = pl.Path("../examples")
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -1213,7 +1212,7 @@ rclose = 1e-4
 
 
 def build_model(name):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation(
             sim_name=name, sim_ws=sim_ws, exe_name="mf6"
@@ -1289,7 +1288,7 @@ def build_model(name):
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -1297,10 +1296,10 @@ def write_model(sim, silent=True):
 # True is returned if the model runs successfully.
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent, report=True)
         if not success:
             print("\n".join(buff))
@@ -1894,11 +1893,11 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
 
         fig.tight_layout()
 
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
+                "{}-{}{}".format(sim_name, obs_fig, '.png'),
             )
             fig.savefig(fpth)
 
@@ -1940,11 +1939,11 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
 
         fig.tight_layout()
 
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
+                "{}-{}{}".format(sim_name, obs_fig, '.png'),
             )
             fig.savefig(fpth)
 
@@ -2017,9 +2016,9 @@ def plot_grid(verbose=False):
         fig.tight_layout()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
+                "..", "figures", "{}-grid{}".format(sim_name, '.png')
             )
             fig.savefig(fpth)
 
@@ -2028,7 +2027,7 @@ def plot_grid(verbose=False):
 
 
 def plot_results(silent=True):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     if silent:
@@ -2043,7 +2042,7 @@ def plot_results(silent=True):
 
     verbose = not silent
 
-    if config.plotModel:
+    if plotModel:
         plot_grid(verbose)
         plot_ts(
             sim, verbose, solve_analytical_solution=solve_analytical_solution
@@ -2071,21 +2070,10 @@ def simulation(silent=True):
     assert success, "could not run...{}".format(sim_name)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_and_plot():
-    simulation(silent=False)
-    plot_results(silent=False)
-    return
+# ### Axisymmetric Example
 
+# MF6 Axisymmetric Model
+simulation()
 
-# nosetest end
-
-
-if __name__ == "__main__":
-    # ### Axisymmetric Example
-
-    # MF6 Axisymmetric Model
-    simulation()
-
-    # Solve analytical and plot results with MF6 results
-    plot_results()
+# Solve analytical and plot results with MF6 results
+plot_results()

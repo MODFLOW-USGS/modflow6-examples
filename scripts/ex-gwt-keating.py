@@ -12,20 +12,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.patches
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the
@@ -34,8 +28,18 @@ figure_size = (7.5, 3)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
 example_name = "ex-gwt-keating"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -289,7 +293,7 @@ def build_mf6gwt(sim_folder):
 
 def build_model(sim_name):
     sims = None
-    if config.buildModel:
+    if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
         sim_mf6gwt = build_mf6gwt(sim_name)
         sim_mf2005 = None  # build_mf2005(sim_name)
@@ -302,21 +306,20 @@ def build_model(sim_name):
 
 
 def write_model(sims, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
-    return
 
 
 # Function to run the model
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sims, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         print("Running mf6gwf model...")
@@ -334,14 +337,13 @@ def run_model(sims, silent=True):
 
 
 def plot_results(sims, idx):
-    if config.plotModel:
+    if plotModel:
         print("Plotting model results...")
         plot_head_results(sims, idx)
         plot_conc_results(sims, idx)
         plot_cvt_results(sims, idx)
-        if config.plotSave and config.createGif:
+        if plotSave and createGif:
             make_animated_gif(sims, idx)
-    return
 
 
 def plot_head_results(sims, idx):
@@ -372,10 +374,10 @@ def plot_head_results(sims, idx):
         ax.set_aspect(plotaspect)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-head{config.figure_ext}"
+            fname = f"{sim_folder}-head.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -437,10 +439,10 @@ def plot_conc_results(sims, idx):
                     markersize="4",
                 )
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-conc{config.figure_ext}"
+            fname = f"{sim_folder}-conc.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -517,9 +519,9 @@ def plot_cvt_results(sims, idx):
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = gwt.obs.output.obs().data
         dt = [("totim", "f8"), ("obs", "f8")]
-        fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs1.csv")
+        fname = os.path.join(data_ws, "ex-gwt-keating", "keating_obs1.csv")
         obs1ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
-        fname = os.path.join(config.data_ws, "ex-gwt-keating", "keating_obs2.csv")
+        fname = os.path.join(data_ws, "ex-gwt-keating", "keating_obs2.csv")
         obs2ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
         fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
         ax = axes[0]
@@ -569,10 +571,10 @@ def plot_cvt_results(sims, idx):
         ax.set_ylabel("normalized concentration, unitless")
         styles.graph_legend(ax)
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-cvt{config.figure_ext}"
+            fname = f"{sim_folder}-cvt.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -593,16 +595,8 @@ def scenario(idx, silent=True):
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Simulate Keating Problem
 
+# Plot showing MODFLOW 6 results
 
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulate Keating Problem
-
-    # Plot showing MODFLOW 6 results
-
-    scenario(0)
+scenario(0)

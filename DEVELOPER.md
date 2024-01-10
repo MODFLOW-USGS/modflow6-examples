@@ -80,9 +80,7 @@ To run example scripts in parallel with verbose output, and generate input files
 pytest -v -n auto ci_build_files.py
 ```
 
-To run models, use `--run True`.
-
-To run in serial instead of parallel, omit `-n auto`.
+To run models, use `--run`. To run in serial instead of parallel, omit `-n auto`.
 
 ### Using `jupytext`
 

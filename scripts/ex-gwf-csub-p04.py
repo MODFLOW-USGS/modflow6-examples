@@ -11,21 +11,30 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
+
+# Base simulation and model name and workspace
+
+sim_name = "ex-gwf-csub-p03"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Set figure properties specific to the problem
 
@@ -43,7 +52,7 @@ compaction_heading = ("row 9, column 10", "row 12, column 7")
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
 
 # Simulation name
 
@@ -192,7 +201,7 @@ relax = 0.97
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -355,7 +364,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -364,10 +373,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -692,9 +701,9 @@ def plot_grid(sim, silent=True):
         styles.remove_edge_ticks(ax)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+                "..", "figures", f"{sim_name}-grid.png"
             )
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -777,8 +786,8 @@ def plot_stresses(sim, silent=True):
         ax.set_ylabel("Stress, in meters of water")
 
         # save figure
-        if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+        if plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -856,8 +865,8 @@ def plot_compaction(sim, silent=True):
         ax.set_xlabel("Simulation time, in years")
 
         # save figure
-        if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
+        if plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-02.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -867,7 +876,7 @@ def plot_compaction(sim, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_grid(sim, silent=silent)
         plot_stresses(sim, silent=silent)
         plot_compaction(sim, silent=silent)
@@ -893,14 +902,6 @@ def simulation(silent=True):
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation()
+# ### One-dimensional compaction in a three-dimensional flow field
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### One-dimensional compaction in a three-dimensional flow field
-
-    simulation()
+simulation()

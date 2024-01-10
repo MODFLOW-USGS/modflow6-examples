@@ -11,29 +11,32 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import flopy.utils.cvfdutil
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set default figure properties
 
 figure_size = (3.5, 3.5)
 
-# Base simulation and model name and workspace
+# Simulation workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -83,7 +86,7 @@ rclose = 1e-6
 
 
 def build_model(sim_name, angle1, xt3d):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -152,7 +155,7 @@ def build_model(sim_name, angle1, xt3d):
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -161,10 +164,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=False):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent, report=True)
         if not success:
             print(buff)
@@ -191,9 +194,9 @@ def plot_grid(idx, sim):
         ax.set_ylabel("y position (m)")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+                "..", "figures", f"{sim_name}-grid.png"
             )
             fig.savefig(fpth)
 
@@ -219,15 +222,15 @@ def plot_head(idx, sim):
         ax.set_ylabel("y position (m)")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+                "..", "figures", f"{sim_name}-head.png"
             )
             fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         if idx == 0:
             plot_grid(idx, sim)
         plot_head(idx, sim)
@@ -252,32 +255,16 @@ def simulation(idx, silent=True):
         plot_results(idx, sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# ### Hani Simulation
+#
+# Simulated heads in the Hani model with anisotropy in x direction.
 
+simulation(0)
 
-def test_02():
-    simulation(1, silent=False)
+# Simulated heads in the Hani model with anisotropy in y direction.
 
+simulation(1)
 
-def test_03():
-    simulation(2, silent=False)
+# Simulated heads in the Hani model with anisotropy rotated 15 degrees.
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Hani Simulation
-    #
-    # Simulated heads in the Hani model with anisotropy in x direction.
-
-    simulation(0)
-
-    # Simulated heads in the Hani model with anisotropy in y direction.
-
-    simulation(1)
-
-    # Simulated heads in the Hani model with anisotropy rotated 15 degrees.
-
-    simulation(2)
+simulation(2)

@@ -13,39 +13,40 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.utils.gridintersect import GridIntersect
 from shapely.geometry import Polygon
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
-# Set default figure properties
-
-figure_size = (4, 4)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-advtidal"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
 length_units = "meters"
 time_units = "days"
+
+# Set default figure properties
+
+figure_size = (4, 4)
 
 # Table Advgwtidal Model Parameters
 
@@ -140,7 +141,7 @@ def get_timeseries(fname, names, interpolation, filename=None):
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name,
@@ -198,7 +199,7 @@ def build_model():
             [2, i, 9, "tides", 1500.0, "ESTUARY-L3"] for i in range(nrow)
         ]
         ghb_spd = {0: ghb_spd}
-        fname = os.path.join(config.data_ws, sim_name, "tides.csv")
+        fname = os.path.join(data_ws, sim_name, "tides.csv")
         tsdict = get_timeseries(fname, "tides", "linear")
         ghbobs_dict = {}
         ghbobs_dict[f"{sim_name}.ghb.obs.csv"] = [
@@ -234,7 +235,7 @@ def build_model():
             [0, 2, 4, -20, ""],
             [0, 13, 5, -40, ""],
         ]
-        fname = os.path.join(config.data_ws, sim_name, "wellrates.csv")
+        fname = os.path.join(data_ws, sim_name, "wellrates.csv")
         tsdict = get_timeseries(
             fname,
             ["well_1_rate", "well_2_rate", "well_6_rate"],
@@ -268,7 +269,7 @@ def build_model():
         riv_spd = list(
             zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd)
         )
-        fname = os.path.join(config.data_ws, sim_name, "riverstage.csv")
+        fname = os.path.join(data_ws, sim_name, "riverstage.csv")
         tsdict = get_timeseries(
             fname,
             ["river_stage_1", "river_stage_2"],
@@ -298,7 +299,7 @@ def build_model():
                     ]
                 )
             fname = os.path.join(
-                config.data_ws, sim_name, f"recharge{ipak + 1}.csv"
+                data_ws, sim_name, f"recharge{ipak + 1}.csv"
             )
             tsdict = get_timeseries(
                 fname,
@@ -363,7 +364,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -372,10 +373,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=False):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent, report=True)
         if not success:
             print(buff)
@@ -448,9 +449,9 @@ def plot_grid(sim):
         title = "Recharge zones"
         letter = chr(ord("@") + 4)
         styles.heading(letter=letter, heading=title, ax=ax)
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+                "..", "figures", f"{sim_name}-grid.png"
             )
             fig.savefig(fpth)
 
@@ -475,20 +476,19 @@ def plot_ts(sim):
             ax.set_xlabel("time (d)")
             ax.set_ylabel(ylabel[iplot])
             styles.graph_legend(ax)
-            if config.plotSave:
+            if plotSave:
                 fpth = os.path.join(
                     "..",
                     "figures",
-                    "{}-{}{}".format(sim_name, obs_fig[iplot], config.figure_ext),
+                    "{}-{}{}".format(sim_name, obs_fig[iplot], 'png'),
                 )
                 fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_grid(sim)
         plot_ts(sim)
-    return
 
 
 # Function that wraps all of the steps for the Advgwtidal model
@@ -508,16 +508,8 @@ def simulation(silent=True):
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(silent=False)
+# ### Advgwtidal Simulation
+#
+# Model grid and simulation results
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Advgwtidal Simulation
-    #
-    # Model grid and simulation results
-
-    simulation()
+simulation()

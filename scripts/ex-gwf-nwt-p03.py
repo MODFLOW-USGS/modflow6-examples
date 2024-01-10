@@ -7,20 +7,15 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from modflow_devtools.misc import timed, is_in_ci
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
 from flopy.plot.styles import styles
 
 # Set figure properties
@@ -28,13 +23,19 @@ from flopy.plot.styles import styles
 figure_size = (6.3, 5.6)
 masked_values = (1e30, -1e30)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-nwt-p03"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -131,7 +132,7 @@ def build_model(
     name,
     recharge="high",
 ):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -194,7 +195,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -202,10 +203,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -313,11 +314,11 @@ def plot_grid(gwf, silent=True):
         cbar.ax.set_xlabel(r"Bottom Elevation, $m$")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-grid{config.figure_ext}",
+                f"{sim_name}-grid.png",
             )
             fig.savefig(fpth)
 
@@ -399,11 +400,11 @@ def plot_recharge(gwf, silent=True):
         styles.graph_legend(ax, loc="center", ncol=2)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-01{config.figure_ext}",
+                f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
 
@@ -412,7 +413,7 @@ def plot_recharge(gwf, silent=True):
 
 
 def plot_results(idx, sim, silent=True):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     with styles.USGSMap() as fs:
@@ -536,11 +537,11 @@ def plot_results(idx, sim, silent=True):
         styles.graph_legend(ax, loc="center", ncol=3)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-{idx + 2:02d}{config.figure_ext}",
+                f"{sim_name}-{idx + 2:02d}.png",
             )
             fig.savefig(fpth)
 
@@ -568,24 +569,12 @@ def simulation(idx, silent=True):
         plot_results(idx, sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# ### MODFLOW-NWT Problem 3 Simulation
+#
+# Simulated heads in the MODFLOW-NWT Problem 3 model with high recharge.
 
+simulation(0)
 
-def test_02():
-    simulation(1, silent=False)
+# Simulated heads in the MODFLOW-NWT Problem 3 model with low recharge.
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### MODFLOW-NWT Problem 3 Simulation
-    #
-    # Simulated heads in the MODFLOW-NWT Problem 3 model with high recharge.
-
-    simulation(0)
-
-    # Simulated heads in the MODFLOW-NWT Problem 3 model with low recharge.
-
-    simulation(1)
+simulation(1)

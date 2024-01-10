@@ -10,42 +10,43 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
-# Set figure properties specific to the
-
-figure_size = (6, 6)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-bcf2ss"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
 length_units = "feet"
 time_units = "days"
 
+# Set figure properties
+
+figure_size = (6, 6)
+
 # Load the wetdry array for layer 1
 
-pth = os.path.join("..", "data", sim_name, "wetdry01.txt")
+pth = data_ws / sim_name / "wetdry01.txt"
 wetdry_layer0 = np.loadtxt(
     pth,
 )
@@ -133,7 +134,7 @@ relax = 0.97
 def build_model(
     name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton
 ):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -208,7 +209,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -217,10 +218,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -233,8 +234,6 @@ def run_model(sim, silent=True):
 
 
 def plot_simulated_results(num, gwf, ho, co, silent=True):
-    verbose = not silent
-
     with styles.USGSMap():
         botm_arr = gwf.dis.botm.array
 
@@ -374,11 +373,11 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         cbar.ax.set_xlabel("Head, in feet")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-{num:02d}{config.figure_ext}",
+                f"{sim_name}-{num:02d}.png",
             )
             fig.savefig(fpth)
 
@@ -387,7 +386,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
 
 
 def plot_results(silent=True):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     if silent:
@@ -488,11 +487,11 @@ def plot_results(silent=True):
         )
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-grid{config.figure_ext}",
+                f"{sim_name}-grid.png",
             )
             fig.savefig(fpth)
 
@@ -510,9 +509,9 @@ def plot_results(silent=True):
         styles.remove_edge_ticks(ax)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+                "..", "figures", f"{sim_name}-01.png"
             )
             fig.savefig(fpth)
 
@@ -551,40 +550,28 @@ def simulation(idx, silent=True):
     params = parameters[key].copy()
 
     sim = build_model(key, **params)
-
     write_model(sim, silent=silent)
 
     success = run_model(sim, silent=silent)
-
     assert success, f"could not run...{key}"
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_and_plot():
-    simulation(0, silent=False)
-    simulation(1, silent=False)
-    plot_results(silent=False)
+# ### BCF2SS Simulation
+#
+#  Node Property Flow Package with rewetting option
 
+simulation(0)
 
-# nosetest end
+# Newton-Raphson formulation
 
-if __name__ == "__main__":
-    # ### BCF2SS Simulation
-    #
-    #  Node Property Flow Package with rewetting option
+simulation(1)
 
-    simulation(0)
+# Simulated water levels and normalized specific discharge vectors in the
+# upper and lower aquifers under natural and pumping conditions using (1) the
+# rewetting option in the Node Property Flow (NPF) Package with the
+# Standard Conductance Formulation and (2) the Newton-Raphson formulation.
+# A. Upper aquifer results under natural conditions. B. Lower aquifer results
+# under natural conditions C. Upper aquifer results under pumping conditions.
+# D. Lower aquifer results under pumping conditions
 
-    # Newton-Raphson formulation
-
-    simulation(1)
-
-    # Simulated water levels and normalized specific discharge vectors in the
-    # upper and lower aquifers under natural and pumping conditions using (1) the
-    # rewetting option in the Node Property Flow (NPF) Package with the
-    # Standard Conductance Formulation and (2) the Newton-Raphson formulation.
-    # A. Upper aquifer results under natural conditions. B. Lower aquifer results
-    # under natural conditions C. Upper aquifer results under pumping conditions.
-    # D. Lower aquifer results under pumping conditions
-
-    plot_results()
+plot_results()

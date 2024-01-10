@@ -10,20 +10,13 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
-import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -35,7 +28,16 @@ figure_size = (6, 4)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Scenario parameters - make sure there is at least one blank line before next item
 
@@ -218,7 +220,7 @@ def build_model(sim_folder, inflow):
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -226,10 +228,10 @@ def write_model(sim, silent=True):
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         success, buff = sim.run_simulation(silent=silent)
         if not success:
@@ -265,15 +267,15 @@ def plot_conc(sim, idx):
         plt.clabel(cs, fmt="%4.2f", fontsize=5)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+                "..", "figures", f"{sim_name}-conc.png"
             )
             fig.savefig(fpth)
 
 
 def plot_results(sim, idx):
-    if config.plotModel:
+    if plotModel:
         plot_conc(sim, idx)
 
 
@@ -296,22 +298,10 @@ def scenario(idx, silent=True):
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Henry Problem
 
+# Scenario 1 - Classic henry problem
+scenario(0)
 
-def test_02():
-    scenario(1, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Henry Problem
-
-    # Scenario 1 - Classic henry problem
-    scenario(0)
-
-    # Scenario 2 - Modified Henry problem with half the inflow rate
-    scenario(1)
+# Scenario 2 - Modified Henry problem with half the inflow rate
+scenario(1)

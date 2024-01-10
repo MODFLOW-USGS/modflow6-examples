@@ -9,20 +9,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import flopy.utils.lgrutil
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set default figure properties
@@ -31,8 +25,17 @@ figure_size = (5, 4)
 
 # Base simulation and data workspace
 
-ws = config.base_ws
-data_ws = os.path.join(config.data_ws, "ex-gwf-lgrv")
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data") / "ex-gwf-lgrv"
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -78,13 +81,13 @@ tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # load data files and process into arrays
 
-fname = os.path.join(data_ws, "top.dat")
+fname = data_ws / "top.dat"
 top = np.loadtxt(fname)
 ikzone = np.empty((nlay, nrow, ncol), dtype=float)
 for k in range(nlay):
-    fname = os.path.join(data_ws, f"ikzone{k + 1}.dat")
+    fname = data_ws / f"ikzone{k + 1}.dat"
     ikzone[k, :, :] = np.loadtxt(fname)
-fname = os.path.join(data_ws, "riv.dat")
+fname = data_ws / "riv.dat"
 dt = [
     ("k", int),
     ("i", int),
@@ -333,7 +336,7 @@ def build_model(
     xorigin=None,
     yorigin=None,
 ):
-    if config.buildModel:
+    if buildModel:
         if sim is None:
             sim_ws = os.path.join(ws, sim_name)
             sim = flopy.mf6.MFSimulation(
@@ -436,7 +439,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         print(f"Writing simulation {sim.name}")
         sim.write_simulation(silent=silent)
 
@@ -446,10 +449,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=False):
     success = True
-    if config.runModel:
+    if runModel:
         print(f"Running simulation {sim.name}")
         success, buff = sim.run_simulation(silent=silent, report=True)
         if not success:
@@ -512,9 +515,9 @@ def plot_grid(sim):
         ax.set_ylim(ymin, ymax)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+                "..", "figures", f"{sim_name}-grid.png"
             )
             fig.savefig(fpth)
 
@@ -540,9 +543,9 @@ def plot_xsect(sim):
         cbar.ax.set_xlabel(r"K, ($m/s$)")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-xsect{config.figure_ext}"
+                "..", "figures", f"{sim_name}-xsect.png"
             )
             fig.savefig(fpth)
 
@@ -597,15 +600,15 @@ def plot_heads(sim):
         ax.set_ylim(ymin, ymax)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-head{config.figure_ext}"
+                "..", "figures", f"{sim_name}-head.png"
             )
             fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_grid(sim)
         plot_xsect(sim)
         plot_heads(sim)
@@ -637,32 +640,16 @@ def simulation(idx, silent=True):
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# ### LGRV Simulation
+#
+# Global Refined Model
 
+simulation(0)
 
-def test_02():
-    simulation(1, silent=False)
+# Global Coarse Model
 
+simulation(1)
 
-def test_03():
-    simulation(2, silent=False)
+# Locally Refined Grid Model
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### LGRV Simulation
-    #
-    # Global Refined Model
-
-    simulation(0)
-
-    # Global Coarse Model
-
-    simulation(1)
-
-    # Locally Refined Grid Model
-
-    simulation(2)
+simulation(2)

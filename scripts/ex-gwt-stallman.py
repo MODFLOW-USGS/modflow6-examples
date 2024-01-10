@@ -9,20 +9,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 mf6exe = "mf6"
@@ -33,8 +27,17 @@ figure_size = (6, 8)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
 example_name = "ex-gwt-stallman"
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -253,7 +256,7 @@ def build_model(sim_folder):
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
     return
 
@@ -262,11 +265,11 @@ def write_model(sim, silent=True):
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     print("Running model...")
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         success, buff = sim.run_simulation(silent=silent)
         if not success:
@@ -336,9 +339,9 @@ def plot_conc(sim, idx):
         ax.legend()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+                "..", "figures", f"{sim_name}-conc.png"
             )
             fig.savefig(fpth)
 
@@ -411,9 +414,9 @@ def make_animated_gif(sim, idx):
 
 def plot_results(sim, idx):
     print("Plotting results...")
-    if config.plotModel:
+    if plotModel:
         plot_conc(sim, idx)
-        if config.plotSave and config.createGif:
+        if plotSave and createGif:
             print("Making animation...")
             make_animated_gif(sim, idx)
     return
@@ -436,16 +439,8 @@ def scenario(idx, silent=True):
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Salt Lake Problem
 
+# Plot showing MODFLOW 6 results
 
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Salt Lake Problem
-
-    # Plot showing MODFLOW 6 results
-
-    scenario(0)
+scenario(0)

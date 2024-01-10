@@ -13,6 +13,7 @@
 # Imports
 
 import os
+from os import environ
 import pathlib as pl
 import shutil
 import sys
@@ -22,32 +23,31 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import modflowapi
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
-# Set figure properties specific to the
-
-figure_size = (6, 6)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-capture"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
 length_units = "meters"
 time_units = "seconds"
+
+# Figure properties
+
+figure_size = (6, 6)
 
 # Load the bottom, hydraulic conductivity, and idomain arrays
 
@@ -143,7 +143,7 @@ for _k, i, j, _h in chd_spd[0]:
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name,
@@ -211,7 +211,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -267,12 +267,17 @@ def get_streamflow(mobj):
 #
 
 
-@config.timeit
+@timed
 def run_model():
     success = True
-    if config.runModel:
+    if runModel:
+        soext = ".so"
+        if sys.platform.lower() == "win32":
+            soext = ".dll"
+        if sys.platform.lower() == "darwin":
+            soext = ".dylib"
         libmf6_path = (
-            pl.Path(shutil.which("mf6")).parent / f"libmf6{config.soext}"
+            pl.Path(shutil.which("mf6")).parent / f"libmf6{soext}"
         )
         sim_ws = os.path.join(ws, sim_name)
         mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
@@ -312,7 +317,7 @@ def run_model():
 
 
 def plot_results(silent=True):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     if silent:
@@ -413,9 +418,9 @@ def plot_results(silent=True):
         )
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+                "..", "figures", f"{sim_name}-01.png"
             )
             fig.savefig(fpth)
 
@@ -431,30 +436,19 @@ def plot_results(silent=True):
 
 def simulation(silent=True):
     sim = build_model()
-
     write_model(sim, silent=silent)
 
     success = run_model()
-
     assert success, f"could not run...{sim_name}"
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(silent=False)
-    plot_results(silent=False)
+# ### Capture Zone Simulation
+#
+#  Capture zone examples using the MODFLOW API with the Freyberg (1988) model
 
+simulation()
 
-# nosetest end
+# Simulated streamflow capture fraction map for the Freyberg (1988) groundwater
+# flow model.
 
-if __name__ == "__main__":
-    # ### Capture Zone Simulation
-    #
-    #  Capture zone examples using the MODFLOW API with the Freyberg (1988) model
-
-    simulation()
-
-    # Simulated streamflow capture fraction map for the Freyberg (1988) groundwater
-    # flow model.
-
-    plot_results()
+plot_results()

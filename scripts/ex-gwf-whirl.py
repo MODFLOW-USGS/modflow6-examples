@@ -11,19 +11,13 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set default figure properties
@@ -33,7 +27,16 @@ figure_size = (3.5, 3.5)
 # Base simulation and model name and workspace
 
 sim_name = "ex-gwf-whirl"
-ws = config.base_ws
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -84,7 +87,7 @@ rclose = 1e-6
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -154,7 +157,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -163,10 +166,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=False):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent, report=True)
         if not success:
             print(buff)
@@ -198,15 +201,15 @@ def plot_spdis(sim):
         ax.set_ylabel("z position (m)")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-spdis{config.figure_ext}"
+                "..", "figures", f"{sim_name}-spdis.png"
             )
             fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_spdis(sim)
 
 
@@ -227,15 +230,7 @@ def simulation(idx, silent=True):
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Whirl Simulation
-    #
-    # Simulated heads in the Whirl model with anisotropy in x direction.
-    simulation(0)
+# ### Whirl Simulation
+#
+# Simulated heads in the Whirl model with anisotropy in x direction.
+simulation(0)

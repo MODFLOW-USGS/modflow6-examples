@@ -10,19 +10,12 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
-import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the
@@ -31,7 +24,16 @@ figure_size = (3, 3)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Scenario parameters - make sure there is at least one blank line before next item
 
@@ -344,7 +346,7 @@ def build_mt3dms(
 
 def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
     sims = None
-    if config.buildModel:
+    if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
         sim_mf6gwt = build_mf6gwt(
             sim_name, distribution_coefficient, decay, decay_sorbed
@@ -361,23 +363,22 @@ def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
 
 
 def write_model(sims, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
         sim_mf2005.write_input()
         sim_mt3dms.write_input()
-    return
 
 
 # Function to run the model
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sims, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         success, buff = sim_mf6gwf.run_simulation(silent=silent)
@@ -401,7 +402,7 @@ def run_model(sims, silent=True):
 
 
 def plot_results():
-    if not config.plotModel:
+    if not plotModel:
         return 
 
     print("Plotting model results...")
@@ -442,15 +443,14 @@ def plot_results():
         axs.legend()
 
         # save figure
-        if config.plotSave:
-            fname = "{}{}".format("ex-gwt-mt3dsupp632", config.figure_ext)
+        if plotSave:
+            fname = "{}{}".format("ex-gwt-mt3dsupp632", '.png')
             fpth = os.path.join("..", "figures", fname)
             fig.savefig(fpth)
-    return
 
 
 def plot_scenario_results(sims, idx):
-    if not config.plotModel:
+    if not plotModel:
         return
     print("Plotting model results...")
     _, sim_mf6gwt, _, sim_mt3dms = sims
@@ -485,10 +485,10 @@ def plot_scenario_results(sims, idx):
         styles.heading(letter=letter, heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}{config.figure_ext}"
+            fname = f"{sim_folder}.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -509,58 +509,37 @@ def scenario(idx, silent=True):
     success = run_model(sims, silent=silent)
     if success:
         plot_scenario_results(sims, idx)
-    return
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Case 1
+#
+# ex-gwt-mt3dsupp632a
+# * distribution_coefficient = 0.25
+# * decay = 0.0
+# * decay_sorbed = -1.0e-3
 
+scenario(0)
 
-def test_02():
-    scenario(1, silent=False)
+# ### Case 2
+#
+# ex-gwt-mt3dsupp632a
+# * distribution_coefficient = 0.25
+# * decay = -5.e-4
+# * decay_sorbed = -5.e-4
 
+scenario(1)
 
-def test_03():
-    scenario(2, silent=False)
+# ### Case 3
+#
+# ex-gwt-mt3dsupp632a
+# * distribution_coefficient = 0.
+# * decay = -1.0e-3
+# * decay_sorbed = 0.
 
+scenario(2)
 
-def test_plot_results():
-    plot_results()
+# ### Plot the Zero-Order Production in a Dual-Domain System Problem results
+#
+# Plot the results for all 3 scenarios in one plot
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Case 1
-    #
-    # ex-gwt-mt3dsupp632a
-    # * distribution_coefficient = 0.25
-    # * decay = 0.0
-    # * decay_sorbed = -1.0e-3
-
-    scenario(0)
-
-    # ### Case 2
-    #
-    # ex-gwt-mt3dsupp632a
-    # * distribution_coefficient = 0.25
-    # * decay = -5.e-4
-    # * decay_sorbed = -5.e-4
-
-    scenario(1)
-
-    # ### Case 3
-    #
-    # ex-gwt-mt3dsupp632a
-    # * distribution_coefficient = 0.
-    # * decay = -1.0e-3
-    # * decay_sorbed = 0.
-
-    scenario(2)
-
-    # ### Plot the Zero-Order Production in a Dual-Domain System Problem results
-    #
-    # Plot the results for all 3 scenarios in one plot
-
-    plot_results()
+plot_results()

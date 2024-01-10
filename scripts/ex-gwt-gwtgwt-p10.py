@@ -7,18 +7,15 @@
 # solutions as produced by the example 'MT3DMS problem 10'.
 
 import os
+from os import environ
+import pathlib as pl
 
-# Imports and extend system path to include the common subdirectory
-import sys
-
-sys.path.append(os.path.join("..", "common"))
-
-import config
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
+from modflow_devtools.misc import is_in_ci
 
 mf6exe = "mf6"
 
@@ -28,8 +25,17 @@ mf6exe = "mf6"
 figure_size = (6, 8)
 
 # Base simulation and model name and workspace
-ws = config.base_ws
+ws = pl.Path("../examples")
 example_name = "ex-gwt-gwtgwt-mt3dms-p10"
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 length_units = "feet"
@@ -201,7 +207,7 @@ scheme = "Undefined"
 
 # ### Build the MODFLOW 6 simulation
 def build_model(sim_name):
-    if not config.buildModel:
+    if not buildModel:
         return
 
     sim_ws = os.path.join(ws, sim_name)
@@ -796,7 +802,7 @@ def add_inner_gwtmodel(sim):
 # Run the simulation and generate the results
 def run_model(sim):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation()
         if not success:
             print(buff)
@@ -1213,7 +1219,7 @@ def plot_concentration(sim):
 
 # Generates all plots
 def plot_results(sim):
-    if config.plotModel:
+    if plotModel:
         print("Plotting model results...")
         plot_grids(sim)
         plot_concentration(sim)

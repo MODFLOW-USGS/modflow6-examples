@@ -58,7 +58,6 @@ import fnmatch
 
 import flopy
 
-sys.path.append(os.path.join("..", "common"))
 from modflow_devtools.latex import get_header, get_footer
 
 # path to the example files
@@ -93,28 +92,17 @@ def make_notebooks():
         # do a little processing
         with open(file) as f:
             lines = f.read().splitlines()
-        f = open(tpth, "w")
-        skip = False
-        modifyIndent = 0
-        for idx, line in enumerate(lines):
-            # exclude if __name__ == "main"
-            if "if __name__" in line:
-                modifyIndent = len(lines[idx + 1]) - len(
-                    lines[idx + 1].lstrip(" ")
-                )
-                continue
-
-            # exclude nosetest functions
-            if "# nosetest" in line.lower():
-                if skip:
-                    skip = False
+        with open(tpth, "w") as f:
+            modifyIndent = 0
+            for idx, line in enumerate(lines):
+                # exclude if __name__ == "main"
+                if "if __name__" in line:
+                    modifyIndent = len(lines[idx + 1]) - len(
+                        lines[idx + 1].lstrip(" ")
+                    )
                     continue
-                else:
-                    skip = True
-            if skip:
-                continue
-            f.write(f"{line[modifyIndent:]}\n")
-        f.close()
+
+                f.write(f"{line[modifyIndent:]}\n")
 
         # convert temporary python file to a notebook
         basename = os.path.splitext(file)[0] + ".ipynb"

@@ -10,32 +10,32 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the
 
 figure_size = (6, 6)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-twri01"
+ws = pl.Path("../examples")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
@@ -158,7 +158,7 @@ rclose = 1e-6
 
 
 def build_model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -216,7 +216,7 @@ def build_model():
 
 
 def build_mf5model():
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, sim_name, "mf2005")
         mf = flopy.modflow.Modflow(
             modelname=sim_name, model_ws=sim_ws, exe_name="mf2005dbl"
@@ -265,7 +265,7 @@ def build_mf5model():
 
 
 def write_model(sim, mf, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
         mf.write_input()
 
@@ -275,10 +275,10 @@ def write_model(sim, mf, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, mf, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -295,7 +295,7 @@ def run_model(sim, mf, silent=True):
 
 
 def plot_results(sim, mf, silent=True):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     with styles.USGSMap() as fs:
@@ -468,9 +468,9 @@ def plot_results(sim, mf, silent=True):
         cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}{config.figure_ext}"
+                "..", "figures", f"{sim_name}.png"
             )
             fig.savefig(fpth)
 
@@ -496,20 +496,12 @@ def simulation(silent=True):
         plot_results(sim, mf, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(silent=False)
+# ### TWRI Simulation
+#
+# Simulated heads in model the unconfined, middle, and lower aquifers (model layers
+# 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
+# model are also shown. The location of drain (green) and well (gray) boundary
+# conditions, normalized specific discharge, and head contours (25 ft contour
+# intervals) are also shown.
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### TWRI Simulation
-    #
-    # Simulated heads in model the unconfined, middle, and lower aquifers (model layers
-    # 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
-    # model are also shown. The location of drain (green) and well (gray) boundary
-    # conditions, normalized specific discharge, and head contours (25 ft contour
-    # intervals) are also shown.
-
-    simulation()
+simulation()

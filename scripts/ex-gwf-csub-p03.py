@@ -12,22 +12,16 @@
 
 import datetime
 import os
-import sys
+import pathlib as pl
+from os import environ
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
+from modflow_devtools.misc import timed, is_in_ci
 from modflow_devtools.latex import int_format, float_format, exp_format, build_table
-import config
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the problem
@@ -37,11 +31,18 @@ arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
-
-# Simulation name
-
 sim_name = "ex-gwf-csub-p03"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Load the constant time series
 
@@ -485,7 +486,7 @@ def build_model(
     ssv=1e-1,
     sse=1e-3,
 ):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, name)
         if subdir_name is not None:
             sim_ws = os.path.join(sim_ws, subdir_name)
@@ -664,7 +665,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -673,10 +674,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -688,7 +689,7 @@ def run_model(sim, silent=True):
 
 
 def export_tables(silent=True):
-    if config.plotSave:
+    if plotSave:
         name = list(parameters.keys())[1]
 
         caption = f"Aquifer properties for example {sim_name}."
@@ -1137,9 +1138,9 @@ def plot_grid(silent=True):
         fig.tight_layout(pad=0.5)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+                "..", "figures", f"{sim_name}-grid.png"
             )
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1193,9 +1194,9 @@ def plot_boundary_heads(silent=True):
         fig.tight_layout()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01{config.figure_ext}"
+                "..", "figures", f"{sim_name}-01.png"
             )
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1282,9 +1283,9 @@ def plot_head_es_comparison(silent=True):
         fig.tight_layout(pad=0.0001)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-02{config.figure_ext}"
+                "..", "figures", f"{sim_name}-02.png"
             )
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1556,9 +1557,9 @@ def plot_calibration(silent=True):
         fig.tight_layout(pad=0.01)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-03{config.figure_ext}"
+                "..", "figures", f"{sim_name}-03.png"
             )
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1699,9 +1700,9 @@ def plot_vertical_head(silent=True):
         fig.tight_layout(pad=0.5)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-04{config.figure_ext}"
+                "..", "figures", f"{sim_name}-04.png"
             )
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1712,7 +1713,7 @@ def plot_vertical_head(silent=True):
 
 
 def plot_results(silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_grid(silent=silent)
         plot_boundary_heads(silent=silent)
         plot_head_es_comparison(silent=silent)
@@ -1740,31 +1741,20 @@ def simulation(idx, silent=True):
     success = run_model(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_and_plot():
-    simulation(0, silent=False)
-    simulation(1, silent=False)
-    plot_results(silent=False)
-    export_tables(silent=False)
+# ### One-dimensional compaction
+#
+# #### Head based solution
 
+simulation(0)
 
-# nosetest end
+# #### Effective stress solution
 
-if __name__ == "__main__":
-    # ### One-dimensional compaction
-    #
-    # #### Head based solution
+simulation(1)
 
-    simulation(0)
+# #### Plot results
 
-    # #### Effective stress solution
+plot_results()
 
-    simulation(1)
+# #### Export tables
 
-    # #### Plot results
-
-    plot_results()
-
-    # #### Export tables
-
-    export_tables()
+export_tables()

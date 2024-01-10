@@ -10,34 +10,36 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
 from modflow_devtools.latex import int_format, float_format, exp_format, build_table
-import config
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 # Set figure properties specific to the
 
 figure_size = (6.3, 5.6)
 masked_values = (0, 1e30, -1e30)
 
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-drn-p01"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -93,13 +95,13 @@ shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and uzf/mvr arrays
 
-data_pth = os.path.join("..", "data", "ex-gwf-sfr-p01")
+data_pth = data_ws / "ex-gwf-sfr-p01"
 fpth = os.path.join(data_pth, "idomain.txt")
 idomain = np.loadtxt(fpth, dtype=int)
 fpth = os.path.join(data_pth, "bottom.txt")
 botm = np.loadtxt(fpth, dtype=float)
 
-data_pth = os.path.join("..", "data", sim_name)
+data_pth = data_ws / sim_name
 fpth = os.path.join(data_pth, "top.txt")
 top = np.loadtxt(fpth, dtype=float)
 fpth = os.path.join(data_pth, "infilt_mult.txt")
@@ -952,7 +954,7 @@ rclose = 1e-6
 
 
 def build_model(name, uzf_gwseep=None):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, name)
         sim = flopy.mf6.MFSimulation(
             sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -1088,7 +1090,7 @@ def build_model(name, uzf_gwseep=None):
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -1097,10 +1099,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -1243,17 +1245,17 @@ def plot_gwseep_results(silent=True):
         )
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-01{config.figure_ext}",
+                f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
 
 
 def export_tables(silent=True):
-    if config.plotSave:
+    if plotSave:
         caption = "Infiltration and pumping rates for example {}.".format(
             sim_name
         )
@@ -1285,7 +1287,7 @@ def export_tables(silent=True):
 
 
 def plot_results(silent=True):
-    if config.plotModel:
+    if plotModel:
         plot_gwseep_results(silent=silent)
         export_tables(silent=silent)
 
@@ -1311,23 +1313,13 @@ def simulation(idx, silent=True):
     assert success, f"could not run...{sim_name}"
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_and_plot():
-    simulation(0, silent=False)
-    simulation(1, silent=False)
-    plot_results(silent=False)
+# ### UZF Package Problem 2 Simulation
 
+# drain used to simulate discharge to the land surface
+simulation(0)
 
-# nosetest end
+# uzf used to simulate discharge to the land surface
+simulation(1)
 
-if __name__ == "__main__":
-    # ### UZF Package Problem 2 Simulation
-
-    # drain used to simulate discharge to the land surface
-    simulation(0)
-
-    # uzf used to simulate discharge to the land surface
-    simulation(1)
-
-    # plot the results
-    plot_results()
+# plot the results
+plot_results()

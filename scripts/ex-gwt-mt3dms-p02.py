@@ -10,20 +10,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
-import numpy as np
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 mf6exe = "mf6"
 
@@ -33,8 +27,17 @@ figure_size = (5, 3)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
 example_name = "ex-gwt-mt3dms-p02"
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Scenario parameters - make sure there is at least one blank line before next item
 
@@ -364,7 +367,7 @@ def build_mt3dms(
 
 def build_model(sim_name, **kwargs):
     sims = None
-    if config.buildModel:
+    if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
         sim_mf6gwt = build_mf6gwt(sim_name, **kwargs)
         sim_mf2005 = build_mf2005(sim_name)
@@ -377,24 +380,23 @@ def build_model(sim_name, **kwargs):
 
 
 def write_model(sims, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
         sim_mf2005.write_input()
         sim_mt3dms.write_input()
-    return
 
 
 # Function to run the model
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sims, silent=True):
     success = True
     report = True
-    if config.runModel:
+    if runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         print("Running mf6gwf...")
@@ -422,7 +424,7 @@ def run_model(sims, silent=True):
 
 
 def plot_results_ct(sims, idx, **kwargs):
-    if not config.plotModel:
+    if not plotModel:
         return
     
     print("Plotting C versus t model results...")
@@ -466,16 +468,16 @@ def plot_results_ct(sims, idx, **kwargs):
         axs.legend()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-ct{config.figure_ext}"
+            fname = f"{sim_folder}-ct.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
 
 def plot_results():
-    if not config.plotModel:
+    if not plotModel:
         return
 
     print("Plotting model results...")
@@ -520,11 +522,10 @@ def plot_results():
         axs.legend()
 
         # save figure
-        if config.plotSave:
-            fname = f"{example_name}{config.figure_ext}"
+        if plotSave:
+            fname = f"{example_name}.png"
             fpth = os.path.join("..", "figures", fname)
             fig.savefig(fpth)
-    return
 
 
 # Function that wraps all of the steps for each scenario
@@ -546,63 +547,31 @@ def scenario(idx, silent=True):
         plot_results_ct(sims, idx, **parameter_dict)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Simulated Zero-Order Growth in a Uniform Flow Field
 
+# Scenario 1 - description
 
-def test_02():
-    scenario(1, silent=False)
+scenario(0)
 
+# Scenario 2 - description
 
-def test_03():
-    scenario(2, silent=False)
+scenario(1)
 
+# Scenario 3 - description
 
-def test_04():
-    scenario(3, silent=False)
+scenario(2)
 
+# Scenario 4 - description
 
-def test_05():
-    scenario(4, silent=False)
+scenario(3)
 
+# Scenario 5 - description
 
-def test_06():
-    scenario(5, silent=False)
+scenario(4)
 
+# Scenario 6 - description
 
-def test_plot_results():
-    plot_results()
+scenario(5)
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-    # Scenario 1 - description
-
-    scenario(0)
-
-    # Scenario 2 - description
-
-    scenario(1)
-
-    # Scenario 3 - description
-
-    scenario(2)
-
-    # Scenario 4 - description
-
-    scenario(3)
-
-    # Scenario 5 - description
-
-    scenario(4)
-
-    # Scenario 6 - description
-
-    scenario(5)
-
-    # Plot All Results
-    plot_results()
+# Plot All Results
+plot_results()

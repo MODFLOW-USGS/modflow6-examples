@@ -24,7 +24,7 @@ scripts = [
     if file_name.endswith(".py") and file_name.startswith("ex-")
 ]
 for s in scripts:
-    args = ("python", s, "--no_run", "--no_plot")
+    args = ("python", s)
     proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=pth)
     stdout, stderr = proc.communicate()
     if stdout:

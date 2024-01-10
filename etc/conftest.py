@@ -1,4 +1,11 @@
-import os
+from pathlib import Path
+import pytest
+
+PROJ_ROOT = Path(__file__).parent.parent
+
+@pytest.fixture(scope="session")
+def run(pytestconfig):
+    return pytestconfig.getoption("run")
 
 
 def pytest_addoption(parser):
@@ -6,13 +13,12 @@ def pytest_addoption(parser):
 
 
 def pytest_generate_tests(metafunc):
-    if "build" in metafunc.fixturenames:
+    if "example" in metafunc.fixturenames:
         run = metafunc.config.getoption("run")
-        scripts_dict = {
-            file_name: (run, file_name)
-            for file_name in sorted(os.listdir(os.path.join("..", "scripts")))
-            if file_name.endswith(".py") and file_name.startswith("ex-")
+        scripts = {
+            file.name: (run, file)
+            for file in sorted((PROJ_ROOT / "scripts").glob("ex-*.py"))
         }
         metafunc.parametrize(
-            "build", scripts_dict.values(), ids=scripts_dict.keys()
+            "example", scripts.values(), ids=scripts.keys()
         )

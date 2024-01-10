@@ -5,19 +5,19 @@
 
 # ### MODFLOW 6 Sagehen Problem Setup
 
-# Append to system path to include the common subdirectory
 
 import os
+from os import environ
+import pathlib as pl
 import sys
 
-sys.path.append(os.path.join("..", "common"))
-import config
 import flopy
 import flopy.utils.binaryfile as bf
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 # Imports
 
@@ -464,10 +464,20 @@ def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
 figure_size = (6, 6)
 figure_size_ts = (6, 3)
 
-# Base simulation and model name and workspace
+# Simulation name and workspace
 
-ws = config.base_ws
 example_name = "ex-gwf-sagehen"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -504,7 +514,7 @@ nstp = [1] * num_ts
 tsmult = [1.0] * num_ts
 
 # from mf-nwt .dis file
-dat_pth = os.path.join(config.data_ws, example_name)
+dat_pth = os.path.join(data_ws, example_name)
 top = np.loadtxt(os.path.join(dat_pth, "top1.txt"))
 bot1 = np.loadtxt(os.path.join(dat_pth, "bot1.txt"))
 # from mf-nwt .bas file
@@ -751,7 +761,7 @@ maxmvr = 10000  # Something arbitrarily high
 
 
 def build_model(sim_name, silent=False):
-    if config.buildModel:
+    if buildModel:
         # Instantiate the MODFLOW 6 simulation
         sim_ws = os.path.join(ws, example_name)
         sim = flopy.mf6.MFSimulation(
@@ -939,17 +949,17 @@ def build_model(sim_name, silent=False):
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
 # Function to run the model. True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         success, buff = sim.run_simulation(silent=silent)
         if not success:
@@ -961,7 +971,7 @@ def run_model(sim, silent=True):
 
 
 def plot_results(mf6, idx):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     print("Plotting model results...")
@@ -983,11 +993,11 @@ def plot_results(mf6, idx):
         styles.heading(heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-finfFact", config.figure_ext),
+                "{}{}".format(sim_name + "-finfFact", figure_ext),
             )
             fig.savefig(fpth)
 
@@ -1024,11 +1034,11 @@ def plot_results(mf6, idx):
         styles.heading(heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-gwDepth", config.figure_ext),
+                "{}{}".format(sim_name + "-gwDepth", figure_ext),
             )
             fig.savefig(fpth)
 
@@ -1171,11 +1181,11 @@ def plot_results(mf6, idx):
         styles.heading(heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-uzFlow", config.figure_ext),
+                "{}{}".format(sim_name + "-uzFlow", figure_ext),
             )
             fig.savefig(fpth)
 
@@ -1225,11 +1235,11 @@ def plot_results(mf6, idx):
         styles.heading(heading=title)
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-swFlow", config.figure_ext),
+                "{}{}".format(sim_name + "-swFlow", figure_ext),
             )
             fig.savefig(fpth)
 

@@ -9,19 +9,13 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the
@@ -30,8 +24,17 @@ figure_size = (5, 3)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
 example_name = "ex-gwt-mt3dsupp82"
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Model units
 
@@ -329,7 +332,7 @@ def build_mt3dms(sim_folder, modflowmodel):
 
 def build_model(sim_name):
     sims = None
-    if config.buildModel:
+    if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
         sim_mf6gwt = build_mf6gwt(sim_name)
         sim_mf2005 = build_mf2005(sim_name)
@@ -342,23 +345,22 @@ def build_model(sim_name):
 
 
 def write_model(sims, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
         sim_mf2005.write_input()
         sim_mt3dms.write_input()
-    return
 
 
 # Function to run the model
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sims, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
         success, buff = sim_mf6gwf.run_simulation(silent=silent)
@@ -382,7 +384,7 @@ def run_model(sims, silent=True):
 
 
 def plot_results(sims, idx):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     print("Plotting model results...")
@@ -426,10 +428,10 @@ def plot_results(sims, idx):
         ax.set_ylabel("y position (m)")
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-map{config.figure_ext}"
+            fname = f"{sim_folder}-map.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -450,16 +452,8 @@ def scenario(idx, silent=True):
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Simulated Zero-Order Growth in a Uniform Flow Field
 
+# Add a description of the plot(s)
 
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-    # Add a description of the plot(s)
-
-    scenario(0)
+scenario(0)

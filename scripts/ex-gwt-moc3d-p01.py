@@ -10,20 +10,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
 from flopy.plot.styles import styles
+from modflow_devtools.misc import timed, is_in_ci
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -35,8 +29,17 @@ figure_size = (5, 3)
 
 # Base simulation and model name and workspace
 
-ws = config.base_ws
+ws = pl.Path("../examples")
 example_name = "ex-gwt-moc3dp1"
+
+# Configuration
+
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
 # Scenario parameters - make sure there is at least one blank line before next item
 
@@ -414,7 +417,7 @@ def build_model(
     sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
 ):
     sims = None
-    if config.buildModel:
+    if buildModel:
         sim_mf6gwf = build_mf6gwf(sim_name)
         sim_mf6gwt = build_mf6gwt(
             sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
@@ -427,21 +430,20 @@ def build_model(
 
 
 def write_model(sims, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim_mf6gwf, sim_mf6gwt = sims
         sim_mf6gwf.write_simulation(silent=silent)
         sim_mf6gwt.write_simulation(silent=silent)
-    return
 
 
 # Function to run the model
 # True is returned if the model runs successfully
 
 
-@config.timeit
+@timed
 def run_model(sims, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success = False
         sim_mf6gwf, sim_mf6gwt = sims
         success, buff = sim_mf6gwf.run_simulation(silent=silent)
@@ -459,7 +461,7 @@ def run_model(sims, silent=True):
 def plot_results_ct(
     sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
 ):
-    if not config.plotModel:
+    if not plotModel:
         return
 
     print("Plotting C versus t model results...")
@@ -523,10 +525,10 @@ def plot_results_ct(
         axs.legend()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-ct{config.figure_ext}"
+            fname = f"{sim_folder}-ct.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -534,7 +536,7 @@ def plot_results_ct(
 def plot_results_cd(
     sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
 ):
-    if config.plotModel:
+    if plotModel:
         return
 
     print("Plotting C versus x model results...")
@@ -594,11 +596,11 @@ def plot_results_cd(
         plt.legend()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-cd{config.figure_ext}"
+            fname = f"{sim_folder}-cd.png"
             fpth = os.path.join(ws, "..", "figures", fname)
             fig.savefig(fpth)
 
@@ -623,40 +625,20 @@ def scenario(idx, silent=True):
         plot_results_cd(sims, idx, **parameter_dict)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# ### Simulated Zero-Order Growth in a Uniform Flow Field
 
+# Scenario 1 - description
 
-def test_02():
-    scenario(1, silent=False)
+scenario(0)
 
+# Scenario 2 - description
 
-def test_03():
-    scenario(2, silent=False)
+scenario(1)
 
+# Scenario 3 - description
 
-def test_04():
-    scenario(3, silent=False)
+scenario(2)
 
+# Scenario 4 - description
 
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-    # Scenario 1 - description
-
-    scenario(0)
-
-    # Scenario 2 - description
-
-    scenario(1)
-
-    # Scenario 3 - description
-
-    scenario(2)
-
-    # Scenario 4 - description
-
-    scenario(3)
+scenario(3)

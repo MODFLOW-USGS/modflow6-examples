@@ -10,20 +10,14 @@
 # Imports
 
 import os
-import sys
+from os import environ
+import pathlib as pl
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
+from modflow_devtools.misc import timed, is_in_ci
 from flopy.plot.styles import styles
 
 # Set figure properties specific to the problem
@@ -31,13 +25,20 @@ from flopy.plot.styles import styles
 figure_size = (6.8, 3.4)
 arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
-# Base simulation and model name and workspace
+# Configuration
 
-ws = config.base_ws
+buildModel = environ.get("BUILD", True)
+writeModel = environ.get("WRITE", True)
+runModel = environ.get("RUN", True)
+plotModel = environ.get("PLOT", True)
+plotSave = environ.get("SAVE", is_in_ci())
+createGif = environ.get("GIF", False)
 
-# Simulation name
+# Simulation name and workspace
 
 sim_name = "ex-gwf-csub-p02"
+ws = pl.Path("../examples")
+data_ws = pl.Path("../data")
 
 # Scenario parameters
 
@@ -123,7 +124,7 @@ def build_model(
     kv=2e-6,
     ndelaycells=19,
 ):
-    if config.buildModel:
+    if buildModel:
         sim_ws = os.path.join(ws, name)
         if subdir_name is not None:
             sim_ws = os.path.join(sim_ws, subdir_name)
@@ -258,7 +259,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if config.writeModel:
+    if writeModel:
         sim.write_simulation(silent=silent)
 
 
@@ -267,10 +268,10 @@ def write_model(sim, silent=True):
 #
 
 
-@config.timeit
+@timed
 def run_model(sim, silent=True):
     success = True
-    if config.runModel:
+    if runModel:
         success, buff = sim.run_simulation(silent=silent)
         if not success:
             print(buff)
@@ -363,9 +364,9 @@ def plot_grid(sim, silent=True):
         plt.tight_layout()
 
         # save figure
-        if config.plotSave:
+        if plotSave:
             fpth = os.path.join(
-                "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+                "..", "figures", f"{sim_name}-grid.png"
             )
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -459,8 +460,8 @@ def plot_head_based(sim, silent=True):
         plt.tight_layout()
 
         # save figure
-        if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+        if plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -539,8 +540,8 @@ def plot_effstress(sim, silent=True):
         plt.tight_layout()
 
         # save figure
-        if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+        if plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -656,8 +657,8 @@ def plot_comp_q_comparison(sim, silent=True):
         leg = styles.graph_legend(ax, loc="upper right")
 
         # save figure
-        if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
+        if plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -798,8 +799,8 @@ def plot_head_comparison(sim, silent=True):
         leg = styles.graph_legend(ax, loc="center", bbox_to_anchor=(0.64, 0.5))
 
         # save figure
-        if config.plotSave:
-            fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
+        if plotSave:
+            fpth = os.path.join("..", "figures", f"{name}-02.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -809,7 +810,7 @@ def plot_head_comparison(sim, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
+    if plotModel:
         name = sim.name
 
         if name.endswith("a"):
@@ -846,7 +847,7 @@ def simulation(idx, silent=True):
 
         write_model(sim, silent=silent)
 
-        if config.runModel:
+        if runModel:
             success = run_model(sim, silent=silent)
 
     else:
@@ -868,39 +869,23 @@ def simulation(idx, silent=True):
 
                 write_model(sim, silent=silent)
 
-                if config.runModel:
+                if runModel:
                     success = run_model(sim, silent=silent)
 
-    if config.plotModel and success:
+    if plotModel and success:
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# ### Delay interbed drainage
+#
+# #### Head based solution
 
+simulation(0)
 
-def test_02():
-    simulation(1, silent=False)
+# #### Effective stress solution
 
+simulation(1)
 
-def test_03():
-    simulation(2, silent=False)
+# #### Head based for multiple interbed thicknesses
 
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Delay interbed drainage
-    #
-    # #### Head based solution
-
-    simulation(0)
-
-    # #### Effective stress solution
-
-    simulation(1)
-
-    # #### Head based for multiple interbed thicknesses
-
-    simulation(2)
+simulation(2)
