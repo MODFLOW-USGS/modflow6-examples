@@ -24,6 +24,7 @@ jobs:
     env:
       script-directory: scripts
       etc-directory: etc
+      test-directory: autotest
     defaults:
       run:
         shell: bash
@@ -57,8 +58,8 @@ jobs:
           repo: modflow6-nightly-build
 
       - name: Run scripts without model runs
-        run: pytest -v -n=auto --durations=0 ci_build_files.py
-        working-directory: ${{env.etc-directory}}
+        run: pytest -v -n=auto --durations=0 test_scripts.py
+        working-directory: ${{env.test-directory}}
 
       - name: zip input files
         run: |
@@ -82,6 +83,7 @@ jobs:
     env:
       script-directory: scripts
       etc-directory: etc
+      test-directory: autotest
     defaults:
       run:
         shell: bash
@@ -127,15 +129,18 @@ jobs:
         uses: modflowpy/install-modflow-action@v1
         with:
           repo: modflow6-nightly-build
+      
+      - name: Run scripts without model runs
+        run: pytest -v -n=auto --durations=0 test_scripts.py
+        working-directory: ${{env.test-directory}}
 
-      - name: Run scripts
-        run: pytest -v -n=auto --durations=0 --run=True ci_build_files.py
-        working-directory: ${{env.etc-directory}}
+      - name: Create/run notebooks
+        run: pytest -v -n=auto --durations=0 test_notebooks.py --run
+        working-directory: ${{env.test-directory}}
 
       - name: Run processing script
         if: matrix.python == '3.9'
-        run: |
-          python process-scripts.py
+        run: python process-scripts.py
         working-directory: ${{env.script-directory}}
 
       - name: Build mf6examples LaTeX document

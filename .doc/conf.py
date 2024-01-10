@@ -58,12 +58,6 @@ f.write(lines)
 # close the restructured text file
 f.close()
 
-# # -- convert the tutorial scripts -------------------------------------------
-# if not on_rtd:
-#     cmd = ("python", "test_build.py")
-#     print(" ".join(cmd))
-#     os.system(" ".join(cmd))
-
 # -- Build the example restructured text files -------------------------------
 if not on_rtd:
     start_dir = os.getcwd()

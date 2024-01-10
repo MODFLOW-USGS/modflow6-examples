@@ -72,15 +72,17 @@ To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks
 
 ### Using `pytest`
 
-Pytest can be used to run all of the example scripts and models. The `pytest-xdist` plugin is a convenient way to run the scripts in parallel. Note that `pytest` must be invoked from the `etc/` directory, *not* from `scripts/`.
+Pytest can be used to run the example scenarios. The `pytest-xdist` plugin is a convenient way to run the tests in parallel.
 
-To run example scripts in parallel with verbose output, and generate input files *without* running models:
+Tests should be run from the `autotest/` directory, *not* from `scripts/`. By default, simulations are built and written to subdirectories of `examples/`, but are not run. To run, use the `--run` flag.
+
+For instance, to test run all scenarios in parallel with verbose output:
 
 ```shell
-pytest -v -n auto ci_build_files.py
+pytest -v -n auto test_scripts.py --run
 ```
 
-To run models, use `--run`. To run in serial instead of parallel, omit `-n auto`.
+To run in serial instead of parallel, omit `-n auto`.
 
 ### Using `jupytext`
 
@@ -90,9 +92,16 @@ The example scripts can be converted to notebooks with `jupytext`. For instance,
 jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ipynb --execute
 ```
 
+Unlike with `pytest`, simulations run when the example script is invoked with `jupytext`.
+
 ## Contributing examples
 
-Adding a new example requires adding a new example script in the `scripts/` folder and adding a new LaTeX problem description in the `doc/sections/` folder. Then open a pull request from your fork of the repository.
+Adding a new example requires:
+
+* adding a new example script in the `scripts/` folder
+* adding a new LaTeX problem description in the `doc/sections/` folder.
+
+Then open a pull request from your fork of the repository.
 
 ## Releasing the examples
 

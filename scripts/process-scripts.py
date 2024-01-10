@@ -1,6 +1,5 @@
 """
-Process MODFLOW 6 examples to build jupyter notebooks,
-summary tables for the LaTeX document, and markdown tables for ReadtheDocs.
+Build LaTeX and Markdown tables for the PDF documentation and ReadtheDocs.
 
 The files that are processed are the example python scripts (expy) and
 the example directories (exdir) that are created from running those scripts.
@@ -79,49 +78,6 @@ def _replace_quotes(proc_str):
     for r in (("'", ""), ('"', "")):
         proc_str = proc_str.replace(*r)
     return proc_str
-
-
-def make_notebooks():
-    nb_pth = os.path.join("..", "notebooks")
-    if not os.path.isdir(nb_pth):
-        os.makedirs(nb_pth)
-
-    tpth = "raw.py"
-    # converts python scripts to jupyter notebooks
-    for file in files:
-        # do a little processing
-        with open(file) as f:
-            lines = f.read().splitlines()
-        with open(tpth, "w") as f:
-            modifyIndent = 0
-            for idx, line in enumerate(lines):
-                # exclude if __name__ == "main"
-                if "if __name__" in line:
-                    modifyIndent = len(lines[idx + 1]) - len(
-                        lines[idx + 1].lstrip(" ")
-                    )
-                    continue
-
-                f.write(f"{line[modifyIndent:]}\n")
-
-        # convert temporary python file to a notebook
-        basename = os.path.splitext(file)[0] + ".ipynb"
-        opth = os.path.join(nb_pth, basename)
-        cmd = (
-            "jupytext",
-            "--from py",
-            "--to ipynb",
-            "--update",
-            "-o",
-            opth,
-            tpth,
-        )
-        print(" ".join(cmd))
-        os.system(" ".join(cmd))
-
-        # remove temporary file
-        if os.path.isfile(tpth):
-            os.remove(tpth)
 
 
 def table_standard_header(caption, label):
@@ -806,9 +762,6 @@ if __name__ == "__main__":
 
         if len(only_process_ex) > 0:
             files = [item for item in files if item in only_process_ex]
-
-    # make the notebooks
-    make_notebooks()
 
     # make the tables from the scripts
     make_tables()
