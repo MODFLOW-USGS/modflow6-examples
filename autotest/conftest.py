@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import pytest
 
 PROJ_ROOT = Path(__file__).parents[1]
@@ -16,7 +17,7 @@ def run(pytestconfig):
 
 
 def pytest_addoption(parser):
-    parser.addoption("--run", action="store", default=False)
+    parser.addoption("--run", action="store_true", default=False)
 
 
 def pytest_generate_tests(metafunc):
@@ -31,9 +32,6 @@ def pytest_generate_tests(metafunc):
     if "example" in metafunc.fixturenames:
         run = metafunc.config.getoption("run")
         scripts = {
-            file.name: (run, file)
-            for file in sorted(SCRIPTS_PATH.glob("ex-*.py"))
+            file.name: (run, file) for file in sorted(SCRIPTS_PATH.glob("ex-*.py"))
         }
-        metafunc.parametrize(
-            "example", scripts.values(), ids=scripts.keys()
-        )
+        metafunc.parametrize("example", scripts.values(), ids=scripts.keys())

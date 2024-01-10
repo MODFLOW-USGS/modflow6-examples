@@ -49,12 +49,12 @@ time_units = "days"
 
 # Configuration
 
-buildModel = environ.get("BUILD", True)
-writeModel = environ.get("WRITE", True)
-runModel = environ.get("RUN", True)
-plotModel = environ.get("PLOT", True)
-plotSave = environ.get("SAVE", is_in_ci())
-createGif = environ.get("GIF", False)
+buildModel = str(environ.get("BUILD", True)).lower() == "true"
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
+runModel = str(environ.get("RUN", True)).lower() == "true"
+plotModel = str(environ.get("PLOT", True)).lower() == "true"
+plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
+createGif = str(environ.get("GIF", False)).lower() == "true"
 
 # Scenario parameters
 
