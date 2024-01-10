@@ -57,8 +57,8 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Run scripts without model runs
-        run: pytest -v -n=auto --durations=0 test_scripts.py
+      - name: Create/run notebooks
+        run: pytest -v -n=auto --durations=0 test_notebooks.py --run
         working-directory: ${{env.test-directory}}
 
       - name: zip input files
@@ -129,10 +129,6 @@ jobs:
         uses: modflowpy/install-modflow-action@v1
         with:
           repo: modflow6-nightly-build
-      
-      - name: Run scripts without model runs
-        run: pytest -v -n=auto --durations=0 test_scripts.py
-        working-directory: ${{env.test-directory}}
 
       - name: Create/run notebooks
         run: pytest -v -n=auto --durations=0 test_notebooks.py --run
