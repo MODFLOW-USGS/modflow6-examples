@@ -44,6 +44,7 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
+          python -m ipykernel install --name python_kernel --user
         working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
@@ -117,6 +118,7 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
+          python -m ipykernel install --name python_kernel --user
         working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
