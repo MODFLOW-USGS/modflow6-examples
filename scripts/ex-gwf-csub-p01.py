@@ -19,6 +19,7 @@ import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -26,7 +27,6 @@ from modflow_devtools.misc import timed
 
 sim_name = "ex-gwf-csub-p01"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 
@@ -82,7 +82,10 @@ locw201 = 11
 
 # Load the aquifer load time series
 
-pth = data_ws / sim_name / "train_load_193704231304.csv"
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/train_load_193704231304.csv",
+    known_hash="md5:32dc8e7b7e39876374af43605e264725",
+)
 csv_load = np.genfromtxt(pth, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file

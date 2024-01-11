@@ -19,6 +19,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -97,33 +98,53 @@ shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, lake locations, top, bottom, and evapotranspiration surface arrays
 
-data_pth = os.path.join("..", "data", sim_name)
-fpth = os.path.join(data_pth, "strt1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/strt1.txt",
+    known_hash="md5:273db6e876e7cfb4985b0b09c232f7cc",
+)
 strt1 = np.loadtxt(fpth, dtype=float)
 strt2 = strt1
 strt = [strt1, strt2]
-fpth = os.path.join(data_pth, "idomain.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+    known_hash="md5:3fb0b80939ff6ccc9dc47d010e002a3c",
+)
 idomain1 = np.loadtxt(fpth, dtype=int)
 idomain = [idomain1, idomain1]
 lake_map = np.ones(shape3d, dtype=int) * -1
-fpth = os.path.join(data_pth, "lakes.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes.txt",
+    known_hash="md5:c344195438bda85738cab2ce34a16733",
+)
 lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
 lake_map = np.ma.masked_where(lake_map < 0, lake_map)
-fpth = os.path.join(data_pth, "top1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top1.txt",
+    known_hash="md5:ba3f1422f45388b19dc1ef6b3076fa96",
+)
 top = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "bot1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bot1.txt",
+    known_hash="md5:4343c79bbf3ad039638d2379d335d06e",
+)
 bot1 = np.loadtxt(fpth, dtype=float)
 bot2 = np.ones_like(bot1) * 300.0
 botm = [bot1, bot2]
 
 # Create hydraulic conductivity and specific yield
 
-fpth = os.path.join(data_pth, "k11_lay1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/k11_lay1.txt",
+    known_hash="md5:287160064d1a9bc0bae94b018bf187d7",
+)
 k11_lay1 = np.loadtxt(fpth, dtype=float) * 2.5
 k11_lay2 = np.ones_like(k11_lay1) * 0.35e-2
 k11 = [k11_lay1, k11_lay2]
 k33 = 0.5e-5
-fpth = os.path.join(data_pth, "sy1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/sy1.txt",
+    known_hash="md5:80be4a9ba817465cf5c05934f94dd675",
+)
 sy1 = np.loadtxt(fpth, dtype=float)
 sy2 = np.ones_like(sy1) * 0.20
 sy = [sy1, sy2]

@@ -17,6 +17,7 @@ from pprint import pformat
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -32,7 +33,6 @@ figure_size = (6, 6)
 
 example_name = "ex-gwt-prudic2004t2"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data") / example_name
 
 # Configuration
 
@@ -75,13 +75,22 @@ total_time = 9131.0  # Total simulation time ($d$)
 
 # Load Data Arrays
 
-fname = os.path.join(data_ws, "bot1.dat")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bot1.dat",
+    known_hash="md5:c510defe0eb1ba1fbfab5663ff63cd83",
+)
 bot0 = np.loadtxt(fname)
 botm = [bot0] + [bot0 - (15.0 * k) for k in range(1, nlay)]
-fname = os.path.join(data_ws, "idomain1.dat")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/idomain1.dat",
+    known_hash="md5:45d1ca08015e4a34125ccd95a83da0ee",
+)
 idomain0 = np.loadtxt(fname, dtype=int)
 idomain = nlay * [idomain0]
-fname = os.path.join(data_ws, "lakibd.dat")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/lakibd.dat",
+    known_hash="md5:18c90af94c34825a206935b7ddace2f9",
+)
 lakibd = np.loadtxt(fname, dtype=int)
 
 
@@ -95,7 +104,10 @@ lakibd = np.loadtxt(fname, dtype=int)
 
 
 def get_stream_data():
-    fname = os.path.join(data_ws, "stream.csv")
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/stream.csv",
+        known_hash="md5:1291c8dec5a415866c711ee14bf0b1f8",
+    )
     dt = 5 * [int] + [float]
     streamdata = np.genfromtxt(fname, names=True, delimiter=",", dtype=dt)
     connectiondata = [[ireach] for ireach in range(streamdata.shape[0])]
@@ -212,7 +224,10 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwfrcha(gwf, recharge={0: recharge}, pname="RCH-1")
 
     chdlist = []
-    fname = os.path.join(data_ws, "chd.dat")
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/chd.dat",
+        known_hash="md5:7889521ec9ec9521377d604d9f6d1f74",
+    )
     for line in open(fname).readlines():
         ll = line.strip().split()
         if len(ll) == 4:
@@ -646,15 +661,24 @@ def plot_gwt_results(sims):
             ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
             ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
 
-            fname = os.path.join(data_ws, "teststrm.sg2")
+            fname = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg2",
+                known_hash="md5:4bb5e256ed8b67f1743d547b43a610d0",
+            )
             sg = np.genfromtxt(fname, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
 
-            fname = os.path.join(data_ws, "teststrm.sg3")
+            fname = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg3",
+                known_hash="md5:a30d8e27d0bbe09dcb9f39d115592ff5",
+            )
             sg = np.genfromtxt(fname, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
 
-            fname = os.path.join(data_ws, "teststrm.sg4")
+            fname = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg4",
+                known_hash="md5:ec589d7333fe160842945b5895f5160a",
+            )
             sg = np.genfromtxt(fname, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")
 

@@ -16,6 +16,7 @@ from os import environ
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.latex import (build_table, exp_format, float_format,
                                     int_format)
@@ -30,7 +31,6 @@ masked_values = (0, 1e30, -1e30)
 
 sim_name = "ex-gwf-drn-p01"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 
@@ -92,20 +92,36 @@ shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and uzf/mvr arrays
 
-data_pth = data_ws / "ex-gwf-sfr-p01"
-fpth = os.path.join(data_pth, "idomain.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-sfr-p01/idomain.txt",
+    known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
+)
 idomain = np.loadtxt(fpth, dtype=int)
-fpth = os.path.join(data_pth, "bottom.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-sfr-p01/bottom.txt",
+    known_hash="md5:fa5fe276f4f58a01eabfe88516cc90af",
+)
 botm = np.loadtxt(fpth, dtype=float)
 
-data_pth = data_ws / sim_name
-fpth = os.path.join(data_pth, "top.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top.txt",
+    known_hash="md5:88cc15f87824ebfd35ed5b4be7f68387",
+)
 top = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "infilt_mult.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/infilt_mult.txt",
+    known_hash="md5:8bf0a48d604263cb35151587a9d8ca29",
+)
 infilt_mult = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "extwc_mult.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/extwc_mult.txt",
+    known_hash="md5:6e289692a2b55b7bafb8bd9d71b0a2cb",
+)
 extwc_mult = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "routing_map.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/routing_map.txt",
+    known_hash="md5:1bf9a6bb3513a184aa5093485e622f5b",
+)
 routing_map = np.loadtxt(fpth, dtype=int)
 
 # convert routing map to zero-based reach numbers

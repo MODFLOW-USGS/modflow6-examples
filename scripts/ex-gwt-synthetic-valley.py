@@ -19,6 +19,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
+import pooch
 import shapely
 from flopy.discretization import VertexGrid
 from flopy.utils.triangle import Triangle
@@ -175,7 +176,6 @@ clay_cmap = colors.ListedColormap(["brown"])
 
 example_name = "ex-gwt-synthetic-valley"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Conversion factors
 
@@ -285,12 +285,31 @@ voronoi_grid = VertexGrid(**gridprops, nlay=1, idomain=idomain_vor)
 
 # +
 # load raster data files
-raster_path = data_ws / example_name
-kaq = flopy.utils.Raster.load(raster_path / "k_aq_SI.tif")
-kclay = flopy.utils.Raster.load(raster_path / "k_clay_SI.tif")
-top_base = flopy.utils.Raster.load(raster_path / "top_SI.tif")
-bot = flopy.utils.Raster.load(raster_path / "bottom_SI.tif")
-lake_location = flopy.utils.Raster.load(raster_path / "lake_location_SI.tif")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_aq_SI.tif",
+    known_hash="md5:d233e5c393ab6c029c63860d73818856",
+)
+kaq = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_clay_SI.tif",
+    known_hash="md5:a08999c37f42b35884468e4ef896d5f9",
+)
+kclay = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/top_SI.tif",
+    known_hash="md5:781155bdcc2b9914e1cad6b10de0e9c7",
+)
+top_base = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bottom_SI.tif",
+    known_hash="md5:00b4a39fbf5180e65c0367cdb6f15c93",
+)
+bot = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/lake_location_SI.tif",
+    known_hash="md5:38600d6f0eef7c033ede278252dc6343",
+)
+lake_location = flopy.utils.Raster.load(fname)
 # -
 
 # +

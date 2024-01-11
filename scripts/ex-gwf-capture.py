@@ -23,6 +23,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import modflowapi
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -48,16 +49,21 @@ figure_size = (6, 6)
 
 # Load the bottom, hydraulic conductivity, and idomain arrays
 
-bottom = np.loadtxt(
-    os.path.join("..", "data", sim_name, "bottom.txt"),
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+    known_hash="md5:201758a5b7febb0390b8b52e634be27f",
 )
-k11 = np.loadtxt(
-    os.path.join("..", "data", sim_name, "hydraulic_conductivity.txt"),
+bottom = np.loadtxt(pth)
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/hydraulic_conductivity.txt",
+    known_hash="md5:6c78564ba92e850d7d51d6e957b8a3ff",
 )
-idomain = np.loadtxt(
-    os.path.join("..", "data", sim_name, "idomain.txt"),
-    dtype=np.int32,
+k11 = np.loadtxt(pth)
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+    known_hash="md5:435d4490adff7a35d1d4928661e45d81",
 )
+idomain = np.loadtxt(pth, dtype=np.int32)
 
 
 # Table Capture Fraction Model Parameters

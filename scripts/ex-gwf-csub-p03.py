@@ -34,7 +34,6 @@ arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 sim_name = "ex-gwf-csub-p03"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 

@@ -30,6 +30,7 @@ from pprint import pformat
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
 from modflow_devtools.misc import timed
@@ -51,7 +52,6 @@ createGif = str(environ.get("GIF", True)).lower() == "true"
 # Base simulation and model name and workspace
 
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 example_name = "ex-gwt-mt3dms-p10"
 
 # Model units
@@ -92,7 +92,11 @@ delc = (
 hk = [60.0, 60.0, 520.0, 520.0]
 laytyp = icelltype = 0
 # Starting Heads:
-f = open(data_ws / "ex-gwt-mt3dms-p10" / "p10shead.dat")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10shead.dat",
+    known_hash="md5:c6591c3c3cfd023ab930b7b1121bfccf",
+)
+f = open(fpth)
 s0 = np.empty((nrow * ncol), dtype=float)
 s0 = read1d(f, s0).reshape((nrow, ncol))
 f.close()
@@ -147,7 +151,11 @@ wel_mf6_spd = {0: welspd_mf6}
 
 # Transport related
 # Starting concentrations:
-f = open(data_ws / "ex-gwt-mt3dms-p10" / "p10cinit.dat")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10cinit.dat",
+    known_hash="md5:8e2d3ba7af1ec65bb07f6039d1dfb2c8",
+)
+f = open(fpth)
 c0 = np.empty((nrow * ncol), dtype=float)
 c0 = read1d(f, c0).reshape((nrow, ncol))
 f.close()

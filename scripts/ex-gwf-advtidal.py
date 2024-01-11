@@ -19,11 +19,11 @@ from os import environ
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from flopy.utils.gridintersect import GridIntersect
 from modflow_devtools.misc import timed
 from shapely.geometry import Polygon
-import pooch
 
 # Simulation name and workspace
 
@@ -191,7 +191,7 @@ def build_model():
     ghb_spd = {0: ghb_spd}
     fname = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/tides.csv",
-        known_hash="md5:425337a0bf24fa72c9e40f4e3d9f698a"
+        known_hash="md5:425337a0bf24fa72c9e40f4e3d9f698a",
     )
     tsdict = get_timeseries(fname, "tides", "linear")
     ghbobs_dict = {}
@@ -230,7 +230,7 @@ def build_model():
     ]
     fname = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/wellrates.csv",
-        known_hash="md5:6ca7366be279d679b14e8338a195422f"
+        known_hash="md5:6ca7366be279d679b14e8338a195422f",
     )
     tsdict = get_timeseries(
         fname,
@@ -263,7 +263,7 @@ def build_model():
     riv_spd = list(zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd))
     fname = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/riverstage.csv",
-        known_hash="md5:83f8b526ec6e6978b1d9dbd6fde231ef"
+        known_hash="md5:83f8b526ec6e6978b1d9dbd6fde231ef",
     )
     tsdict = get_timeseries(
         fname,
@@ -281,7 +281,7 @@ def build_model():
     hashes = [
         "f8b9b26a3403101f3568cd42f759554f",
         "c1ea7ded8edf33d6d70a1daf2524584a",
-        "9ca294d3260c9d3c3487f8db498a0aa6"
+        "9ca294d3260c9d3c3487f8db498a0aa6",
     ]
     for ipak, p in enumerate([recharge_zone_1, recharge_zone_2, recharge_zone_3]):
         ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
@@ -298,7 +298,7 @@ def build_model():
             )
         fname = pooch.retrieve(
             url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge{ipak + 1}.csv",
-            known_hash=f"md5:{hashes[ipak]}"
+            known_hash=f"md5:{hashes[ipak]}",
         )
         tsdict = get_timeseries(
             fname,

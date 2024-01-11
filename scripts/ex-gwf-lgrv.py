@@ -16,6 +16,7 @@ import flopy
 import flopy.utils.lgrutil
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -25,8 +26,8 @@ figure_size = (5, 4)
 
 # Base simulation and data workspace
 
+sim_name = "ex-gwf-lgrv"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data") / "ex-gwf-lgrv"
 
 # Configuration
 
@@ -42,9 +43,9 @@ time_units = "seconds"
 # Scenario parameters
 
 parameters = {
-    "ex-gwf-lgrv-gr": {"configuration": "Refined"},
-    "ex-gwf-lgrv-gc": {"configuration": "Coarse"},
-    "ex-gwf-lgrv-lgr": {"configuration": "LGR"},
+    f"{sim_name}-gr": {"configuration": "Refined"},
+    f"{sim_name}-gc": {"configuration": "Coarse"},
+    f"{sim_name}-lgr": {"configuration": "LGR"},
 }
 
 # Table LGRV Model Parameters
@@ -78,13 +79,49 @@ tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # load data files and process into arrays
 
-fname = data_ws / "top.dat"
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top.dat",
+    known_hash="md5:7e95923e78d0a2e2133929376d913ecf",
+)
 top = np.loadtxt(fname)
 ikzone = np.empty((nlay, nrow, ncol), dtype=float)
+hashes = [
+    "548876af515cb8db0c17e7cba0cda364",
+    "548876af515cb8db0c17e7cba0cda364",
+    "548876af515cb8db0c17e7cba0cda364",
+    "548876af515cb8db0c17e7cba0cda364",
+    "d91e2663ad671119de17a91ffb2a65ab",
+    "1702d97a83074669db86521b22b87304",
+    "da973a8edd77a44ed23a29661e2935eb",
+    "0d514a8f7b208e840a8e5cbfe4018c63",
+    "afd45ac7125f8351b73add34d35d8435",
+    "dc99e101996376e1dde1d172dea05f5d",
+    "fe8d2de0558245c9270597b01070403a",
+    "cd1fcf0fe2c807ff53eda80860bfe50f",
+    "c77b43c8045f5459a75547d575665134",
+    "2252b57927d7d01d0f9a0dda262397d7",
+    "1399c6872dd7c41be4b10c1251ad7c65",
+    "331e4006370cceb3864b881b7a0558d6",
+    "a46e66e632c5af7bf104900793509e5d",
+    "41f44eee3db48234069de4e9e329317b",
+    "8f4f1bdd6b6863c3ba68e2336f5ff70a",
+    "a1c856c05bcc4a17cf3fe61b87fbc720",
+    "a23fef9e866ad9763943150a3b70f5eb",
+    "02d67bc7f67814d2248c27cdd5205cf8",
+    "e7a07da76d111ef2229d26c553daa7eb",
+    "f6bc51735c4af81e1298d0efd06cd506",
+    "432b9a02f3ff4906a214b271c965ebad",
+]
 for k in range(nlay):
-    fname = data_ws / f"ikzone{k + 1}.dat"
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/ikzone{k + 1}.dat",
+        known_hash=f"md5:{hashes[k]}",
+    )
     ikzone[k, :, :] = np.loadtxt(fname)
-fname = data_ws / "riv.dat"
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/riv.dat",
+    known_hash="md5:5ccbe4f29940376309db445dbb2d75d0",
+)
 dt = [
     ("k", int),
     ("i", int),

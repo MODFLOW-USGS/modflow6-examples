@@ -17,6 +17,7 @@ import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -24,7 +25,6 @@ from modflow_devtools.misc import timed
 
 sim_name = "ex-gwf-bcf2ss"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 
@@ -43,7 +43,10 @@ figure_size = (6, 6)
 
 # Load the wetdry array for layer 1
 
-pth = data_ws / sim_name / "wetdry01.txt"
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/wetdry01.txt",
+    known_hash="md5:3a4b357b7d2cd5175a205f3347ab973d",
+)
 wetdry_layer0 = np.loadtxt(
     pth,
 )

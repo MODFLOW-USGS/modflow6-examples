@@ -25,7 +25,6 @@ from modflow_devtools.misc import timed
 
 sim_name = "ex-gwf-csub-p03"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 

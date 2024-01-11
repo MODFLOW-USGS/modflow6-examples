@@ -35,7 +35,6 @@ createGif = str(environ.get("GIF", True)).lower() == "true"
 
 sim_name = "ex-gwf-csub-p02"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Scenario parameters
 

@@ -14,6 +14,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -139,7 +140,7 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
     return conns
 
 
-def determine_runoff_conns_4mvr(pth, elev_arr, ibnd, orig_rch, nrow, ncol):
+def determine_runoff_conns_4mvr(elev_arr, ibnd, orig_rch, nrow, ncol):
     # Get the sfr information stored in a companion script
     sfr_dat = orig_rch.copy()
     sfrlayout = np.zeros_like(ibnd)
@@ -460,7 +461,6 @@ figure_size_ts = (6, 3)
 
 example_name = "ex-gwf-sagehen"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 
@@ -503,12 +503,27 @@ nstp = [1] * num_ts
 tsmult = [1.0] * num_ts
 
 # from mf-nwt .dis file
-dat_pth = os.path.join(data_ws, example_name)
-top = np.loadtxt(os.path.join(dat_pth, "top1.txt"))
-bot1 = np.loadtxt(os.path.join(dat_pth, "bot1.txt"))
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/top1.txt",
+    known_hash="md5:a93be6cf74bf376f696fc2fbcc316aea",
+)
+top = np.loadtxt(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bot1.txt",
+    known_hash="md5:6503e01167875bd257479a2941d1d586",
+)
+bot1 = np.loadtxt(fname)
 # from mf-nwt .bas file
-idomain1 = np.loadtxt(os.path.join(dat_pth, "ibnd1.txt"))
-strt = np.loadtxt(os.path.join(dat_pth, "strt1.txt"))
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/ibnd1.txt",
+    known_hash="md5:7b33e2fba54eae694171c94c75e13d2e",
+)
+idomain1 = np.loadtxt(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/strt1.txt",
+    known_hash="md5:d49e24ec920472380787fd27c528123f",
+)
+strt = np.loadtxt(fname)
 # peel out locations of negative values for setting constant head data
 tmp1 = np.where(idomain1 < 0)
 listOfChdCoords = list(zip(np.zeros_like(tmp1[0]), tmp1[0], tmp1[1]))
@@ -523,9 +538,21 @@ for i in np.arange(len(listOfChdCoords)):
 idomain = np.abs(idomain1)
 
 # from mf-nwt .upw file
-k11 = np.loadtxt(os.path.join(dat_pth, "kh1.txt"))
-sy = np.loadtxt(os.path.join(dat_pth, "sy1.txt"))
-k33 = np.loadtxt(os.path.join(dat_pth, "kv1.txt"))
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/kh1.txt",
+    known_hash="md5:50c0a5bfd79b1c9d0e0900540c19d6cc",
+)
+k11 = np.loadtxt(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/sy1.txt",
+    known_hash="md5:6bc38fd082875633686732f34ba3e18b",
+)
+sy = np.loadtxt(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/kv1.txt",
+    known_hash="md5:7b6685bf35f1150bef553f81c2dfb2cb",
+)
+k33 = np.loadtxt(fname)
 icelltype = 1  # Water table resides in layer 1
 iconvert = np.ones_like(strt)
 
@@ -1736,14 +1763,32 @@ for i in np.arange(0, top.shape[0]):
 # #### Prepping input for UZF package
 # Package_data information
 
-iuzbnd = np.loadtxt(os.path.join(dat_pth, "iuzbnd.txt"))
-thts = np.loadtxt(os.path.join(dat_pth, "thts.txt"))
-uzk33 = np.loadtxt(os.path.join(dat_pth, "vks.txt"))
-finf_grad = np.loadtxt(os.path.join(dat_pth, "finf_gradient.txt"))
-# next, load time series of multipliers
-uz_ts = pd.read_csv(
-    os.path.join(dat_pth, "uzf_ts.dat"), delim_whitespace=True, header=0
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/iuzbnd.txt",
+    known_hash="md5:280faee0782e0de5f2046b38ac20c271",
 )
+iuzbnd = np.loadtxt(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/thts.txt",
+    known_hash="md5:6ebb033605c7e4700ddcf3f2e51ac371",
+)
+thts = np.loadtxt(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/vks.txt",
+    known_hash="md5:61892e6cff6dae1879112c9eb03a1614",
+)
+uzk33 = np.loadtxt(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/finf_gradient.txt",
+    known_hash="md5:e5ac0a0b27a66dd9f2eff63a63c6e6fe",
+)
+finf_grad = np.loadtxt(fname)
+# next, load time series of multipliers
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/uzf_ts.dat",
+    known_hash="md5:969ed0391d64804ec8395a578eb08ed1",
+)
+uz_ts = pd.read_csv(fname, delim_whitespace=True, header=0)
 
 # Need to set iuzbnd inactive where there are constant head cells, or where the
 # model grid is inactive
@@ -1833,7 +1878,7 @@ for t in range(num_ts):
 # calculate an array that is the equivalent of the irunbnd array from the UZF1
 # package.  The MVR package will be used to establish these connection in MF6
 # since the IRUNBND functionality went away in the new MF6 framework.
-irunbnd = determine_runoff_conns_4mvr(dat_pth, top, idomain1, rchs, nrow, ncol)
+irunbnd = determine_runoff_conns_4mvr(top, idomain1, rchs, nrow, ncol)
 
 iuzno = 0
 k = 0  # Hard-wire the layer no.

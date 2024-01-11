@@ -15,6 +15,7 @@ from os import environ
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 import shapefile as shp
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
@@ -130,12 +131,16 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain arrays
-
-data_pth = os.path.join("..", "data", sim_name)
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes-01.txt",
+    known_hash="md5:a74ded5357aa667b9df793847e5f8f41",
+)
 lake_map = np.ones(shape3d, dtype=int) * -1
-fpth = os.path.join(data_pth, "lakes-01.txt")
 lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
-fpth = os.path.join(data_pth, "lakes-02.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes-02.txt",
+    known_hash="md5:7830e5223c958c35be349a3be24a60a3",
+)
 lake_map[1, :, :] = np.loadtxt(fpth, dtype=int) - 1
 
 # create linearly varying evapotranspiration surface

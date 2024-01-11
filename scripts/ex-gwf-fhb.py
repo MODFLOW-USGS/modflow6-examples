@@ -27,7 +27,6 @@ figure_size = (4, 4)
 
 sim_name = "ex-gwf-fhb"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 

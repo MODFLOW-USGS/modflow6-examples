@@ -30,6 +30,7 @@ from pprint import pformat
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
 from modflow_devtools.misc import timed
@@ -85,7 +86,11 @@ k11[11:19, :, 0:24] = k2
 k11[11:19, :, 36:] = k2
 laytyp = 6 * [1] + 21 * [0]
 # Setting starting head information
-f = open(os.path.join("..", "data", "ex-gwt-mt3dms-p08", "p08shead.dat"))
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p08/p08shead.dat",
+    known_hash="md5:673d570ab9d496355470ac598c4b8b55",
+)
+f = open(fpth)
 strt = np.empty((nlay * ncol), dtype=float)
 strt = read1d(f, strt).reshape((nlay, nrow, ncol))
 f.close()

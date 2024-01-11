@@ -13,9 +13,9 @@ from os import environ
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
-from modflow_devtools.misc import is_in_ci
 
 mf6exe = "mf6"
 
@@ -85,7 +85,11 @@ hk = [k1, k1, k2, k2]
 laytyp = icelltype = 0
 
 # Starting heads from file:
-f = open(os.path.join("..", "data", "ex-gwt-mt3dms-p10", "p10shead.dat"))
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10shead.dat",
+    known_hash="md5:c6591c3c3cfd023ab930b7b1121bfccf",
+)
+f = open(fpth)
 s0 = np.empty((nrow * ncol), dtype=float)
 s0 = read1d(f, s0).reshape((nrow, ncol))
 f.close()

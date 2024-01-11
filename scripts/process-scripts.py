@@ -50,25 +50,20 @@ Flag1 Flag2    Arg1 Arg2  Description
     >>> process-scripts.py -k *-maw-*  # process all MAW example problems.
 """
 import ast
+import fnmatch
 import os
 import re
 import sys
-import fnmatch
 
 import flopy
-
-from modflow_devtools.latex import get_header, get_footer
+from modflow_devtools.latex import get_footer, get_header
 
 # path to the example files
 ex_pth = os.path.join("..", "examples")
 
 # only process python files starting with ex_
 files = sorted(
-    [
-        file
-        for file in os.listdir()
-        if file.endswith(".py") and file.startswith("ex-")
-    ]
+    [file for file in os.listdir() if file.endswith(".py") and file.startswith("ex-")]
 )
 
 only_process_ex = []
@@ -89,9 +84,7 @@ def table_standard_header(caption, label):
         "Parameter",
         "Value",
     )
-    return get_header(
-        caption, label, headings, col_widths=col_widths, center=False
-    )
+    return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_scenario_header(caption, label):
@@ -107,9 +100,7 @@ def table_scenario_header(caption, label):
         "Parameter",
         "Value",
     )
-    return get_header(
-        caption, label, headings, col_widths=col_widths, center=False
-    )
+    return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_footer():
@@ -123,9 +114,7 @@ def make_tables():
 
     for file in files:
         print(f"processing...'{file}'")
-        basename = os.path.splitext(os.path.basename(file))[0].replace(
-            "_", "-"
-        )
+        basename = os.path.splitext(os.path.basename(file))[0].replace("_", "-")
         # do a little processing
         with open(file) as f:
             txt = f.read()
@@ -183,9 +172,7 @@ def make_tables():
                         except:
                             units = " (unknown)"
                     if len(table_line) > 0:
-                        table_line += "\t{}{} & {}".format(
-                            text_to_write, units, value
-                        )
+                        table_line += "\t{}{} & {}".format(text_to_write, units, value)
                     else:
                         table_line = "\t& & {}{} & {}".format(
                             text_to_write, units, value
@@ -338,14 +325,11 @@ def get_examples_dict(verbose=False):
                 if file_name.lower() == "mfsim.nam":
                     if verbose:
                         msg = (
-                            "  Found MODFLOW 6 simulation "
-                            + f"name file: {file_name}"
+                            "  Found MODFLOW 6 simulation " + f"name file: {file_name}"
                         )
                         print(msg)
                     print(f"Using flopy to load {dirName}")
-                    sim = flopy.mf6.MFSimulation.load(
-                        sim_ws=dirName, verbosity_level=0
-                    )
+                    sim = flopy.mf6.MFSimulation.load(sim_ws=dirName, verbosity_level=0)
                     sim_paks = []
                     for pak in sim.sim_package_list:
                         pak_type = pak.package_abbr
@@ -402,9 +386,7 @@ def build_md_tables(ex_dict):
     for ex_name in ex_paks.keys():
         for ex_root in ex_order:
             if ex_root in ex_name:
-                pak_link[ex_name] = "[{}](_examples/{}.html)".format(
-                    ex_name, ex_root
-                )
+                pak_link[ex_name] = "[{}](_examples/{}.html)".format(ex_name, ex_root)
                 break
         if ex_name not in list(pak_link.keys()):
             pak_link[ex_name] = ex_name
@@ -587,9 +569,7 @@ def build_tex_tables(ex_dict):
     for idx, ex in enumerate(ex_order):
         for key, d in ex_dict.items():
             if ex in key:
-                ex_number = [idx + 1] + [
-                    " " for i in range(len(d["paks"]) - 1)
-                ]
+                ex_number = [idx + 1] + [" " for i in range(len(d["paks"]) - 1)]
                 d["ex_number"] = ex_number
                 ex_tex[key] = d
 
@@ -611,9 +591,7 @@ def build_tex_tables(ex_dict):
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
-    lines = get_header(
-        caption, label, headings, col_widths=col_widths, firsthead=True
-    )
+    lines = get_header(caption, label, headings, col_widths=col_widths, firsthead=True)
 
     on_ex = 0
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):

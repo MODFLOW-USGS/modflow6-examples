@@ -19,6 +19,7 @@ import flopy
 import matplotlib.patches
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
@@ -30,7 +31,6 @@ figure_size = (7.5, 3)
 
 example_name = "ex-gwt-keating"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 
@@ -486,17 +486,21 @@ def make_animated_gif(sims, idx):
 def plot_cvt_results(sims, idx):
     print("Plotting cvt model results...")
     sim_mf6gwf, sim_mf6gwt, _, _ = sims
-    gwf = sim_mf6gwf.flow
     gwt = sim_mf6gwt.trans
-    botm = gwf.dis.botm.array
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = gwt.obs.output.obs().data
         dt = [("totim", "f8"), ("obs", "f8")]
-        fname = os.path.join(data_ws, "ex-gwt-keating", "keating_obs1.csv")
+        fname = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-keating/keating_obs1.csv",
+            known_hash="md5:174c5548c3bbb9ea4ebc8b5a33ea2851",
+        )
         obs1ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
-        fname = os.path.join(data_ws, "ex-gwt-keating", "keating_obs2.csv")
+        fpth = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-keating/keating_obs2.csv",
+            known_hash="md5:8de2ef529a2537ecd6c62bc207b67fb5",
+        )
         obs2ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
         fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
         ax = axes[0]

@@ -19,6 +19,7 @@ import flopy
 import flopy.utils.cvfdutil
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from flopy.utils.geometry import get_polygon_area
 from flopy.utils.gridintersect import GridIntersect
@@ -32,7 +33,6 @@ figure_size = (5, 5)
 # Simulation name and workspace
 sim_name = "ex-gwf-disvmesh"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 
@@ -110,7 +110,10 @@ def from_argus_export(fname):
 
 # Load argus mesh and get disv grid properties
 
-fname = os.path.join(data_ws, "ex-gwf-disvmesh", "argus.exp")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-disvmesh/argus.exp",
+    known_hash="md5:072a758ca3d35831acb7e1e27e7b8524",
+)
 verts, iverts = from_argus_export(fname)
 gridprops = flopy.utils.cvfdutil.get_disv_gridprops(verts, iverts)
 cell_areas = []
