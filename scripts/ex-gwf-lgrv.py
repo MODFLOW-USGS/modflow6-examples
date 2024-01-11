@@ -329,12 +329,8 @@ def build_model(
 ):
     if sim is None:
         sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
+        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
             outer_maximum=nouter,

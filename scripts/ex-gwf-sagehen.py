@@ -1660,6 +1660,7 @@ def get_rgrd():
 def get_rtp():
     return rtp
 
+
 segs = get_sfrsegs()
 rchs = get_sfrrchs()
 sfrcells = get_sfrcells()
@@ -2086,7 +2087,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-finfFact", '.png'),
+                "{}{}".format(sim_name + "-finfFact", ".png"),
             )
             fig.savefig(fpth)
 
@@ -2127,7 +2128,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-gwDepth", '.png'),
+                "{}{}".format(sim_name + "-gwDepth", ".png"),
             )
             fig.savefig(fpth)
 
@@ -2258,7 +2259,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-uzFlow", '.png'),
+                "{}{}".format(sim_name + "-uzFlow", ".png"),
             )
             fig.savefig(fpth)
 
@@ -2312,7 +2313,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-swFlow", '.png'),
+                "{}{}".format(sim_name + "-swFlow", ".png"),
             )
             fig.savefig(fpth)
 

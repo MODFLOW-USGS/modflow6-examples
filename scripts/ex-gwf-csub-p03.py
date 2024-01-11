@@ -544,9 +544,7 @@ def build_model(
         k33=k33,
         save_specific_discharge=True,
     )
-    flopy.mf6.ModflowGwfsto(
-        gwf, iconvert=iconvert, ss=0.0, sy=0, transient={0: True}
-    )
+    flopy.mf6.ModflowGwfsto(gwf, iconvert=iconvert, ss=0.0, sy=0, transient={0: True})
     if head_based:
         hb_bool = True
         tsgm = None

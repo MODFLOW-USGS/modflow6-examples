@@ -165,9 +165,7 @@ def build_model(
         k=k11,
         save_specific_discharge=True,
     )
-    flopy.mf6.ModflowGwfsto(
-        gwf, iconvert=icelltype, ss=0.0, sy=0, transient={0: True}
-    )
+    flopy.mf6.ModflowGwfsto(gwf, iconvert=icelltype, ss=0.0, sy=0, transient={0: True})
     if head_based:
         hb_bool = True
         pc0 = head_offset

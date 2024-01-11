@@ -123,9 +123,7 @@ def build_model():
     rate[:, :, 0] = inflow_rate
     rate[:, :, -1] = -inflow_rate
     wellay, welrow, welcol = np.where(rate != 0.0)
-    wel_spd = [
-        ((k, i, j), rate[k, i, j]) for k, i, j in zip(wellay, welrow, welcol)
-    ]
+    wel_spd = [((k, i, j), rate[k, i, j]) for k, i, j in zip(wellay, welrow, welcol)]
     wel_spd = {0: wel_spd}
     flopy.mf6.ModflowGwfwel(
         gwf,

@@ -546,9 +546,7 @@ def plot_gwf_results(sims):
             lake_stage = stage[ilak]
             head[0, i, j] = lake_stage
 
-        fig, axs = plt.subplots(
-            1, 2, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 2, figsize=figure_size, dpi=300, tight_layout=True)
 
         for ilay in [0, 1]:
             ax = axs[ilay]

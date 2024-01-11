@@ -3998,9 +3998,7 @@ def build_model():
             ("id126_rejinf", "rej-inf-to-mvr", 126),
         ],
     }
-    uzf.obs.initialize(
-        filename=uzf_obs_file, print_input=True, continuous=uzf_obs_dict
-    )
+    uzf.obs.initialize(filename=uzf_obs_file, print_input=True, continuous=uzf_obs_dict)
     flopy.mf6.ModflowGwfmvr(
         gwf,
         maxmvr=max_mvr,

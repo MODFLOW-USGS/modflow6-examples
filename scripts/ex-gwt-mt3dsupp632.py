@@ -336,9 +336,7 @@ def build_mt3dms(
 
 def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
     sim_mf6gwf = build_mf6gwf(sim_name)
-    sim_mf6gwt = build_mf6gwt(
-        sim_name, distribution_coefficient, decay, decay_sorbed
-    )
+    sim_mf6gwt = build_mf6gwt(sim_name, distribution_coefficient, decay, decay_sorbed)
     sim_mf2005 = build_mf2005(sim_name)
     sim_mt3dms = build_mt3dms(
         sim_name, distribution_coefficient, decay, decay_sorbed, sim_mf2005

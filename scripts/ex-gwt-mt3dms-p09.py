@@ -459,9 +459,7 @@ def build_model(sim_name, mixelm=0, silent=False):
         gwt,
         budget_filerecord=f"{gwtname}.cbc",
         concentration_filerecord=f"{gwtname}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
         filename=f"{gwtname}.oc",
@@ -496,7 +494,9 @@ def run_model(mf2k5, mt3d, sim, silent=True):
         return
     success, buff = mf2k5.run_model(silent=silent, report=True)
     assert success, pformat(buff)
-    success, buff = mt3d.run_model(silent=silent, normal_msg="Program completed", report=True)
+    success, buff = mt3d.run_model(
+        silent=silent, normal_msg="Program completed", report=True
+    )
     assert success, pformat(buff)
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)

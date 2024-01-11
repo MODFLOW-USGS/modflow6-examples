@@ -160,9 +160,7 @@ def build_model():
         botm=botm,
     )
     obs_recarray = {"gwf_calib_obs.csv": [("w3_1_1", "HEAD", (2, 0, locw201))]}
-    flopy.mf6.ModflowUtlobs(
-        gwf, digits=10, print_input=True, continuous=obs_recarray
-    )
+    flopy.mf6.ModflowUtlobs(gwf, digits=10, print_input=True, continuous=obs_recarray)
     flopy.mf6.ModflowGwfic(gwf, strt=strt)
     flopy.mf6.ModflowGwfnpf(
         gwf,

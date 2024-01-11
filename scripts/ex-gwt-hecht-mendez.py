@@ -765,9 +765,7 @@ def build_mf6_transport_model(
         gwt,
         budget_filerecord=f"{gwtname}.cbc",
         concentration_filerecord=f"{gwtname}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[
             ("CONCENTRATION", "LAST"),
             ("CONCENTRATION", "STEPS", "15"),
@@ -844,18 +842,14 @@ def plot_results(
 
     # Get the x location of the cell centroids
     model_centroids_x = []
-    for i, (cum_pos, half_width) in enumerate(
-        zip(np.cumsum(delr), np.divide(delr, 2))
-    ):
+    for i, (cum_pos, half_width) in enumerate(zip(np.cumsum(delr), np.divide(delr, 2))):
         if i > 0:
             model_centroids_x.append(cum_pos - half_width)
         else:
             model_centroids_x.append(half_width)
 
     # Next subtract off the location of the BHE
-    model_centroids_x_BHE = [
-        val - model_centroids_x[21] for val in model_centroids_x
-    ]
+    model_centroids_x_BHE = [val - model_centroids_x[21] for val in model_centroids_x]
     # Drop the negative locations to the left of the BHE
     model_centroids_x_right_of_BHE = model_centroids_x_BHE[22:]  # Does not include
 
@@ -944,9 +938,7 @@ def plot_results(
             )
             mt_tr_ln = ax.plot(x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS")
 
-        mf6_ss_ln = ax.plot(
-            x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
-        )
+        mf6_ss_ln = ax.plot(x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT")
         mf6_tr_ln = ax.plot(
             x_pos,
             y_10_mf6_sln,

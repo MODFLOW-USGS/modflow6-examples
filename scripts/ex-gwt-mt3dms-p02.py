@@ -389,9 +389,7 @@ def run_model(sims, silent=True):
     success, buff = sim_mf2005.run_model(silent=silent, report=True)
     assert success, pformat(buff)
     success, buff = sim_mt3dms.run_model(
-        silent=silent,
-        normal_msg="Program completed",
-        report=True
+        silent=silent, normal_msg="Program completed", report=True
     )
     assert success, pformat(buff)
 

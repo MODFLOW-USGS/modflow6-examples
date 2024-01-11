@@ -306,7 +306,7 @@ def run_model(sim, silent=False):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
-    assert success, buff   
+    assert success, buff
 
 
 # Functions to plot model results.

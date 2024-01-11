@@ -312,9 +312,7 @@ def build_model():
     petm = [0.3, 0.1]
     row, col = np.where(np.zeros((nrow, ncol)) == 0)
     cellids = list(zip(nrow * ncol * [0], row, col))
-    evt_spd = [
-        [k, i, j, etsurf, etrate, depth, *pxdp, *petm] for k, i, j in cellids
-    ]
+    evt_spd = [[k, i, j, etsurf, etrate, depth, *pxdp, *petm] for k, i, j in cellids]
     flopy.mf6.ModflowGwfevt(gwf, nseg=nseg, stress_period_data=evt_spd, pname="EVT")
 
     head_filerecord = f"{sim_name}.hds"

@@ -19,8 +19,8 @@
 import copy
 import os
 import pathlib as pl
-from math import sqrt
 from itertools import cycle
+from math import sqrt
 from os import environ
 
 import flopy
