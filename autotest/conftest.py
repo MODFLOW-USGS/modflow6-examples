@@ -4,6 +4,7 @@ import pytest
 
 PROJ_ROOT = Path(__file__).parents[1]
 SCRIPTS_PATH = PROJ_ROOT / "scripts"
+TABLES_PATH = PROJ_ROOT / "tables"
 IMAGES_PATH = PROJ_ROOT / "images"
 FIGURES_PATH = PROJ_ROOT / "figures"
 EXAMPLES_PATH = PROJ_ROOT / "examples"
@@ -22,6 +23,7 @@ def pytest_addoption(parser):
 
 def pytest_generate_tests(metafunc):
     # make directories if needed
+    TABLES_PATH.mkdir(exist_ok=True)
     IMAGES_PATH.mkdir(exist_ok=True)
     FIGURES_PATH.mkdir(exist_ok=True)
     EXAMPLES_PATH.mkdir(exist_ok=True)
