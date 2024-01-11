@@ -76,9 +76,6 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Debug
-        uses: mxschmitt/action-tmate@v3
-
       - name: Create/run notebooks
         run: pytest -v -n=auto --durations=0 test_notebooks.py --run
         working-directory: ${{env.test-directory}}
