@@ -34,7 +34,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -1081,8 +1080,7 @@ def build_model(name, uzf_gwseep=None):
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the UZF Package Problem 2 model.
@@ -1092,12 +1090,10 @@ def write_model(sim, silent=True):
 
 @timed
 def run_model(sim, silent=True):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
 # plot vertical bars for stress periods
@@ -1289,13 +1285,9 @@ def plot_results(silent=True):
 def simulation(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-
     sim = build_model(key, **params)
-
     write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-    assert success, f"could not run...{sim_name}"
+    run_model(sim, silent=silent)
 
 
 # ### UZF Package Problem 2 Simulation

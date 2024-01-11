@@ -31,7 +31,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -148,8 +147,7 @@ def build_model(sim_name, angle1, xt3d):
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the FHB model.
@@ -159,12 +157,10 @@ def write_model(sim, silent=True):
 
 @timed
 def run_model(sim, silent=False):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent, report=True)
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, buff
 
 
 # Function to plot the Hani model results.
@@ -239,9 +235,8 @@ def simulation(idx, silent=True):
     params = parameters[key].copy()
     sim = build_model(key, **params)
     write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
-        plot_results(idx, sim, silent=silent)
+    run_model(sim, silent=silent)
+    plot_results(idx, sim, silent=silent)
 
 
 # ### Hani Simulation

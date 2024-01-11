@@ -1057,7 +1057,6 @@ sim_name = "ex-gwf-rad-disu"
 ws = pl.Path("../examples")
 
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -1230,8 +1229,7 @@ def build_model(name):
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the Axisymmetric model.
@@ -1240,13 +1238,10 @@ def write_model(sim, silent=True):
 
 @timed
 def run_model(sim, silent=True):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent, report=True)
-        if not success:
-            print("\n".join(buff))
-
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, buff
 
 
 # Function to solve Axisymmetric model using analytical equation.
@@ -1998,13 +1993,9 @@ def plot_results(silent=True):
 def simulation(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
-
     sim = build_model(sim_name)
-
     write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(sim_name)
+    run_model(sim, silent=silent)
 
 
 # ### Axisymmetric Example

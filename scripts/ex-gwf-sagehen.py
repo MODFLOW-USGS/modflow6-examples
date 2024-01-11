@@ -464,7 +464,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -539,7 +538,7 @@ hclose, rclose, relax = 3e-2, 3e-2, 0.97
 # #### Prepping input for SFR package
 # Get package_data information
 
-segs = [
+orig_seg = [
     (1, 1, 9, 0, 0.00, 0.0, 0.0, 0, 0.04, "origSeg1"),
     (2, 1, 10, 0, 0.00, 0.0, 0.0, 0, 0.04, "origSeg2"),
     (3, 1, 9, 0, 0.00, 0.0, 0.0, 0, 0.04, "origSeg3"),
@@ -556,7 +555,8 @@ segs = [
     (14, 1, 15, 0, 0.00, 0.0, 0.0, 0, 0.04, "origSeg14"),
     (15, 1, 0, 0, 0.00, 0.0, 0.0, 0, 0.04, "origSeg15"),
 ]
-rchs = [
+
+orig_rch = [
     (1, 45, 9, 1, 1),
     (1, 44, 9, 1, 2),
     (1, 43, 9, 1, 3),
@@ -771,6 +771,8 @@ rchs = [
     (1, 44, 79, 15, 3),
     (1, 45, 79, 15, 4),
 ]
+
+# These are zero based
 sfrcells = [
     (0, 44, 8),
     (0, 43, 8),
@@ -986,6 +988,7 @@ sfrcells = [
     (0, 43, 78),
     (0, 44, 78),
 ]
+
 rlen = [
     90.0,
     90.0,
@@ -1201,6 +1204,7 @@ rlen = [
     60.0,
     30.0,
 ]
+
 rgrd = [
     0.150,
     0.120,
@@ -1416,6 +1420,7 @@ rgrd = [
     0.033,
     0.022,
 ]
+
 rtp = [
     2458.0,
     2449.0,
@@ -1631,6 +1636,37 @@ rtp = [
     1930.0,
     1929.0,
 ]
+
+
+def get_sfrsegs():
+    return orig_seg
+
+
+def get_sfrrchs():
+    return orig_rch
+
+
+def get_sfrcells():
+    return sfrcells
+
+
+def get_sfrlen():
+    return rlen
+
+
+def get_rgrd():
+    return rgrd
+
+
+def get_rtp():
+    return rtp
+
+segs = get_sfrsegs()
+rchs = get_sfrrchs()
+sfrcells = get_sfrcells()
+rlen = get_sfrlen()
+rgrd = get_rgrd()
+rtp = get_rtp()
 
 # Define the connections
 conns = gen_mf6_sfr_connections(segs, rchs)
@@ -2012,8 +2048,7 @@ def build_model(sim_name, silent=False):
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the model. True is returned if the model runs successfully

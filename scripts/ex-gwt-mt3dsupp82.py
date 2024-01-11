@@ -29,7 +29,6 @@ example_name = "ex-gwt-mt3dsupp82"
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -335,8 +334,6 @@ def build_model(sim_name):
 
 
 def write_model(sims, silent=True):
-    if not writeModel:
-        return
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
@@ -350,25 +347,20 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    success = True
     if runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf2005.run_model(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mt3dms.run_model(
-            silent=silent, normal_msg="Program completed"
-        )
-        if not success:
-            print(buff)
-    return success
+        return
+
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    success, buff = sim_mf6gwf.run_simulation(silent=silent)
+    assert success, buff
+    success, buff = sim_mf6gwt.run_simulation(silent=silent)
+    assert success, buff
+    success, buff = sim_mf2005.run_model(silent=silent)
+    assert success, buff
+    success, buff = sim_mt3dms.run_model(
+        silent=silent, normal_msg="Program completed"
+    )
+    assert success, buff
 
 
 # Function to plot the model results
@@ -434,9 +426,8 @@ def plot_results(sims, idx):
 def scenario(idx, silent=True):
     sim = build_model(example_name)
     write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
-        plot_results(sim, idx)
+    run_model(sim, silent=silent)
+    plot_results(sim, idx)
 
 
 # ### Simulated Zero-Order Growth in a Uniform Flow Field

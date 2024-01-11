@@ -32,7 +32,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -342,8 +341,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the Advgwtidal model.

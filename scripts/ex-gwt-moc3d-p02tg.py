@@ -36,7 +36,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -332,8 +331,6 @@ def build_model(sim_name):
 
 
 def write_model(sims, silent=True):
-    if not writeModel:
-        return
     sim_mf6gwf, sim_mf6gwt = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)

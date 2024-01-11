@@ -43,7 +43,6 @@ figure_size = (6, 8)
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -581,10 +580,9 @@ def build_model(sim_name, mixelm=0, silent=False):
 
 
 def write_model(mf2k5, mt3d, sim, silent=True):
-    if writeModel:
-        mf2k5.write_input()
-        mt3d.write_input()
-        sim.write_simulation(silent=silent)
+    mf2k5.write_input()
+    mt3d.write_input()
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the model. True is returned if the model runs successfully.

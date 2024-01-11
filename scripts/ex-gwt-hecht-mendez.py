@@ -49,7 +49,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -786,15 +785,13 @@ def build_mf6_transport_model(
 
 
 def write_mf2k5_models(mf2k5, mt3d, silent=True):
-    if writeModel:
-        mf2k5.write_input()
-        mt3d.write_input()
+    mf2k5.write_input()
+    mt3d.write_input()
 
 
 def write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=True):
-    if writeModel:
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
 
 
 # Function to run the model. True is returned if the model runs successfully.
@@ -993,24 +990,13 @@ def plot_results(
 def scenario(idx, runMT3D=False, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-
-    if runMT3D:
-        mf2k5 = build_mf2k5_flow_model(key, **parameter_dict)
-    else:
-        mf2k5 = None
-
+    mf2k5 = build_mf2k5_flow_model(key, **parameter_dict) if runMT3D else None
+    mt3d = build_mt3d_transport_model(mf2k5, key, **parameter_dict) if runMT3D else None
     sim_mf6gwf = build_mf6_flow_model(key, **parameter_dict)
-
-    if runMT3D:
-        mt3d = build_mt3d_transport_model(mf2k5, key, **parameter_dict)
-    else:
-        mt3d = None
-
     sim_mf6gwt = build_mf6_transport_model(key, **parameter_dict)
 
     if runMT3D:
         write_mf2k5_models(mf2k5, mt3d, silent=silent)
-
     write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=silent)
 
     run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent)

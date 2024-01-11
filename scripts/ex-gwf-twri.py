@@ -30,7 +30,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -256,9 +255,8 @@ def build_mf5model():
 
 
 def write_model(sim, mf, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
-        mf.write_input()
+    sim.write_simulation(silent=silent)
+    mf.write_input()
 
 
 # Function to run the TWRI model.
@@ -268,17 +266,14 @@ def write_model(sim, mf, silent=True):
 
 @timed
 def run_model(sim, mf, silent=True):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        else:
-            success, buff = mf.run_model(silent=silent)
-            if not success:
-                print(buff)
-
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent)
+    if not success:
+        print(buff)
+    else:
+        success, buff = mf.run_model(silent=silent)
+        assert success, buff
 
 
 # Function to plot the TWRI model results.
@@ -468,13 +463,9 @@ def plot_results(sim, mf, silent=True):
 def simulation(silent=True):
     sim = build_model()
     mf = build_mf5model()
-
     write_model(sim, mf, silent=silent)
-
-    success = run_model(sim, mf, silent=silent)
-
-    if success:
-        plot_results(sim, mf, silent=silent)
+    run_model(sim, mf, silent=silent)
+    plot_results(sim, mf, silent=silent)
 
 
 # ### TWRI Simulation

@@ -36,7 +36,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install Python packages
         run: |
@@ -80,7 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: [3.8, 3.9, "3.10", "3.11"]
+        python: [3.9, "3.10", "3.11", "3.12"]
     env:
       script-directory: scripts
       etc-directory: etc
@@ -135,6 +135,9 @@ jobs:
       - name: Create/run notebooks
         run: pytest -v -n=auto --durations=0 test_notebooks.py --run
         working-directory: ${{env.test-directory}}
+
+      - name: Copy notebooks to RTD directory
+        run: cp -R notebooks/*.ipynb .doc/_notebooks/
 
       - name: Run processing script
         if: matrix.python == '3.9'

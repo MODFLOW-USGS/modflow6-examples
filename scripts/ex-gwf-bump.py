@@ -34,7 +34,6 @@ time_units = "days"
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -208,8 +207,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the model. True is returned if the model runs successfully.
@@ -218,13 +216,10 @@ def write_model(sim, silent=True):
 
 @timed
 def run_model(sim, silent=True):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
 # Function to create a figure
@@ -461,15 +456,10 @@ def plot_results(idx, sim, silent=True):
 def simulation(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-
     sim = build_model(key, **params)
-
     write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-
-    if success:
-        plot_results(idx, sim, silent=silent)
+    run_model(sim, silent=silent)
+    plot_results(idx, sim, silent=silent)
 
 
 # ### Zaidel Simulation

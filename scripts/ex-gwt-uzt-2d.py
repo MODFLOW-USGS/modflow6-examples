@@ -30,7 +30,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -764,10 +763,9 @@ def build_model(
 
 
 def write_model(mf2k5, mt3d, sim, silent=True):
-    if writeModel:
-        mf2k5.write_input()
-        mt3d.write_input()
-        sim.write_simulation(silent=silent)
+    mf2k5.write_input()
+    mt3d.write_input()
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the model. True is returned if the model runs successfully.
@@ -775,14 +773,12 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 
 @timed
 def run_model(mf2k5, mt3d, sim, silent=True):
-    success = True
-    if runModel:
-        success, buff = mf2k5.run_model(silent=silent)
-        success, buff = mt3d.run_model(silent=silent)
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    success, buff = mf2k5.run_model(silent=silent)
+    success, buff = mt3d.run_model(silent=silent)
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
 # Function to plot the model results
@@ -963,11 +959,9 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     mf2k5, mt3d, sim = build_model(key, mixelm=mixelm, **parameter_dict)
-
     write_model(mf2k5, mt3d, sim, silent=silent)
-    success = run_model(mf2k5, mt3d, sim, silent=silent)
-    if success:
-        plot_results(mf2k5, mt3d, sim, idx)
+    run_model(mf2k5, mt3d, sim, silent=silent)
+    plot_results(mf2k5, mt3d, sim, idx)
 
 
 # ### Two-Dimensional Transport in a Diagonal Flow Field

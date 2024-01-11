@@ -33,7 +33,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -205,8 +204,7 @@ def build_model():
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to solve the system of equations to convergence
@@ -263,43 +261,42 @@ def get_streamflow(mobj):
 
 @timed
 def run_model():
-    success = True
-    if runModel:
-        soext = ".so"
-        if sys.platform.lower() == "win32":
-            soext = ".dll"
-        if sys.platform.lower() == "darwin":
-            soext = ".dylib"
-        libmf6_path = pl.Path(shutil.which("mf6")).parent / f"libmf6{soext}"
-        sim_ws = os.path.join(ws, sim_name)
-        mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
-        qbase = capture_fraction_iteration(mf6, cf_q)
+    if not runModel:
+        return
 
-        # create capture fraction array
-        capture = np.zeros((nrow, ncol), dtype=float)
+    soext = ".so"
+    if sys.platform.lower() == "win32":
+        soext = ".dll"
+    if sys.platform.lower() == "darwin":
+        soext = ".dylib"
+    libmf6_path = pl.Path(shutil.which("mf6")).parent / f"libmf6{soext}"
+    sim_ws = os.path.join(ws, sim_name)
+    mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
+    qbase = capture_fraction_iteration(mf6, cf_q)
 
-        # iterate through each active cell
-        ireduced_node = -1
-        for irow in range(nrow):
-            for jcol in range(ncol):
-                # skip inactive cells
-                if imap[irow, jcol] < 1:
-                    continue
+    # create capture fraction array
+    capture = np.zeros((nrow, ncol), dtype=float)
 
-                # increment reduced node number
-                ireduced_node += 1
+    # iterate through each active cell
+    ireduced_node = -1
+    for irow in range(nrow):
+        for jcol in range(ncol):
+            # skip inactive cells
+            if imap[irow, jcol] < 1:
+                continue
 
-                # calculate the perturbed river flow
-                qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
+            # increment reduced node number
+            ireduced_node += 1
 
-                # add the value to the capture array
-                capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
+            # calculate the perturbed river flow
+            qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
 
-        # save the capture fraction array
-        fpth = os.path.join(sim_ws, "capture.npz")
-        np.savez_compressed(fpth, capture=capture)
+            # add the value to the capture array
+            capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
 
-    return success
+    # save the capture fraction array
+    fpth = os.path.join(sim_ws, "capture.npz")
+    np.savez_compressed(fpth, capture=capture)
 
 
 # Function to plot the Capture Fraction model results with heads in each layer.
@@ -425,9 +422,7 @@ def plot_results(silent=True):
 def simulation(silent=True):
     sim = build_model()
     write_model(sim, silent=silent)
-
-    success = run_model()
-    assert success, f"could not run...{sim_name}"
+    run_model()
 
 
 # ### Capture Zone Simulation

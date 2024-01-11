@@ -27,7 +27,6 @@ arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -252,8 +251,7 @@ def build_model(
 
 
 def write_model(sim, silent=True):
-    if writeModel:
-        sim.write_simulation(silent=silent)
+    sim.write_simulation(silent=silent)
 
 
 # Function to run the model.
@@ -263,13 +261,10 @@ def write_model(sim, silent=True):
 
 @timed
 def run_model(sim, silent=True):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
 # Analytical solution for plotting
@@ -568,7 +563,7 @@ def fill_heads(rec_arr, ndcells):
 
 
 def plot_comp_q_comparison(sim, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         name = sim.name
         thicknesses = parameters[name]["bed_thickness"]
 
@@ -653,7 +648,7 @@ def plot_comp_q_comparison(sim, silent=True):
 
 
 def plot_head_comparison(sim, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         name = sim.name
         ndcells = parameters[name]["ndelaycells"]
         thicknesses = parameters[name]["bed_thickness"]
@@ -791,17 +786,18 @@ def plot_head_comparison(sim, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if plotModel:
-        name = sim.name
+    if not plotModel:
+        return
+    name = sim.name
 
-        if name.endswith("a"):
-            plot_grid(sim, silent=silent)
-            plot_head_based(sim, silent=silent)
-        elif name.endswith("b"):
-            plot_effstress(sim, silent=silent)
-        elif name.endswith("c"):
-            plot_comp_q_comparison(sim, silent=silent)
-            plot_head_comparison(sim, silent=silent)
+    if name.endswith("a"):
+        plot_grid(sim, silent=silent)
+        plot_head_based(sim, silent=silent)
+    elif name.endswith("b"):
+        plot_effstress(sim, silent=silent)
+    elif name.endswith("c"):
+        plot_comp_q_comparison(sim, silent=silent)
+        plot_head_comparison(sim, silent=silent)
 
 
 # Function that wraps all of the steps for the model
@@ -847,13 +843,8 @@ def simulation(idx, silent=True):
                 params["kv"] = kv
 
                 sim = build_model(key, subdir_name=subdir_name, **params)
-
                 write_model(sim, silent=silent)
-
-                if runModel:
-                    success = run_model(sim, silent=silent)
-
-    if plotModel and success:
+                run_model(sim, silent=silent)
         plot_results(sim, silent=silent)
 
 

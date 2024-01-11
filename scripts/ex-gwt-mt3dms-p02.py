@@ -31,7 +31,6 @@ example_name = "ex-gwt-mt3dms-p02"
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
 plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
@@ -367,12 +366,11 @@ def build_model(sim_name, **kwargs):
 
 
 def write_model(sims, silent=True):
-    if writeModel:
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
-        sim_mf2005.write_input()
-        sim_mt3dms.write_input()
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
+    sim_mf2005.write_input()
+    sim_mt3dms.write_input()
 
 
 # Function to run the model
@@ -381,30 +379,24 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    success = True
     report = True
-    if runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        print("Running mf6gwf...")
-        success, buff = sim_mf6gwf.run_simulation(silent=silent, report=report)
-        if not success:
-            print(buff)
-        print("Running mf6gwt...")
-        success, buff = sim_mf6gwt.run_simulation(silent=silent, report=report)
-        if not success:
-            print(buff)
-        print("Running mf2005...")
-        success, buff = sim_mf2005.run_model(silent=silent, report=report)
-        if not success:
-            print(buff)
-        print("Running mt3dms...")
-        success, buff = sim_mt3dms.run_model(
-            silent=silent, normal_msg="Program completed", report=report
-        )
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    print("Running mf6gwf...")
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=report)
+    assert success, buff
+    print("Running mf6gwt...")
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=report)
+    assert success, buff
+    print("Running mf2005...")
+    success, buff = sim_mf2005.run_model(silent=silent, report=report)
+    assert success, buff
+    print("Running mt3dms...")
+    success, buff = sim_mt3dms.run_model(
+        silent=silent, normal_msg="Program completed", report=report
+    )
+    assert success, buff
 
 
 # Function to plot the model results
@@ -525,9 +517,8 @@ def scenario(idx, silent=True):
     parameter_dict = parameters[key]
     sims = build_model(key, **parameter_dict)
     write_model(sims, silent=silent)
-    success = run_model(sims, silent=silent)
-    if success:
-        plot_results_ct(sims, idx, **parameter_dict)
+    run_model(sims, silent=silent)
+    plot_results_ct(sims, idx, **parameter_dict)
 
 
 # ### Simulated Zero-Order Growth in a Uniform Flow Field
