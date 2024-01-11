@@ -28,7 +28,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -130,85 +129,83 @@ def build_model(
     ihdwet=None,
     wetdry=None,
 ):
-    if buildModel:
-        sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        if newton:
-            newtonoptions = "newton"
-            no_ptc = "ALL"
-            complexity = "complex"
-        else:
-            newtonoptions = None
-            no_ptc = None
-            complexity = "simple"
+    sim_ws = os.path.join(ws, name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    if newton:
+        newtonoptions = "newton"
+        no_ptc = "ALL"
+        complexity = "complex"
+    else:
+        newtonoptions = None
+        no_ptc = None
+        complexity = "simple"
 
-        flopy.mf6.ModflowIms(
-            sim,
-            complexity=complexity,
-            print_option="SUMMARY",
-            no_ptcrecord=no_ptc,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=rclose,
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim,
-            modelname=sim_name,
-            newtonoptions=newtonoptions,
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        if rewet:
-            rewet_record = [
-                "wetfct",
-                wetfct,
-                "iwetit",
-                iwetit,
-                "ihdwet",
-                ihdwet,
-            ]
-            wetdry = 9 * [wetdry] + 5 * [0]
-        else:
-            rewet_record = None
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            rewet_record=rewet_record,
-            icelltype=icelltype,
-            k=k11,
-            k33=k33,
-            wetdry=wetdry,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=icelltype,
-            ss=ss,
-            sy=sy,
-            steady_state={3: True},
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=H1)
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
-        flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd)
+    flopy.mf6.ModflowIms(
+        sim,
+        complexity=complexity,
+        print_option="SUMMARY",
+        no_ptcrecord=no_ptc,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=rclose,
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim,
+        modelname=sim_name,
+        newtonoptions=newtonoptions,
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    if rewet:
+        rewet_record = [
+            "wetfct",
+            wetfct,
+            "iwetit",
+            iwetit,
+            "ihdwet",
+            ihdwet,
+        ]
+        wetdry = 9 * [wetdry] + 5 * [0]
+    else:
+        rewet_record = None
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        rewet_record=rewet_record,
+        icelltype=icelltype,
+        k=k11,
+        k33=k33,
+        wetdry=wetdry,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=icelltype,
+        ss=ss,
+        sy=sy,
+        steady_state={3: True},
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=H1)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+    flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd)
 
-        head_filerecord = f"{sim_name}.hds"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            saverecord=[("HEAD", "LAST")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        saverecord=[("HEAD", "LAST")],
+    )
+    return sim
 
 
 # Function to write flow diversion model files

@@ -40,7 +40,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -131,167 +130,165 @@ rclose = 1e-6
 
 
 def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
 
-        # The coarse, outer model
-        gwf_outer = flopy.mf6.ModflowGwf(sim, modelname=gwfname_outer, save_flows=True)
-        flopy.mf6.ModflowGwfdis(
-            gwf_outer,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            idomain=idomain,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf_outer,
-            icelltype=icelltype,
-            k=k11,
-            save_specific_discharge=True,
-            xt3doptions=XT3D_in_models,
-        )
-        flopy.mf6.ModflowGwfic(gwf_outer, strt=strt)
+    # The coarse, outer model
+    gwf_outer = flopy.mf6.ModflowGwf(sim, modelname=gwfname_outer, save_flows=True)
+    flopy.mf6.ModflowGwfdis(
+        gwf_outer,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        idomain=idomain,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf_outer,
+        icelltype=icelltype,
+        k=k11,
+        save_specific_discharge=True,
+        xt3doptions=XT3D_in_models,
+    )
+    flopy.mf6.ModflowGwfic(gwf_outer, strt=strt)
 
-        # constant head boundary LEFT
-        left_chd = [
-            [(ilay, irow, 0), h_left] for ilay in range(nlay) for irow in range(nrow)
-        ]
-        chd_spd = {0: left_chd}
-        flopy.mf6.ModflowGwfchd(
-            gwf_outer,
-            stress_period_data=chd_spd,
-            pname="CHD-LEFT",
-            filename=f"{gwfname_outer}.left.chd",
-        )
+    # constant head boundary LEFT
+    left_chd = [
+        [(ilay, irow, 0), h_left] for ilay in range(nlay) for irow in range(nrow)
+    ]
+    chd_spd = {0: left_chd}
+    flopy.mf6.ModflowGwfchd(
+        gwf_outer,
+        stress_period_data=chd_spd,
+        pname="CHD-LEFT",
+        filename=f"{gwfname_outer}.left.chd",
+    )
 
-        # constant head boundary RIGHT
-        right_chd = [
-            [(ilay, irow, ncol - 1), h_right]
-            for ilay in range(nlay)
-            for irow in range(nrow)
-        ]
-        chd_spd = {0: right_chd}
-        flopy.mf6.ModflowGwfchd(
-            gwf_outer,
-            stress_period_data=chd_spd,
-            pname="CHD-RIGHT",
-            filename=f"{gwfname_outer}.right.chd",
-        )
+    # constant head boundary RIGHT
+    right_chd = [
+        [(ilay, irow, ncol - 1), h_right]
+        for ilay in range(nlay)
+        for irow in range(nrow)
+    ]
+    chd_spd = {0: right_chd}
+    flopy.mf6.ModflowGwfchd(
+        gwf_outer,
+        stress_period_data=chd_spd,
+        pname="CHD-RIGHT",
+        filename=f"{gwfname_outer}.right.chd",
+    )
 
-        head_filerecord = f"{gwfname_outer}.hds"
-        budget_filerecord = f"{gwfname_outer}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf_outer,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
+    head_filerecord = f"{gwfname_outer}.hds"
+    budget_filerecord = f"{gwfname_outer}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf_outer,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
 
-        # the refined, inner model
-        gwf_inner = flopy.mf6.ModflowGwf(sim, modelname=gwfname_inner, save_flows=True)
-        flopy.mf6.ModflowGwfdis(
-            gwf_inner,
-            nlay=nlay,
-            nrow=nrow_inner,
-            ncol=ncol_inner,
-            delr=delr_inner,
-            delc=delc_inner,
-            top=top,
-            botm=botm,
-            xorigin=xorigin,
-            yorigin=yorigin,
-            length_units=length_units,
-        )
-        flopy.mf6.ModflowGwfic(gwf_inner, strt=strt)
-        flopy.mf6.ModflowGwfnpf(
-            gwf_inner,
-            save_specific_discharge=True,
-            xt3doptions=XT3D_in_models,
-            save_flows=True,
-            icelltype=icelltype,
-            k=k11,
-        )
+    # the refined, inner model
+    gwf_inner = flopy.mf6.ModflowGwf(sim, modelname=gwfname_inner, save_flows=True)
+    flopy.mf6.ModflowGwfdis(
+        gwf_inner,
+        nlay=nlay,
+        nrow=nrow_inner,
+        ncol=ncol_inner,
+        delr=delr_inner,
+        delc=delc_inner,
+        top=top,
+        botm=botm,
+        xorigin=xorigin,
+        yorigin=yorigin,
+        length_units=length_units,
+    )
+    flopy.mf6.ModflowGwfic(gwf_inner, strt=strt)
+    flopy.mf6.ModflowGwfnpf(
+        gwf_inner,
+        save_specific_discharge=True,
+        xt3doptions=XT3D_in_models,
+        save_flows=True,
+        icelltype=icelltype,
+        k=k11,
+    )
 
-        head_filerecord = f"{gwfname_inner}.hds"
-        budget_filerecord = f"{gwfname_inner}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf_inner,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
+    head_filerecord = f"{gwfname_inner}.hds"
+    budget_filerecord = f"{gwfname_inner}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf_inner,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
 
-        # Use Lgr to get the exchange data
-        nrowp = gwf_outer.dis.nrow.get_data()
-        ncolp = gwf_outer.dis.ncol.get_data()
-        delrp = gwf_outer.dis.delr.array
-        delcp = gwf_outer.dis.delc.array
-        topp = gwf_outer.dis.top.array
-        botmp = gwf_outer.dis.botm.array
-        idomainp = gwf_outer.dis.idomain.array
+    # Use Lgr to get the exchange data
+    nrowp = gwf_outer.dis.nrow.get_data()
+    ncolp = gwf_outer.dis.ncol.get_data()
+    delrp = gwf_outer.dis.delr.array
+    delcp = gwf_outer.dis.delc.array
+    topp = gwf_outer.dis.top.array
+    botmp = gwf_outer.dis.botm.array
+    idomainp = gwf_outer.dis.idomain.array
 
-        lgr = Lgr(
-            nlay,
-            nrowp,
-            ncolp,
-            delrp,
-            delcp,
-            topp,
-            botmp,
-            idomainp,
-            ncpp=rfct,
-            ncppl=1,
-        )
+    lgr = Lgr(
+        nlay,
+        nrowp,
+        ncolp,
+        delrp,
+        delcp,
+        topp,
+        botmp,
+        idomainp,
+        ncpp=rfct,
+        ncppl=1,
+    )
 
-        exgdata = lgr.get_exchange_data(angldegx=True, cdist=True)
-        for exg in exgdata:
-            l = exg
-            angle = l[-2]
-            if angle == 0:
-                bname = "left"
-            elif angle == 90.0:
-                bname = "bottom"
-            elif angle == 180.0:
-                bname = "right"
-            elif angle == 270.0:
-                bname = "top"
-            l.append(bname)
+    exgdata = lgr.get_exchange_data(angldegx=True, cdist=True)
+    for exg in exgdata:
+        l = exg
+        angle = l[-2]
+        if angle == 0:
+            bname = "left"
+        elif angle == 90.0:
+            bname = "bottom"
+        elif angle == 180.0:
+            bname = "right"
+        elif angle == 270.0:
+            bname = "top"
+        l.append(bname)
 
-        # group exchanges based on boundname
-        exgdata.sort(key=lambda x: x[-3])
+    # group exchanges based on boundname
+    exgdata.sort(key=lambda x: x[-3])
 
-        flopy.mf6.ModflowGwfgwf(
-            sim,
-            exgtype="GWF6-GWF6",
-            nexg=len(exgdata),
-            exgmnamea=gwfname_outer,
-            exgmnameb=gwfname_inner,
-            exchangedata=exgdata,
-            xt3d=XT3D_at_exchange,
-            print_input=True,
-            print_flows=True,
-            save_flows=True,
-            boundnames=True,
-            auxiliary=["ANGLDEGX", "CDIST"],
-        )
+    flopy.mf6.ModflowGwfgwf(
+        sim,
+        exgtype="GWF6-GWF6",
+        nexg=len(exgdata),
+        exgmnamea=gwfname_outer,
+        exgmnameb=gwfname_inner,
+        exchangedata=exgdata,
+        xt3d=XT3D_at_exchange,
+        print_input=True,
+        print_flows=True,
+        save_flows=True,
+        boundnames=True,
+        auxiliary=["ANGLDEGX", "CDIST"],
+    )
 
-        return sim
-    return None
+    return sim
 
 
 # Function to write model files

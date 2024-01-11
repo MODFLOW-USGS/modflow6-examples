@@ -31,7 +31,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -593,133 +592,131 @@ rclose = 1e-6
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="newton", save_flows=True
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            idomain=np.ones(shape3d, dtype=int),
-            top=top,
-            botm=botm,
-        )
-        obs_file = f"{sim_name}.gwf.obs"
-        csv_file = obs_file + ".csv"
-        obslist = [
-            ["A", "head", (0, 3, 3)],
-            ["B", "head", (0, 13, 8)],
-            ["C", "head", (0, 23, 13)],
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=sim_name, newtonoptions="newton", save_flows=True
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        idomain=np.ones(shape3d, dtype=int),
+        top=top,
+        botm=botm,
+    )
+    obs_file = f"{sim_name}.gwf.obs"
+    csv_file = obs_file + ".csv"
+    obslist = [
+        ["A", "head", (0, 3, 3)],
+        ["B", "head", (0, 13, 8)],
+        ["C", "head", (0, 23, 13)],
+    ]
+    obsdict = {csv_file: obslist}
+    flopy.mf6.ModflowUtlobs(
+        gwf, filename=obs_file, print_input=False, continuous=obsdict
+    )
+
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=1,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+    flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
+    flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=etvrate, depth=etvdepth)
+    (
+        idomain_wlakes,
+        pakdata_dict,
+        lak_conn,
+    ) = flopy.mf6.utils.get_lak_connections(
+        gwf.modelgrid,
+        lake_map,
+        bedleak=lak_bedleak,
+    )
+    lak_packagedata = []
+    for key in pakdata_dict.keys():
+        lak_packagedata.append([key, lak_strt, pakdata_dict[key]])
+    lak = flopy.mf6.ModflowGwflak(
+        gwf,
+        pname="LAK-1",
+        time_conversion=lak_time_conv,
+        length_conversion=lak_len_conv,
+        mover=True,
+        print_stage=True,
+        nlakes=2,
+        noutlets=len(lak_outlets),
+        packagedata=lak_packagedata,
+        connectiondata=lak_conn,
+        outlets=lak_outlets,
+        perioddata=lak_spd,
+    )
+    obs_file = f"{sim_name}.lak.obs"
+    csv_file = obs_file + ".csv"
+    obs_dict = {
+        csv_file: [
+            ("lake1", "stage", (0,)),
+            ("lake2", "stage", (1,)),
         ]
-        obsdict = {csv_file: obslist}
-        flopy.mf6.ModflowUtlobs(
-            gwf, filename=obs_file, print_input=False, continuous=obsdict
-        )
+    }
+    lak.obs.initialize(
+        filename=obs_file, digits=10, print_input=True, continuous=obs_dict
+    )
+    gwf.dis.idomain = idomain_wlakes
+    flopy.mf6.ModflowGwfsfr(
+        gwf,
+        pname="SFR-1",
+        time_conversion=86400.000,
+        length_conversion=3.28081,
+        mover=True,
+        print_stage=True,
+        print_flows=True,
+        nreaches=len(sfr_pakdata),
+        packagedata=sfr_pakdata,
+        connectiondata=sfr_conn,
+        perioddata=sfr_spd,
+    )
+    flopy.mf6.ModflowGwfmvr(
+        gwf,
+        maxmvr=4,
+        maxpackages=2,
+        packages=mvr_paks,
+        perioddata=mvr_spd,
+    )
 
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=1,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
-        flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=etvrate, depth=etvdepth)
-        (
-            idomain_wlakes,
-            pakdata_dict,
-            lak_conn,
-        ) = flopy.mf6.utils.get_lak_connections(
-            gwf.modelgrid,
-            lake_map,
-            bedleak=lak_bedleak,
-        )
-        lak_packagedata = []
-        for key in pakdata_dict.keys():
-            lak_packagedata.append([key, lak_strt, pakdata_dict[key]])
-        lak = flopy.mf6.ModflowGwflak(
-            gwf,
-            pname="LAK-1",
-            time_conversion=lak_time_conv,
-            length_conversion=lak_len_conv,
-            mover=True,
-            print_stage=True,
-            nlakes=2,
-            noutlets=len(lak_outlets),
-            packagedata=lak_packagedata,
-            connectiondata=lak_conn,
-            outlets=lak_outlets,
-            perioddata=lak_spd,
-        )
-        obs_file = f"{sim_name}.lak.obs"
-        csv_file = obs_file + ".csv"
-        obs_dict = {
-            csv_file: [
-                ("lake1", "stage", (0,)),
-                ("lake2", "stage", (1,)),
-            ]
-        }
-        lak.obs.initialize(
-            filename=obs_file, digits=10, print_input=True, continuous=obs_dict
-        )
-        gwf.dis.idomain = idomain_wlakes
-        flopy.mf6.ModflowGwfsfr(
-            gwf,
-            pname="SFR-1",
-            time_conversion=86400.000,
-            length_conversion=3.28081,
-            mover=True,
-            print_stage=True,
-            print_flows=True,
-            nreaches=len(sfr_pakdata),
-            packagedata=sfr_pakdata,
-            connectiondata=sfr_conn,
-            perioddata=sfr_spd,
-        )
-        flopy.mf6.ModflowGwfmvr(
-            gwf,
-            maxmvr=4,
-            maxpackages=2,
-            packages=mvr_paks,
-            perioddata=mvr_spd,
-        )
-
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 LAK Package problem 2 model files

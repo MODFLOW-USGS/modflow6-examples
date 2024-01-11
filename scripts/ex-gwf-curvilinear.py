@@ -2159,7 +2159,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -2345,80 +2344,78 @@ rclose = 1e-4
 
 
 def build_model(name):
-    if buildModel:
-        sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            complexity="complex",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-        )
+    sim_ws = os.path.join(ws, name)
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        complexity="complex",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+    )
 
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
 
-        disv = flopy.mf6.ModflowGwfdisv(
-            gwf, length_units=length_units, **grid_merger.get_disv_kwargs()
-        )
+    disv = flopy.mf6.ModflowGwfdisv(
+        gwf, length_units=length_units, **grid_merger.get_disv_kwargs()
+    )
 
-        npf = flopy.mf6.ModflowGwfnpf(
-            gwf,
-            k=k11,
-            k33=k11,
-            save_flows=True,
-            save_specific_discharge=True,
-        )
+    npf = flopy.mf6.ModflowGwfnpf(
+        gwf,
+        k=k11,
+        k33=k11,
+        save_flows=True,
+        save_specific_discharge=True,
+    )
 
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=0,
-            steady_state=True,
-            save_flows=True,
-        )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=0,
+        steady_state=True,
+        save_flows=True,
+    )
 
-        flopy.mf6.ModflowGwfic(gwf, strt=surface_elevation)
+    flopy.mf6.ModflowGwfic(gwf, strt=surface_elevation)
 
-        flopy.mf6.ModflowGwfchd(
-            gwf,
-            stress_period_data=chd_left,
-            pname="CHD-LEFT",
-            filename=f"{sim_name}.left.chd",
-            save_flows=True,
-        )
-        flopy.mf6.ModflowGwfchd(
-            gwf,
-            stress_period_data=chd_right,
-            pname="CHD-RIGHT",
-            filename=f"{sim_name}.right.chd",
-            save_flows=True,
-        )
+    flopy.mf6.ModflowGwfchd(
+        gwf,
+        stress_period_data=chd_left,
+        pname="CHD-LEFT",
+        filename=f"{sim_name}.left.chd",
+        save_flows=True,
+    )
+    flopy.mf6.ModflowGwfchd(
+        gwf,
+        stress_period_data=chd_right,
+        pname="CHD-RIGHT",
+        filename=f"{sim_name}.right.chd",
+        save_flows=True,
+    )
 
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            budget_filerecord=f"{name}.cbc",
-            head_filerecord=f"{name}.hds",
-            headprintrecord=[
-                (
-                    "COLUMNS",
-                    curvlin1.ncol + ncol + curvlin2.ncol,
-                    "WIDTH",
-                    15,
-                    "DIGITS",
-                    6,
-                    "GENERAL",
-                )
-            ],
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-            printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-            filename=f"{name}.oc",
-        )
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        budget_filerecord=f"{name}.cbc",
+        head_filerecord=f"{name}.hds",
+        headprintrecord=[
+            (
+                "COLUMNS",
+                curvlin1.ncol + ncol + curvlin2.ncol,
+                "WIDTH",
+                15,
+                "DIGITS",
+                6,
+                "GENERAL",
+            )
+        ],
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        filename=f"{name}.oc",
+    )
 
-        return sim
-    return None
+    return sim
 
 
 # Function to write model files

@@ -30,7 +30,6 @@ data_ws = pl.Path("../data") / "ex-gwf-lgrv"
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -330,101 +329,99 @@ def build_model(
     xorigin=None,
     yorigin=None,
 ):
-    if buildModel:
-        if sim is None:
-            sim_ws = os.path.join(ws, sim_name)
-            sim = flopy.mf6.MFSimulation(
-                sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-            )
-            flopy.mf6.ModflowTdis(
-                sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-            )
-            flopy.mf6.ModflowIms(
-                sim,
-                outer_maximum=nouter,
-                outer_dvclose=hclose,
-                inner_maximum=ninner,
-                inner_dvclose=hclose,
-                rcloserecord=f"{rclose} strict",
-            )
-        if modelname is None:
-            modelname = sim_name
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=modelname, save_flows=True)
+    if sim is None:
+        sim_ws = os.path.join(ws, sim_name)
+        sim = flopy.mf6.MFSimulation(
+            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
+        )
+        flopy.mf6.ModflowTdis(
+            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+        )
+        flopy.mf6.ModflowIms(
+            sim,
+            outer_maximum=nouter,
+            outer_dvclose=hclose,
+            inner_maximum=ninner,
+            inner_dvclose=hclose,
+            rcloserecord=f"{rclose} strict",
+        )
+    if modelname is None:
+        modelname = sim_name
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=modelname, save_flows=True)
 
-        if ncppl is not None:
-            nlayc = len(ncppl)
-            layer_index = [ncppl[0] - 1]
-            for iln in ncppl[1:]:
-                last = layer_index[-1]
-                layer_index.append(iln + last)
-        else:
-            nlayc = nlay
-            layer_index = list(range(nlayc))
-        nrowc, ncolc = coarsen_shape(icoarsen, nrow, ncol)
-        delrc = delr * icoarsen
-        delcc = delc * icoarsen
-        topc = array_resampler(top, icoarsen, "mean")
-        if rowcolspan is not None:
-            istart, istop, jstart, jstop = rowcolspan
-            nrowc = istop - istart
-            ncolc = jstop - jstart
-        else:
-            istart = 0
-            istop = nrow
-            jstart = 0
-            jstop = ncol
-        if idomain is None:
-            idomain = 1
-        topc = topc[istart:istop, jstart:jstop]
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlayc,
-            nrow=nrowc,
-            ncol=ncolc,
-            delr=delrc,
-            delc=delcc,
-            top=topc,
-            botm=botm[layer_index],
-            idomain=idomain,
-            xorigin=xorigin,
-            yorigin=yorigin,
-        )
-        idomain = gwf.dis.idomain.array
-        k11c = []
-        for k in range(nlayc):
-            ilay = layer_index[k]
-            a = array_resampler(k11[ilay], icoarsen, "maximum")
-            k11c.append(a[istart:istop, jstart:jstop])
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            k33overk=True,
-            icelltype=icelltype,
-            k=k11c,
-            save_specific_discharge=True,
-            k33=1.0,
-        )
-        strt = nlayc * [topc]
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    if ncppl is not None:
+        nlayc = len(ncppl)
+        layer_index = [ncppl[0] - 1]
+        for iln in ncppl[1:]:
+            last = layer_index[-1]
+            layer_index.append(iln + last)
+    else:
+        nlayc = nlay
+        layer_index = list(range(nlayc))
+    nrowc, ncolc = coarsen_shape(icoarsen, nrow, ncol)
+    delrc = delr * icoarsen
+    delcc = delc * icoarsen
+    topc = array_resampler(top, icoarsen, "mean")
+    if rowcolspan is not None:
+        istart, istop, jstart, jstop = rowcolspan
+        nrowc = istop - istart
+        ncolc = jstop - jstart
+    else:
+        istart = 0
+        istop = nrow
+        jstart = 0
+        jstop = ncol
+    if idomain is None:
+        idomain = 1
+    topc = topc[istart:istop, jstart:jstop]
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlayc,
+        nrow=nrowc,
+        ncol=ncolc,
+        delr=delrc,
+        delc=delcc,
+        top=topc,
+        botm=botm[layer_index],
+        idomain=idomain,
+        xorigin=xorigin,
+        yorigin=yorigin,
+    )
+    idomain = gwf.dis.idomain.array
+    k11c = []
+    for k in range(nlayc):
+        ilay = layer_index[k]
+        a = array_resampler(k11[ilay], icoarsen, "maximum")
+        k11c.append(a[istart:istop, jstart:jstop])
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        k33overk=True,
+        icelltype=icelltype,
+        k=k11c,
+        save_specific_discharge=True,
+        k33=1.0,
+    )
+    strt = nlayc * [topc]
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        rivdatc = riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan)
-        riv_spd = {0: rivdatc}
-        flopy.mf6.ModflowGwfriv(
-            gwf,
-            stress_period_data=riv_spd,
-            pname="RIV",
-        )
-        flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge, pname="RCH")
-        head_filerecord = f"{modelname}.hds"
-        budget_filerecord = f"{modelname}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
-        return sim
-    return None
+    rivdatc = riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan)
+    riv_spd = {0: rivdatc}
+    flopy.mf6.ModflowGwfriv(
+        gwf,
+        stress_period_data=riv_spd,
+        pname="RIV",
+    )
+    flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge, pname="RCH")
+    head_filerecord = f"{modelname}.hds"
+    budget_filerecord = f"{modelname}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 LGRV model files

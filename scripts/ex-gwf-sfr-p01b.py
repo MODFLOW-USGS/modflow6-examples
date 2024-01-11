@@ -34,7 +34,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -3758,278 +3757,276 @@ rclose = 1e-6
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            complexity="complex",
-            outer_dvclose=1.0e-4,
-            outer_maximum=2000,
-            under_relaxation="dbd",
-            linear_acceleration="BICGSTAB",
-            under_relaxation_theta=0.7,
-            under_relaxation_kappa=0.08,
-            under_relaxation_gamma=0.05,
-            under_relaxation_momentum=0.0,
-            backtracking_number=20,
-            backtracking_tolerance=2.0,
-            backtracking_reduction_factor=0.2,
-            backtracking_residual_limit=5.0e-4,
-            inner_dvclose=1.0e-5,
-            rcloserecord="0.0001 relative_rclose",
-            inner_maximum=100,
-            relaxation_factor=0.0,
-            number_orthogonalizations=2,
-            preconditioner_levels=8,
-            preconditioner_drop_tolerance=0.001,
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="newton", save_flows=True
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            idomain=idomain,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            alternative_cell_averaging="AMT-HMK",
-            icelltype=1,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-            steady_state={0: True},
-            transient={1: True},
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
-        flopy.mf6.ModflowGwfwel(
-            gwf,
-            print_input=True,
-            print_flows=True,
-            save_flows=True,
-            mover=True,
-            pname="WEL-1",
-            stress_period_data=wel_spd,
-        )
-        sfr = flopy.mf6.ModflowGwfsfr(
-            gwf,
-            print_flows=True,
-            print_stage=True,
-            save_flows=True,
-            boundnames=True,
-            budget_filerecord=sim_name + ".sfr.bud",
-            mover=True,
-            pname="SFR-1",
-            maximum_depth_change=0.1e-05,
-            length_conversion=3.28081,
-            nreaches=len(sfr_pakdata),
-            packagedata=sfr_pakdata,
-            connectiondata=sfr_conn,
-            diversions=sfr_div,
-            perioddata=sfr_spd,
-            filename=f"{sim_name}.sfr",
-        )
-        sfr_obs_file = f"{sim_name}.sfr.obs"
-        sfr_obs_dict = {
-            "sfr.reach01.csv": [
-                ("extin", "ext-inflow", (0,)),
-                ("inflow", "inflow", (0,)),
-                ("frommvr", "from-mvr", (0,)),
-                ("gwf", "sfr", (0,)),
-                ("outflow", "outflow", (0,)),
-                ("extout", "ext-outflow", (0,)),
-                ("tomvr", "to-mvr", (0,)),
-            ],
-            "sfr.reach24.csv": [
-                ("extin", "ext-inflow", (23,)),
-                ("inflow", "inflow", (23,)),
-                ("frommvr", "from-mvr", (23,)),
-                ("gwf", "sfr", (23,)),
-                ("outflow", "outflow", (23,)),
-                ("extout", "ext-outflow", (23,)),
-                ("tomvr", "to-mvr", (23,)),
-            ],
-            "sfr.reach29.csv": [
-                ("extin", "ext-inflow", (28,)),
-                ("inflow", "inflow", (28,)),
-                ("frommvr", "from-mvr", (28,)),
-                ("gwf", "sfr", (28,)),
-                ("outflow", "outflow", (28,)),
-                ("extout", "ext-outflow", (28,)),
-                ("tomvr", "to-mvr", (28,)),
-            ],
-            "sfr.reach31.csv": [
-                ("extin", "ext-inflow", (30,)),
-                ("inflow", "inflow", (30,)),
-                ("frommvr", "from-mvr", (30,)),
-                ("gwf", "sfr", (30,)),
-                ("outflow", "outflow", (30,)),
-                ("extout", "ext-outflow", (30,)),
-                ("tomvr", "to-mvr", (30,)),
-            ],
-            "sfr.allreaches.csv": [
-                ("extin", "ext-inflow", "allreaches"),
-                ("inflow", "inflow", "allreaches"),
-                ("frommvr", "from-mvr", "allreaches"),
-                ("gwf", "sfr", "allreaches"),
-                ("outflow", "outflow", "allreaches"),
-                ("extout", "ext-outflow", "allreaches"),
-                ("tomvr", "to-mvr", "allreaches"),
-            ],
-            "sfr.stage.csv": [
-                ("s01", "stage", (0,)),
-                ("s24", "stage", (23,)),
-                ("s29", "stage", (28,)),
-                ("s31", "stage", (30,)),
-            ],
-        }
-        sfr.obs.initialize(
-            filename=sfr_obs_file,
-            digits=10,
-            print_input=True,
-            continuous=sfr_obs_dict,
-        )
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        complexity="complex",
+        outer_dvclose=1.0e-4,
+        outer_maximum=2000,
+        under_relaxation="dbd",
+        linear_acceleration="BICGSTAB",
+        under_relaxation_theta=0.7,
+        under_relaxation_kappa=0.08,
+        under_relaxation_gamma=0.05,
+        under_relaxation_momentum=0.0,
+        backtracking_number=20,
+        backtracking_tolerance=2.0,
+        backtracking_reduction_factor=0.2,
+        backtracking_residual_limit=5.0e-4,
+        inner_dvclose=1.0e-5,
+        rcloserecord="0.0001 relative_rclose",
+        inner_maximum=100,
+        relaxation_factor=0.0,
+        number_orthogonalizations=2,
+        preconditioner_levels=8,
+        preconditioner_drop_tolerance=0.001,
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=sim_name, newtonoptions="newton", save_flows=True
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        idomain=idomain,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        alternative_cell_averaging="AMT-HMK",
+        icelltype=1,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+        steady_state={0: True},
+        transient={1: True},
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
+    flopy.mf6.ModflowGwfwel(
+        gwf,
+        print_input=True,
+        print_flows=True,
+        save_flows=True,
+        mover=True,
+        pname="WEL-1",
+        stress_period_data=wel_spd,
+    )
+    sfr = flopy.mf6.ModflowGwfsfr(
+        gwf,
+        print_flows=True,
+        print_stage=True,
+        save_flows=True,
+        boundnames=True,
+        budget_filerecord=sim_name + ".sfr.bud",
+        mover=True,
+        pname="SFR-1",
+        maximum_depth_change=0.1e-05,
+        length_conversion=3.28081,
+        nreaches=len(sfr_pakdata),
+        packagedata=sfr_pakdata,
+        connectiondata=sfr_conn,
+        diversions=sfr_div,
+        perioddata=sfr_spd,
+        filename=f"{sim_name}.sfr",
+    )
+    sfr_obs_file = f"{sim_name}.sfr.obs"
+    sfr_obs_dict = {
+        "sfr.reach01.csv": [
+            ("extin", "ext-inflow", (0,)),
+            ("inflow", "inflow", (0,)),
+            ("frommvr", "from-mvr", (0,)),
+            ("gwf", "sfr", (0,)),
+            ("outflow", "outflow", (0,)),
+            ("extout", "ext-outflow", (0,)),
+            ("tomvr", "to-mvr", (0,)),
+        ],
+        "sfr.reach24.csv": [
+            ("extin", "ext-inflow", (23,)),
+            ("inflow", "inflow", (23,)),
+            ("frommvr", "from-mvr", (23,)),
+            ("gwf", "sfr", (23,)),
+            ("outflow", "outflow", (23,)),
+            ("extout", "ext-outflow", (23,)),
+            ("tomvr", "to-mvr", (23,)),
+        ],
+        "sfr.reach29.csv": [
+            ("extin", "ext-inflow", (28,)),
+            ("inflow", "inflow", (28,)),
+            ("frommvr", "from-mvr", (28,)),
+            ("gwf", "sfr", (28,)),
+            ("outflow", "outflow", (28,)),
+            ("extout", "ext-outflow", (28,)),
+            ("tomvr", "to-mvr", (28,)),
+        ],
+        "sfr.reach31.csv": [
+            ("extin", "ext-inflow", (30,)),
+            ("inflow", "inflow", (30,)),
+            ("frommvr", "from-mvr", (30,)),
+            ("gwf", "sfr", (30,)),
+            ("outflow", "outflow", (30,)),
+            ("extout", "ext-outflow", (30,)),
+            ("tomvr", "to-mvr", (30,)),
+        ],
+        "sfr.allreaches.csv": [
+            ("extin", "ext-inflow", "allreaches"),
+            ("inflow", "inflow", "allreaches"),
+            ("frommvr", "from-mvr", "allreaches"),
+            ("gwf", "sfr", "allreaches"),
+            ("outflow", "outflow", "allreaches"),
+            ("extout", "ext-outflow", "allreaches"),
+            ("tomvr", "to-mvr", "allreaches"),
+        ],
+        "sfr.stage.csv": [
+            ("s01", "stage", (0,)),
+            ("s24", "stage", (23,)),
+            ("s29", "stage", (28,)),
+            ("s31", "stage", (30,)),
+        ],
+    }
+    sfr.obs.initialize(
+        filename=sfr_obs_file,
+        digits=10,
+        print_input=True,
+        continuous=sfr_obs_dict,
+    )
 
-        (
-            idomain_wlakes,
-            lakepakdata_dict,
-            lakeconnectiondata,
-        ) = flopy.mf6.utils.get_lak_connections(
-            gwf.modelgrid,
-            lake_map,
-            idomain=gwf.dis.idomain.array,
-            bedleak=lake_leakance,
-        )
-        lak_pakdata = []
-        for key in lakepakdata_dict.keys():
-            lak_pakdata.append([key, lak_stage[key], lakepakdata_dict[key]])
-        lak = flopy.mf6.ModflowGwflak(
-            gwf,
-            print_stage=True,
-            print_flows=True,
-            save_flows=True,
-            budget_filerecord=sim_name + ".lak.bud",
-            length_conversion=3.28081,
-            mover=True,
-            pname="LAK-1",
-            boundnames=False,
-            nlakes=len(lak_pakdata),
-            noutlets=len(lak_outlets),
-            outlets=lak_outlets,
-            packagedata=lak_pakdata,
-            connectiondata=lakeconnectiondata,
-            perioddata=lk_spd,
-            filename=f"{sim_name}.lak",
-        )
-        lak_obs_file = f"{sim_name}.lak.obs"
-        lak_obs_dict = {
-            "obs_lak.csv": [
-                ("LAK1_STAGE", "STAGE", 1),
-                ("LAK2_STAGE", "STAGE", 2),
-                ("LAK1_TO-MVR", "TO-MVR", 1),
-                ("LAK1_FROM-MVR", "FROM-MVR", 1),
-                ("LAK2_TO-MVR", "TO-MVR", 2),
-                ("LAK2_FROM-MVR", "FROM-MVR", 2),
-            ]
-        }
-        lak.obs.initialize(filename=lak_obs_file, digits=10, continuous=lak_obs_dict)
-        uzf = flopy.mf6.ModflowGwfuzf(
-            gwf,
-            nuzfcells=len(uzf_pakdata),
-            boundnames=True,
-            ntrailwaves=10,
-            nwavesets=50,
-            print_flows=False,
-            save_flows=True,
-            simulate_et=True,
-            linear_gwet=True,
-            simulate_gwseep=True,
-            mover=True,
-            packagedata=uzf_pakdata,
-            perioddata=uzf_spd,
-            budget_filerecord=f"{sim_name}.uzf.bud",
-            pname="UZF-1",
-            filename=f"{sim_name}.uzf",
-        )
-        uzf_obs_file = f"{sim_name}.uzf.obs"
-        uzf_obs_dict = {
-            "obs_uzf.csv": [
-                ("ninfil", "net-infiltration", "ag"),
-                ("rejinf", "rej-inf", "ag"),
-                ("rejinfmvr", "rej-inf-to-mvr", "ag"),
-                ("infil", "infiltration", "ag"),
-                ("frommvr", "from-mvr", "ag"),
-                ("gwrch", "uzf-gwrch", "ag"),
-                ("gwet", "uzf-gwet", "ag"),
-                ("uzet", "uzet", "ag"),
-            ],
-            "obs_uzf_column.csv": [
-                ("id26_infil", "infiltration", 26),
-                ("id126_infil", "infiltration", 126),
-                ("id26_dpth=20", "water-content", 26, 20.0),
-                (
-                    "id126_dpth=51",
-                    "water-content",
-                    126,
-                    1.0,
-                ),  # DEPTH IS BELOW CELTOP
-                ("id26_rch", "uzf-gwrch", 26),
-                ("id126_rch", "uzf-gwrch", 126),
-                ("id26_gwet", "uzf-gwet", 26),
-                ("id126_gwet", "uzf-gwet", 126),
-                ("id26_uzet", "uzet", 26),
-                ("id126_uzet", "uzet", 126),
-                ("id26_gwd2mvr", "uzf-gwd-to-mvr", 26),
-                ("id126_gwd2mvr", "uzf-gwd-to-mvr", 126),
-                ("id26_rejinf", "rej-inf-to-mvr", 26),
-                ("id126_rejinf", "rej-inf-to-mvr", 126),
-            ],
-        }
-        uzf.obs.initialize(
-            filename=uzf_obs_file, print_input=True, continuous=uzf_obs_dict
-        )
-        flopy.mf6.ModflowGwfmvr(
-            gwf,
-            maxmvr=max_mvr,
-            print_flows=True,
-            maxpackages=maxpackages,
-            packages=mvr_pack,
-            perioddata=mvr_spd,
-            pname="MVR-1",
-            budget_filerecord=sim_name + ".mvr.bud",
-            filename=f"{sim_name}.mvr",
-        )
+    (
+        idomain_wlakes,
+        lakepakdata_dict,
+        lakeconnectiondata,
+    ) = flopy.mf6.utils.get_lak_connections(
+        gwf.modelgrid,
+        lake_map,
+        idomain=gwf.dis.idomain.array,
+        bedleak=lake_leakance,
+    )
+    lak_pakdata = []
+    for key in lakepakdata_dict.keys():
+        lak_pakdata.append([key, lak_stage[key], lakepakdata_dict[key]])
+    lak = flopy.mf6.ModflowGwflak(
+        gwf,
+        print_stage=True,
+        print_flows=True,
+        save_flows=True,
+        budget_filerecord=sim_name + ".lak.bud",
+        length_conversion=3.28081,
+        mover=True,
+        pname="LAK-1",
+        boundnames=False,
+        nlakes=len(lak_pakdata),
+        noutlets=len(lak_outlets),
+        outlets=lak_outlets,
+        packagedata=lak_pakdata,
+        connectiondata=lakeconnectiondata,
+        perioddata=lk_spd,
+        filename=f"{sim_name}.lak",
+    )
+    lak_obs_file = f"{sim_name}.lak.obs"
+    lak_obs_dict = {
+        "obs_lak.csv": [
+            ("LAK1_STAGE", "STAGE", 1),
+            ("LAK2_STAGE", "STAGE", 2),
+            ("LAK1_TO-MVR", "TO-MVR", 1),
+            ("LAK1_FROM-MVR", "FROM-MVR", 1),
+            ("LAK2_TO-MVR", "TO-MVR", 2),
+            ("LAK2_FROM-MVR", "FROM-MVR", 2),
+        ]
+    }
+    lak.obs.initialize(filename=lak_obs_file, digits=10, continuous=lak_obs_dict)
+    uzf = flopy.mf6.ModflowGwfuzf(
+        gwf,
+        nuzfcells=len(uzf_pakdata),
+        boundnames=True,
+        ntrailwaves=10,
+        nwavesets=50,
+        print_flows=False,
+        save_flows=True,
+        simulate_et=True,
+        linear_gwet=True,
+        simulate_gwseep=True,
+        mover=True,
+        packagedata=uzf_pakdata,
+        perioddata=uzf_spd,
+        budget_filerecord=f"{sim_name}.uzf.bud",
+        pname="UZF-1",
+        filename=f"{sim_name}.uzf",
+    )
+    uzf_obs_file = f"{sim_name}.uzf.obs"
+    uzf_obs_dict = {
+        "obs_uzf.csv": [
+            ("ninfil", "net-infiltration", "ag"),
+            ("rejinf", "rej-inf", "ag"),
+            ("rejinfmvr", "rej-inf-to-mvr", "ag"),
+            ("infil", "infiltration", "ag"),
+            ("frommvr", "from-mvr", "ag"),
+            ("gwrch", "uzf-gwrch", "ag"),
+            ("gwet", "uzf-gwet", "ag"),
+            ("uzet", "uzet", "ag"),
+        ],
+        "obs_uzf_column.csv": [
+            ("id26_infil", "infiltration", 26),
+            ("id126_infil", "infiltration", 126),
+            ("id26_dpth=20", "water-content", 26, 20.0),
+            (
+                "id126_dpth=51",
+                "water-content",
+                126,
+                1.0,
+            ),  # DEPTH IS BELOW CELTOP
+            ("id26_rch", "uzf-gwrch", 26),
+            ("id126_rch", "uzf-gwrch", 126),
+            ("id26_gwet", "uzf-gwet", 26),
+            ("id126_gwet", "uzf-gwet", 126),
+            ("id26_uzet", "uzet", 26),
+            ("id126_uzet", "uzet", 126),
+            ("id26_gwd2mvr", "uzf-gwd-to-mvr", 26),
+            ("id126_gwd2mvr", "uzf-gwd-to-mvr", 126),
+            ("id26_rejinf", "rej-inf-to-mvr", 26),
+            ("id126_rejinf", "rej-inf-to-mvr", 126),
+        ],
+    }
+    uzf.obs.initialize(
+        filename=uzf_obs_file, print_input=True, continuous=uzf_obs_dict
+    )
+    flopy.mf6.ModflowGwfmvr(
+        gwf,
+        maxmvr=max_mvr,
+        print_flows=True,
+        maxpackages=maxpackages,
+        packages=mvr_pack,
+        perioddata=mvr_spd,
+        pname="MVR-1",
+        budget_filerecord=sim_name + ".mvr.bud",
+        filename=f"{sim_name}.mvr",
+    )
 
-        # rest idomain with lake adjustments
-        gwf.dis.idomain = idomain_wlakes
+    # rest idomain with lake adjustments
+    gwf.dis.idomain = idomain_wlakes
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 SFR Package Problem 1 model files

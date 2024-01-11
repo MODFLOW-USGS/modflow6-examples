@@ -35,7 +35,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -239,22 +238,17 @@ def build_mf6gwt(sim_folder):
 
 
 def build_model(sim_name):
-    sims = None
-    if buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name)
-        sims = (sim_mf6gwf, sim_mf6gwt)
-    return sims
+    return build_mf6gwf(sim_name), build_mf6gwt(sim_name)
 
 
 # Function to write model files
 
 
 def write_model(sims, silent=True):
-    if writeModel:
-        sim_mf6gwf, sim_mf6gwt = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
+    if not writeModel:
+        return
+    for sim in sims:
+        sim.write_simulation(silent=silent)
 
 
 # Function to run the model
@@ -263,17 +257,11 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    success = True
-    if runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    for sim in sims:
+        success, buff = sim.run_simulation(silent=silent)
+        assert success, buff
 
 
 # Function to plot the model results
@@ -348,16 +336,15 @@ def plot_results(sims):
 #
 
 
-def scenario(idx, silent=True):
+def scenario(silent=True):
     sims = build_model(example_name)
     write_model(sims, silent=silent)
-    success = run_model(sims, silent=silent)
-    if success:
-        plot_results(sims)
+    run_model(sims, silent=silent)
+    plot_results(sims)
 
 
 # ### Model
 
 # Model run
 
-scenario(0)
+scenario()

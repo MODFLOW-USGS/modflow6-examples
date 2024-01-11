@@ -31,7 +31,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -122,68 +121,66 @@ rclose = 1e-6
 
 
 def build_model(sim_name, xt3d):
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdisv(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            top=top,
-            botm=botm,
-            **gridprops,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            save_specific_discharge=True,
-            xt3doptions=xt3d,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdisv(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        top=top,
+        botm=botm,
+        **gridprops,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        save_specific_discharge=True,
+        xt3doptions=xt3d,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        chd_spd = []
-        chd_spd += [[0, i, 1.0] for i in [0, 7, 14, 18, 22, 26, 33]]
-        chd_spd = {0: chd_spd}
-        flopy.mf6.ModflowGwfchd(
-            gwf,
-            stress_period_data=chd_spd,
-            pname="CHD-LEFT",
-            filename=f"{sim_name}.left.chd",
-        )
+    chd_spd = []
+    chd_spd += [[0, i, 1.0] for i in [0, 7, 14, 18, 22, 26, 33]]
+    chd_spd = {0: chd_spd}
+    flopy.mf6.ModflowGwfchd(
+        gwf,
+        stress_period_data=chd_spd,
+        pname="CHD-LEFT",
+        filename=f"{sim_name}.left.chd",
+    )
 
-        chd_spd = []
-        chd_spd += [[0, i, 0.0] for i in [6, 13, 17, 21, 25, 32, 39]]
-        chd_spd = {0: chd_spd}
-        flopy.mf6.ModflowGwfchd(
-            gwf,
-            stress_period_data=chd_spd,
-            pname="CHD-RIGHT",
-            filename=f"{sim_name}.right.chd",
-        )
+    chd_spd = []
+    chd_spd += [[0, i, 0.0] for i in [6, 13, 17, 21, 25, 32, 39]]
+    chd_spd = {0: chd_spd}
+    flopy.mf6.ModflowGwfchd(
+        gwf,
+        stress_period_data=chd_spd,
+        pname="CHD-RIGHT",
+        filename=f"{sim_name}.right.chd",
+    )
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
 
-        return sim
-    return None
+    return sim
 
 
 # Function to write MODFLOW 6 USG1DISV model files

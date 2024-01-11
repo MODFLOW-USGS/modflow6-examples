@@ -1056,7 +1056,7 @@ figure_size = (6, 6)
 sim_name = "ex-gwf-rad-disu"
 ws = pl.Path("../examples")
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
+
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -1166,66 +1166,64 @@ rclose = 1e-4
 
 
 def build_model(name):
-    if buildModel:
-        sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            complexity="complex",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-        )
+    sim_ws = os.path.join(ws, name)
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        complexity="complex",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+    )
 
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
 
-        disukwargs = get_disu_radial_kwargs(
-            nlay,
-            nradial,
-            radius_outer,
-            surface_elevation,
-            layer_thickness,
-            get_vertex=True,
-        )
+    disukwargs = get_disu_radial_kwargs(
+        nlay,
+        nradial,
+        radius_outer,
+        surface_elevation,
+        layer_thickness,
+        get_vertex=True,
+    )
 
-        disu = flopy.mf6.ModflowGwfdisu(gwf, length_units=length_units, **disukwargs)
+    disu = flopy.mf6.ModflowGwfdisu(gwf, length_units=length_units, **disukwargs)
 
-        npf = flopy.mf6.ModflowGwfnpf(
-            gwf,
-            k=k11,
-            k33=k33,
-            save_flows=True,
-            save_specific_discharge=True,
-        )
+    npf = flopy.mf6.ModflowGwfnpf(
+        gwf,
+        k=k11,
+        k33=k33,
+        save_flows=True,
+        save_specific_discharge=True,
+    )
 
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-            save_flows=True,
-        )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+        save_flows=True,
+    )
 
-        flopy.mf6.ModflowGwfic(gwf, strt=initial_head)
+    flopy.mf6.ModflowGwfic(gwf, strt=initial_head)
 
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, save_flows=True)
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, save_flows=True)
 
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            budget_filerecord=f"{name}.cbc",
-            head_filerecord=f"{name}.hds",
-            headprintrecord=[("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-            printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-            filename=f"{name}.oc",
-        )
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        budget_filerecord=f"{name}.cbc",
+        head_filerecord=f"{name}.hds",
+        headprintrecord=[("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        filename=f"{name}.oc",
+    )
 
-        flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
-        return sim
-    return None
+    flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
+    return sim
 
 
 # Function to write model files

@@ -28,7 +28,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -337,18 +336,15 @@ def build_mt3dms(
 
 
 def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
-    sims = None
-    if buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(
-            sim_name, distribution_coefficient, decay, decay_sorbed
-        )
-        sim_mf2005 = build_mf2005(sim_name)
-        sim_mt3dms = build_mt3dms(
-            sim_name, distribution_coefficient, decay, decay_sorbed, sim_mf2005
-        )
-        sims = (sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms)
-    return sims
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(
+        sim_name, distribution_coefficient, decay, decay_sorbed
+    )
+    sim_mf2005 = build_mf2005(sim_name)
+    sim_mt3dms = build_mt3dms(
+        sim_name, distribution_coefficient, decay, decay_sorbed, sim_mf2005
+    )
+    return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
 # Function to write model files
@@ -369,25 +365,19 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    success = True
-    if runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf2005.run_model(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mt3dms.run_model(
-            silent=silent, normal_msg="Program completed"
-        )
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    success, buff = sim_mf6gwf.run_simulation(silent=silent)
+    assert success, buff
+    success, buff = sim_mf6gwt.run_simulation(silent=silent)
+    assert success, buff
+    success, buff = sim_mf2005.run_model(silent=silent)
+    assert success, buff
+    success, buff = sim_mt3dms.run_model(
+        silent=silent, normal_msg="Program completed"
+    )
+    assert success, buff
 
 
 # Functions to plot the model results
@@ -494,9 +484,8 @@ def scenario(idx, silent=True):
     parameter_dict = parameters[key]
     sims = build_model(key, **parameter_dict)
     write_model(sims, silent=silent)
-    success = run_model(sims, silent=silent)
-    if success:
-        plot_scenario_results(sims, idx)
+    run_model(sims, silent=silent)
+    plot_scenario_results(sims, idx)
 
 
 # ### Case 1

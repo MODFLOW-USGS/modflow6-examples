@@ -29,7 +29,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -195,159 +194,157 @@ relax = 0.97
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            linear_acceleration=linaccel,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            relaxation_factor=relax,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, save_flows=True, newtonoptions="newton"
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-            idomain=idomain,
-        )
-        # gwf obs
-        flopy.mf6.ModflowUtlobs(
-            gwf,
-            digits=10,
-            print_input=True,
-            continuous={
-                "gwf_obs.csv": [
-                    ("h1l1", "HEAD", (0, 8, 9)),
-                    ("h1l2", "HEAD", (1, 8, 9)),
-                    ("h1l3", "HEAD", (2, 8, 9)),
-                    ("h1l4", "HEAD", (3, 8, 9)),
-                    ("h2l1", "HEAD", (0, 11, 6)),
-                    ("h2l2", "HEAD", (1, 11, 6)),
-                    ("h3l2", "HEAD", (2, 11, 6)),
-                    ("h4l2", "HEAD", (3, 11, 6)),
-                ]
-            },
-        )
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        linear_acceleration=linaccel,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        relaxation_factor=relax,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=sim_name, save_flows=True, newtonoptions="newton"
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+        idomain=idomain,
+    )
+    # gwf obs
+    flopy.mf6.ModflowUtlobs(
+        gwf,
+        digits=10,
+        print_input=True,
+        continuous={
+            "gwf_obs.csv": [
+                ("h1l1", "HEAD", (0, 8, 9)),
+                ("h1l2", "HEAD", (1, 8, 9)),
+                ("h1l3", "HEAD", (2, 8, 9)),
+                ("h1l4", "HEAD", (3, 8, 9)),
+                ("h2l1", "HEAD", (0, 11, 6)),
+                ("h2l2", "HEAD", (1, 11, 6)),
+                ("h3l2", "HEAD", (2, 11, 6)),
+                ("h4l2", "HEAD", (3, 11, 6)),
+            ]
+        },
+    )
 
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=icelltype,
-            ss=0.0,
-            sy=sy,
-            steady_state={0: True},
-            transient={1: True},
-        )
-        csub = flopy.mf6.ModflowGwfcsub(
-            gwf,
-            print_input=True,
-            save_flows=True,
-            compression_indices=True,
-            update_material_properties=True,
-            boundnames=True,
-            ninterbeds=len(csub_pakdata),
-            sgm=sgm,
-            sgs=sgs,
-            cg_theta=cg_theta,
-            cg_ske_cr=cg_ske,
-            beta=beta,
-            gammaw=gammaw,
-            packagedata=csub_pakdata,
-        )
-        opth = f"{sim_name}.csub.obs"
-        csub_csv = opth + ".csv"
-        obs = [
-            ("w1l1", "interbed-compaction", "01_09_10"),
-            ("w1l2", "interbed-compaction", "02_09_10"),
-            ("w1l3", "interbed-compaction", "03_09_10"),
-            ("w1l4", "interbed-compaction", "04_09_10"),
-            ("w2l1", "interbed-compaction", "01_12_07"),
-            ("w2l2", "interbed-compaction", "02_12_07"),
-            ("w2l3", "interbed-compaction", "03_12_07"),
-            ("w2l4", "interbed-compaction", "04_12_07"),
-            ("s1l1", "coarse-compaction", (0, 8, 9)),
-            ("s1l2", "coarse-compaction", (1, 8, 9)),
-            ("s1l3", "coarse-compaction", (2, 8, 9)),
-            ("s1l4", "coarse-compaction", (3, 8, 9)),
-            ("s2l1", "coarse-compaction", (0, 11, 6)),
-            ("s2l2", "coarse-compaction", (1, 11, 6)),
-            ("s2l3", "coarse-compaction", (2, 11, 6)),
-            ("s2l4", "coarse-compaction", (3, 11, 6)),
-            ("c1l1", "compaction-cell", (0, 8, 9)),
-            ("c1l2", "compaction-cell", (1, 8, 9)),
-            ("c1l3", "compaction-cell", (2, 8, 9)),
-            ("c1l4", "compaction-cell", (3, 8, 9)),
-            ("c2l1", "compaction-cell", (0, 11, 6)),
-            ("c2l2", "compaction-cell", (1, 11, 6)),
-            ("c2l3", "compaction-cell", (2, 11, 6)),
-            ("c2l4", "compaction-cell", (3, 11, 6)),
-            ("w2l4q", "csub-cell", (3, 11, 6)),
-            ("gs1", "gstress-cell", (0, 8, 9)),
-            ("es1", "estress-cell", (0, 8, 9)),
-            ("pc1", "preconstress-cell", (0, 8, 9)),
-            ("gs2", "gstress-cell", (1, 8, 9)),
-            ("es2", "estress-cell", (1, 8, 9)),
-            ("pc2", "preconstress-cell", (1, 8, 9)),
-            ("gs3", "gstress-cell", (2, 8, 9)),
-            ("es3", "estress-cell", (2, 8, 9)),
-            ("pc3", "preconstress-cell", (2, 8, 9)),
-            ("gs4", "gstress-cell", (3, 8, 9)),
-            ("es4", "estress-cell", (3, 8, 9)),
-            ("pc4", "preconstress-cell", (3, 8, 9)),
-            ("sk1l2", "ske-cell", (1, 8, 9)),
-            ("sk2l4", "ske-cell", (3, 11, 6)),
-            ("t1l2", "theta", "02_09_10"),
-            ("w1qie", "elastic-csub", "02_09_10"),
-            ("w1qii", "inelastic-csub", "02_09_10"),
-            ("w1qaq", "coarse-csub", (1, 8, 9)),
-            ("w1qt", "csub-cell", (1, 8, 9)),
-            ("w1wc", "wcomp-csub-cell", (1, 8, 9)),
-            ("w2qie", "elastic-csub", "04_12_07"),
-            ("w2qii", "inelastic-csub", "04_12_07"),
-            ("w2qaq", "coarse-csub", (3, 11, 6)),
-            ("w2qt ", "csub-cell", (3, 11, 6)),
-            ("w2wc", "wcomp-csub-cell", (3, 11, 6)),
-        ]
-        orecarray = {csub_csv: obs}
-        csub.obs.initialize(
-            filename=opth, digits=10, print_input=True, continuous=orecarray
-        )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=icelltype,
+        ss=0.0,
+        sy=sy,
+        steady_state={0: True},
+        transient={1: True},
+    )
+    csub = flopy.mf6.ModflowGwfcsub(
+        gwf,
+        print_input=True,
+        save_flows=True,
+        compression_indices=True,
+        update_material_properties=True,
+        boundnames=True,
+        ninterbeds=len(csub_pakdata),
+        sgm=sgm,
+        sgs=sgs,
+        cg_theta=cg_theta,
+        cg_ske_cr=cg_ske,
+        beta=beta,
+        gammaw=gammaw,
+        packagedata=csub_pakdata,
+    )
+    opth = f"{sim_name}.csub.obs"
+    csub_csv = opth + ".csv"
+    obs = [
+        ("w1l1", "interbed-compaction", "01_09_10"),
+        ("w1l2", "interbed-compaction", "02_09_10"),
+        ("w1l3", "interbed-compaction", "03_09_10"),
+        ("w1l4", "interbed-compaction", "04_09_10"),
+        ("w2l1", "interbed-compaction", "01_12_07"),
+        ("w2l2", "interbed-compaction", "02_12_07"),
+        ("w2l3", "interbed-compaction", "03_12_07"),
+        ("w2l4", "interbed-compaction", "04_12_07"),
+        ("s1l1", "coarse-compaction", (0, 8, 9)),
+        ("s1l2", "coarse-compaction", (1, 8, 9)),
+        ("s1l3", "coarse-compaction", (2, 8, 9)),
+        ("s1l4", "coarse-compaction", (3, 8, 9)),
+        ("s2l1", "coarse-compaction", (0, 11, 6)),
+        ("s2l2", "coarse-compaction", (1, 11, 6)),
+        ("s2l3", "coarse-compaction", (2, 11, 6)),
+        ("s2l4", "coarse-compaction", (3, 11, 6)),
+        ("c1l1", "compaction-cell", (0, 8, 9)),
+        ("c1l2", "compaction-cell", (1, 8, 9)),
+        ("c1l3", "compaction-cell", (2, 8, 9)),
+        ("c1l4", "compaction-cell", (3, 8, 9)),
+        ("c2l1", "compaction-cell", (0, 11, 6)),
+        ("c2l2", "compaction-cell", (1, 11, 6)),
+        ("c2l3", "compaction-cell", (2, 11, 6)),
+        ("c2l4", "compaction-cell", (3, 11, 6)),
+        ("w2l4q", "csub-cell", (3, 11, 6)),
+        ("gs1", "gstress-cell", (0, 8, 9)),
+        ("es1", "estress-cell", (0, 8, 9)),
+        ("pc1", "preconstress-cell", (0, 8, 9)),
+        ("gs2", "gstress-cell", (1, 8, 9)),
+        ("es2", "estress-cell", (1, 8, 9)),
+        ("pc2", "preconstress-cell", (1, 8, 9)),
+        ("gs3", "gstress-cell", (2, 8, 9)),
+        ("es3", "estress-cell", (2, 8, 9)),
+        ("pc3", "preconstress-cell", (2, 8, 9)),
+        ("gs4", "gstress-cell", (3, 8, 9)),
+        ("es4", "estress-cell", (3, 8, 9)),
+        ("pc4", "preconstress-cell", (3, 8, 9)),
+        ("sk1l2", "ske-cell", (1, 8, 9)),
+        ("sk2l4", "ske-cell", (3, 11, 6)),
+        ("t1l2", "theta", "02_09_10"),
+        ("w1qie", "elastic-csub", "02_09_10"),
+        ("w1qii", "inelastic-csub", "02_09_10"),
+        ("w1qaq", "coarse-csub", (1, 8, 9)),
+        ("w1qt", "csub-cell", (1, 8, 9)),
+        ("w1wc", "wcomp-csub-cell", (1, 8, 9)),
+        ("w2qie", "elastic-csub", "04_12_07"),
+        ("w2qii", "inelastic-csub", "04_12_07"),
+        ("w2qaq", "coarse-csub", (3, 11, 6)),
+        ("w2qt ", "csub-cell", (3, 11, 6)),
+        ("w2wc", "wcomp-csub-cell", (3, 11, 6)),
+    ]
+    orecarray = {csub_csv: obs}
+    csub.obs.initialize(
+        filename=opth, digits=10, print_input=True, continuous=orecarray
+    )
 
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
-        flopy.mf6.ModflowGwfrch(gwf, stress_period_data={0: rch6})
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel6)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
+    flopy.mf6.ModflowGwfrch(gwf, stress_period_data={0: rch6})
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel6)
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            printrecord=[("BUDGET", "ALL")],
-            saverecord=[("BUDGET", "ALL"), ("HEAD", "ALL")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        printrecord=[("BUDGET", "ALL")],
+        saverecord=[("BUDGET", "ALL"), ("HEAD", "ALL")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 model files

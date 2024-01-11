@@ -34,7 +34,6 @@ example_name = "ex-gwt-moc3dp1"
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -410,24 +409,22 @@ def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, deca
 
 
 def build_model(sim_name, longitudinal_dispersivity, retardation_factor, decay_rate):
-    sims = None
-    if buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(
-            sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
-        )
-        sims = (sim_mf6gwf, sim_mf6gwt)
-    return sims
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(
+        sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
+    )
+    return sim_mf6gwf, sim_mf6gwt
 
 
 # Function to write model files
 
 
 def write_model(sims, silent=True):
-    if writeModel:
-        sim_mf6gwf, sim_mf6gwt = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
+    if not writeModel:
+        return
+    sim_mf6gwf, sim_mf6gwt = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
 
 
 # Function to run the model
@@ -436,17 +433,11 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    success = True
-    if runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
+    sim_mf6gwf, sim_mf6gwt = sims
+    success, buff = sim_mf6gwf.run_simulation(silent=silent)
+    assert success, buff
+    success, buff = sim_mf6gwt.run_simulation(silent=silent)
+    assert success, buff
 
 
 # Function to plot the model results
@@ -607,10 +598,9 @@ def scenario(idx, silent=True):
     parameter_dict = parameters[key]
     sims = build_model(key, **parameter_dict)
     write_model(sims, silent=silent)
-    success = run_model(sims, silent=silent)
-    if success:
-        plot_results_ct(sims, idx, **parameter_dict)
-        plot_results_cd(sims, idx, **parameter_dict)
+    run_model(sims, silent=silent)
+    plot_results_ct(sims, idx, **parameter_dict)
+    plot_results_cd(sims, idx, **parameter_dict)
 
 
 # ### Simulated Zero-Order Growth in a Uniform Flow Field

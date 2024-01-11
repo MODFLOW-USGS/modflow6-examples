@@ -30,7 +30,6 @@ example_name = "ex-gwt-gwtgwt-mt3dms-p10"
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -203,9 +202,6 @@ scheme = "Undefined"
 
 # ### Build the MODFLOW 6 simulation
 def build_model(sim_name):
-    if not buildModel:
-        return
-
     sim_ws = os.path.join(ws, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
 

@@ -34,7 +34,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -288,24 +287,22 @@ def build_mf6gwt(sim_folder):
 
 
 def build_model(sim_name):
-    sims = None
-    if buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name)
-        sim_mf2005 = None  # build_mf2005(sim_name)
-        sim_mt3dms = None  # build_mt3dms(sim_name, sim_mf2005)
-        sims = (sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms)
-    return sims
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(sim_name)
+    sim_mf2005 = None  # build_mf2005(sim_name)
+    sim_mt3dms = None  # build_mt3dms(sim_name, sim_mf2005)
+    return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
 # Function to write model files
 
 
 def write_model(sims, silent=True):
-    if writeModel:
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
+    if not writeModel:
+        return
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
 
 
 # Function to run the model
@@ -314,19 +311,13 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    success = True
-    if runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        print("Running mf6gwf model...")
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        print("Running mf6gwt model...")
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    print("Running mf6gwf model...")
+    success, buff = sim_mf6gwf.run_simulation(silent=silent)
+    assert success, buff
+    print("Running mf6gwt model...")
+    success, buff = sim_mf6gwt.run_simulation(silent=silent)
+    assert success, buff
 
 
 # Function to plot the model results
@@ -582,9 +573,8 @@ def plot_cvt_results(sims, idx):
 def scenario(idx, silent=True):
     sim = build_model(example_name)
     write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
-        plot_results(sim, idx)
+    run_model(sim, silent=silent)
+    plot_results(sim, idx)
 
 
 # ### Simulate Keating Problem

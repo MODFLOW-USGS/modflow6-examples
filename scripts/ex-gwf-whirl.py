@@ -31,7 +31,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -87,65 +86,63 @@ rclose = 1e-6
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            k22=k22,
-            k33=k33,
-            angle1=angle1,
-            save_specific_discharge=True,
-            xt3doptions=True,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        rate = np.zeros((nlay, nrow, ncol), dtype=float)
-        rate[:, :, 0] = inflow_rate
-        rate[:, :, -1] = -inflow_rate
-        wellay, welrow, welcol = np.where(rate != 0.0)
-        wel_spd = [
-            ((k, i, j), rate[k, i, j]) for k, i, j in zip(wellay, welrow, welcol)
-        ]
-        wel_spd = {0: wel_spd}
-        flopy.mf6.ModflowGwfwel(
-            gwf,
-            stress_period_data=wel_spd,
-            pname="WEL",
-        )
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
-        return sim
-    return None
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        k22=k22,
+        k33=k33,
+        angle1=angle1,
+        save_specific_discharge=True,
+        xt3doptions=True,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    rate = np.zeros((nlay, nrow, ncol), dtype=float)
+    rate[:, :, 0] = inflow_rate
+    rate[:, :, -1] = -inflow_rate
+    wellay, welrow, welcol = np.where(rate != 0.0)
+    wel_spd = [
+        ((k, i, j), rate[k, i, j]) for k, i, j in zip(wellay, welrow, welcol)
+    ]
+    wel_spd = {0: wel_spd}
+    flopy.mf6.ModflowGwfwel(
+        gwf,
+        stress_period_data=wel_spd,
+        pname="WEL",
+    )
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 Whirl model files
@@ -163,12 +160,10 @@ def write_model(sim, silent=True):
 
 @timed
 def run_model(sim, silent=False):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent, report=True)
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, buff
 
 
 # Function to plot the Whirl model results.
@@ -218,9 +213,8 @@ def plot_results(sim, silent=True):
 def simulation(idx, silent=True):
     sim = build_model()
     write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
-        plot_results(sim, silent=silent)
+    run_model(sim, silent=silent)
+    plot_results(sim, silent=silent)
 
 
 # ### Whirl Simulation

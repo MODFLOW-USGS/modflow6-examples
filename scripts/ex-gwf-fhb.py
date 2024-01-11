@@ -31,7 +31,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -87,104 +86,102 @@ rclose = 1e-6
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            storagecoefficient=True,
-            iconvert=0,
-            ss=1.0e-6,
-            sy=None,
-            transient={0: True},
-        )
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        storagecoefficient=True,
+        iconvert=0,
+        ss=1.0e-6,
+        sy=None,
+        transient={0: True},
+    )
 
-        chd_spd = []
-        chd_spd += [[0, i, 9, "CHDHEAD"] for i in range(3)]
-        chd_spd = {0: chd_spd}
-        tsdata = [(0.0, 0.0), (307.0, 1.0), (791.0, 5.0), (1000.0, 2.0)]
-        tsdict = {
-            "timeseries": tsdata,
-            "time_series_namerecord": "CHDHEAD",
-            "interpolation_methodrecord": "LINEAREND",
-        }
-        flopy.mf6.ModflowGwfchd(
-            gwf,
-            stress_period_data=chd_spd,
-            timeseries=tsdict,
-            pname="CHD",
-        )
+    chd_spd = []
+    chd_spd += [[0, i, 9, "CHDHEAD"] for i in range(3)]
+    chd_spd = {0: chd_spd}
+    tsdata = [(0.0, 0.0), (307.0, 1.0), (791.0, 5.0), (1000.0, 2.0)]
+    tsdict = {
+        "timeseries": tsdata,
+        "time_series_namerecord": "CHDHEAD",
+        "interpolation_methodrecord": "LINEAREND",
+    }
+    flopy.mf6.ModflowGwfchd(
+        gwf,
+        stress_period_data=chd_spd,
+        timeseries=tsdict,
+        pname="CHD",
+    )
 
-        wel_spd = []
-        wel_spd += [[0, 1, 0, "FLOWRATE"]]
-        wel_spd = {0: wel_spd}
-        tsdata = [
-            (0.0, 2000.0),
-            (307.0, 6000.0),
-            (791.0, 5000.0),
-            (1000.0, 9000.0),
-        ]
-        tsdict = {
-            "timeseries": tsdata,
-            "time_series_namerecord": "FLOWRATE",
-            "interpolation_methodrecord": "LINEAREND",
-        }
-        flopy.mf6.ModflowGwfwel(
-            gwf,
-            stress_period_data=wel_spd,
-            timeseries=tsdict,
-            pname="WEL",
-        )
+    wel_spd = []
+    wel_spd += [[0, 1, 0, "FLOWRATE"]]
+    wel_spd = {0: wel_spd}
+    tsdata = [
+        (0.0, 2000.0),
+        (307.0, 6000.0),
+        (791.0, 5000.0),
+        (1000.0, 9000.0),
+    ]
+    tsdict = {
+        "timeseries": tsdata,
+        "time_series_namerecord": "FLOWRATE",
+        "interpolation_methodrecord": "LINEAREND",
+    }
+    flopy.mf6.ModflowGwfwel(
+        gwf,
+        stress_period_data=wel_spd,
+        timeseries=tsdict,
+        pname="WEL",
+    )
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
 
-        obsdict = {}
-        obslist = [
-            ["h1_2_1", "head", (0, 1, 0)],
-            ["h1_2_10", "head", (0, 1, 9)],
-        ]
-        obsdict[f"{sim_name}.obs.head.csv"] = obslist
-        obslist = [["icf1", "flow-ja-face", (0, 1, 1), (0, 1, 0)]]
-        obsdict[f"{sim_name}.obs.flow.csv"] = obslist
-        obs = flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
+    obsdict = {}
+    obslist = [
+        ["h1_2_1", "head", (0, 1, 0)],
+        ["h1_2_10", "head", (0, 1, 9)],
+    ]
+    obsdict[f"{sim_name}.obs.head.csv"] = obslist
+    obslist = [["icf1", "flow-ja-face", (0, 1, 1), (0, 1, 0)]]
+    obsdict[f"{sim_name}.obs.flow.csv"] = obslist
+    obs = flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
 
-        return sim
-    return None
+    return sim
 
 
 # Function to write MODFLOW 6 FHB model files

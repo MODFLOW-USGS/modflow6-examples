@@ -30,7 +30,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -251,13 +250,10 @@ rclose = 1e-4
 
 
 def build_model(name, simulation="regional"):
-    if buildModel:
-        if simulation == "regional":
-            sim = build_regional(name)
-        else:
-            sim = build_local(name, simulation)
-
-    return sim
+    if simulation == "regional":
+        return build_regional(name)
+    else:
+        return build_local(name, simulation)
 
 
 def build_regional(name):

@@ -30,7 +30,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -83,77 +82,75 @@ rclose = 1e-6
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        ihc, cl1, cl2, hwva = 1, delr / 2.0, delr / 2.0, delc
-        angldegx = 90.0
-        cdist = delr
-        exgdata = [
-            [(k, 0, 0), (k, 0, ncol - 1), ihc, cl1, cl2, hwva, angldegx, cdist]
-            for k in range(nlay)
-        ]
-        exg = flopy.mf6.ModflowGwfgwf(
-            sim,
-            exgtype="GWF6-GWF6",
-            nexg=len(exgdata),
-            auxiliary=["ANGLDEGX", "CDIST"],
-            exgmnamea=sim_name,
-            exgmnameb=sim_name,
-            exchangedata=exgdata,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=hydraulic_conductivity,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    ihc, cl1, cl2, hwva = 1, delr / 2.0, delr / 2.0, delc
+    angldegx = 90.0
+    cdist = delr
+    exgdata = [
+        [(k, 0, 0), (k, 0, ncol - 1), ihc, cl1, cl2, hwva, angldegx, cdist]
+        for k in range(nlay)
+    ]
+    exg = flopy.mf6.ModflowGwfgwf(
+        sim,
+        exgtype="GWF6-GWF6",
+        nexg=len(exgdata),
+        auxiliary=["ANGLDEGX", "CDIST"],
+        exgmnamea=sim_name,
+        exgmnameb=sim_name,
+        exchangedata=exgdata,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=hydraulic_conductivity,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        hm = 1.0
-        lmbda = ncol * delr
-        wv = 2 * np.pi / lmbda
-        x = gwf.modelgrid.xcellcenters
-        chd_head = hm * np.sin(wv * x)
-        chd_spd = []
-        for j in range(ncol):
-            chd_spd.append([0, 0, j, chd_head[0, j]])
-        flopy.mf6.ModflowGwfchd(
-            gwf,
-            stress_period_data=chd_spd,
-            pname="CHD",
-        )
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
-        return sim
-    return None
+    hm = 1.0
+    lmbda = ncol * delr
+    wv = 2 * np.pi / lmbda
+    x = gwf.modelgrid.xcellcenters
+    chd_head = hm * np.sin(wv * x)
+    chd_spd = []
+    for j in range(ncol):
+        chd_spd.append([0, 0, j, chd_head[0, j]])
+    flopy.mf6.ModflowGwfchd(
+        gwf,
+        stress_period_data=chd_spd,
+        pname="CHD",
+    )
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 SPBC model files

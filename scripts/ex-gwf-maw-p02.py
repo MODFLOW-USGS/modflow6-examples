@@ -31,7 +31,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -119,74 +118,72 @@ rclose = 1e-4
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-            idomain=idomain,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=0,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=0,
-            ss=ss,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+        idomain=idomain,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=0,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=0,
+        ss=ss,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        maw = flopy.mf6.ModflowGwfmaw(
-            gwf,
-            flowing_wells=True,
-            nmawwells=1,
-            packagedata=maw_packagedata,
-            connectiondata=maw_conn,
-            perioddata=maw_spd,
-        )
-        obs_file = f"{sim_name}.maw.obs"
-        csv_file = obs_file + ".csv"
-        obs_dict = {
-            csv_file: [
-                ("head", "head", (0,)),
-                ("Q1", "maw", (0,), (0,)),
-                ("Q2", "maw", (0,), (1,)),
-                ("FW", "fw-rate", (0,)),
-            ]
-        }
-        maw.obs.initialize(
-            filename=obs_file, digits=10, print_input=True, continuous=obs_dict
-        )
+    maw = flopy.mf6.ModflowGwfmaw(
+        gwf,
+        flowing_wells=True,
+        nmawwells=1,
+        packagedata=maw_packagedata,
+        connectiondata=maw_conn,
+        perioddata=maw_spd,
+    )
+    obs_file = f"{sim_name}.maw.obs"
+    csv_file = obs_file + ".csv"
+    obs_dict = {
+        csv_file: [
+            ("head", "head", (0,)),
+            ("Q1", "maw", (0,), (0,)),
+            ("Q2", "maw", (0,), (1,)),
+            ("FW", "fw-rate", (0,)),
+        ]
+    }
+    maw.obs.initialize(
+        filename=obs_file, digits=10, print_input=True, continuous=obs_dict
+    )
 
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            printrecord=[("BUDGET", "LAST")],
-        )
-        return sim
-    return None
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        printrecord=[("BUDGET", "LAST")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 Flowing Well Problem model files

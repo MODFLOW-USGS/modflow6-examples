@@ -34,7 +34,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -954,130 +953,128 @@ rclose = 1e-6
 
 
 def build_model(name, uzf_gwseep=None):
-    if buildModel:
-        sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
+    sim_ws = os.path.join(ws, name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        idomain=idomain,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=1,
+        k=k11,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+        steady_state={0: True},
+        transient={1: True},
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
+    sfr = flopy.mf6.ModflowGwfsfr(
+        gwf,
+        pname="SFR-1",
+        length_conversion=3.28081,
+        mover=True,
+        nreaches=len(sfr_pakdata),
+        packagedata=sfr_pakdata,
+        connectiondata=sfr_conn,
+        diversions=sfr_div,
+        perioddata=sfr_spd,
+    )
+    uzf = flopy.mf6.ModflowGwfuzf(
+        gwf,
+        pname="UZF-1",
+        simulate_gwseep=uzf_gwseep,
+        simulate_et=True,
+        linear_gwet=True,
+        boundnames=True,
+        mover=True,
+        nuzfcells=len(uzf_pakdata),
+        ntrailwaves=25,
+        nwavesets=20,
+        packagedata=uzf_pakdata,
+        perioddata=uzf_spd,
+    )
+
+    mvr_packages = mvr_paks.copy()
+    mvr_spd = uzf_mvr_spd.copy()
+    obs_file = f"{sim_name}.surfrate.obs"
+    csv_file = obs_file + ".csv"
+    if uzf_gwseep:
+        obs_dict = {
+            csv_file: [
+                ("surfrate", "uzf-gwd-to-mvr", "surfrate"),
+                ("netinfil", "net-infiltration", "surfrate"),
+            ]
+        }
+        uzf.obs.initialize(
+            filename=obs_file,
+            digits=10,
+            print_input=True,
+            continuous=obs_dict,
         )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
-        flopy.mf6.ModflowGwfdis(
+    else:
+        mvr_packages.append(["DRN-1"])
+        mvr_spd += drn_mvr_spd.copy()
+        drn = flopy.mf6.ModflowGwfdrn(
             gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            idomain=idomain,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=1,
-            k=k11,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-            steady_state={0: True},
-            transient={1: True},
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
-        sfr = flopy.mf6.ModflowGwfsfr(
-            gwf,
-            pname="SFR-1",
-            length_conversion=3.28081,
-            mover=True,
-            nreaches=len(sfr_pakdata),
-            packagedata=sfr_pakdata,
-            connectiondata=sfr_conn,
-            diversions=sfr_div,
-            perioddata=sfr_spd,
-        )
-        uzf = flopy.mf6.ModflowGwfuzf(
-            gwf,
-            pname="UZF-1",
-            simulate_gwseep=uzf_gwseep,
-            simulate_et=True,
-            linear_gwet=True,
+            pname="DRN-1",
+            auxiliary=[("draindepth")],
+            auxdepthname="draindepth",
             boundnames=True,
             mover=True,
-            nuzfcells=len(uzf_pakdata),
-            ntrailwaves=25,
-            nwavesets=20,
-            packagedata=uzf_pakdata,
-            perioddata=uzf_spd,
+            stress_period_data=drn_spd,
+        )
+        obs_dict = {
+            csv_file: [
+                ("surfrate", "to-mvr", "surfrate"),
+            ]
+        }
+        drn.obs.initialize(
+            filename=obs_file,
+            digits=10,
+            print_input=True,
+            continuous=obs_dict,
         )
 
-        mvr_packages = mvr_paks.copy()
-        mvr_spd = uzf_mvr_spd.copy()
-        obs_file = f"{sim_name}.surfrate.obs"
-        csv_file = obs_file + ".csv"
-        if uzf_gwseep:
-            obs_dict = {
-                csv_file: [
-                    ("surfrate", "uzf-gwd-to-mvr", "surfrate"),
-                    ("netinfil", "net-infiltration", "surfrate"),
-                ]
-            }
-            uzf.obs.initialize(
-                filename=obs_file,
-                digits=10,
-                print_input=True,
-                continuous=obs_dict,
-            )
-        else:
-            mvr_packages.append(["DRN-1"])
-            mvr_spd += drn_mvr_spd.copy()
-            drn = flopy.mf6.ModflowGwfdrn(
-                gwf,
-                pname="DRN-1",
-                auxiliary=[("draindepth")],
-                auxdepthname="draindepth",
-                boundnames=True,
-                mover=True,
-                stress_period_data=drn_spd,
-            )
-            obs_dict = {
-                csv_file: [
-                    ("surfrate", "to-mvr", "surfrate"),
-                ]
-            }
-            drn.obs.initialize(
-                filename=obs_file,
-                digits=10,
-                print_input=True,
-                continuous=obs_dict,
-            )
+    flopy.mf6.ModflowGwfmvr(
+        gwf,
+        maxpackages=len(mvr_packages),
+        maxmvr=len(mvr_spd),
+        packages=mvr_packages,
+        perioddata=mvr_spd,
+    )
 
-        flopy.mf6.ModflowGwfmvr(
-            gwf,
-            maxpackages=len(mvr_packages),
-            maxmvr=len(mvr_spd),
-            packages=mvr_packages,
-            perioddata=mvr_spd,
-        )
-
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            printrecord=[("BUDGET", "LAST")],
-        )
-        return sim
-    return None
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        printrecord=[("BUDGET", "LAST")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 UZF Package Problem 2 model files

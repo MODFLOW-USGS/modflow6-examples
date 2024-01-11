@@ -31,7 +31,6 @@ example_name = "ex-gwt-mt3dms-p02"
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -357,14 +356,11 @@ def build_mt3dms(
 
 
 def build_model(sim_name, **kwargs):
-    sims = None
-    if buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name, **kwargs)
-        sim_mf2005 = build_mf2005(sim_name)
-        sim_mt3dms = build_mt3dms(sim_name, sim_mf2005, **kwargs)
-        sims = (sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms)
-    return sims
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(sim_name, **kwargs)
+    sim_mf2005 = build_mf2005(sim_name)
+    sim_mt3dms = build_mt3dms(sim_name, sim_mf2005, **kwargs)
+    return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
 # Function to write model files

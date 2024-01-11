@@ -30,7 +30,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -158,103 +157,99 @@ rclose = 1e-6
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            cvoptions="perched",
-            perched=True,
-            icelltype=icelltype,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
-        flopy.mf6.ModflowGwfdrn(gwf, stress_period_data=drn_spd)
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
-        flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
-        return sim
-    return None
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        cvoptions="perched",
+        perched=True,
+        icelltype=icelltype,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+    flopy.mf6.ModflowGwfdrn(gwf, stress_period_data=drn_spd)
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
+    flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
+    return sim
 
 
 # MODFLOW-2005 model object (mf) is returned if building the model
 
 
 def build_mf5model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name, "mf2005")
-        mf = flopy.modflow.Modflow(
-            modelname=sim_name, model_ws=sim_ws, exe_name="mf2005dbl"
-        )
-        flopy.modflow.ModflowDis(
-            mf,
-            nlay=3,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            laycbd=[1, 1, 0],
-            top=top,
-            botm=botm,
-            nper=1,
-            perlen=perlen,
-            nstp=nstp,
-            tsmult=tsmult,
-        )
-        flopy.modflow.ModflowBas(mf, strt=strt)
-        flopy.modflow.ModflowLpf(
-            mf,
-            laytyp=[1, 0, 0],
-            hk=[k11[0], k11[2], k11[4]],
-            vka=[k11[0], k11[2], k11[4]],
-            vkcb=[k11[1], k11[3], 0],
-            ss=0,
-            sy=0.0,
-        )
-        flopy.modflow.ModflowChd(mf, stress_period_data=chd_spd0)
-        flopy.modflow.ModflowDrn(mf, stress_period_data=drn_spd)
-        flopy.modflow.ModflowWel(mf, stress_period_data=wel_spd0)
-        flopy.modflow.ModflowRch(mf, rech=recharge)
-        flopy.modflow.ModflowPcg(
-            mf, mxiter=nouter, iter1=ninner, hclose=hclose, rclose=rclose
-        )
-        oc = flopy.modflow.ModflowOc(
-            mf, stress_period_data={(0, 0): ["save head", "save budget"]}
-        )
-        oc.reset_budgetunit()
-        return mf
-    return None
+    sim_ws = os.path.join(ws, sim_name, "mf2005")
+    mf = flopy.modflow.Modflow(
+        modelname=sim_name, model_ws=sim_ws, exe_name="mf2005dbl"
+    )
+    flopy.modflow.ModflowDis(
+        mf,
+        nlay=3,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        laycbd=[1, 1, 0],
+        top=top,
+        botm=botm,
+        nper=1,
+        perlen=perlen,
+        nstp=nstp,
+        tsmult=tsmult,
+    )
+    flopy.modflow.ModflowBas(mf, strt=strt)
+    flopy.modflow.ModflowLpf(
+        mf,
+        laytyp=[1, 0, 0],
+        hk=[k11[0], k11[2], k11[4]],
+        vka=[k11[0], k11[2], k11[4]],
+        vkcb=[k11[1], k11[3], 0],
+        ss=0,
+        sy=0.0,
+    )
+    flopy.modflow.ModflowChd(mf, stress_period_data=chd_spd0)
+    flopy.modflow.ModflowDrn(mf, stress_period_data=drn_spd)
+    flopy.modflow.ModflowWel(mf, stress_period_data=wel_spd0)
+    flopy.modflow.ModflowRch(mf, rech=recharge)
+    flopy.modflow.ModflowPcg(
+        mf, mxiter=nouter, iter1=ninner, hclose=hclose, rclose=rclose
+    )
+    oc = flopy.modflow.ModflowOc(
+        mf, stress_period_data={(0, 0): ["save head", "save budget"]}
+    )
+    oc.reset_budgetunit()
+    return mf
 
 
 # Function to write MODFLOW 6 TWRI model files

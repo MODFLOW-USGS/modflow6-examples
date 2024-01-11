@@ -36,7 +36,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -136,79 +135,77 @@ rclose = 1e-6
 
 
 def build_model(sim_name):
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdisv(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            top=top,
-            botm=botm,
-            **gridprops,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=True,
-            xt3doptions=True,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdisv(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        top=top,
+        botm=botm,
+        **gridprops,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=True,
+        xt3doptions=True,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        theta = np.arange(0.0, 2 * np.pi, 0.2)
-        radius = 1500.0
-        x = radius * np.cos(theta)
-        y = radius * np.sin(theta)
-        outer = [(x, y) for x, y in zip(x, y)]
-        radius = 1025.0
-        x = radius * np.cos(theta)
-        y = radius * np.sin(theta)
-        hole = [(x, y) for x, y in zip(x, y)]
-        p = Polygon(outer, holes=[hole])
-        ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
-        result = ix.intersect(p)
-        ghb_cellids = np.array(result["cellids"], dtype=int)
+    theta = np.arange(0.0, 2 * np.pi, 0.2)
+    radius = 1500.0
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    outer = [(x, y) for x, y in zip(x, y)]
+    radius = 1025.0
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    hole = [(x, y) for x, y in zip(x, y)]
+    p = Polygon(outer, holes=[hole])
+    ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
+    result = ix.intersect(p)
+    ghb_cellids = np.array(result["cellids"], dtype=int)
 
-        ghb_spd = []
-        ghb_spd += [[0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids]
-        ghb_spd = {0: ghb_spd}
-        flopy.mf6.ModflowGwfghb(
-            gwf,
-            stress_period_data=ghb_spd,
-            pname="GHB",
-        )
+    ghb_spd = []
+    ghb_spd += [[0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids]
+    ghb_spd = {0: ghb_spd}
+    flopy.mf6.ModflowGwfghb(
+        gwf,
+        stress_period_data=ghb_spd,
+        pname="GHB",
+    )
 
-        ncpl = gridprops["ncpl"]
-        rchcells = np.array(list(range(ncpl)), dtype=int)
-        rchcells[ghb_cellids] = -1
-        rch_spd = [(0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0]
-        rch_spd = {0: rch_spd}
-        flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd, pname="RCH")
+    ncpl = gridprops["ncpl"]
+    rchcells = np.array(list(range(ncpl)), dtype=int)
+    rchcells[ghb_cellids] = -1
+    rch_spd = [(0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0]
+    rch_spd = {0: rch_spd}
+    flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd, pname="RCH")
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
 
-        return sim
-    return None
+    return sim
 
 
 # Function to write MODFLOW 6 DISVMESH model files

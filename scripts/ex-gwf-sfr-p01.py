@@ -32,7 +32,6 @@ ws = pl.Path("../examples")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -782,91 +781,89 @@ rclose = 1e-6
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="newton", save_flows=True
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            idomain=idomain,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=1,
-            k=k11,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-            steady_state={0: True},
-            transient={1: True},
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
-        flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=evap_rate, depth=ext_depth)
-        sfr = flopy.mf6.ModflowGwfsfr(
-            gwf,
-            length_conversion=3.28081,
-            nreaches=len(sfr_pakdata),
-            packagedata=sfr_pakdata,
-            connectiondata=sfr_conn,
-            diversions=sfr_div,
-            perioddata=sfr_spd,
-        )
-        obs_file = f"{sim_name}.sfr.obs"
-        csv_file = obs_file + ".csv"
-        obs_dict = {
-            csv_file: [
-                ("r01_stage", "stage", (3,)),
-                ("r02_stage", "stage", (14,)),
-                ("r03_stage", "stage", (26,)),
-                ("r04_stage", "stage", (35,)),
-                ("r01_flow", "downstream-flow", (3,)),
-                ("r02_flow", "downstream-flow", (14,)),
-                ("r03_flow", "downstream-flow", (26,)),
-                ("r04_flow", "downstream-flow", (35,)),
-            ]
-        }
-        sfr.obs.initialize(
-            filename=obs_file, digits=10, print_input=True, continuous=obs_dict
-        )
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=sim_name, newtonoptions="newton", save_flows=True
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        idomain=idomain,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=1,
+        k=k11,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+        steady_state={0: True},
+        transient={1: True},
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
+    flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
+    flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=evap_rate, depth=ext_depth)
+    sfr = flopy.mf6.ModflowGwfsfr(
+        gwf,
+        length_conversion=3.28081,
+        nreaches=len(sfr_pakdata),
+        packagedata=sfr_pakdata,
+        connectiondata=sfr_conn,
+        diversions=sfr_div,
+        perioddata=sfr_spd,
+    )
+    obs_file = f"{sim_name}.sfr.obs"
+    csv_file = obs_file + ".csv"
+    obs_dict = {
+        csv_file: [
+            ("r01_stage", "stage", (3,)),
+            ("r02_stage", "stage", (14,)),
+            ("r03_stage", "stage", (26,)),
+            ("r04_stage", "stage", (35,)),
+            ("r01_flow", "downstream-flow", (3,)),
+            ("r02_flow", "downstream-flow", (14,)),
+            ("r03_flow", "downstream-flow", (26,)),
+            ("r04_flow", "downstream-flow", (35,)),
+        ]
+    }
+    sfr.obs.initialize(
+        filename=obs_file, digits=10, print_input=True, continuous=obs_dict
+    )
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 SFR Package Problem 1 model files

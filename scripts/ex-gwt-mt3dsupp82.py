@@ -29,7 +29,6 @@ example_name = "ex-gwt-mt3dsupp82"
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -325,26 +324,24 @@ def build_mt3dms(sim_folder, modflowmodel):
 
 
 def build_model(sim_name):
-    sims = None
-    if buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name)
-        sim_mf2005 = build_mf2005(sim_name)
-        sim_mt3dms = build_mt3dms(sim_name, sim_mf2005)
-        sims = (sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms)
-    return sims
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(sim_name)
+    sim_mf2005 = build_mf2005(sim_name)
+    sim_mt3dms = build_mt3dms(sim_name, sim_mf2005)
+    return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
 # Function to write model files
 
 
 def write_model(sims, silent=True):
-    if writeModel:
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
-        sim_mf2005.write_input()
-        sim_mt3dms.write_input()
+    if not writeModel:
+        return
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
+    sim_mf2005.write_input()
+    sim_mt3dms.write_input()
 
 
 # Function to run the model

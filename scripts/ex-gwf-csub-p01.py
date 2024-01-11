@@ -30,7 +30,6 @@ data_ws = pl.Path("../data")
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -135,85 +134,83 @@ relax = 1.0
 
 
 def build_model():
-    if buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            linear_acceleration=linaccel,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            relaxation_factor=relax,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, save_flows=True, newtonoptions="newton"
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        obs_recarray = {"gwf_calib_obs.csv": [("w3_1_1", "HEAD", (2, 0, locw201))]}
-        flopy.mf6.ModflowUtlobs(
-            gwf, digits=10, print_input=True, continuous=obs_recarray
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=icelltype,
-            ss=0.0,
-            sy=sy,
-            steady_state={0: True},
-            transient={1: True},
-        )
-        csub = flopy.mf6.ModflowGwfcsub(
-            gwf,
-            print_input=True,
-            update_material_properties=True,
-            save_flows=True,
-            ninterbeds=0,
-            maxsig0=1,
-            compression_indices=None,
-            sgm=sgm,
-            sgs=sgs,
-            cg_theta=cg_theta,
-            cg_ske_cr=cg_ske,
-            beta=4.65120000e-10,
-            packagedata=None,
-            stress_period_data={0: [[(0, 0, 0), "LOAD"]]},
-        )
-        # initialize time series
-        csubnam = f"{sim_name}.load.ts"
-        csub.ts.initialize(
-            filename=csubnam,
-            timeseries=csub_ts,
-            time_series_namerecord=["LOAD"],
-            interpolation_methodrecord=["linear"],
-            sfacrecord=["1.05"],
-        )
+    sim_ws = os.path.join(ws, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        linear_acceleration=linaccel,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        relaxation_factor=relax,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=sim_name, save_flows=True, newtonoptions="newton"
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    obs_recarray = {"gwf_calib_obs.csv": [("w3_1_1", "HEAD", (2, 0, locw201))]}
+    flopy.mf6.ModflowUtlobs(
+        gwf, digits=10, print_input=True, continuous=obs_recarray
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=icelltype,
+        ss=0.0,
+        sy=sy,
+        steady_state={0: True},
+        transient={1: True},
+    )
+    csub = flopy.mf6.ModflowGwfcsub(
+        gwf,
+        print_input=True,
+        update_material_properties=True,
+        save_flows=True,
+        ninterbeds=0,
+        maxsig0=1,
+        compression_indices=None,
+        sgm=sgm,
+        sgs=sgs,
+        cg_theta=cg_theta,
+        cg_ske_cr=cg_ske,
+        beta=4.65120000e-10,
+        packagedata=None,
+        stress_period_data={0: [[(0, 0, 0), "LOAD"]]},
+    )
+    # initialize time series
+    csubnam = f"{sim_name}.load.ts"
+    csub.ts.initialize(
+        filename=csubnam,
+        timeseries=csub_ts,
+        time_series_namerecord=["LOAD"],
+        interpolation_methodrecord=["linear"],
+        sfacrecord=["1.05"],
+    )
 
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            printrecord=[("BUDGET", "ALL")],
-        )
-        return sim
-    return None
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        printrecord=[("BUDGET", "ALL")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 model files

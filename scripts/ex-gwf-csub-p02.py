@@ -27,7 +27,6 @@ arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 # Configuration
 
-buildModel = str(environ.get("BUILD", True)).lower() == "true"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotModel = str(environ.get("PLOT", True)).lower() == "true"
@@ -124,131 +123,129 @@ def build_model(
     kv=2e-6,
     ndelaycells=19,
 ):
-    if buildModel:
-        sim_ws = os.path.join(ws, name)
-        if subdir_name is not None:
-            sim_ws = os.path.join(sim_ws, subdir_name)
-        sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
-        flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-        flopy.mf6.ModflowIms(
-            sim,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            linear_acceleration=linaccel,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            relaxation_factor=relax,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=name, save_flows=True, newtonoptions="newton"
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        # gwf obs
-        flopy.mf6.ModflowUtlobs(
-            gwf,
-            digits=10,
-            print_input=True,
-            continuous={"gwf_obs.csv": [("h1_1_2", "HEAD", (0, 0, 1))]},
-        )
+    sim_ws = os.path.join(ws, name)
+    if subdir_name is not None:
+        sim_ws = os.path.join(sim_ws, subdir_name)
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        linear_acceleration=linaccel,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        relaxation_factor=relax,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=name, save_flows=True, newtonoptions="newton"
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    # gwf obs
+    flopy.mf6.ModflowUtlobs(
+        gwf,
+        digits=10,
+        print_input=True,
+        continuous={"gwf_obs.csv": [("h1_1_2", "HEAD", (0, 0, 1))]},
+    )
 
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf, iconvert=icelltype, ss=0.0, sy=0, transient={0: True}
-        )
-        if head_based:
-            hb_bool = True
-            pc0 = head_offset
-            tsgm = None
-            tsgs = None
-        else:
-            hb_bool = None
-            pc0 = -head_offset
-            tsgm = sgm
-            tsgs = sgs
-        sub6 = [
-            [
-                0,
-                0,
-                0,
-                1,
-                "delay",
-                pc0,
-                bed_thickness,
-                1.0,
-                skv,
-                ske,
-                theta,
-                kv,
-                h0,
-                "ib1",
-            ]
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf, iconvert=icelltype, ss=0.0, sy=0, transient={0: True}
+    )
+    if head_based:
+        hb_bool = True
+        pc0 = head_offset
+        tsgm = None
+        tsgs = None
+    else:
+        hb_bool = None
+        pc0 = -head_offset
+        tsgm = sgm
+        tsgs = sgs
+    sub6 = [
+        [
+            0,
+            0,
+            0,
+            1,
+            "delay",
+            pc0,
+            bed_thickness,
+            1.0,
+            skv,
+            ske,
+            theta,
+            kv,
+            h0,
+            "ib1",
         ]
-        csub = flopy.mf6.ModflowGwfcsub(
-            gwf,
-            print_input=True,
-            save_flows=True,
-            head_based=hb_bool,
-            ndelaycells=ndelaycells,
-            boundnames=True,
-            ninterbeds=1,
-            sgm=tsgm,
-            sgs=tsgs,
-            cg_theta=cg_theta,
-            cg_ske_cr=0.0,
-            beta=0.0,
-            packagedata=sub6,
-        )
-        opth = f"{name}.csub.obs"
-        csub_csv = opth + ".csv"
-        obs = [
-            ("tcomp", "interbed-compaction", "ib1"),
-            ("sk", "sk", "ib1"),
-            ("qtop", "delay-flowtop", (0,)),
-            ("qbot", "delay-flowbot", (0,)),
+    ]
+    csub = flopy.mf6.ModflowGwfcsub(
+        gwf,
+        print_input=True,
+        save_flows=True,
+        head_based=hb_bool,
+        ndelaycells=ndelaycells,
+        boundnames=True,
+        ninterbeds=1,
+        sgm=tsgm,
+        sgs=tsgs,
+        cg_theta=cg_theta,
+        cg_ske_cr=0.0,
+        beta=0.0,
+        packagedata=sub6,
+    )
+    opth = f"{name}.csub.obs"
+    csub_csv = opth + ".csv"
+    obs = [
+        ("tcomp", "interbed-compaction", "ib1"),
+        ("sk", "sk", "ib1"),
+        ("qtop", "delay-flowtop", (0,)),
+        ("qbot", "delay-flowbot", (0,)),
+    ]
+    for k in range(ndelaycells):
+        tag = f"H{k + 1:04d}"
+        obs.append((tag, "delay-head", (0,), (k,)))
+    if not head_based:
+        iposm = int(ndelaycells / 2) + 1
+        iposb = ndelaycells - 1
+        obs += [
+            ("est", "delay-estress", (0,), (0,)),
+            ("esm", "delay-estress", (0,), (iposm,)),
+            ("esb", "delay-estress", (0,), (iposb,)),
+            ("gs", "gstress-cell", (0, 0, 1)),
+            ("es", "estress-cell", (0, 0, 1)),
         ]
-        for k in range(ndelaycells):
-            tag = f"H{k + 1:04d}"
-            obs.append((tag, "delay-head", (0,), (k,)))
-        if not head_based:
-            iposm = int(ndelaycells / 2) + 1
-            iposb = ndelaycells - 1
-            obs += [
-                ("est", "delay-estress", (0,), (0,)),
-                ("esm", "delay-estress", (0,), (iposm,)),
-                ("esb", "delay-estress", (0,), (iposb,)),
-                ("gs", "gstress-cell", (0, 0, 1)),
-                ("es", "estress-cell", (0, 0, 1)),
-            ]
-        orecarray = {csub_csv: obs}
-        csub.obs.initialize(
-            filename=opth, digits=10, print_input=True, continuous=orecarray
-        )
+    orecarray = {csub_csv: obs}
+    csub.obs.initialize(
+        filename=opth, digits=10, print_input=True, continuous=orecarray
+    )
 
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
 
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            printrecord=[("BUDGET", "ALL")],
-        )
-        return sim
-    return None
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        printrecord=[("BUDGET", "ALL")],
+    )
+    return sim
 
 
 # Function to write MODFLOW 6 model files
