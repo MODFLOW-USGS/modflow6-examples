@@ -18,7 +18,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -37,9 +37,8 @@ data_ws = pl.Path("../data") / example_name
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -532,54 +531,51 @@ def plot_results(sims):
 
 
 def plot_gwf_results(sims):
-    if plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        gwf = sim_mf6gwf.flow
-        with styles.USGSMap() as fs:
-            sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
+    print("Plotting model results...")
+    sim_mf6gwf, _ = sims
+    gwf = sim_mf6gwf.flow
+    with styles.USGSMap():
+        sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
 
-            head = gwf.output.head().get_data()
-            stage = gwf.lak.output.stage().get_data().flatten()
+        head = gwf.output.head().get_data()
+        stage = gwf.lak.output.stage().get_data().flatten()
 
-            il, jl = np.where(lakibd > 0)
-            for i, j in zip(il, jl):
-                ilak = lakibd[i, j] - 1
-                lake_stage = stage[ilak]
-                head[0, i, j] = lake_stage
+        il, jl = np.where(lakibd > 0)
+        for i, j in zip(il, jl):
+            ilak = lakibd[i, j] - 1
+            lake_stage = stage[ilak]
+            head[0, i, j] = lake_stage
 
-            fig, axs = plt.subplots(
-                1, 2, figsize=figure_size, dpi=300, tight_layout=True
+        fig, axs = plt.subplots(
+            1, 2, figsize=figure_size, dpi=300, tight_layout=True
+        )
+
+        for ilay in [0, 1]:
+            ax = axs[ilay]
+            pmv = plot_bcmap(ax, gwf, ilay)
+            levels = np.arange(20, 60, 1)
+            cs = pmv.contour_array(
+                head,
+                colors="blue",
+                linestyles="-",
+                levels=levels,
+                masked_values=[1.0e30],
             )
+            ax.clabel(cs, cs.levels[::5], fmt="%1.0f", colors="b")
+            title = f"Model Layer {ilay + 1}"
+            letter = chr(ord("@") + ilay + 1)
+            styles.heading(letter=letter, heading=title, ax=ax)
 
-            for ilay in [0, 1]:
-                ax = axs[ilay]
-                pmv = plot_bcmap(ax, gwf, ilay)
-                levels = np.arange(20, 60, 1)
-                cs = pmv.contour_array(
-                    head,
-                    colors="blue",
-                    linestyles="-",
-                    levels=levels,
-                    masked_values=[1.0e30],
-                )
-                ax.clabel(cs, cs.levels[::5], fmt="%1.0f", colors="b")
-                title = f"Model Layer {ilay + 1}"
-                letter = chr(ord("@") + ilay + 1)
-                styles.heading(letter=letter, heading=title, ax=ax)
-
-            # save figure
-            if plotSave:
-                sim_folder = os.path.split(sim_ws)[0]
-                sim_folder = os.path.basename(sim_folder)
-                fname = f"{sim_folder}-head.png"
-                fpth = os.path.join(ws, "..", "figures", fname)
-                fig.savefig(fpth)
+        # save figure
+        if plotSave:
+            sim_folder = os.path.split(sim_ws)[0]
+            sim_folder = os.path.basename(sim_folder)
+            fname = f"{sim_folder}-head.png"
+            fpth = os.path.join(ws, "..", "figures", fname)
+            fig.savefig(fpth)
 
 
 def plot_gwt_results(sims):
-    if not plotModel:
-        return
     print("Plotting model results...")
     sim_mf6gwf, sim_mf6gwt = sims
     gwf = sim_mf6gwf.flow

@@ -18,7 +18,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 
@@ -34,9 +34,8 @@ example_name = "ex-gwt-stallman"
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -395,12 +394,9 @@ def make_animated_gif(sim, idx):
 
 
 def plot_results(sim, idx):
-    print("Plotting results...")
-    if plotModel:
-        plot_conc(sim, idx)
-        if plotSave and createGif:
-            print("Making animation...")
-            make_animated_gif(sim, idx)
+    plot_conc(sim, idx)
+    if plotSave and createGif:
+        make_animated_gif(sim, idx)
 
 
 # Function that wraps all of the steps for each scenario

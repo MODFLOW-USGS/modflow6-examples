@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import modflowapi
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Simulation name and workspace
 
@@ -34,9 +34,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -304,9 +303,6 @@ def run_model():
 
 
 def plot_results(silent=True):
-    if not plotModel:
-        return
-
     if silent:
         verbosity_level = 0
     else:

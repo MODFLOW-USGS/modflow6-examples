@@ -18,7 +18,7 @@ import flopy.utils.cvfdutil
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 from scipy.special import erfc
 
 mf6exe = "mf6"
@@ -37,9 +37,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -378,13 +377,8 @@ def plot_analytical(ax, levels):
 
 
 def plot_grid(sims):
-    if not plotModel:
-        return
-
-    print("Plotting model results...")
     _, sim_mf6gwt = sims
-
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         gwt = sim_mf6gwt.trans
@@ -404,13 +398,8 @@ def plot_grid(sims):
 
 
 def plot_results(sims):
-    if not plotModel:
-        return
-
-    print("Plotting model results...")
     _, sim_mf6gwt = sims
-
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         gwt = sim_mf6gwt.get_model("trans")
         conc = gwt.output.concentration().get_data()
 

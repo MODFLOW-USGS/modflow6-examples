@@ -19,7 +19,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Base simulation and model name and workspace
 
@@ -30,9 +30,8 @@ data_ws = pl.Path("../data")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Set figure properties specific to the problem
 
@@ -846,10 +845,9 @@ def plot_compaction(sim, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if plotModel:
-        plot_grid(sim, silent=silent)
-        plot_stresses(sim, silent=silent)
-        plot_compaction(sim, silent=silent)
+    plot_grid(sim, silent=silent)
+    plot_stresses(sim, silent=silent)
+    plot_compaction(sim, silent=silent)
 
 
 # Function that wraps all of the steps for the model

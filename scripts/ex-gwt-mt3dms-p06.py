@@ -31,7 +31,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -44,9 +44,8 @@ figure_size = (6, 4.5)
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Base simulation and model name and workspace
 
@@ -488,26 +487,20 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mt3d, mf6, idx, ax=None):
-    if not plotModel:
-        return
-
     mt3d_out_path = mt3d.model_ws
     mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
     mf6.simulation_data.mfpath.get_sim_path()
 
     # Get the MT3DMS observation output file
     fname = os.path.join(mt3d_out_path, "MT3D001.OBS")
-    if os.path.isfile(fname):
-        cvt = mt3d.load_obs(fname)
-    else:
-        cvt = None
+    cvt = mt3d.load_obs(fname) if os.path.isfile(fname) else None
 
     # Get the MODFLOW 6 concentration observation output file
     fname = os.path.join(mf6_out_path, list(mf6.model_names)[1] + ".obs.csv")
     mf6cobs = flopy.utils.Mf6Obs(fname).data
 
     # Create figure for scenario
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         sim_name = mf6.name
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
         if ax is None:

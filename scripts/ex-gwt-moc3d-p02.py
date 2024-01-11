@@ -17,7 +17,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 from scipy.special import erfc
 
 mf6exe = "mf6"
@@ -36,9 +36,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -290,17 +289,10 @@ def plot_analytical(ax, levels):
 
 
 def plot_results(sims):
-    if plotModel:
-        return
-
-    print("Plotting model results...")
     _, sim_mf6gwt = sims
-
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         conc = sim_mf6gwt.trans.output.concentration().get_data()
-
         fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
-
         gwt = sim_mf6gwt.trans
         pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
         levels = [1, 3, 10, 30, 100, 300]

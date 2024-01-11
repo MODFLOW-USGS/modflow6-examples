@@ -20,13 +20,14 @@ import copy
 import os
 import pathlib as pl
 from math import sqrt
+from itertools import cycle
 from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Curvilinear grid
 
@@ -2169,9 +2170,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -2352,7 +2352,7 @@ def run_model(sim, silent=True):
 
 
 def plot_grid(sim, verbose=False):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=figure_size_grid)
@@ -2401,11 +2401,9 @@ def plot_grid(sim, verbose=False):
 
 
 def plot_head(sim):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
-
         fig = plt.figure(figsize=figure_size_head)
-
         head = gwf.output.head().get_data()[:, 0, :]
 
         # create MODFLOW 6 cell-by-cell budget object
@@ -2438,15 +2436,10 @@ def plot_head(sim):
 
 def plot_analytical(sim, verbose=False):
     gwf = sim.get_model(sim_name)
-
     head = gwf.output.head().get_data()[:, 0, :]
-
     col = ncol // 2 - 1  # Get head along middle of model
-
     head = [head[0, curvlin.get_cellid(rad, col)] for rad in range(nradial)]
-
     xrad = [0.5 * (radii[r - 1] + radii[r]) for r in range(1, nradial + 1)]
-
     analytical = [head[0]]
     r1 = xrad[0]
     r2 = xrad[-1]
@@ -2465,11 +2458,8 @@ def plot_analytical(sim, verbose=False):
         ax.set_ylabel("Head (ft)")
         ax.plot(xrad, head, "ob", label="MF6 Solution", markerfacecolor="none")
         ax.plot(xrad, analytical, "-b", label="Analytical Solution")
-
         styles.graph_legend(ax)
-
         fig.tight_layout()
-
         if plotSave:
             fpth = os.path.join(
                 "..",
@@ -2483,9 +2473,6 @@ def plot_analytical(sim, verbose=False):
 
 
 def plot_results(silent=True):
-    if not plotModel:
-        return
-
     if silent:
         verbosity_level = 0
     else:
@@ -2497,11 +2484,9 @@ def plot_results(silent=True):
     )
 
     verbose = not silent
-
-    if plotModel:
-        plot_grid(sim, verbose)
-        plot_head(sim)
-        plot_analytical(sim, verbose)
+    plot_grid(sim, verbose)
+    plot_head(sim)
+    plot_analytical(sim, verbose)
 
 
 def calculate_model_error():
@@ -2511,11 +2496,8 @@ def calculate_model_error():
     )
 
     gwf = sim.get_model(sim_name)
-
     head = gwf.output.head().get_data()[0, 0, :]
-
     xrad = [0.5 * (radii[r - 1] + radii[r]) for r in range(1, nradial + 1)]
-
     analytical = [head[0]]
     r1 = xrad[0]
     r2 = xrad[-1]
@@ -2544,9 +2526,10 @@ def calculate_model_error():
 
 
 def check_model_error():
-    if runModel:
-        rel_error, rmse = calculate_model_error()
-        assert rel_error < 0.001
+    if not runModel:
+        return
+    rel_error, rmse = calculate_model_error()
+    assert rel_error < 0.001
 
 
 # Function that wraps all of the steps for the curvilinear model

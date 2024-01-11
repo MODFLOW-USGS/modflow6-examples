@@ -23,7 +23,7 @@ import pandas as pd
 from flopy.plot.styles import styles
 from modflow_devtools.latex import (build_table, exp_format, float_format,
                                     int_format)
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set figure properties specific to the problem
 
@@ -39,9 +39,8 @@ data_ws = pl.Path("../data")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Load the constant time series
 
@@ -1677,12 +1676,11 @@ def plot_vertical_head(silent=True):
 
 
 def plot_results(silent=True):
-    if plotModel:
-        plot_grid(silent=silent)
-        plot_boundary_heads(silent=silent)
-        plot_head_es_comparison(silent=silent)
-        plot_calibration(silent=silent)
-        plot_vertical_head()
+    plot_grid(silent=silent)
+    plot_boundary_heads(silent=silent)
+    plot_head_es_comparison(silent=silent)
+    plot_calibration(silent=silent)
+    plot_vertical_head()
 
 
 # Function that wraps all of the steps for the model

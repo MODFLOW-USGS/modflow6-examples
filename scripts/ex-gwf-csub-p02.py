@@ -18,7 +18,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set figure properties specific to the problem
 
@@ -28,9 +28,8 @@ arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Simulation name and workspace
 
@@ -786,10 +785,7 @@ def plot_head_comparison(sim, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if not plotModel:
-        return
     name = sim.name
-
     if name.endswith("a"):
         plot_grid(sim, silent=silent)
         plot_head_based(sim, silent=silent)

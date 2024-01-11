@@ -17,7 +17,7 @@ import flopy.utils.lgrutil
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set default figure properties
 
@@ -31,9 +31,8 @@ data_ws = pl.Path("../data") / "ex-gwf-lgrv"
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -446,8 +445,7 @@ def run_model(sim, silent=False):
 # Function to plot the LGRV model results.
 #
 def plot_grid(sim):
-    print(f"Plotting grid for {sim.name}...")
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_name = sim.name
         gwf = sim.get_model("parent")
         gwfc = None
@@ -585,11 +583,9 @@ def plot_heads(sim):
 
 
 def plot_results(sim, silent=True):
-    if plotModel:
-        plot_grid(sim)
-        plot_xsect(sim)
-        plot_heads(sim)
-    return
+    plot_grid(sim)
+    plot_xsect(sim)
+    plot_heads(sim)
 
 
 # Function that wraps all of the steps for the LGRV model

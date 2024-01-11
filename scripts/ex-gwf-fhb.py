@@ -17,7 +17,7 @@ from os import environ
 import flopy
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set default figure properties
 
@@ -32,9 +32,8 @@ data_ws = pl.Path("../data")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -257,9 +256,8 @@ def plot_ts(sim):
 
 
 def plot_results(sim, silent=True):
-    if plotModel:
-        plot_grid(sim)
-        plot_ts(sim)
+    plot_grid(sim)
+    plot_ts(sim)
 
 
 # Function that wraps all of the steps for the FHB model

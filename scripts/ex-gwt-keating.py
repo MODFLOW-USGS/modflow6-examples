@@ -20,7 +20,7 @@ import matplotlib.patches
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set figure properties specific to the
 
@@ -35,9 +35,8 @@ data_ws = pl.Path("../data")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -309,10 +308,8 @@ def write_model(sims, silent=True):
 @timed
 def run_model(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-    print("Running mf6gwf model...")
     success, buff = sim_mf6gwf.run_simulation(silent=silent)
     assert success, buff
-    print("Running mf6gwt model...")
     success, buff = sim_mf6gwt.run_simulation(silent=silent)
     assert success, buff
 
@@ -321,13 +318,12 @@ def run_model(sims, silent=True):
 
 
 def plot_results(sims, idx):
-    if plotModel:
-        print("Plotting model results...")
-        plot_head_results(sims, idx)
-        plot_conc_results(sims, idx)
-        plot_cvt_results(sims, idx)
-        if plotSave and createGif:
-            make_animated_gif(sims, idx)
+    print("Plotting model results...")
+    plot_head_results(sims, idx)
+    plot_conc_results(sims, idx)
+    plot_cvt_results(sims, idx)
+    if plotSave and createGif:
+        make_animated_gif(sims, idx)
 
 
 def plot_head_results(sims, idx):
@@ -335,7 +331,6 @@ def plot_head_results(sims, idx):
     sim_mf6gwf, _, _, _ = sims
     gwf = sim_mf6gwf.flow
     botm = gwf.dis.botm.array
-    # gwt = sim_mf6gwt.trans
 
     with styles.USGSMap() as fs:
         sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()

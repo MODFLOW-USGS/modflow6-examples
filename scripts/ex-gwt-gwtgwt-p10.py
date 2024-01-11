@@ -31,9 +31,8 @@ example_name = "ex-gwt-gwtgwt-mt3dms-p10"
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 length_units = "feet"
@@ -1198,12 +1197,11 @@ def plot_concentration(sim):
 
 # Generates all plots
 def plot_results(sim):
-    if plotModel:
-        print("Plotting model results...")
-        plot_grids(sim)
-        plot_concentration(sim)
-        plot_difference_conc(sim)
-        plot_difference_heads(sim)
+    print("Plotting model results...")
+    plot_grids(sim)
+    plot_concentration(sim)
+    plot_difference_conc(sim)
+    plot_difference_heads(sim)
 
 
 def test_01():

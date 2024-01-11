@@ -17,7 +17,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set default figure properties
 
@@ -31,9 +31,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -166,18 +165,16 @@ def write_model(sim, silent=True):
 
 @timed
 def run_model(sim, silent=False):
-    success = True
-    if runModel:
-        success, buff = sim.run_simulation(silent=silent, report=True)
-        if not success:
-            print(buff)
-    return success
+    if not runModel:
+        return
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, buff
 
 
 # Function to plot the SPBC model results.
 #
 def plot_grid(sim):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=figure_size)
@@ -215,8 +212,7 @@ def plot_grid(sim):
 
 
 def plot_results(sim, silent=True):
-    if plotModel:
-        plot_grid(sim)
+    plot_grid(sim)
 
 
 # Function that wraps all of the steps for the SPBC model
@@ -231,9 +227,8 @@ def plot_results(sim, silent=True):
 def simulation(silent=True):
     sim = build_model()
     write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
-        plot_results(sim, silent=silent)
+    run_model(sim, silent=silent)
+    plot_results(sim, silent=silent)
 
 
 # ### SPBC Simulation

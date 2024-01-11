@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from matplotlib.patches import Circle
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 # Solve definite integral using Fortran library QUADPACK
 from scipy.integrate import quad
 # Find a root of a function using Brent's method within a bracketed range
@@ -1058,9 +1058,8 @@ ws = pl.Path("../examples")
 
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -1961,9 +1960,6 @@ def plot_grid(verbose=False):
 
 
 def plot_results(silent=True):
-    if not plotModel:
-        return
-
     if silent:
         verbosity_level = 0
     else:
@@ -1975,10 +1971,8 @@ def plot_results(silent=True):
     )
 
     verbose = not silent
-
-    if plotModel:
-        plot_grid(verbose)
-        plot_ts(sim, verbose, solve_analytical_solution=solve_analytical_solution)
+    plot_grid(verbose)
+    plot_ts(sim, verbose, solve_analytical_solution=solve_analytical_solution)
 
 
 # Function that wraps all of the steps for the Axisymmetric model

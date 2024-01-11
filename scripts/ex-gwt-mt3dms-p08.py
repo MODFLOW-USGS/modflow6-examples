@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -45,9 +45,8 @@ figure_size = (5, 7)
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Base simulation and model name and workspace
 
@@ -553,12 +552,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
-    if not plotModel:
-        return
-
-    print("Plotting model results...")
     mt3d_out_path = mt3d.model_ws
-    mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
     mf6.simulation_data.mfpath.get_sim_path()
 
     # Get the MT3DMS concentration output

@@ -24,15 +24,14 @@ from flopy.discretization import VertexGrid
 from flopy.utils.triangle import Triangle
 from flopy.utils.voronoi import VoronoiGrid
 from matplotlib import colors
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 from shapely.geometry import LineString, Polygon
 
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Groundwater 2023 utilities
 
@@ -810,8 +809,6 @@ def plot_feature_labels(ax):
 
 
 def plot_results(sims, idx):
-    if not plotModel:
-        return
     print("Plotting model results...")
     plot_river_mapping(sims, idx)
     plot_head_results(sims, idx)

@@ -19,7 +19,7 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.latex import (build_table, exp_format, float_format,
                                     int_format)
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set figure properties specific to the
 
@@ -35,9 +35,8 @@ data_ws = pl.Path("../data")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -1268,9 +1267,8 @@ def export_tables(silent=True):
 
 
 def plot_results(silent=True):
-    if plotModel:
-        plot_gwseep_results(silent=silent)
-        export_tables(silent=silent)
+    plot_gwseep_results(silent=silent)
+    export_tables(silent=silent)
 
 
 # Function that wraps all of the steps for the UZF Package Problem 2 model

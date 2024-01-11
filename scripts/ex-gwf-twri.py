@@ -17,7 +17,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set figure properties specific to the
 
@@ -31,9 +31,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
@@ -281,10 +280,7 @@ def run_model(sim, mf, silent=True):
 
 
 def plot_results(sim, mf, silent=True):
-    if not plotModel:
-        return
-
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_ws = os.path.join(ws, sim_name)
         gwf = sim.get_model(sim_name)
 

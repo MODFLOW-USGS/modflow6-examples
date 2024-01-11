@@ -17,7 +17,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -35,9 +35,8 @@ example_name = "ex-gwt-moc3dp1"
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Scenario parameters - make sure there is at least one blank line before next item
 
@@ -443,13 +442,8 @@ def run_model(sims, silent=True):
 def plot_results_ct(
     sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
 ):
-    if not plotModel:
-        return
-
-    print("Plotting C versus t model results...")
     _, sim_mf6gwt = sims
-
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
         fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
@@ -514,13 +508,8 @@ def plot_results_ct(
 def plot_results_cd(
     sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
 ):
-    if plotModel:
-        return
-
-    print("Plotting C versus x model results...")
     _, sim_mf6gwt = sims
-
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         ucnobj_mf6 = sim_mf6gwt.trans.output.concentration()
 
         fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)

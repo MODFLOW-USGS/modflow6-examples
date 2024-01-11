@@ -16,7 +16,7 @@ from os import environ
 import flopy
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -33,9 +33,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Scenario parameters - make sure there is at least one blank line before next item
 
@@ -233,9 +232,8 @@ def run_model(sim, silent=True):
 
 
 def plot_conc(sim, idx):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_name = list(parameters.keys())[idx]
-        sim_ws = os.path.join(ws, sim_name)
         gwf = sim.get_model("flow")
         gwt = sim.get_model("trans")
 
@@ -263,8 +261,7 @@ def plot_conc(sim, idx):
 
 
 def plot_results(sim, idx):
-    if plotModel:
-        plot_conc(sim, idx)
+    plot_conc(sim, idx)
 
 
 # Function that wraps all of the steps for each scenario

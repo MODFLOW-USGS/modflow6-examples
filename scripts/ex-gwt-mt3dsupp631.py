@@ -16,7 +16,7 @@ from pprint import pformat
 import flopy
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set figure properties specific to the
 
@@ -30,9 +30,8 @@ example_name = "ex-gwt-mt3dsupp631"
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -273,12 +272,8 @@ def run_model(sims, silent=True):
 
 
 def plot_results(sims, idx):
-    if not plotModel:
-        return
-
-    print("Plotting model results...")
     _, sim_mf6gwt, _, sim_mt3dms = sims
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
         fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         axs.plot(

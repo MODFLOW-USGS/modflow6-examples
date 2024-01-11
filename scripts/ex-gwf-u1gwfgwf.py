@@ -27,7 +27,7 @@ import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
 from matplotlib.colors import ListedColormap
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Set default figure properties
 
@@ -41,9 +41,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -547,11 +546,10 @@ def plot_head(idx, sim):
 
 
 def plot_results(idx, sim, silent=True):
-    if plotModel:
-        if idx == 0:
-            plot_grid(idx, sim)
-            plot_stencils(idx, sim)
-        plot_head(idx, sim)
+    if idx == 0:
+        plot_grid(idx, sim)
+        plot_stencils(idx, sim)
+    plot_head(idx, sim)
 
 
 # Function that wraps all of the steps for the FHB model

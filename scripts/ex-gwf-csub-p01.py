@@ -20,7 +20,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 # Simulation name and workspace
 
@@ -31,9 +31,8 @@ data_ws = pl.Path("../data")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -228,7 +227,7 @@ def write_model(sim, silent=True):
 def run_model(sim, silent=True):
     if not runModel:
         return
-    success, buff = sim.run_simulation(silent=silent)
+    success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
@@ -237,10 +236,7 @@ def run_model(sim, silent=True):
 
 
 def plot_results(sim, silent=True):
-    if not plotModel:
-        return
-
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
 
         # plot the grid

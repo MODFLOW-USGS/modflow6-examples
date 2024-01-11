@@ -31,7 +31,7 @@ import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 from scipy.special import erf, erfc
 
 mf6exe = "mf6"
@@ -50,9 +50,8 @@ ws = pl.Path("../examples")
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -825,158 +824,156 @@ def plot_results(
     seepagevelocity=0,
     constantheadright=14,
 ):
-    if plotModel:
-        print("Plotting model results...")
-        if mt3d is not None:
-            mt3d_out_path = mt3d.model_ws
+    if mt3d is not None:
+        mt3d_out_path = mt3d.model_ws
 
-            # Get the MT3DMS concentration output
-            fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
-            ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
-            times_mt3d = ucnobj_mt3d.get_times()
-            conc_mt3d = ucnobj_mt3d.get_alldata()
+        # Get the MT3DMS concentration output
+        fname_mt3d = os.path.join(mt3d_out_path, "MT3D001.UCN")
+        ucnobj_mt3d = flopy.utils.UcnFile(fname_mt3d)
+        times_mt3d = ucnobj_mt3d.get_times()
+        conc_mt3d = ucnobj_mt3d.get_alldata()
 
-        mf6_out_path = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
+    mf6_out_path = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
 
-        # Get the MF6 concentration output
-        gwt = sim_mf6gwt.get_model("gwt-" + name)
-        ucnobj_mf6 = gwt.output.concentration()
+    # Get the MF6 concentration output
+    gwt = sim_mf6gwt.get_model("gwt-" + name)
+    ucnobj_mf6 = gwt.output.concentration()
 
-        times_mf6 = ucnobj_mf6.get_times()
-        conc_mf6 = ucnobj_mf6.get_alldata()
+    times_mf6 = ucnobj_mf6.get_times()
+    conc_mf6 = ucnobj_mf6.get_alldata()
 
-        # Get the x location of the cell centroids
-        model_centroids_x = []
-        for i, (cum_pos, half_width) in enumerate(
-            zip(np.cumsum(delr), np.divide(delr, 2))
-        ):
-            if i > 0:
-                model_centroids_x.append(cum_pos - half_width)
-            else:
-                model_centroids_x.append(half_width)
+    # Get the x location of the cell centroids
+    model_centroids_x = []
+    for i, (cum_pos, half_width) in enumerate(
+        zip(np.cumsum(delr), np.divide(delr, 2))
+    ):
+        if i > 0:
+            model_centroids_x.append(cum_pos - half_width)
+        else:
+            model_centroids_x.append(half_width)
 
-        # Next subtract off the location of the BHE
-        model_centroids_x_BHE = [
-            val - model_centroids_x[21] for val in model_centroids_x
-        ]
-        # Drop the negative locations to the left of the BHE
-        model_centroids_x_right_of_BHE = model_centroids_x_BHE[22:]  # Does not include
+    # Next subtract off the location of the BHE
+    model_centroids_x_BHE = [
+        val - model_centroids_x[21] for val in model_centroids_x
+    ]
+    # Drop the negative locations to the left of the BHE
+    model_centroids_x_right_of_BHE = model_centroids_x_BHE[22:]  # Does not include
 
-        # Analytical solution(s)
-        To = T0  # deg K (initial temperature of the ground)
-        Y3d = 0.1  # m
-        Z3d = delz  # m
-        ath = al * trpt  # m
-        atv = al * trpv  # m
-        F0 = -60  # W/m
-        Fplanar = -600  # W/m^2
-        va = seepagevelocity
-        n = prsity  # porosity
-        rhow = 1000.0  # density of water
-        cw = 4185.0  # heat capacity of water
-        thermdiff = 1.86e-6  # "molecular diffusion" representing heat
-        # conduction
+    # Analytical solution(s)
+    To = T0  # deg K (initial temperature of the ground)
+    Y3d = 0.1  # m
+    Z3d = delz  # m
+    ath = al * trpt  # m
+    atv = al * trpv  # m
+    F0 = -60  # W/m
+    Fplanar = -600  # W/m^2
+    va = seepagevelocity
+    n = prsity  # porosity
+    rhow = 1000.0  # density of water
+    cw = 4185.0  # heat capacity of water
+    thermdiff = 1.86e-6  # "molecular diffusion" representing heat
+    # conduction
 
-        x_pos = np.array(model_centroids_x_right_of_BHE)
-        ss_sln = hechtMendez_SS_3d(
-            x_pos, To, Y3d, Z3d, ath, atv, Fplanar, va, n, rhow, cw, thermdiff
-        )
+    x_pos = np.array(model_centroids_x_right_of_BHE)
+    ss_sln = hechtMendez_SS_3d(
+        x_pos, To, Y3d, Z3d, ath, atv, Fplanar, va, n, rhow, cw, thermdiff
+    )
 
-        t = 864000  # seconds (10 days)
-        Y = 0.1  # dimension of source in the y direction
-        Z = delz  # dimension of source in the z direction
-        R = 2.59  # From Hecht-Mendez manuscript
+    t = 864000  # seconds (10 days)
+    Y = 0.1  # dimension of source in the y direction
+    Z = delz  # dimension of source in the z direction
+    R = 2.59  # From Hecht-Mendez manuscript
 
-        tr_sln = hechtMendez3d(
+    tr_sln = hechtMendez3d(
+        x_pos,
+        t,
+        Y,
+        Z,
+        al,
+        ath,
+        atv,
+        thermdiff,
+        va,
+        n,
+        R,
+        Fplanar,
+        cw,
+        rhow,
+    )
+
+    # list of where to draw vertical lines
+    avlines = list(range(10)) + list(range(10, 110, 10))
+
+    # fill variables with analytical solutions
+    y_ss_anly_sln = ss_sln
+    y_tr_anly_sln = [285.15 + val for val in tr_sln]
+
+    # fill variables containing the simulated solutions
+    if mt3d is not None:
+        y_10_mt_sln = conc_mt3d[0, 6, (42 - 1), 22:]
+        y_150_mt_sln = conc_mt3d[-1, 6, (42 - 1), 22:]
+
+    y_10_mf6_sln = conc_mf6[0, 6, (42 - 1), 22:]
+    y_150_mf6_sln = conc_mf6[-1, 6, (42 - 1), 22:]
+
+    # Create figure for scenario
+    with styles.USGSPlot() as fs:
+        sim_name = sim_mf6gwt.name
+        plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
+
+        if ax is None:
+            fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
+            ax = fig.add_subplot(1, 1, 1)
+
+        for xc in avlines:
+            ax.axvline(x=xc, color="k", linestyle=":", alpha=0.1)
+
+        ss_ln = ax.plot(
             x_pos,
-            t,
-            Y,
-            Z,
-            al,
-            ath,
-            atv,
-            thermdiff,
-            va,
-            n,
-            R,
-            Fplanar,
-            cw,
-            rhow,
+            y_ss_anly_sln,
+            "r-",
+            label="Steady state analytical solution",
+        )
+        tr_ln = ax.plot(
+            x_pos, y_tr_anly_sln, "b-", label="Transient analytical solution"
         )
 
-        # list of where to draw vertical lines
-        avlines = list(range(10)) + list(range(10, 110, 10))
-
-        # fill variables with analytical solutions
-        y_ss_anly_sln = ss_sln
-        y_tr_anly_sln = [285.15 + val for val in tr_sln]
-
-        # fill variables containing the simulated solutions
         if mt3d is not None:
-            y_10_mt_sln = conc_mt3d[0, 6, (42 - 1), 22:]
-            y_150_mt_sln = conc_mt3d[-1, 6, (42 - 1), 22:]
-
-        y_10_mf6_sln = conc_mf6[0, 6, (42 - 1), 22:]
-        y_150_mf6_sln = conc_mf6[-1, 6, (42 - 1), 22:]
-
-        # Create figure for scenario
-        with styles.USGSPlot() as fs:
-            sim_name = sim_mf6gwt.name
-            plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
-
-            if ax is None:
-                fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
-                ax = fig.add_subplot(1, 1, 1)
-
-            for xc in avlines:
-                ax.axvline(x=xc, color="k", linestyle=":", alpha=0.1)
-
-            ss_ln = ax.plot(
-                x_pos,
-                y_ss_anly_sln,
-                "r-",
-                label="Steady state analytical solution",
+            mt_ss_ln = ax.plot(
+                x_pos, y_150_mt_sln, "r+", label="Steady state MT3DMS, TVD"
             )
-            tr_ln = ax.plot(
-                x_pos, y_tr_anly_sln, "b-", label="Transient analytical solution"
-            )
+            mt_tr_ln = ax.plot(x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS")
 
-            if mt3d is not None:
-                mt_ss_ln = ax.plot(
-                    x_pos, y_150_mt_sln, "r+", label="Steady state MT3DMS, TVD"
-                )
-                mt_tr_ln = ax.plot(x_pos, y_10_mt_sln, "b+", label="Transient MT3DMS")
+        mf6_ss_ln = ax.plot(
+            x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
+        )
+        mf6_tr_ln = ax.plot(
+            x_pos,
+            y_10_mf6_sln,
+            "bo",
+            markerfacecolor="none",
+            label="Transient MF6-GWT",
+        )
+        ax.set_xlim(1, 100)
+        ax.set_ylim(285.15 - 2.1, 285.15 + 0.5)
+        ax.set_xscale("log")
+        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("temperature, in Kelvins")
+        ax.legend()
+        plt.tight_layout()
 
-            mf6_ss_ln = ax.plot(
-                x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT"
+        # save figure
+        if plotSave:
+            letter = chr(ord("@") + idx + 1)
+            fpth = os.path.join(
+                "..",
+                "figures",
+                "{}{}".format(
+                    "ex-" + sim_name + "-" + letter,
+                    ".png",
+                ),
             )
-            mf6_tr_ln = ax.plot(
-                x_pos,
-                y_10_mf6_sln,
-                "bo",
-                markerfacecolor="none",
-                label="Transient MF6-GWT",
-            )
-            ax.set_xlim(1, 100)
-            ax.set_ylim(285.15 - 2.1, 285.15 + 0.5)
-            ax.set_xscale("log")
-            ax.set_xlabel("x-coordinate, in meters")
-            ax.set_ylabel("temperature, in Kelvins")
-            ax.legend()
-            plt.tight_layout()
-
-            # save figure
-            if plotSave:
-                letter = chr(ord("@") + idx + 1)
-                fpth = os.path.join(
-                    "..",
-                    "figures",
-                    "{}{}".format(
-                        "ex-" + sim_name + "-" + letter,
-                        ".png",
-                    ),
-                )
-                fig.savefig(fpth)
+            fig.savefig(fpth)
 
 
 # ### Function that wraps all of the steps for each MT3DMS Example 10 Problem scenario

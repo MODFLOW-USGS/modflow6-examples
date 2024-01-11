@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 exe_name_mf = "mf2005"
@@ -33,9 +33,8 @@ example_name = "ex-gwf-lgr"
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
 
@@ -851,7 +850,7 @@ def write_model(sim, silent=True):
 def run_model(sim, silent=True):
     if not runModel:
         return
-    success, buff = sim.run_simulation(silent=silent)
+    success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
@@ -859,12 +858,8 @@ def run_model(sim, silent=True):
 
 
 def plot_results(mf6, idx):
-    if not plotModel:
-        return
-
-    print("Plotting model results...")
     sim_name = mf6.name
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # Start by retrieving some output
         mf6_out_pth = mf6.simulation_data.mfpath.get_sim_path()
         sfr_parent_bud_file = list(mf6.model_names)[0] + ".sfr.bud"

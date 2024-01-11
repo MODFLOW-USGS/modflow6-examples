@@ -17,7 +17,7 @@ from pprint import pformat
 import flopy
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
-from modflow_devtools.misc import is_in_ci, timed
+from modflow_devtools.misc import timed
 
 mf6exe = "mf6"
 
@@ -33,9 +33,8 @@ example_name = "ex-gwt-mt3dms-p02"
 # Configuration
 
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotModel = str(environ.get("PLOT", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", is_in_ci())).lower() == "true"
-createGif = str(environ.get("GIF", False)).lower() == "true"
+plotSave = str(environ.get("SAVE", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Scenario parameters - make sure there is at least one blank line before next item
 
@@ -401,13 +400,10 @@ def run_model(sims, silent=True):
 
 
 def plot_results_ct(sims, idx, **kwargs):
-    if not plotModel:
-        return
-
     print("Plotting C versus t model results...")
-    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    _, sim_mf6gwt, _, sim_mt3dms = sims
 
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
         fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
@@ -452,14 +448,8 @@ def plot_results_ct(sims, idx, **kwargs):
 
 
 def plot_results():
-    if not plotModel:
-        return
-
-    print("Plotting model results...")
-
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
-
         case_colors = ["blue", "green", "red", "yellow"]
         pkeys = list(parameters.keys())
         for icase, sim_name in enumerate(pkeys[2:]):
