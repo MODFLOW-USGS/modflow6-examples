@@ -347,7 +347,7 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    if runModel:
+    if not runModel:
         return
 
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims

@@ -588,6 +588,8 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 
 @timed
 def run_model(mf2k5, mt3d, sim, silent=True):
+    if not runModel:
+        return
     # success, buff = mf2k5.run_model(silent=silent, report=True)
     # assert success, pformat(buff)
     success, buff = mt3d.run_model(
@@ -757,4 +759,4 @@ def scenario(idx, silent=True):
 # ### Two-Dimensional Transport in a Diagonal Flow Field
 #
 # Compares the standard finite difference solutions between MT3D MF 6
-scenario(0, silent=True)
+scenario(0)

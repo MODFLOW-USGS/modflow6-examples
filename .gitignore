@@ -184,3 +184,5 @@ temp
 
 # only version control jupytext-managed python scripts/*.py
 notebooks/
+
+**.DS_Store
