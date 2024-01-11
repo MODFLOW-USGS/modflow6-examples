@@ -11,6 +11,7 @@
 import os
 import pathlib as pl
 from os import environ
+from pprint import pformat
 
 import flopy
 import matplotlib.animation as animation
@@ -259,8 +260,8 @@ def write_model(sim, silent=True):
 def run_model(sim, silent=True):
     if not runModel:
         return
-    success, buff = sim.run_simulation(silent=silent)
-    assert success, buff
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
 # Function to plot the model results
@@ -391,7 +392,6 @@ def make_animated_gif(sim, idx):
     ani = animation.FuncAnimation(fig, update, times.shape[0], init_func=init)
     fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
     ani.save(fpth, fps=50)
-    return
 
 
 def plot_results(sim, idx):
@@ -401,7 +401,6 @@ def plot_results(sim, idx):
         if plotSave and createGif:
             print("Making animation...")
             make_animated_gif(sim, idx)
-    return
 
 
 # Function that wraps all of the steps for each scenario

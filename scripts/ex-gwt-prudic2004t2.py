@@ -12,6 +12,7 @@
 import os
 import pathlib as pl
 from os import environ
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
@@ -501,12 +502,11 @@ def write_model(sims, silent=True):
 def run_model(sims, silent=True):
     if not runModel:
         return
-    success = False
     sim_mf6gwf, sim_mf6gwt = sims
-    success, buff = sim_mf6gwf.run_simulation(silent=silent)
-    assert success, buff
-    success, buff = sim_mf6gwt.run_simulation(silent=silent)
-    assert success, buff
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
 # Function to plot the model results
@@ -529,7 +529,6 @@ def plot_bcmap(ax, gwf, layer=0):
 def plot_results(sims):
     plot_gwf_results(sims)
     plot_gwt_results(sims)
-    return
 
 
 def plot_gwf_results(sims):

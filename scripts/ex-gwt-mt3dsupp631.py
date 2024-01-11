@@ -11,6 +11,7 @@
 import os
 import pathlib as pl
 from os import environ
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
@@ -256,16 +257,16 @@ def run_model(sims, silent=True):
     if not runModel:
         return
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-    success, buff = sim_mf6gwf.run_simulation(silent=silent)
-    assert success, buff
-    success, buff = sim_mf6gwt.run_simulation(silent=silent)
-    assert success, buff
-    success, buff = sim_mf2005.run_model(silent=silent)
-    assert success, buff
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf2005.run_model(silent=silent, report=True)
+    assert success, pformat(buff)
     success, buff = sim_mt3dms.run_model(
-        silent=silent, normal_msg="Program completed"
+        silent=silent, normal_msg="Program completed", report=True
     )
-    assert success, buff
+    assert success, pformat(buff)
 
 
 # Function to plot the model results

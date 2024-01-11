@@ -9,6 +9,7 @@
 import os
 import pathlib as pl
 from os import environ
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
@@ -775,10 +776,12 @@ def write_model(mf2k5, mt3d, sim, silent=True):
 def run_model(mf2k5, mt3d, sim, silent=True):
     if not runModel:
         return
-    success, buff = mf2k5.run_model(silent=silent)
-    success, buff = mt3d.run_model(silent=silent)
-    success, buff = sim.run_simulation(silent=silent)
-    assert success, buff
+    success, buff = mf2k5.run_model(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = mt3d.run_model(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
 # Function to plot the model results

@@ -11,6 +11,7 @@
 import os
 import pathlib as pl
 from os import environ
+from pprint import pformat
 
 import flopy
 import flopy.plot.styles as styles
@@ -693,14 +694,11 @@ def write_model(sims, silent=True):
 def run_model(sims, silent=True):
     if not runModel:
         return
-    success = False
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-    print("Running mf6gwf model...")
-    success, buff = sim_mf6gwf.run_simulation(silent=silent)
-    assert success, buff
-    print("Running mf6gwt model...")
-    success, buff = sim_mf6gwt.run_simulation(silent=silent)
-    assert success, buff
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
 # Functions to plot the model results
@@ -771,7 +769,6 @@ def set_ticklabels(
         ax.set_xlabel("x position (km)")
     if not skip_ylabel:
         ax.set_ylabel("y position (km)")
-    return
 
 
 def plot_well_labels(ax):
@@ -785,7 +782,6 @@ def plot_well_labels(ax):
             textcoords="offset points",
             arrowprops=arrowprops,
         )
-    return
 
 
 def plot_feature_labels(ax):

@@ -12,6 +12,7 @@
 import os
 import pathlib as pl
 from os import environ
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
@@ -379,24 +380,21 @@ def write_model(sims, silent=True):
 
 @timed
 def run_model(sims, silent=True):
-    report = True
     if not runModel:
         return
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-    print("Running mf6gwf...")
-    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=report)
-    assert success, buff
-    print("Running mf6gwt...")
-    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=report)
-    assert success, buff
-    print("Running mf2005...")
-    success, buff = sim_mf2005.run_model(silent=silent, report=report)
-    assert success, buff
-    print("Running mt3dms...")
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf2005.run_model(silent=silent, report=True)
+    assert success, pformat(buff)
     success, buff = sim_mt3dms.run_model(
-        silent=silent, normal_msg="Program completed", report=report
+        silent=silent,
+        normal_msg="Program completed",
+        report=True
     )
-    assert success, buff
+    assert success, pformat(buff)
 
 
 # Function to plot the model results

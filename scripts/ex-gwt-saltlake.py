@@ -12,6 +12,7 @@
 import os
 import pathlib as pl
 from os import environ
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
@@ -233,8 +234,8 @@ def write_model(sim, silent=True):
 def run_model(sim, silent=True):
     if not runModel:
         return
-    success, buff = sim.run_simulation(silent=silent)
-    assert success, buff
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
 # Function to plot the model results
