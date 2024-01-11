@@ -23,12 +23,12 @@ from flopy.plot.styles import styles
 from flopy.utils.gridintersect import GridIntersect
 from modflow_devtools.misc import timed
 from shapely.geometry import Polygon
+import pooch
 
 # Simulation name and workspace
 
 sim_name = "ex-gwf-advtidal"
 ws = pl.Path("../examples")
-data_ws = pl.Path("../data")
 
 # Configuration
 
@@ -189,7 +189,10 @@ def build_model():
     ghb_spd += [[1, i, 9, "tides", 15.0, "ESTUARY-L2"] for i in range(nrow)]
     ghb_spd += [[2, i, 9, "tides", 1500.0, "ESTUARY-L3"] for i in range(nrow)]
     ghb_spd = {0: ghb_spd}
-    fname = os.path.join(data_ws, sim_name, "tides.csv")
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/tides.csv",
+        known_hash="md5:425337a0bf24fa72c9e40f4e3d9f698a"
+    )
     tsdict = get_timeseries(fname, "tides", "linear")
     ghbobs_dict = {}
     ghbobs_dict[f"{sim_name}.ghb.obs.csv"] = [
@@ -225,7 +228,10 @@ def build_model():
         [0, 2, 4, -20, ""],
         [0, 13, 5, -40, ""],
     ]
-    fname = os.path.join(data_ws, sim_name, "wellrates.csv")
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/wellrates.csv",
+        known_hash="md5:6ca7366be279d679b14e8338a195422f"
+    )
     tsdict = get_timeseries(
         fname,
         ["well_1_rate", "well_2_rate", "well_6_rate"],
@@ -255,7 +261,10 @@ def build_model():
         + 3 * [""]
     )
     riv_spd = list(zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd))
-    fname = os.path.join(data_ws, sim_name, "riverstage.csv")
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/riverstage.csv",
+        known_hash="md5:83f8b526ec6e6978b1d9dbd6fde231ef"
+    )
     tsdict = get_timeseries(
         fname,
         ["river_stage_1", "river_stage_2"],
@@ -269,6 +278,11 @@ def build_model():
         pname="RIV",
     )
 
+    hashes = [
+        "f8b9b26a3403101f3568cd42f759554f",
+        "c1ea7ded8edf33d6d70a1daf2524584a",
+        "9ca294d3260c9d3c3487f8db498a0aa6"
+    ]
     for ipak, p in enumerate([recharge_zone_1, recharge_zone_2, recharge_zone_3]):
         ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
         result = ix.intersect(p)
@@ -282,7 +296,10 @@ def build_model():
                     result["areas"][i] / delr / delc,
                 ]
             )
-        fname = os.path.join(data_ws, sim_name, f"recharge{ipak + 1}.csv")
+        fname = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge{ipak + 1}.csv",
+            known_hash=f"md5:{hashes[ipak]}"
+        )
         tsdict = get_timeseries(
             fname,
             [f"rch_{ipak + 1}"],

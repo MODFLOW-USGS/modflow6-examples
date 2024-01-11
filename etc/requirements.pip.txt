@@ -19,3 +19,4 @@ rasterio
 rasterstats
 jupyter
 jupytext
+pooch

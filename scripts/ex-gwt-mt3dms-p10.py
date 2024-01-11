@@ -593,7 +593,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
     # success, buff = mf2k5.run_model(silent=silent, report=True)
     # assert success, pformat(buff)
     success, buff = mt3d.run_model(
-        silent=silent, normal_msg="Program completed", report=True
+        silent=silent, report=True, normal_msg="Program completed"
     )
     assert success, pformat(buff)
     success, buff = sim.run_simulation(silent=silent, report=True)
@@ -604,9 +604,7 @@ def run_model(mf2k5, mt3d, sim, silent=True):
 
 
 def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
-    print("Plotting model results...")
     mt3d_out_path = mt3d.model_ws
-    mf6_out_path = mf6.simulation_data.mfpath.get_sim_path()
     mf6.simulation_data.mfpath.get_sim_path()
 
     # Get the MT3DMS concentration output
@@ -620,7 +618,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
     conc_mf6 = ucnobj_mf6.get_alldata()
 
     # Create figure for scenario
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         sim_name = mf6.name
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
