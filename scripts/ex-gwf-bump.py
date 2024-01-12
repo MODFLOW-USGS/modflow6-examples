@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
+import pooch
 
 # Set figure properties
 
@@ -93,7 +94,10 @@ shape3d = (nlay, nrow, ncol)
 
 # Load the bottom
 
-fpth = os.path.join("..", "data", sim_name, "bottom.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+    known_hash="md5:9287f9e214147d95e6ed159732079a0b",
+)
 botm = np.loadtxt(fpth).reshape(shape3d)
 
 # create a cylinder
