@@ -465,7 +465,7 @@ def plot_ts(sim):
                 fpth = os.path.join(
                     "..",
                     "figures",
-                    "{}-{}{}".format(sim_name, obs_fig[iplot], "png"),
+                    "{}-{}{}".format(sim_name, obs_fig[iplot], ".png"),
                 )
                 fig.savefig(fpth)
 
