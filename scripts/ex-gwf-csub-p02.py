@@ -345,7 +345,7 @@ def plot_grid(sim, silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join("..", "figures", f"{name}-grid.png")
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -807,19 +807,13 @@ def simulation(idx, silent=True):
     interbed_thickness = parameters[key]["bed_thickness"]
     interbed_kv = parameters[key]["kv"]
     params = parameters[key].copy()
-
-    success = False
     if len(interbed_thickness) == 1:
         params["bed_thickness"] = interbed_thickness[0]
         params["kv"] = interbed_kv[0]
 
         sim = build_model(key, **params)
-
         write_model(sim, silent=silent)
-
-        if runModel:
-            success = run_model(sim, silent=silent)
-
+        run_model(sim, silent=silent)
     else:
         for b, kv in zip(interbed_thickness, interbed_kv):
             for head_based in (
@@ -838,7 +832,7 @@ def simulation(idx, silent=True):
                 sim = build_model(key, subdir_name=subdir_name, **params)
                 write_model(sim, silent=silent)
                 run_model(sim, silent=silent)
-        plot_results(sim, silent=silent)
+    plot_results(sim, silent=silent)
 
 
 # ### Delay interbed drainage
