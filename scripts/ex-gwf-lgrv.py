@@ -26,7 +26,6 @@ figure_size = (5, 4)
 
 # Base simulation and data workspace
 
-sim_name = "ex-gwf-lgrv"
 ws = pl.Path("../examples")
 
 # Configuration
@@ -43,9 +42,9 @@ time_units = "seconds"
 # Scenario parameters
 
 parameters = {
-    f"{sim_name}-gr": {"configuration": "Refined"},
-    f"{sim_name}-gc": {"configuration": "Coarse"},
-    f"{sim_name}-lgr": {"configuration": "LGR"},
+    "ex-gwf-lgrv-gr": {"configuration": "Refined"},
+    "ex-gwf-lgrv-gc": {"configuration": "Coarse"},
+    "ex-gwf-lgrv-lgr": {"configuration": "LGR"},
 }
 
 # Table LGRV Model Parameters
@@ -80,7 +79,7 @@ tdis_ds = list(zip(perlen, nstp, tsmult))
 # load data files and process into arrays
 
 fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top.dat",
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/top.dat",
     known_hash="md5:7e95923e78d0a2e2133929376d913ecf",
 )
 top = np.loadtxt(fname)
@@ -114,12 +113,12 @@ hashes = [
 ]
 for k in range(nlay):
     fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/ikzone{k + 1}.dat",
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/ikzone{k + 1}.dat",
         known_hash=f"md5:{hashes[k]}",
     )
     ikzone[k, :, :] = np.loadtxt(fname)
 fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/riv.dat",
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/riv.dat",
     known_hash="md5:5ccbe4f29940376309db445dbb2d75d0",
 )
 dt = [
@@ -243,9 +242,9 @@ def riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan):
     return rivdatc
 
 
-def build_lgr_model(sim_name):
-    sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+def build_lgr_model(name):
+    sim_ws = os.path.join(ws, name)
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
         sim,
@@ -259,11 +258,11 @@ def build_lgr_model(sim_name):
     # parent model with coarse grid
     icoarsen = 3
     ncppl = [1, 3, 3, 3, 3, 3, 3, 3, 3]
-    sim = build_parent_model(sim, sim_name, icoarsen=icoarsen, ncppl=ncppl)
+    sim = build_parent_model(sim, name, icoarsen=icoarsen, ncppl=ncppl)
     gwf = sim.get_model("parent")
 
     # child model with fine grid
-    sim = build_child_model(sim, sim_name)
+    sim = build_child_model(sim, name)
     gwfc = sim.get_model("child")
 
     # use flopy lgr utility to wire up connections between parent and child
@@ -307,7 +306,7 @@ def build_lgr_model(sim_name):
     return sim
 
 
-def build_parent_model(sim, sim_name, icoarsen, ncppl):
+def build_parent_model(sim, name, icoarsen, ncppl):
     xminp, xmaxp, yminp, ymaxp = model_domain
     xminc, xmaxc, yminc, ymaxc = child_domain
     delcp = delc * icoarsen
@@ -321,7 +320,7 @@ def build_parent_model(sim, sim_name, icoarsen, ncppl):
     idomain = np.ones((nlayp, nrowp, ncolp), dtype=int)
     idomain[:, istart:istop, jstart:jstop] = 0
     sim = build_model(
-        sim_name,
+        name,
         icoarsen=icoarsen,
         ncppl=ncppl,
         idomain=idomain,
@@ -331,7 +330,7 @@ def build_parent_model(sim, sim_name, icoarsen, ncppl):
     return sim
 
 
-def build_child_model(sim, sim_name):
+def build_child_model(sim, name):
     icoarsen = 1
     xminp, xmaxp, yminp, ymaxp = model_domain
     xminc, xmaxc, yminc, ymaxc = child_domain
@@ -343,7 +342,7 @@ def build_child_model(sim, sim_name):
     jstop = int((xmaxc - xminp) / delrp)
     nrowp, ncolp = coarsen_shape(icoarsen, nrow, ncol)
     sim = build_model(
-        sim_name,
+        name,
         rowcolspan=[istart, istop, jstart, jstop],
         sim=sim,
         modelname="child",
@@ -354,7 +353,7 @@ def build_child_model(sim, sim_name):
 
 
 def build_model(
-    sim_name,
+    name,
     icoarsen=1,
     ncppl=None,
     rowcolspan=None,
@@ -365,8 +364,8 @@ def build_model(
     yorigin=None,
 ):
     if sim is None:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+        sim_ws = os.path.join(ws, name)
+        sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
         flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
             sim,
@@ -377,7 +376,7 @@ def build_model(
             rcloserecord=f"{rclose} strict",
         )
     if modelname is None:
-        modelname = sim_name
+        modelname = name
     gwf = flopy.mf6.ModflowGwf(sim, modelname=modelname, save_flows=True)
 
     if ncppl is not None:
@@ -479,7 +478,7 @@ def run_model(sim, silent=False):
 #
 def plot_grid(sim):
     with styles.USGSMap():
-        sim_name = sim.name
+        name = sim.name
         gwf = sim.get_model("parent")
         gwfc = None
         if "child" in list(sim.model_names):
@@ -530,14 +529,14 @@ def plot_grid(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = os.path.join("..", "figures", f"{name}-grid.png")
             fig.savefig(fpth)
 
 
 def plot_xsect(sim):
     print(f"Plotting cross section for {sim.name}...")
     with styles.USGSMap() as fs:
-        sim_name = sim.name
+        name = sim.name
         gwf = sim.get_model("parent")
 
         fig = plt.figure(figsize=(5, 2.5))
@@ -556,14 +555,14 @@ def plot_xsect(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-xsect.png")
+            fpth = os.path.join("..", "figures", f"{name}-xsect.png")
             fig.savefig(fpth)
 
 
 def plot_heads(sim):
     print(f"Plotting results for {sim.name} ...")
     with styles.USGSMap() as fs:
-        sim_name = sim.name
+        name = sim.name
         gwf = sim.get_model("parent")
         modelname = gwf.name
         gwfc = None
@@ -611,7 +610,7 @@ def plot_heads(sim):
 
         # save figure
         if plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
+            fpth = os.path.join("..", "figures", f"{name}-head.png")
             fig.savefig(fpth)
 
 
