@@ -144,10 +144,6 @@ jobs:
         run: python process-scripts.py
         working-directory: ${{env.script-directory}}
 
-      - name: Debug
-        if: matrix.python == '3.9'
-        uses: mxschmitt/action-tmate@v3
-
       - name: Build mf6examples LaTeX document
         if: matrix.python == '3.9'
         shell: python
