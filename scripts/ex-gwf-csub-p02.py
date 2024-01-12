@@ -345,7 +345,7 @@ def plot_grid(sim, silent=True):
 
         # save figure
         if plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = os.path.join("..", "figures", f"{name}-grid.png")
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
