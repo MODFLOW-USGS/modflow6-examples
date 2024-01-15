@@ -127,6 +127,7 @@ fpth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10cinit.dat",
     known_hash="md5:8e2d3ba7af1ec65bb07f6039d1dfb2c8",
 )
+f = open(fpth)
 c0 = np.empty((nrow * ncol), dtype=float)
 c0 = read1d(f, c0).reshape((nrow, ncol))
 f.close()

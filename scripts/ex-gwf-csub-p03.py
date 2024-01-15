@@ -1271,7 +1271,7 @@ def plot_calibration(silent=True):
 
         pth = pooch.retrieve(
             url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
-            hash="md5:8177e15feeeedcdd59ee15745e796e59"
+            known_hash="md5:8177e15feeeedcdd59ee15745e796e59"
         )
         df_obs_heads, col_list = process_sim_csv(pth)
 
