@@ -24,6 +24,7 @@ from flopy.plot.styles import styles
 from modflow_devtools.latex import (build_table, exp_format, float_format,
                                     int_format)
 from modflow_devtools.misc import timed
+import pooch
 
 # Set figure properties specific to the problem
 
@@ -42,8 +43,10 @@ plotSave = str(environ.get("SAVE", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Load the constant time series
-
-pth = os.path.join("..", "data", sim_name, "boundary_heads.csv")
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
+    known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
+)
 csv_head = np.genfromtxt(pth, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file
@@ -777,14 +780,15 @@ def export_tables(silent=True):
             col_widths=col_widths,
         )
 
-    return
-
 
 # Function to get observed data as a pandas dataframe
 
 
-def get_obs_dataframe(file_name="008N010W01Q005S_1D.csv"):
-    fpth = os.path.join("..", "data", sim_name, file_name)
+def get_obs_dataframe(file_name, hash):
+    fpth = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{file_name}",
+        known_hash=f"md5:{hash}",
+    )
     df = pd.read_csv(fpth, index_col=0)
     df.index = pd.to_datetime(df.index.values)
     df.rename({"mean": "observed"}, inplace=True, axis=1)
@@ -1265,7 +1269,10 @@ def plot_calibration(silent=True):
         df_sim = get_sim_dataframe(pth)
         df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
-        pth = os.path.join("..", "data", sim_name, "boundary_heads.csv")
+        pth = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
+            hash="md5:8177e15feeeedcdd59ee15745e796e59"
+        )
         df_obs_heads, col_list = process_sim_csv(pth)
 
         ccolors = (
@@ -1287,7 +1294,7 @@ def plot_calibration(silent=True):
         xca = xc0 + dx / 2
 
         # get observation data
-        df = get_obs_dataframe(file_name="008N010W01Q005S_obs.csv")
+        df = get_obs_dataframe(file_name="008N010W01Q005S_obs.csv", hash="96dd2d0f0eca8c0293275bf87073547e")
         ix0 = df.index.get_loc("2006-09-04 00:00:00")
         offset = df_sim["simulated"].values[-1] - df.observed.values[ix0]
         df.observed += offset
@@ -1301,7 +1308,7 @@ def plot_calibration(silent=True):
 
         # -- subplot c -----------------------------------------------------------
         # get observations
-        df_pc = get_obs_dataframe()
+        df_pc = get_obs_dataframe(file_name="008N010W01Q005S_1D.csv", hash="167f83f51692165394442b0eb1fec45e")
 
         # get index for start of calibration period for subplot c
         ix0 = df_sim.index.get_loc("1992-10-01 12:00:00")

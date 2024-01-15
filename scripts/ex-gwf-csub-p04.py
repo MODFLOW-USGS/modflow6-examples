@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
+import pooch
 
 # Base simulation and model name and workspace
 
@@ -109,7 +110,10 @@ ib_thick = [float(value) for value in ib_thick_str.split(",")]
 
 # Load active domain and create idomain array
 
-pth = os.path.join("..", "data", sim_name, "idomain.txt")
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+    known_hash="md5:2f05a27b6f71e564c0d3616e3fd00ac8",
+)
 ib = np.loadtxt(pth, dtype=int)
 idomain = np.tile(ib, (nlay, 1))
 

@@ -319,7 +319,10 @@ def plot_results(sim, silent=True):
         sim_date = [dstart + datetime.timedelta(seconds=x) for x in sim_obs["totim"]]
 
         # get the observed head
-        pth = os.path.join("..", "data", sim_name, "s201_gw_2sec.csv")
+        pth = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/s201_gw_2sec.csv",
+            known_hash="md5:1098bcd3f4fc1bd3b38d3d55152a8fbb",
+        )
         dtype = [("date", object), ("dz_m", float)]
         obs_head = np.genfromtxt(pth, names=True, delimiter=",", dtype=dtype)
         obs_date = []

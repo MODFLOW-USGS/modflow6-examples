@@ -653,7 +653,7 @@ def plot_gwt_results(sims):
         sfaconc = bobj.get_alldata()[:, 0, 0, :]
         times = bobj.times
 
-        with styles.USGSPlot() as fs:
+        with styles.USGSPlot():
             fig, axs = plt.subplots(1, 1, figsize=(5, 3), dpi=300, tight_layout=True)
             ax = axs
             times = np.array(times) / 365.0

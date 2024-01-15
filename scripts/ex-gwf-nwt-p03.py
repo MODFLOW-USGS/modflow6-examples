@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
+import pooch
 
 # Set figure properties
 
@@ -86,7 +87,10 @@ ticklabels = np.arange(0, 10000, 2000)
 
 # Load the bottom
 
-fpth = os.path.join("..", "data", sim_name, "bottom.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+    known_hash="md5:0fd4b16db652808c7e36a5a2a25da0a2",
+)
 botm = np.loadtxt(fpth).reshape(shape3d)
 
 # Set the starting heads
@@ -95,7 +99,10 @@ strt = botm + 20.0
 
 # Load the high recharge rate
 
-fpth = os.path.join("..", "data", sim_name, "recharge_high.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge_high.txt",
+    known_hash="md5:8d8f8bb3cec22e7a0cbe6aba95da8f35",
+)
 rch_high = np.loadtxt(fpth)
 
 # Generate the low recharge rate from the high recharge rate
