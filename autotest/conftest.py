@@ -10,6 +10,7 @@ FIGURES_PATH = PROJ_ROOT / "figures"
 EXAMPLES_PATH = PROJ_ROOT / "examples"
 NOTEBOOKS_PATH = PROJ_ROOT / "notebooks"
 RTD_PATH = PROJ_ROOT / ".doc" / "_notebooks"
+EXCLUDE = []
 
 
 @pytest.fixture(scope="session")
@@ -34,6 +35,8 @@ def pytest_generate_tests(metafunc):
     if "example" in metafunc.fixturenames:
         run = metafunc.config.getoption("run")
         scripts = {
-            file.name: (run, file) for file in sorted(SCRIPTS_PATH.glob("ex-*.py"))
+            file.name: (run, file)
+            for file in sorted(SCRIPTS_PATH.glob("ex-*.py"))
+            if file.stem not in EXCLUDE
         }
         metafunc.parametrize("example", scripts.values(), ids=scripts.keys())
