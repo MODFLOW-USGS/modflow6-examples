@@ -64,35 +64,33 @@ The above is equivalent to calling the function with no arguments. Arguments may
 
 ## Running the examples
 
-The examples can be run with Jupyter or with Pytest.
+The example scripts generate input and output files in subdirectories of `examples/`. Three environment variables control their behavior, each only effective if the previous are, all accepting case-insensitive `true/false`:
 
-### Using `jupyter`
+- `RUN`: whether to run models &mdash; set `false` to build but not run
+- `PLOT`: whether to plot model results
+- `SAVE`: whether to save plots to file
 
-To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks/` directory.
+The examples can also be tested via `pytest`, converted to notebooks and/or executed with `jupytext`, or run as notebooks with `jupyter`.
 
-### Using `pytest`
-
-Pytest can be used to run the example scenarios. The `pytest-xdist` plugin is a convenient way to run the tests in parallel.
-
-Tests should be run from the `autotest/` directory, *not* from `scripts/`. By default, simulations are built and written to subdirectories of `examples/`, but are not run. To run, use the `--run` flag.
-
-For instance, to test run all scenarios in parallel with verbose output:
+For instance, to test the example scripts in parallel:
 
 ```shell
-pytest -v -n auto test_scripts.py --run
+pytest -n auto test_scripts.py --run
 ```
 
-To run in serial instead of parallel, omit `-n auto`.
+To test notebook conversion/execution with `jupytext`:
 
-### Using `jupytext`
+```shell
+pytest -n auto test_notebooks.py --run
+```
 
-The example scripts can be converted to notebooks with `jupytext`. For instance, from the project root, to generate and execute a notebook in `notebooks/`:
+To convert an example script to a notebook manually with `jupytext`:
 
 ```shell
 jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ipynb --execute
 ```
 
-Unlike with `pytest`, simulations run when the example script is invoked with `jupytext`.
+To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks/` directory.
 
 ## Contributing examples
 
