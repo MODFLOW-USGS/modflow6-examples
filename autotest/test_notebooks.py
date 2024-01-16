@@ -7,9 +7,8 @@ from conftest import NOTEBOOKS_PATH
 
 
 @requires_exe("jupytext")
-def test_notebooks(example):
-    run, script = example
-    with set_env(RUN=str(run)):
+def test_notebooks(example_script, run, plot, save):
+    with set_env(RUN=str(run), PLOT=str(plot), SAVE=str(save)):
         args = [
             "jupytext",
             "--from",
@@ -17,9 +16,9 @@ def test_notebooks(example):
             "--to",
             "ipynb",
             "--execute",
-            script,
+            example_script,
             "-o",
-            NOTEBOOKS_PATH / script.with_suffix(".ipynb").name,
+            NOTEBOOKS_PATH / example_script.with_suffix(".ipynb").name,
         ]
         stdout, stderr, retcode = run_cmd(*args, verbose=True, env=environ)
         assert not retcode, stdout + stderr

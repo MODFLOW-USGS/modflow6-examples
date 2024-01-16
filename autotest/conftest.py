@@ -18,8 +18,20 @@ def run(pytestconfig):
     return pytestconfig.getoption("run")
 
 
+@pytest.fixture(scope="session")
+def plot(pytestconfig):
+    return pytestconfig.getoption("plot")
+
+
+@pytest.fixture(scope="session")
+def save(pytestconfig):
+    return pytestconfig.getoption("save")
+
+
 def pytest_addoption(parser):
     parser.addoption("--run", action="store_true", default=False)
+    parser.addoption("--plot", action="store_true", default=False)
+    parser.addoption("--save", action="store_true", default=False)
 
 
 def pytest_generate_tests(metafunc):
@@ -32,11 +44,10 @@ def pytest_generate_tests(metafunc):
     RTD_PATH.mkdir(exist_ok=True, parents=True)
 
     # generate example scenarios
-    if "example" in metafunc.fixturenames:
-        run = metafunc.config.getoption("run")
+    if "example_script" in metafunc.fixturenames:
         scripts = {
-            file.name: (run, file)
+            file.name: file
             for file in sorted(SCRIPTS_PATH.glob("ex-*.py"))
             if file.stem not in EXCLUDE
         }
-        metafunc.parametrize("example", scripts.values(), ids=scripts.keys())
+        metafunc.parametrize("example_script", scripts.values(), ids=scripts.keys())
