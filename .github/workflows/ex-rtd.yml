@@ -77,7 +77,7 @@ jobs:
           repo: modflow6-nightly-build
 
       - name: Create/run notebooks
-        run: pytest -v -n=auto --durations=0 test_notebooks.py --run
+        run: pytest -v -n=auto --durations=0 test_notebooks.py --run --plot --save
         working-directory: ${{env.test-directory}}
 
       - name: Copy notebooks to RTD directory

@@ -14,24 +14,24 @@ EXCLUDE = []
 
 
 @pytest.fixture(scope="session")
-def run(pytestconfig):
-    return pytestconfig.getoption("run")
+def run(request) -> bool:
+    return request.config.getoption("--run")
 
 
 @pytest.fixture(scope="session")
-def plot(pytestconfig):
-    return pytestconfig.getoption("plot")
+def plot(request) -> bool:
+    return request.config.getoption("--plot")
 
 
 @pytest.fixture(scope="session")
-def save(pytestconfig):
-    return pytestconfig.getoption("save")
+def save(request) -> bool:
+    return request.config.getoption("--save")
 
 
 def pytest_addoption(parser):
-    parser.addoption("--run", action="store_true", default=False)
-    parser.addoption("--plot", action="store_true", default=False)
-    parser.addoption("--save", action="store_true", default=False)
+    parser.addoption("--run", action="store_true", default=False, help="Whether to run models")
+    parser.addoption("--plot", action="store_true", default=False, help="Whether to plot results (requires --run)")
+    parser.addoption("--save", action="store_true", default=False, help="Whether to save plots (requires --run and --plot)")
 
 
 def pytest_generate_tests(metafunc):

@@ -70,9 +70,9 @@ The example scripts generate input and output files in subdirectories of `exampl
 - `PLOT`: whether to plot model results
 - `SAVE`: whether to save plots to file
 
-The examples can also be tested via `pytest`, converted to notebooks and/or executed with `jupytext`, or run as notebooks with `jupyter`.
+The example scripts can be run directly, tested via `pytest`, converted to notebooks and/or executed with `jupytext`, or run as notebooks with `jupyter`. When the scripts are run directly, all three configuration variables default to true. When run via `pytest`, all three default to false. There are corresponding `pytest` CLI arguments `--run`, `--plot`, and `--save`.
 
-For instance, to test the example scripts in parallel:
+For instance, to test the example scripts in parallel, running models but omitting plots:
 
 ```shell
 pytest -n auto test_scripts.py --run
