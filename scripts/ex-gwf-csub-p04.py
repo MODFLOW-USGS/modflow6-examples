@@ -1,15 +1,17 @@
-# ## One-dimensional compaction in a three-dimensional flow field
+# ## One-dimensional compaction in a three-dimensional flow field example
 #
 # This problem is based on the problem presented in the SUB-WT report
 # (Leake and Galloway, 2007) and represent groundwater development in a
 # hypothetical aquifer that includes some features typical of basin-fill
 # aquifers in an arid or semi-arid environment.
-#
 
-# ### Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -18,50 +20,31 @@ import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
-import pooch
 
-# Base simulation and model name and workspace
-
-sim_name = "ex-gwf-csub-p03"
-ws = pl.Path("../examples")
-
-# Configuration
-
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
-
-# Set figure properties specific to the problem
-
-figure_size = (6.8, 5.5)
-arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
-plot_tags = (
-    "W1L",
-    "W2L",
-    "S1L",
-    "S2L",
-    "C1L",
-    "C2L",
-)
-compaction_heading = ("row 9, column 10", "row 12, column 7")
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-csub-p04"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
+runModel = str(environ.get("RUN", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table
-
+# Model parameters
 nper = 3  # Number of periods
 nlay = 4  # Number of layers
 nrow = 20  # Number of rows
@@ -88,15 +71,13 @@ ib_cv = 0.25  # Interbed compression index (unitless)
 stress_offset = 15.0  # Initial preconsolidation stress offset ($m$)
 
 # Static temporal data used by TDIS file
-
 tdis_ds = (
     (0.0, 1, 1.0),
     (21915.0, 60, 1.0),
     (21915.0, 60, 1.0),
 )
 
-# parse parameter strings into tuples
-
+# Parse parameter strings into tuples
 botm = [float(value) for value in botm_str.split(",")]
 icelltype = [int(value) for value in icelltype_str.split(",")]
 k11 = [float(value) for value in k11_str.split(",")]
@@ -109,7 +90,6 @@ cg_ske = [float(value) for value in cg_ske_str.split(",")]
 ib_thick = [float(value) for value in ib_thick_str.split(",")]
 
 # Load active domain and create idomain array
-
 pth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
     known_hash="md5:2f05a27b6f71e564c0d3616e3fd00ac8",
@@ -118,7 +98,6 @@ ib = np.loadtxt(pth, dtype=int)
 idomain = np.tile(ib, (nlay, 1))
 
 # Constant head boundary cells
-
 chd_locs = [(nrow - 1, 7), (nrow - 1, 8)]
 c6 = []
 for i, j in chd_locs:
@@ -126,7 +105,6 @@ for i, j in chd_locs:
         c6.append([k, i, j, strt])
 
 # Recharge boundary cells
-
 rch_rate = 5.5e-4
 rch6 = []
 for i in range(nrow):
@@ -136,7 +114,6 @@ for i in range(nrow):
         rch6.append([0, i, j, rch_rate])
 
 # Well boundary cells
-
 well_locs = (
     (1, 8, 9),
     (3, 11, 6),
@@ -153,7 +130,6 @@ for idx, q in enumerate(well_rates):
     wel6[idx + 1] = spd
 
 # Create interbed package data
-
 icsubno = 0
 csub_pakdata = []
 for i in range(nrow):
@@ -180,22 +156,22 @@ for i in range(nrow):
             icsubno += 1
 
 # Solver parameters
-
 nouter = 100
 ninner = 300
 hclose = 1e-9
 rclose = 1e-6
 linaccel = "bicgstab"
 relax = 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -348,27 +324,37 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to get csub observations
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results, starting with a few utilities.
+
+# +
+# Set figure properties specific to the problem
+figure_size = (6.8, 5.5)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
+plot_tags = (
+    "W1L",
+    "W2L",
+    "S1L",
+    "S2L",
+    "C1L",
+    "C2L",
+)
+compaction_heading = ("row 9, column 10", "row 12, column 7")
 
 
 def get_csub_observations(sim):
@@ -394,10 +380,8 @@ def get_csub_observations(sim):
     return csub_obs
 
 
-# Function to calculate the compaction at the surface
-
-
 def calc_compaction_at_surface(sim):
+    """Calculate the compaction at the surface"""
     csub_obs = get_csub_observations(sim)
     for tag in plot_tags:
         for k in (
@@ -411,9 +395,6 @@ def calc_compaction_at_surface(sim):
     return csub_obs
 
 
-# Function to plot compaction results
-
-
 def plot_compaction_values(ax, sim, tagbase="W1L"):
     colors = ["#FFF8DC", "#D2B48C", "#CD853F", "#8B4513"][::-1]
     obs = calc_compaction_at_surface(sim)
@@ -424,11 +405,8 @@ def plot_compaction_values(ax, sim, tagbase="W1L"):
         ax.fill_between(obs["totim"], obs[tag], y2=0, color=fc, label=label)
 
 
-# Function to plot the model grid
-
-
 def plot_grid(sim, silent=True):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         name = sim.name
         gwf = sim.get_model(name)
         extents = gwf.modelgrid.extent
@@ -688,9 +666,6 @@ def plot_grid(sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the stresses
-
-
 def plot_stresses(sim, silent=True):
     with styles.USGSPlot() as fs:
         name = sim.name
@@ -844,31 +819,27 @@ def plot_compaction(sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the model results.
-
-
 def plot_results(sim, silent=True):
     plot_grid(sim, silent=silent)
     plot_stresses(sim, silent=silent)
     plot_compaction(sim, silent=silent)
 
 
-# Function that wraps all of the steps for the model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+# +
+def scenario(silent=True):
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### One-dimensional compaction in a three-dimensional flow field
-
-simulation()
+# One-dimensional compaction in a three-dimensional flow field
+scenario()
+# -

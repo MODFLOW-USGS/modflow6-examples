@@ -2,12 +2,12 @@
 #
 # This is the Neville-Tonkin Multi-Aquifer Well from the
 # Lake Package documentation (Neville and Tonkin, 2004).
-#
 
-# ### Neville-Tonkin MAW Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -19,29 +19,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (6.3, 4.3)
-masked_values = (0, 1e30, -1e30)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-maw-p01"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-maw-p01a": {
         "rate": 0.0,
@@ -51,8 +49,7 @@ parameters = {
     },
 }
 
-# Table Neville-Tonkin MAW Problem Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 2  # Number of layers
 nrow = 101  # Number of rows
@@ -68,22 +65,18 @@ ss = 1e-4  # Specific storage ($1/d$)
 maw_radius = 0.15  # Well radius ($m$)
 
 # parse parameter strings into tuples
-
 botm = [float(value) for value in botm_str.split(",")]
 strt = [float(value) for value in strt_str.split(",")]
 
 # Static temporal data used by TDIS file
-
 tdis_ds = ((2.314815, 50, 1.2),)
 
 # Define dimensions
-
 extents = (0.0, delr * ncol, 0.0, delc * nrow)
 shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # create idomain
-
 idomain = np.ones(shape3d, dtype=float)
 xw, yw = (ncol / 2) * delr, (nrow / 2) * delc
 y = 0.0
@@ -96,36 +89,30 @@ for i in range(nrow):
         if r > 7163.0:
             idomain[:, i, j] = 0
 
-# ### Create Neville-Tonkin MAW Problem Model Boundary Conditions
-
-# MAW Package
-
+# MAW Package boundary conditions
 maw_row = int(nrow / 2)
 maw_col = int(ncol / 2)
-
 maw_packagedata = [[0, maw_radius, botm[-1], strt[-1], "THIEM", 2]]
-
 maw_conn = [
     [0, 0, 0, maw_row, maw_col, top, botm[-1], -999.0, -999.0],
     [0, 1, 1, maw_row, maw_col, top, botm[-1], -999.0, -999.0],
 ]
 
-
 # Solver parameters
-
 nouter = 500
 ninner = 100
 hclose = 1e-9
 rclose = 1e-4
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Neville-Tonkin MAW Problem model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name, rate=0.0):
-    sim_ws = os.path.join(ws, name)
+# +
+def build_models(name, rate=0.0):
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -193,37 +180,38 @@ def build_model(name, rate=0.0):
     return sim
 
 
-# Function to write MODFLOW 6 Neville-Tonkin MAW Problem model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the Neville-Tonkin MAW Problem model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot the lake results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.3, 4.3)
+masked_values = (0, 1e30, -1e30)
 
 
 def plot_maw_results(silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # load the observations
         name = list(parameters.keys())[0]
-        fpth = os.path.join(ws, name, f"{sim_name}.maw.obs.csv")
+        fpth = os.path.join(workspace, name, f"{sim_name}.maw.obs.csv")
         maw0 = flopy.utils.Mf6Obs(fpth).data
         name = list(parameters.keys())[1]
-        fpth = os.path.join(ws, name, f"{sim_name}.maw.obs.csv")
+        fpth = os.path.join(workspace, name, f"{sim_name}.maw.obs.csv")
         maw1 = flopy.utils.Mf6Obs(fpth).data
 
         time = maw0["totim"] * 86400.0
@@ -318,16 +306,13 @@ def plot_maw_results(silent=True):
             fig.savefig(fpth)
 
 
-# Plot the grid
-
-
 def plot_grid(silent=True):
     if silent:
         verbosity = 0
     else:
         verbosity = 1
     name = list(parameters.keys())[0]
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity
     )
@@ -407,41 +392,33 @@ def plot_grid(silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the Neville-Tonkin MAW Problem model results.
-
-
 def plot_results(silent=True):
     plot_grid(silent=silent)
     plot_maw_results(silent=silent)
 
 
-# Function that wraps all of the steps for the Neville-Tonkin MAW Problem model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx=0, silent=True):
+# +
+def scenario(idx=0, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
 
-# ### Neville-Tonkin MAW Problem Simulation
-#
 # No pumping case
-
-simulation(0)
+scenario(0)
 
 # Pumping case
-
-simulation(1)
+scenario(1)
 
 # Plot the results
-
 plot_results()
+# -

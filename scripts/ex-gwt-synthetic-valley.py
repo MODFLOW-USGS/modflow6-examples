@@ -1,13 +1,12 @@
 # ## Synthetic Valley Problem
 #
 # This problem is described in Hughes and others (2023).
-#
-#
 
-# ### Synthetic Valley Problem
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -28,10 +27,10 @@ from matplotlib import colors
 from modflow_devtools.misc import timed
 from shapely.geometry import LineString, Polygon
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Groundwater 2023 utilities
@@ -116,82 +115,28 @@ def circle_function(center=(0, 0), radius=1.0, dtheta=10.0):
     return np.array([(x, y) for x, y in zip(xpts, ypts)])
 
 
-# Set figure properties specific to the example
-
-two_panel_figsize = (17.15 / 2.541, 0.8333 * 17.15 / 2.541)
-one_panel_figsize = (8.25 / 2.541, 13.25 / 2.541)
-six_panel_figsize = (17.15 / 2.541, 1.4 * 0.8333 * 17.15 / 2.541)
-
-# set figure element defaults
-
-levels = np.arange(10, 110, 10)
-contour_color = "black"
-contour_style = "--"
-sv_contour_dict = {
-    "linewidths": 0.5,
-    "colors": contour_color,
-    "linestyles": contour_style,
-}
-sv_contour_dict = {
-    "linewidths": 0.5,
-    "colors": contour_color,
-    "linestyles": contour_style,
-}
-sv_gwt_contour_dict = {
-    "linewidths": 0.75,
-    "colors": contour_color,
-    "linestyles": contour_style,
-}
-contour_label_dict = {
-    "linewidth": 0.5,
-    "color": contour_color,
-    "linestyle": contour_style,
-}
-contour_gwt_label_dict = {
-    "linewidth": 0.75,
-    "color": contour_color,
-    "linestyle": contour_style,
-}
-clabel_dict = {
-    "inline": True,
-    "fmt": "%1.0f",
-    "fontsize": 6,
-    "inline_spacing": 0.5,
-}
-font_dict = {"fontsize": 5, "color": "black"}
-grid_dict = {"lw": 0.25, "color": "0.5"}
-arrowprops = dict(
-    arrowstyle="-",
-    edgecolor="red",
-    lw=0.5,
-    shrinkA=0.15,
-    shrinkB=0.15,
-)
-river_dict = {"color": "blue", "linestyle": "-", "linewidth": 1}
-
-lake_cmap = colors.ListedColormap(["cyan"])
-clay_cmap = colors.ListedColormap(["brown"])
-
-# Base simulation and model name and workspace
-
+# Example name and base workspace
 example_name = "ex-gwt-synthetic-valley"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Conversion factors
-
 ft2m = 1.0 / 3.28081
 ft3tom3 = 1.0 * ft2m * ft2m * ft2m
 ftpd2cmpy = 1000.0 * 365.25 * ft2m
 mpd2cmpy = 100.0 * 365.25
 mpd2inpy = 12.0 * 365.25 * 3.28081
+# -
 
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 pertim = 10957.5  # Simulation length ($d$)
 ntransport_steps = 60  # Number of transport time steps
 nlay = 6  # Number of layers
@@ -213,9 +158,10 @@ alpha_th = 7.5  # Transverse horizontal dispersivity ($m$)
 porosity = 0.2  # Aquifer porosity (unitless)
 confining_porosity = 0.4  # Confining unit porosity (unitless)
 
-# build voronoi grid
+# -
 
 # +
+# voronoi grid properties
 maximum_area = 150.0 * 150.0
 well_dv = 300.0
 boundary_refinement = 100.0
@@ -321,7 +267,6 @@ top_range = (0, 20)
 top_levels = np.arange(0, 25, 5)
 head_range = (-1, 5)
 head_levels = np.arange(1, head_range[1] + 1, 1)
-
 extent = voronoi_grid.extent
 # -
 
@@ -502,18 +447,16 @@ welspd = [
 ]
 # -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
-# recharge is the only variable
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -612,7 +555,7 @@ def build_mf6gwf(sim_folder):
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -687,7 +630,7 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_model(sim_name):
+def build_models(sim_name):
     sim_mf6gwf = build_mf6gwf(sim_name)
     sim_mf6gwt = build_mf6gwt(sim_name)
     sim_mf2005 = None  # build_mf2005(sim_name)
@@ -695,21 +638,14 @@ def build_model(sim_name):
     return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
-# Function to write model files
-
-
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     if not runModel:
         return
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -719,7 +655,65 @@ def run_model(sims, silent=True):
     assert success, pformat(buff)
 
 
-# Functions to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+two_panel_figsize = (17.15 / 2.541, 0.8333 * 17.15 / 2.541)
+one_panel_figsize = (8.25 / 2.541, 13.25 / 2.541)
+six_panel_figsize = (17.15 / 2.541, 1.4 * 0.8333 * 17.15 / 2.541)
+levels = np.arange(10, 110, 10)
+contour_color = "black"
+contour_style = "--"
+sv_contour_dict = {
+    "linewidths": 0.5,
+    "colors": contour_color,
+    "linestyles": contour_style,
+}
+sv_contour_dict = {
+    "linewidths": 0.5,
+    "colors": contour_color,
+    "linestyles": contour_style,
+}
+sv_gwt_contour_dict = {
+    "linewidths": 0.75,
+    "colors": contour_color,
+    "linestyles": contour_style,
+}
+contour_label_dict = {
+    "linewidth": 0.5,
+    "color": contour_color,
+    "linestyle": contour_style,
+}
+contour_gwt_label_dict = {
+    "linewidth": 0.75,
+    "color": contour_color,
+    "linestyle": contour_style,
+}
+clabel_dict = {
+    "inline": True,
+    "fmt": "%1.0f",
+    "fontsize": 6,
+    "inline_spacing": 0.5,
+}
+font_dict = {"fontsize": 5, "color": "black"}
+grid_dict = {"lw": 0.25, "color": "0.5"}
+arrowprops = dict(
+    arrowstyle="-",
+    edgecolor="red",
+    lw=0.5,
+    shrinkA=0.15,
+    shrinkB=0.15,
+)
+river_dict = {"color": "blue", "linestyle": "-", "linewidth": 1}
+lake_cmap = colors.ListedColormap(["cyan"])
+clay_cmap = colors.ListedColormap(["brown"])
+
+
 def plot_wells(ax=None, ms=None):
     if ax is None:
         ax = plt.gca()
@@ -928,7 +922,7 @@ def plot_river_mapping(sims, idx):
         if plotSave:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-river-discretization.png"
-            fig.savefig(os.path.join(ws, "..", "figures", fname))
+            fig.savefig(os.path.join(workspace, "..", "figures", fname))
 
 
 def plot_head_results(sims, idx):
@@ -1107,7 +1101,7 @@ def plot_head_results(sims, idx):
         if plotSave:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-head.png"
-            fig.savefig(os.path.join(ws, "..", "figures", fname))
+            fig.savefig(os.path.join(workspace, "..", "figures", fname))
 
 
 def plot_conc_results(sims):
@@ -1228,26 +1222,23 @@ def plot_conc_results(sims):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
-            fig.savefig(os.path.join(ws, "..", "figures", fname))
+            fig.savefig(os.path.join(workspace, "..", "figures", fname))
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(example_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 
-# ### Simulate Synthetic Valley Problem (Hughes and others 2023)
-
-# Plot showing MODFLOW 6 results
-
 scenario(0)
+# -

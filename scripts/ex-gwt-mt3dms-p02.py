@@ -1,14 +1,15 @@
-# ## One-Dimensional Steady Flow with Transport
+# ## One-dimensional steady flow with transport
 #
-# MT3DMS Problem 2
+# This is the second example problem presented in Zheng 1999, titled "One-dimensional transport
+# with nonlinear or nonequilibrium sorption. The purpose of this example is to demonstrate
+# simulation of nonlinear and nonequilibrium sorption. In this section the results from the
+# GWT model are compared with the results from MT3DMS.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### One-Dimensional Steady Flow with Transport Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -19,25 +20,23 @@ import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-
-# Set figure properties specific to this problem
-
-figure_size = (5, 3)
-
-# Base simulation and model name and workspace
-
+# Example name and base workspace
 ws = pl.Path("../examples")
 example_name = "ex-gwt-mt3dms-p02"
 
-# Configuration
-
+# Settings from an environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Scenario parameters - make sure there is at least one blank line before next item
-
 parameters = {
     "ex-gwt-mt3dms-p02a": {
         "sorption": "freundlich",
@@ -65,7 +64,6 @@ parameters = {
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
-
 parameter_units = {
     "beta": "$s^{-1}$",
     "sorption": "text string",
@@ -76,12 +74,10 @@ parameter_units = {
 }
 
 # Model units
-
 length_units = "centimeters"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -106,12 +102,12 @@ specific_discharge = velocity * porosity
 inflow_rate = specific_discharge * delc * (top - botm)
 system_length = ncol * delr
 
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
@@ -178,9 +174,6 @@ def build_mf6gwf(sim_folder):
         saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
     )
     return sim
-
-
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
 
 
 def build_mf6gwt(
@@ -354,7 +347,7 @@ def build_mt3dms(
     return mt
 
 
-def build_model(sim_name, **kwargs):
+def build_models(sim_name, **kwargs):
     sim_mf6gwf = build_mf6gwf(sim_name)
     sim_mf6gwt = build_mf6gwt(sim_name, **kwargs)
     sim_mf2005 = build_mf2005(sim_name)
@@ -362,10 +355,7 @@ def build_model(sim_name, **kwargs):
     return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
-# Function to write model files
-
-
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
@@ -373,12 +363,8 @@ def write_model(sims, silent=True):
     sim_mt3dms.write_input()
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     if not runModel:
         return
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -394,7 +380,15 @@ def run_model(sims, silent=True):
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5, 3)
 
 
 def plot_results_ct(sims, idx, **kwargs):
@@ -489,49 +483,28 @@ def plot_results():
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    sims = build_model(key, **parameter_dict)
-    write_model(sims, silent=silent)
-    run_model(sims, silent=silent)
+    sims = build_models(key, **parameter_dict)
+    write_models(sims, silent=silent)
+    run_models(sims, silent=silent)
     plot_results_ct(sims, idx, **parameter_dict)
 
 
-# ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-# Scenario 1 - description
-
 scenario(0)
-
-# Scenario 2 - description
-
 scenario(1)
-
-# Scenario 3 - description
-
 scenario(2)
-
-# Scenario 4 - description
-
 scenario(3)
-
-# Scenario 5 - description
-
 scenario(4)
-
-# Scenario 6 - description
-
 scenario(5)
-
-# Plot All Results
 plot_results()
+# -

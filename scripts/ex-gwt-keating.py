@@ -4,13 +4,12 @@
 # aquifer overlying a water table aquifer.  The presence of a discontinuous
 # low permeability lens causes the perched aquifer to form in response to
 # recharge.  The problem also represents solute transport through the system.
-#
-#
 
-# ### Keating Problem
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -23,28 +22,27 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (7.5, 3)
-
-# Base simulation and model name and workspace
-
+# Example name and base workspace
 example_name = "ex-gwt-keating"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 nlay = 80  # Number of layers
 nrow = 1  # Number of rows
 ncol = 400  # Number of columns
@@ -98,18 +96,18 @@ rrate = rrate / (float(number_recharge_cells) * cell_area)
 rchspd = {}
 rchspd[0] = [[(0, 0, j), rrate, recharge_conc] for j in rcol]
 rchspd[1] = [[(0, 0, j), rrate, 0.0] for j in rcol]
+# -
 
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
-# recharge is the only variable
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((period1, 1, 1.0), (period2, 1, 1.0))
     flopy.mf6.ModflowTdis(
@@ -193,7 +191,7 @@ def build_mf6gwf(sim_folder):
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -284,7 +282,7 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_model(sim_name):
+def build_models(sim_name):
     sim_mf6gwf = build_mf6gwf(sim_name)
     sim_mf6gwt = build_mf6gwt(sim_name)
     sim_mf2005 = None  # build_mf2005(sim_name)
@@ -292,21 +290,14 @@ def build_model(sim_name):
     return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
-# Function to write model files
-
-
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     success, buff = sim_mf6gwf.run_simulation(silent=silent)
     assert success, buff
@@ -314,7 +305,15 @@ def run_model(sims, silent=True):
     assert success, buff
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (7.5, 3)
 
 
 def plot_results(sims, idx):
@@ -355,7 +354,7 @@ def plot_head_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-head.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
@@ -418,7 +417,7 @@ def plot_conc_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
@@ -554,27 +553,24 @@ def plot_cvt_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-cvt.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(example_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 
-# ### Simulate Keating Problem
-
-# Plot showing MODFLOW 6 results
-
 scenario(0)
+# -

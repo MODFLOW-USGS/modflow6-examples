@@ -1,14 +1,15 @@
-# ## One-Dimensional Steady Flow with Transport
+# ## One-dimensional steady flow with transport
 #
-# MOC3D Problem 1
+# This problem corresponds to the first problem presented in the MOC3D
+# report Konikow 1996, involving the transport of a dissolved constituent
+# in a steady, one-dimensional flow field. An analytical solution for this
+# problem is given by \cite{wexler1992}.  This example is simulated with the GWT Model in \mf, which receives flow information from a separate simulation with the GWF Model in \mf.  Results from the GWT Model are compared with the results from the \cite{wexler1992} analytical solution.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### One-Dimensional Steady Flow with Transport Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -19,27 +20,23 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (5, 3)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-moc3dp1"
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
-# Scenario parameters - make sure there is at least one blank line before next item
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
+# +
+# Scenario-specific parameters - make sure there is at least one blank line before next item
 parameters = {
     "ex-gwt-moc3d-p01a": {
         "longitudinal_dispersivity": 0.1,
@@ -65,7 +62,6 @@ parameters = {
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
-
 parameter_units = {
     "longitudinal_dispersivity": "$cm$",
     "retardation_factor": "unitless",
@@ -73,12 +69,10 @@ parameter_units = {
 }
 
 # Model units
-
 length_units = "centimeters"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -94,10 +88,14 @@ porosity = 0.1  # Porosity of mobile domain (unitless)
 total_time = 120.0  # Simulation time ($s$)
 source_concentration = 1.0  # Source concentration (unitless)
 initial_concentration = 0.0  # Initial concentration (unitless)
+# -
 
-# Wexler 1-dimensional analytical solution
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 class Wexler1d:
     """
     Analytical solution for 1D transport with inflow at a concentration of 1.
@@ -247,12 +245,6 @@ class Wexler1d:
         return conc
 
 
-# ### Functions to build, write, run, and plot models
-#
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
-
-
 def get_sorption_dict(retardation_factor):
     sorption = None
     bulk_density = None
@@ -289,7 +281,7 @@ def get_decay_dict(decay_rate, sorption=False):
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -341,13 +333,10 @@ def build_mf6gwf(sim_folder):
     return sim
 
 
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-
-
 def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 240, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -406,7 +395,7 @@ def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, deca
     return sim
 
 
-def build_model(sim_name, longitudinal_dispersivity, retardation_factor, decay_rate):
+def build_models(sim_name, longitudinal_dispersivity, retardation_factor, decay_rate):
     sim_mf6gwf = build_mf6gwf(sim_name)
     sim_mf6gwt = build_mf6gwt(
         sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
@@ -414,21 +403,14 @@ def build_model(sim_name, longitudinal_dispersivity, retardation_factor, decay_r
     return sim_mf6gwf, sim_mf6gwt
 
 
-# Function to write model files
-
-
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt = sims
     success, buff = sim_mf6gwf.run_simulation(silent=silent)
     assert success, buff
@@ -436,7 +418,15 @@ def run_model(sims, silent=True):
     assert success, buff
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5, 3)
 
 
 def plot_results_ct(
@@ -501,7 +491,7 @@ def plot_results_ct(
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-ct.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
@@ -566,43 +556,32 @@ def plot_results_cd(
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-cd.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
+
+# +
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    sims = build_model(key, **parameter_dict)
-    write_model(sims, silent=silent)
-    run_model(sims, silent=silent)
+    sims = build_models(key, **parameter_dict)
+    write_models(sims, silent=silent)
+    run_models(sims, silent=silent)
     plot_results_ct(sims, idx, **parameter_dict)
     plot_results_cd(sims, idx, **parameter_dict)
 
 
-# ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-# Scenario 1 - description
-
 scenario(0)
-
-# Scenario 2 - description
-
 scenario(1)
-
-# Scenario 3 - description
-
 scenario(2)
-
-# Scenario 4 - description
-
 scenario(3)
+# -

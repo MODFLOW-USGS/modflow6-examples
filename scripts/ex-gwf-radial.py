@@ -13,8 +13,11 @@
 #    unconfined aquifers considering delayed gravity response.
 #    Water resources research, 10(2), 303-312
 
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from math import sqrt
@@ -26,14 +29,37 @@ import numpy as np
 from flopy.plot.styles import styles
 from matplotlib.patches import Circle
 from modflow_devtools.misc import timed
+
 # Solve definite integral using Fortran library QUADPACK
 from scipy.integrate import quad
+
 # Find a root of a function using Brent's method within a bracketed range
 from scipy.optimize import brentq
+
 # Zero Order Bessel Function
 from scipy.special import j0, jn_zeros
 
-# Function to get keyword arguments for radial grid
+# Example name and base workspace
+sim_name = "ex-gwf-rad-disu"
+workspace = pl.Path("../examples")
+
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
+runModel = str(environ.get("RUN", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
+
+# Define some utilities for creating the grid and solving the radial solution
+
+# +
+# Radial unconfined drawdown solution from Neuman 1974
+pi = 3.141592653589793
+sin = np.sin
+cos = np.cos
+sinh = np.sinh
+cosh = np.cosh
+exp = np.exp
 
 
 def get_disu_radial_kwargs(
@@ -216,16 +242,6 @@ def get_disu_radial_kwargs(
         kw["nvert"] = 0
 
     return kw
-
-
-# Radial unconfined drawdown solution from Neuman 1974
-
-pi = 3.141592653589793
-sin = np.sin
-cos = np.cos
-sinh = np.sinh
-cosh = np.cosh
-exp = np.exp
 
 
 def _find_hyperbolic_max_value():
@@ -988,9 +1004,6 @@ class RadialUnconfinedDrawdown:
         )
 
 
-# Utility function to return DISU node for given radial band and layer
-
-
 def get_radial_node(rad, lay, nradial):
     """
     Given nradial dimension (bands per layer),
@@ -1040,58 +1053,35 @@ def get_radius_lay_from_node(node, nradial):
     return rad, lay
 
 
-# Run Analytical Model - Very slow
-# If True, solves the Neuman 1974 analytical model (very slow)
-# else uses stored results from solving the Neuman 1974 analytical model
+# -
 
-solve_analytical_solution = False
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
-
-# Set default figure properties
-
-figure_size = (6, 6)
-
-# Simulation name and workspace
-
-sim_name = "ex-gwf-rad-disu"
-ws = pl.Path("../examples")
-
-
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
-
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Table Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 _ = 24  # Number of time steps
 _ = "10"  # Simulation total time ($day$)
-
 nlay = 25  # Number of layers
 nradial = 22  # Number of radial direction cells (radial bands)
-
 initial_head = 50.0  # Initial water table elevation ($ft$)
-
 surface_elevation = 50.0  # Top of the radial model ($ft$)
 _ = 0.0  # Base of the radial model ($ft$)
 layer_thickness = 2.0  # Thickness of each radial layer ($ft$)
 _ = "0.25 to 2000"  # Outer radius of each radial band ($ft$)
-
 k11 = 20.0  # Horizontal hydraulic conductivity ($ft/day$)
 k33 = 20.0  # Vertical hydraulic conductivity ($ft/day$)
-
 ss = 1.0e-5  # Specific storage ($1/day$)
 sy = 0.1  # Specific yield (unitless)
-
 _ = "0.0 to 10"  # Well screen elevation ($ft$)
 _ = "1"  # Well radial band location (unitless)
 _ = "-4000.0"  # Well pumping rate ($ft^3/day$)
-
 _ = "40"  # Observation distance from well ($ft$)
 _ = "1"  # ``Top'' observation elevation ($ft$)
 _ = "25"  # ``Middle'' observation depth ($ft$)
@@ -1156,15 +1146,16 @@ nouter = 500
 ninner = 300
 hclose = 1e-4
 rclose = 1e-4
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Axisymmetric Model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name):
-    sim_ws = os.path.join(ws, name)
+# +
+def build_models(name):
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -1224,29 +1215,31 @@ def build_model(name):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the Axisymmetric model.
-# True is returned if the model runs successfully.
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to solve Axisymmetric model using analytical equation.
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Set default figure properties
+figure_size = (6, 6)
 
 
 def solve_analytical(obs2ana, times=None, no_solve=False):
+    """Solve Axisymmetric model using analytical equation."""
     # obs2ana = {obsdict[file][0] : analytical_name}
     disukwargs = get_disu_radial_kwargs(
         nlay, nradial, radius_outer, surface_elevation, layer_thickness
@@ -1965,37 +1958,39 @@ def plot_results(silent=True):
     else:
         verbosity_level = 1
 
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
     )
 
     verbose = not silent
+    # If True, solves the Neuman 1974 analytical model (very slow)
+    # else uses stored results from solving the Neuman 1974 analytical model
+    analytical = False
+
     plot_grid(verbose)
-    plot_ts(sim, verbose, solve_analytical_solution=solve_analytical_solution)
+    plot_ts(sim, verbose, solve_analytical_solution=analytical)
 
 
-# Function that wraps all of the steps for the Axisymmetric model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
+# +
+def scenario(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
-    sim = build_model(sim_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(sim_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
-
-# ### Axisymmetric Example
 
 # MF6 Axisymmetric Model
-simulation()
+scenario()
 
 # Solve analytical and plot results with MF6 results
 plot_results()
+# -

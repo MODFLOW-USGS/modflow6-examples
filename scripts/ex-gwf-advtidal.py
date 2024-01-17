@@ -6,12 +6,12 @@
 # is days. Each cell is 500 ft × 500 ft.  The estuary is represented by GHB
 # boundaries in column 10.  Two rivers cross the area from left to right.
 # Recharge is zoned by the use of three Recharge-Package input files
-#
 
-# ### Advgwtidal Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, read settings from environment variables, and define model parameters.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -25,28 +25,27 @@ from flopy.utils.gridintersect import GridIntersect
 from modflow_devtools.misc import timed
 from shapely.geometry import Polygon
 
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-advtidal"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Set default figure properties
-
-figure_size = (4, 4)
-
-# Table Advgwtidal Model Parameters
-
+# Model parameters
 nper = 4  # Number of periods
 nlay = 3  # Number of layers
 ncol = 10  # Number of columns
@@ -66,23 +65,18 @@ sy = 0.2  # Specific yield (unitless)
 # Simulation has 1 steady stress period (1 day)
 # and 3 transient stress periods (10 days each).
 # Each transient stress period has 120 2-hour time steps.
-
 perlen = [1.0, 10.0, 10.0, 10.0]
 nstp = [1, 120, 120, 120]
 tsmult = [1.0, 1.0, 1.0, 1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
-# parse parameter strings into tuples
-
+# Parse parameter strings into tuples
 botm = [float(value) for value in botm_str.split(",")]
 k11 = [float(value) for value in k11_str.split(",")]
 k33 = [float(value) for value in k33_str.split(",")]
 icelltype = [int(value) for value in icelltype_str.split(",")]
 
-# ### Create Advgwtidal Recharge Zones
-#
-# shapely is used to construct recharge zones
-#
+# Recharge zones (constructed with shapely)
 recharge_zone_1 = Polygon(
     shell=[
         (0, 0),
@@ -112,17 +106,18 @@ recharge_zone_3 = Polygon(
 )
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 Advgwtidal model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def get_timeseries(fname, names, interpolation, filename=None):
     tsdata = []
     for row in np.genfromtxt(fname, delimiter=",", comments="#"):
@@ -137,8 +132,8 @@ def get_timeseries(fname, names, interpolation, filename=None):
     return tsdict
 
 
-def build_model():
-    sim_ws = os.path.join(ws, sim_name)
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name,
         sim_ws=sim_ws,
@@ -351,28 +346,27 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 Advgwtidal model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the Advgwtidal model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=False):
-    if not runModel:
-        return
+def run_models(sim, silent=False):
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the Advgwtidal model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (4, 4)
+
+
 def plot_grid(sim):
     with styles.USGSMap():
         gwf = sim.get_model(sim_name)
@@ -442,7 +436,7 @@ def plot_grid(sim):
 
 
 def plot_ts(sim):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
         obsnames = gwf.obs[1].output.obs_names
         obs_list = [
@@ -475,24 +469,20 @@ def plot_results(sim, silent=True):
     plot_ts(sim)
 
 
-# Function that wraps all of the steps for the Advgwtidal model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+# +
+def scenario(silent=True):
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### Advgwtidal Simulation
-#
-# Model grid and simulation results
-
-simulation()
+scenario()
+# -

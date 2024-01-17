@@ -1,11 +1,13 @@
 # ## Two-Dimensional Transport with the UZF and UZT packages active.
 #
-# The purpose of this script is to test transport in the unsaturated zone
-# package.  This test originally appeared in Morway et al. (2013).
+# This problem tests transport in the unsaturated zone.
+# This example originally appeared in Morway et al (2013).
 
-# ### MODFLOW 6 2D UZT/GWT Problem Setup
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -17,27 +19,23 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mfnwt"
-exe_name_mt = "mt3dusgs"
+# Example name and base workspace
+workspace = pl.Path("../examples")
 
-# Set figure properties specific to this problem
-
-figure_size = (6, 4)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Set scenario parameters (make sure there is at least one blank line before next item)
-# This entire dictionary is passed to _build_model()_ using the kwargs argument
-
+# This entire dictionary is passed to _build_models()_ using the kwargs argument
 parameters = {
     "ex-gwt-uzt-2d-a": {
         "longitudinal_dispersivity": [0.5],
@@ -120,7 +118,6 @@ parameters = {
 #
 # add parameter_units to add units to the scenario parameter table that is automatically
 # built and used by the .tex input
-
 parameter_units = {
     "longitudinal_dispersivity": "$m$",
     "ratio_horizontal_to_longitudinal_dispersivity": "unitless",
@@ -128,12 +125,10 @@ parameter_units = {
 }
 
 # Model units
-
 length_units = "meter"
 time_units = "days"
 
-# Table MODFLOW 6 GWT MT3DMS Example 8
-
+# Model parameters
 nlay = 20  # Number of layers
 nrow = 1  # Number of rows
 ncol = 40  # Number of columns
@@ -260,13 +255,11 @@ for k in range(nlay):
 nuzfcells = len(packagedata)
 uzf_perioddata = {0: pd0}
 
-
 # Transport related
 mixelm = -1  # -1: TVD; 0: FD
 dmcoef = 0.0  # ft^2/day
 
 # Solver settings
-
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-6, 1e-6, 1.0
 percel = 1.0
@@ -281,13 +274,15 @@ npmax = 20
 dchmoc = 1.0e-3
 nlsink = nplane
 npsink = nph
+# -
 
-# ### Functions to build, write, and run models and plot MT3DMS Example 9
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     sim_name,
     mixelm=0,
     longitudinal_dispersivity=[0.5],
@@ -296,14 +291,14 @@ def build_model(
     silent=False,
 ):
     print(f"Building mf-nwt model...{sim_name}")
-    model_ws = os.path.join(ws, sim_name, "mt3d")
+    model_ws = os.path.join(workspace, sim_name, "mt3d")
     modelname_mf = "uzt-2d-mf"
 
     # Instantiate the MODFLOW model
     mf = flopy.modflow.Modflow(
         modelname=modelname_mf,
         model_ws=model_ws,
-        exe_name=exe_name_mf,
+        exe_name="mfnwt",
         version="mfnwt",
     )
 
@@ -374,7 +369,7 @@ def build_model(
     mt = flopy.mt3d.Mt3dms(
         modelname=modelname_mt,
         model_ws=model_ws,
-        exe_name=exe_name_mt,
+        exe_name="mt3dusgs",
         modflowmodel=mf,
         version="mt3d-usgs",
     )
@@ -455,8 +450,8 @@ def build_model(
 
     name = "uzt-2d-mf6"
     gwfname = "gwf-" + name
-    sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # How much output to write?
     from flopy.mf6.mfbase import VerbosityLevel
@@ -757,20 +752,14 @@ def build_model(
     return mf, mt, sim
 
 
-# Function to write model files
-
-
-def write_model(mf2k5, mt3d, sim, silent=True):
+def write_models(mf2k5, mt3d, sim, silent=True):
     mf2k5.write_input()
     mt3d.write_input()
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully.
-
-
 @timed
-def run_model(mf2k5, mt3d, sim, silent=True):
+def run_models(mf2k5, mt3d, sim, silent=True):
     if not runModel:
         return
     success, buff = mf2k5.run_model(silent=silent, report=True)
@@ -783,7 +772,15 @@ def run_model(mf2k5, mt3d, sim, silent=True):
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 4)
 
 
 def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
@@ -946,26 +943,23 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             fig.savefig(fpth)
 
 
-# ### Function that wraps all of the steps for each MT3DMS Example 10 Problem scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    mf2k5, mt3d, sim = build_model(key, mixelm=mixelm, **parameter_dict)
-    write_model(mf2k5, mt3d, sim, silent=silent)
-    run_model(mf2k5, mt3d, sim, silent=silent)
+    mf2k5, mt3d, sim = build_models(key, mixelm=mixelm, **parameter_dict)
+    write_models(mf2k5, mt3d, sim, silent=silent)
+    run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mf2k5, mt3d, sim, idx)
 
 
-# ### Two-Dimensional Transport in a Diagonal Flow Field
-#
-# Compares the standard finite difference solutions between MT3D & MF 6
 scenario(0, silent=True)
-
 scenario(1, silent=True)
+# -

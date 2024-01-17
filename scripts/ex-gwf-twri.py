@@ -3,12 +3,12 @@
 # This problem is described in McDonald and Harbaugh (1988) and duplicated in
 # Harbaugh and McDonald (1996). This problem is also is distributed with
 # MODFLOW-2005 (Harbaugh, 2005) and MODFLOW 6 (Langevin and others, 2017).
-#
 
-# ### TWRI Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -19,33 +19,31 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (6, 6)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-twri01"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
-
 parameter_units = {"recharge": "$ft/s$"}
 
 # Model units
-
 length_units = "feet"
 time_units = "seconds"
 
-# Table TWRI Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 5  # Number of layers
 ncol = 15  # Number of columns
@@ -63,39 +61,32 @@ k33_str = (
 recharge = 3e-8  # Recharge rate ($ft/s$)
 
 # Static temporal data used by TDIS file
-
 perlen = 8.640e04
 nstp = 1
 tsmult = 1.0
 tdis_ds = ((perlen, nstp, tsmult),)
 
 # parse parameter strings into tuples
-
 botm = [float(value) for value in botm_str.split(",")]
 k11 = [float(value) for value in k11_str.split(",")]
 k33 = [float(value) for value in k33_str.split(",")]
 icelltype = [int(value) for value in icelltype_str.split(",")]
 
-# ### Create TWRI Model Boundary Conditions
-#
+# Create TWRI Model Boundary Conditions
 # Constant head cells are specified on the west edge of the model
 # in model layers 1 and 2 `(k, i, j)` = $(1 \rightarrow 2, 1 \rightarrow 15, 1)$
-#
-
 chd_spd = []
 for k in (0, 2):
     chd_spd += [[k, i, 0, 0.0] for i in range(nrow)]
 chd_spd = {0: chd_spd}
 
 # Constant head cells for MODFLOW-2005 model
-
 chd_spd0 = []
 for k in (0, 1):
     chd_spd0 += [[k, i, 0, 0.0, 0.0] for i in range(nrow)]
 chd_spd0 = {0: chd_spd0}
 
 # Well boundary conditions
-
 wel_spd = {
     0: [
         [4, 4, 10, -5.0],
@@ -117,7 +108,6 @@ wel_spd = {
 }
 
 # Well boundary conditions for MODFLOW-2005 model
-
 wel_spd0 = []
 layer_map = {0: 0, 2: 1, 4: 2}
 for k, i, j, q in wel_spd[0]:
@@ -125,9 +115,7 @@ for k, i, j, q in wel_spd[0]:
     wel_spd0.append([kk, i, j, q])
 wel_spd0 = {0: wel_spd0}
 
-
 # Drain boundary conditions
-
 drn_spd = {
     0: [
         [0, 7, 1, 0.0, 1.0e0],
@@ -143,19 +131,20 @@ drn_spd = {
 }
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 TWRI model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -203,11 +192,8 @@ def build_model():
     return sim
 
 
-# MODFLOW-2005 model object (mf) is returned if building the model
-
-
 def build_mf5model():
-    sim_ws = os.path.join(ws, sim_name, "mf2005")
+    sim_ws = os.path.join(workspace, sim_name, "mf2005")
     mf = flopy.modflow.Modflow(
         modelname=sim_name, model_ws=sim_ws, exe_name="mf2005dbl"
     )
@@ -250,21 +236,13 @@ def build_mf5model():
     return mf
 
 
-# Function to write MODFLOW 6 TWRI model files
-
-
-def write_model(sim, mf, silent=True):
+def write_models(sim, mf, silent=True):
     sim.write_simulation(silent=silent)
     mf.write_input()
 
 
-# Function to run the TWRI model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, mf, silent=True):
+def run_models(sim, mf, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
@@ -275,13 +253,20 @@ def run_model(sim, mf, silent=True):
         assert success, buff
 
 
-# Function to plot the TWRI model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 6)
 
 
 def plot_results(sim, mf, silent=True):
     with styles.USGSMap():
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
 
         # create MODFLOW 6 head object
@@ -447,29 +432,26 @@ def plot_results(sim, mf, silent=True):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the TWRI model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
+# +
+def scenario(silent=True):
+    sim = build_models()
     mf = build_mf5model()
-    write_model(sim, mf, silent=silent)
-    run_model(sim, mf, silent=silent)
+    write_models(sim, mf, silent=silent)
+    run_models(sim, mf, silent=silent)
     plot_results(sim, mf, silent=silent)
 
 
-# ### TWRI Simulation
-#
 # Simulated heads in model the unconfined, middle, and lower aquifers (model layers
 # 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
 # model are also shown. The location of drain (green) and well (gray) boundary
 # conditions, normalized specific discharge, and head contours (25 ft contour
 # intervals) are also shown.
-
-simulation()
+scenario()
+# -

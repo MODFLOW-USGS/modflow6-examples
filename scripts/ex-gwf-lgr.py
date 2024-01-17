@@ -2,9 +2,11 @@
 #
 # This script reproduces the model in Mehl and Hill (2013).
 
-# ### MODFLOW 6 LGR Problem Setup
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -17,32 +19,27 @@ from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (7, 5)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwf-lgr"
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table
-
+# Model parameters
 nlayp = 3  # Number of layers in parent model
 nrowp = 15  # Number of rows in parent model
 ncolp = 15  # Number of columns in parent model
@@ -57,7 +54,6 @@ k33 = 1.0  # Vertical hydraulic conductivity ($m/d$)
 
 # Additional model input preparation
 # Time related variables
-
 delrp = 1544.1 / ncolp
 delcp = 1029.4 / nrowp
 numdays = 1
@@ -67,7 +63,6 @@ nstp = [1] * numdays
 tsmult = [1.0] * numdays
 
 # Further parent model grid discretization
-
 x = [round(x, 3) for x in np.linspace(50.0, 45.0, ncolp)]
 topp = np.repeat(x, nrowp).reshape((15, 15)).T
 z = [round(z, 3) for z in np.linspace(50.0, 0.0, nlayp + 1)]
@@ -77,13 +72,11 @@ idomainp[0:2, 6:11, 2:8] = 0  # Zero out where the child grid will reside
 icelltype = [1, 0, 0]  # Water table resides in layer 1
 
 # Solver settings
-
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-7, 1e-6, 0.97
 
 # Prepping input for SFR package for parent model
 # Define the connections
-
 connsp = [
     (0, -1),
     (1, 0, -2),
@@ -106,7 +99,6 @@ connsp = [
 ]
 
 # Package_data information
-
 sfrcells = [
     (0, 0, 1),
     (0, 1, 1),
@@ -206,7 +198,6 @@ sfrspd = {0: [[0, "INFLOW", 40.0]]}
 # stream segment with all linear connections. Cheating a bit by the
 # knowledge that there are 89 stream reaches in the child model.  This
 # is known from the original model
-
 connsc = []
 for i in np.arange(89):
     if i == 0:
@@ -217,7 +208,6 @@ for i in np.arange(89):
         connsc.append((i, i - 1, -1 * (i + 1)))
 
 # Package_data information
-
 sfrcellsc = [
     (0, 0, 3),
     (0, 1, 3),
@@ -520,23 +510,24 @@ for i in np.arange(len(rlenc)):
     )
 
 sfrspdc = {0: [[0, "INFLOW", 0.0]]}
+# -
 
-
-# ### Function to build models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name, silent=False):
+# +
+def build_models(sim_name, silent=False):
     # Instantiate the MODFLOW 6 simulation
     name = "lgr"
     gwfname = "gwf-" + name
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name,
         version="mf6",
         sim_ws=sim_ws,
-        exe_name=mf6exe,
+        exe_name="mf6",
         continue_=True,
     )
 
@@ -836,25 +827,27 @@ def build_model(sim_name, silent=False):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (7, 5)
 
 
 def plot_results(mf6, idx):
@@ -1080,24 +1073,21 @@ def plot_results(mf6, idx):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(example_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 
-# ### Mehl and Hill (2013) results
-#
 # Two-dimensional transport in a uniform flow field
-
 scenario(0)
+# -

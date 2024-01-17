@@ -1,13 +1,18 @@
 # ## Stallman Problem
 #
-# Periodic heat boundary condition at surface
-# Transient heat transfer problem in vertical
+# Stallman 1965 presents an analytical solution for transient heat flow
+# in the subsurface in response to a sinusoidally varying temperature
+# boundary imposed at the land surface, involving heat convection in
+# response to downward groundwater flow. The problem also includes
+# heat conduction through the fully saturated aquifer material. The
+# analytical solution quantifies the temperature variation as a function
+# of depth and time for this one-dimensional transient problem.
+
+# ### Initial setup
 #
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-# ### Stallman Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -20,30 +25,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 8)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
+# Example namd and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-stallman"
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 600  # Number of periods
 nstp = 6  # Number of time steps
 perlen = 525600  # Simulation time length ($s$)
@@ -100,8 +102,14 @@ cnc_mf6 = cnc_data
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+# -
+
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 # Analytical solution for Stallman analysis (Stallman 1965, JGR)
 def Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay):
     zstallman = np.zeros((nlay, 2))
@@ -120,16 +128,10 @@ def Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay):
     return zstallman
 
 
-# ### Functions to build, write, run, and plot models
-#
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
-
-
-def build_model(sim_folder):
+def build_models(sim_folder):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -244,32 +246,33 @@ def build_model(sim_folder):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 8)
 
 
 def plot_conc(sim, idx):
     with styles.USGSMap() as fs:
         sim_name = example_name
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model("flow")
         gwt = sim.get_model("trans")
 
@@ -330,12 +333,9 @@ def plot_conc(sim, idx):
             fig.savefig(fpth)
 
 
-# Function to make animation
-
-
 def make_animated_gif(sim, idx):
     sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     gwf = sim.get_model("flow")
     gwt = sim.get_model("trans")
 
@@ -399,24 +399,20 @@ def plot_results(sim, idx):
         make_animated_gif(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(example_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 
-# ### Salt Lake Problem
-
-# Plot showing MODFLOW 6 results
-
 scenario(0)
+# -

@@ -1,14 +1,17 @@
-# ## Unsaturated Zone Flow (UZF) Package problem 2
+# ## Unsaturated Zone Flow (UZF) Package example 2
 #
 # This is the unsaturated zone package example problem (test 2) from the
 # Unsaturated Zone Flow Package documentation (Niswonger and others, 2006).
 # All reaches have been converted to rectangular reaches.
-#
+
 
 # ### UZF Package Problem 2 Setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -18,33 +21,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.latex import (build_table, exp_format, float_format,
-                                    int_format)
+from modflow_devtools.latex import build_table, exp_format, float_format, int_format
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (6.3, 5.6)
-masked_values = (0, 1e30, -1e30)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-drn-p01"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Configuration
 
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "seconds"
 
-# Model parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-drn-p01a": {
         "uzf_gwseep": None,
@@ -54,9 +55,7 @@ parameters = {
     },
 }
 
-
-# Table UZF Package Problem 2 Model Parameters
-
+# Model parameters
 nper = 12  # Number of periods
 nlay = 1  # Number of layers
 nrow = 15  # Number of rows
@@ -80,7 +79,6 @@ ext_depth = 15.0  # Evapotranspiration extinction depth ($ft$)
 surf_dep = 1.0  # Surface depression depth ($ft$)
 
 # Static temporal data used by TDIS file
-
 tdis_ds = [(2628000.0, 1, 1.0)]
 for n in range(nper - 1):
     tdis_ds.append((2628000.0, 15, 1.1))
@@ -91,7 +89,6 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and uzf/mvr arrays
-
 fpth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-sfr-p01/idomain.txt",
     known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
@@ -125,11 +122,9 @@ fpth = pooch.retrieve(
 routing_map = np.loadtxt(fpth, dtype=int)
 
 # convert routing map to zero-based reach numbers
-
 routing_map -= 1
 
 # Create hydraulic conductivity and specific yield
-
 k11 = np.zeros(shape2d, dtype=float)
 k11[idomain == 1] = k11_stream
 k11[idomain == 2] = k11_basin
@@ -138,7 +133,6 @@ sy[idomain == 1] = sy_stream
 sy[idomain == 2] = sy_basin
 
 # Infiltration rates
-
 infiltration = (
     1.0e-9,
     8.0e-9,
@@ -155,7 +149,6 @@ infiltration = (
 )
 
 # Pumping rates
-
 well_rates = (
     -2.0,
     -2.0,
@@ -171,19 +164,13 @@ well_rates = (
     0.0,
 )
 
-
-# ### Create UZF Package Problem 2 Model Boundary Conditions
-#
 # General head boundary conditions
-#
-
 ghb_spd = [
     [0, 12, 0, 988.0, 0.038],
     [0, 13, 8, 1045.0, 0.038],
 ]
 
 # Well boundary conditions
-
 wel_spd = {}
 for n in range(nper):
     q = well_rates[n]
@@ -204,7 +191,6 @@ for n in range(nper):
         ]
 
 # Drain boundary
-
 drn_spd = []
 for i in range(nrow):
     for j in range(ncol):
@@ -222,7 +208,6 @@ for i in range(nrow):
         drn_spd.append(drncell)
 
 # UZF package
-
 uzf_pakdata = []
 iuzf = 0
 for i in range(nrow):
@@ -270,7 +255,6 @@ for n in range(nper):
     uzf_spd[n] = spd
 
 # SFR Package
-
 sfr_pakdata = [
     [
         0,
@@ -909,8 +893,8 @@ sfr_spd = [
     [13, "stage", 1063.619],
     [14, "stage", 1061.581],
 ]
-# MVR package
 
+# MVR package
 mvr_paks = [
     ["SFR-1"],
     ["UZF-1"],
@@ -954,20 +938,20 @@ for i in range(nrow):
 
 
 # Solver parameters
-
 nouter = 100
 ninner = 50
 hclose = 1e-6
 rclose = 1e-6
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 UZF Package Problem 2 model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name, uzf_gwseep=None):
-    sim_ws = os.path.join(ws, name)
+# +
+def build_models(name, uzf_gwseep=None):
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -1091,27 +1075,28 @@ def build_model(name, uzf_gwseep=None):
     return sim
 
 
-# Function to write MODFLOW 6 UZF Package Problem 2 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the UZF Package Problem 2 model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# plot vertical bars for stress periods
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.3, 5.6)
+masked_values = (0, 1e30, -1e30)
 
 
 def plot_stress_periods(ax):
@@ -1135,20 +1120,17 @@ def plot_stress_periods(ax):
             ec="none",
         )
         x0 = x1
-    return
-
-
-# plot the groundwater seepage results
 
 
 def plot_gwseep_results(silent=True):
+    """Plot groundwater seepage results"""
     with styles.USGSPlot() as fs:
         # load the observations
         name = list(parameters.keys())[0]
-        fpth = os.path.join(ws, name, f"{sim_name}.surfrate.obs.csv")
+        fpth = os.path.join(workspace, name, f"{sim_name}.surfrate.obs.csv")
         drn = flopy.utils.Mf6Obs(fpth).data
         name = list(parameters.keys())[1]
-        fpth = os.path.join(ws, name, f"{sim_name}.surfrate.obs.csv")
+        fpth = os.path.join(workspace, name, f"{sim_name}.surfrate.obs.csv")
         uzf = flopy.utils.Mf6Obs(fpth).data
 
         time = drn["totim"] / 86400.0
@@ -1279,38 +1261,33 @@ def export_tables(silent=True):
         build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
 
-# Function to plot the UZF Package Problem 2 model results.
-
-
 def plot_results(silent=True):
     plot_gwseep_results(silent=silent)
     export_tables(silent=silent)
 
 
-# Function that wraps all of the steps for the UZF Package Problem 2 model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
-
-# ### UZF Package Problem 2 Simulation
 
 # drain used to simulate discharge to the land surface
-simulation(0)
+scenario(0)
 
 # uzf used to simulate discharge to the land surface
-simulation(1)
+scenario(1)
 
 # plot the results
 plot_results()
+# -

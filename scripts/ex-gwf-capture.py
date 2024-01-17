@@ -8,10 +8,13 @@
 # package model.
 #
 
-# ### Capture Fraction Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 import shutil
@@ -27,28 +30,27 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-capture"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "seconds"
 
-# Figure properties
-
-figure_size = (6, 6)
-
 # Load the bottom, hydraulic conductivity, and idomain arrays
-
 pth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
     known_hash="md5:201758a5b7febb0390b8b52e634be27f",
@@ -65,9 +67,7 @@ pth = pooch.retrieve(
 )
 idomain = np.loadtxt(pth, dtype=np.int32)
 
-
-# Table Capture Fraction Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 40  # Number of rows
@@ -80,15 +80,10 @@ strt = 45.0  # Starting head ($m$)
 recharge = 1.60000000e-09  # Recharge rate ($m/s$)
 cf_q = -1e-3  # Perturbation flux ($m/s$)
 
-# Static temporal data used by TDIS file
-
+# Temporal discretization
 tdis_ds = ((1.0, 1.0, 1),)
 
-
-# ### Create Capture Fraction Model Boundary Conditions
-
 # Well boundary conditions
-
 wel_spd = {
     0: [
         [0, 8, 15, -0.00820000],
@@ -101,7 +96,6 @@ wel_spd = {
 }
 
 # Constant head boundary conditions
-
 chd_spd = {
     0: [
         [0, 39, 5, 16.90000000],
@@ -118,7 +112,6 @@ chd_spd = {
 }
 
 # River boundary conditions
-
 rbot = np.linspace(20.0, 10.25, num=nrow)
 rstage = np.linspace(20.1, 11.25, num=nrow)
 riv_spd = []
@@ -127,26 +120,25 @@ for idx, (s, b) in enumerate(zip(rstage, rbot)):
 riv_spd = {0: riv_spd}
 
 # Solver parameters
-
 nouter = 100
 ninner = 25
 hclose = 1e-9
 rclose = 1e-3
 
-
 # Create mapping array for the capture zone analysis
 imap = idomain.copy()
 for _k, i, j, _h in chd_spd[0]:
     imap[i, j] = 0
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Capture Zone model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name,
         sim_ws=sim_ws,
@@ -205,14 +197,8 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 Capture Fraction model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
-
-
-# Function to solve the system of equations to convergence
 
 
 def capture_fraction_iteration(mobj, q, inode=None):
@@ -228,9 +214,6 @@ def capture_fraction_iteration(mobj, q, inode=None):
     qriv = get_streamflow(mobj)
     mobj.finalize()
     return qriv
-
-
-# Function to update the Capture Fraction Package
 
 
 def update_wel_pak(mobj, inode, q):
@@ -251,21 +234,13 @@ def update_wel_pak(mobj, inode, q):
     mobj.set_value(tag, bound)
 
 
-# Function to get the streamflow from memory
-
-
 def get_streamflow(mobj):
     tag = mobj.get_var_address("SIMVALS", sim_name, "RIV-1")
     return mobj.get_value(tag).sum()
 
 
-# Function to run the Capture Fraction model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model():
+def run_models():
     if not runModel:
         return
 
@@ -275,7 +250,7 @@ def run_model():
     if sys.platform.lower() == "darwin":
         soext = ".dylib"
     libmf6_path = pl.Path(shutil.which("mf6")).parent / f"libmf6{soext}"
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
     qbase = capture_fraction_iteration(mf6, cf_q)
 
@@ -304,8 +279,15 @@ def run_model():
     np.savez_compressed(fpth, capture=capture)
 
 
-# Function to plot the Capture Fraction model results with heads in each layer.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 6)
 
 
 def plot_results(silent=True):
@@ -314,8 +296,8 @@ def plot_results(silent=True):
     else:
         verbosity_level = 1
 
-    with styles.USGSMap() as fs:
-        sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSMap():
+        sim_ws = os.path.join(workspace, sim_name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -412,28 +394,22 @@ def plot_results(silent=True):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the Streamflow Capture model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model, and
-# 3. run_model
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model()
+# +
+def scenario(silent=True):
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models()
 
 
-# ### Capture Zone Simulation
-#
-#  Capture zone examples using the MODFLOW API with the Freyberg (1988) model
+scenario()
 
-simulation()
-
-# Simulated streamflow capture fraction map for the Freyberg (1988) groundwater
-# flow model.
-
+# Simulated streamflow capture fraction map for the Freyberg (1988) groundwater flow model.
 plot_results()
+# -

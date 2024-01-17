@@ -29,8 +29,9 @@ example_name = "ex-gwt-mt3dsupp631"
 
 # Configuration
 
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Model units
@@ -38,7 +39,7 @@ createGif = str(environ.get("GIF", True)).lower() == "true"
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
+# Model parameters
 
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
@@ -228,7 +229,7 @@ def build_mt3dms(sim_folder, modflowmodel):
     return mt
 
 
-def build_model(sim_name):
+def build_models(sim_name):
     sim_mf6gwf = build_mf6gwf(sim_name)
     sim_mf6gwt = build_mf6gwt(sim_name)
     sim_mf2005 = build_mf2005(sim_name)
@@ -239,7 +240,7 @@ def build_model(sim_name):
 # Function to write model files
 
 
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
@@ -252,7 +253,7 @@ def write_model(sims, silent=True):
 
 
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     if not runModel:
         return
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -320,9 +321,9 @@ def plot_results(sims, idx):
 
 
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(example_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 

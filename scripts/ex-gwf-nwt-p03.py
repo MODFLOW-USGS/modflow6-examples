@@ -1,11 +1,16 @@
 # ## MODFLOW-NWT Problem 3 example
 #
-#
+# This example is based on problem 3 in Niswonder et al 2011, which used
+# the Newton-Raphson formulation to simulate water levels in a rectangular,
+# unconfined aquifer with a complex bottom elevation and receiving areally
+# distributed recharge. This problem provides a good example of the utility
+# of Newton-Raphson for solving problems with wetting and drying of cells.
 
-# ### MODFLOW-NWT Problem 3 Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -14,33 +19,31 @@ import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
-import pooch
 
-# Set figure properties
-
-figure_size = (6.3, 5.6)
-masked_values = (1e30, -1e30)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-nwt-p03"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-nwt-p03a": {
         "recharge": "high",
@@ -50,8 +53,7 @@ parameters = {
     },
 }
 
-# Table
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 80  # Number of rows
@@ -63,7 +65,6 @@ k11 = 1.0  # Horizontal hydraulic conductivity ($m/day$)
 H1 = 24.0  # Constant head water level ($m$)
 
 # plotting ranges and contour levels
-
 vmin, vmax = 20, 60
 smin, smax = 0, 25
 bmin, bmax = 0, 90
@@ -75,18 +76,15 @@ scolor = "black"
 bcolor = "black"
 
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((365.0, 1, 1.0),)
 
 # Calculate extents, and shape3d
-
 extents = (0, delr * ncol, 0, delc * nrow)
 shape3d = (nlay, nrow, ncol)
 ticklabels = np.arange(0, 10000, 2000)
 
 # Load the bottom
-
 fpth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
     known_hash="md5:0fd4b16db652808c7e36a5a2a25da0a2",
@@ -94,11 +92,9 @@ fpth = pooch.retrieve(
 botm = np.loadtxt(fpth).reshape(shape3d)
 
 # Set the starting heads
-
 strt = botm + 20.0
 
 # Load the high recharge rate
-
 fpth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge_high.txt",
     known_hash="md5:8d8f8bb3cec22e7a0cbe6aba95da8f35",
@@ -106,7 +102,6 @@ fpth = pooch.retrieve(
 rch_high = np.loadtxt(fpth)
 
 # Generate the low recharge rate from the high recharge rate
-
 rch_low = rch_high.copy() * 1e-3
 
 # Constant head boundary conditions
@@ -120,18 +115,19 @@ chd_spd = [
 ]
 
 # Solver parameters
-
 nouter = 500
 ninner = 500
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     recharge="high",
 ):
@@ -188,26 +184,28 @@ def build_model(
     return sim
 
 
-# Function to write MODFLOW-NWT Problem 3 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully.
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to create a figure
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.3, 5.6)
+masked_values = (1e30, -1e30)
 
 
 def create_figure(nsubs=1, size=(4, 4)):
@@ -248,9 +246,6 @@ def create_figure(nsubs=1, size=(4, 4)):
     ax.patch.set_alpha(0.0)
 
     return fig, axes
-
-
-# Function to plot the grid
 
 
 def plot_grid(gwf, silent=True):
@@ -317,7 +312,7 @@ def plot_grid(gwf, silent=True):
 
 
 def plot_recharge(gwf, silent=True):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig, axes = create_figure(nsubs=2, size=figure_size)
         ax = axes[0]
         mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
@@ -402,12 +397,8 @@ def plot_recharge(gwf, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the model results.
-
-
 def plot_results(idx, sim, silent=True):
     with styles.USGSMap():
-        name = list(parameters.keys())[idx]
         gwf = sim.get_model(sim_name)
 
         bot = gwf.dis.botm.array
@@ -536,30 +527,26 @@ def plot_results(idx, sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for MODFLOW-NWT Problem 3 model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### MODFLOW-NWT Problem 3 Simulation
-#
 # Simulated heads in the MODFLOW-NWT Problem 3 model with high recharge.
-
-simulation(0)
+scenario(0)
 
 # Simulated heads in the MODFLOW-NWT Problem 3 model with low recharge.
-
-simulation(1)
+scenario(1)
+# -

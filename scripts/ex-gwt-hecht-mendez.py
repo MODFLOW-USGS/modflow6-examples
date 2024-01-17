@@ -1,4 +1,4 @@
-# ## Three-Dimensional Heat Transport Study
+# ## Three-dimensional heat transport example
 #
 # The purpose of this script is to (1) recreate the 3D heat transport example
 # first published in Groundwater in 2010 titled, "Evaluating MT3DMS for Heat
@@ -20,9 +20,11 @@
 # to the analytical solution can be improved by refining the temporal
 # resolution of the simulation.
 
-# ### MODFLOW 6 GWT MT3DMS Heat Transport Problem Setup
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -34,33 +36,28 @@ from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 from scipy.special import erf, erfc
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dusgs"
-
-# Set figure properties specific to this problem
-
-figure_size = (5.5, 2.75)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 name = "hecht-mendez"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "seconds"
 
 # Set scenario parameters (make sure there is at least one blank line before next item)
-# This entire dictionary is passed to _build_model()_ using the kwargs argument
-
+# This entire dictionary is passed to _build_models()_ using the kwargs argument
 parameters = {
     "ex-gwt-hecht-mendez-a": {
         "peclet": 0.0,
@@ -83,10 +80,8 @@ parameters = {
 }
 
 # Scenario parameter units
-#
 # add parameter_units to add units to the scenario parameter table that is automatically
 # built and used by the .tex input
-
 parameter_units = {
     "peclet": "$unitless$",
     "gradient": "$m/m$",
@@ -94,8 +89,7 @@ parameter_units = {
     "constantheadright": "$m$",
 }
 
-# Table Flow and transport parameters used in Hecht-Mendez example
-
+# Model parameters
 nlay = 13  # Number of layers
 nrow = 83  # Number of rows
 ncol = 247  # Number of columns
@@ -208,13 +202,16 @@ sp1 = 0.176  # cm^3/g  (Kd: "Distribution coefficient")
 cobs = [(7 - 1, 42 - 1, k - 1) for k in range(22, 224, 2)]
 
 # Solver settings
-
 nouter, ninner = 100, 300
 hclose, rclose, relax = 5e-5, 1e-8, 1.0
+# -
 
-# Hecht-Mendez analytical solution
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def hechtMendez_SS_3d(
     x_pos, To, Y3d, Z3d, ath, atv, Fplanar, va, n, rhow, cw, thermdiff
 ):
@@ -363,11 +360,6 @@ def hechtMendez3d(x_pos, t, Y, Z, al, ath, atv, thermdiff, va, n, R, Fplanar, cw
     return sln
 
 
-# ### Functions to build, write, and run models published in Hecht-Mendez 2010
-#
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
-
-
 def build_mf2k5_flow_model(
     sim_name,
     peclet=0.0,
@@ -377,7 +369,7 @@ def build_mf2k5_flow_model(
     silent=False,
 ):
     print(f"Building mf2005 model...{sim_name}")
-    mt3d_ws = os.path.join(ws, sim_name, "mt3d")
+    mt3d_ws = os.path.join(workspace, sim_name, "mt3d")
     modelname_mf = "hecht-mendez"
 
     # Instantiate the MODFLOW model
@@ -436,9 +428,6 @@ def build_mf2k5_flow_model(
     return mf
 
 
-# MODFLOW 6
-
-
 def build_mf6_flow_model(
     sim_name,
     peclet=0.0,
@@ -449,7 +438,7 @@ def build_mf6_flow_model(
 ):
     print(f"Building mf6gwf model...{sim_name}")
     gwfname = "gwf-" + name
-    sim_ws = os.path.join(ws, sim_name, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_name, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=gwfname, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 time discretization
@@ -573,7 +562,7 @@ def build_mt3d_transport_model(
     print(f"Building mt3dms model...{sim_name}")
 
     modelname_mt = "hecht-mendez_mt"
-    mt3d_ws = os.path.join(ws, sim_name, "mt3d")
+    mt3d_ws = os.path.join(workspace, sim_name, "mt3d")
     mt = flopy.mt3d.Mt3dms(
         modelname=modelname_mt,
         model_ws=mt3d_ws,
@@ -638,7 +627,7 @@ def build_mf6_transport_model(
     # Instantiating MODFLOW 6 groundwater transport package
     print(f"Building mf6gwt model...{sim_name}")
     gwtname = "gwt-" + name
-    sim_ws = os.path.join(ws, sim_name, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_name, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=gwtname, sim_ws=sim_ws, exe_name="mf6")
 
     # MF6 time discretization is a bit different than corresponding flow simulation
@@ -778,9 +767,6 @@ def build_mf6_transport_model(
     return sim
 
 
-# Function to write model files
-
-
 def write_mf2k5_models(mf2k5, mt3d, silent=True):
     mf2k5.write_input()
     mt3d.write_input()
@@ -791,11 +777,8 @@ def write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=True):
     sim_mf6gwt.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully.
-
-
 @timed
-def run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=None, mt3d=None, silent=True):
+def run_models(sim_mf6gwf, sim_mf6gwt, mf2k5=None, mt3d=None, silent=True):
     if mf2k5 is not None:
         success, buff = mf2k5.run_model(silent=silent)
 
@@ -807,7 +790,15 @@ def run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=None, mt3d=None, silent=True):
     assert success, buff
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5.5, 2.75)
 
 
 def plot_results(
@@ -968,14 +959,14 @@ def plot_results(
             fig.savefig(fpth)
 
 
-# ### Function that wraps all of the steps for each MT3DMS Example 10 Problem scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, runMT3D=False, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
@@ -988,7 +979,7 @@ def scenario(idx, runMT3D=False, silent=True):
         write_mf2k5_models(mf2k5, mt3d, silent=silent)
     write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=silent)
 
-    run_model(sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent)
+    run_models(sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent)
     plot_results(
         sim_mf6gwf,
         sim_mf6gwt,
@@ -1013,3 +1004,4 @@ scenario(1, silent=False)
 # Compares the standard finite difference solutions between MT3D MF 6
 # when the Peclet number is 0
 scenario(2, silent=False)
+# -

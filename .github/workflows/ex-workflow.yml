@@ -19,15 +19,6 @@ jobs:
   zip_files:
     name: zip input files
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    env:
-      script-directory: scripts
-      etc-directory: etc
-      test-directory: autotest
-    defaults:
-      run:
-        shell: bash
 
     steps:
       - name: Checkout MODFLOW6 examples repo
@@ -39,13 +30,13 @@ jobs:
           python-version: 3.9
 
       - name: Install Python packages
+        working-directory: etc
         run: |
           python --version
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
-        working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
@@ -58,9 +49,10 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Create/run notebooks
-        run: pytest -v -n=auto --durations=0 test_notebooks.py --run --plot --save
-        working-directory: ${{env.test-directory}}
+      - name: Create model
+        working-directory: autotest
+        # run the scripts via pytest without running the models, just build input files
+        run: pytest -v -n=auto --durations=0 test_scripts.py
 
       - name: zip input files
         run: |
@@ -132,8 +124,9 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Create/run notebooks
-        run: pytest -v -n=auto --durations=0 test_notebooks.py --run --plot --save
+      - name: Create notebooks and model input files
+        # don't run the models though
+        run: pytest -v -n=auto --durations=0 test_notebooks.py
         working-directory: ${{env.test-directory}}
 
       - name: Copy notebooks to RTD directory
@@ -187,8 +180,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: current
-          path: |
-            ./mf6examples.pdf
+          path: mf6examples.pdf
 
 
   # make the release if the "build" job was successful

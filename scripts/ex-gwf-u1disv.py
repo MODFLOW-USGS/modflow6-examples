@@ -6,10 +6,11 @@
 # with the XT3D option of the NPF Package to improve the solution.
 #
 
-# ### USG1DISV Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -21,27 +22,26 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set default figure properties
+# Base workspace
+workspace = pl.Path("../examples")
 
-figure_size = (6, 6)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-u1disv": {
         "xt3d": False,
@@ -51,8 +51,7 @@ parameters = {
     },
 }
 
-# Table USG1DISV Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 top = 0.0  # Top of the model ($m$)
@@ -65,14 +64,12 @@ k11 = 1.0  # Horizontal hydraulic conductivity ($m/d$)
 # Simulation has 1 steady stress period (1 day)
 # and 3 transient stress periods (10 days each).
 # Each transient stress period has 120 2-hour time steps.
-
 perlen = [1.0]
 nstp = [1]
 tsmult = [1.0, 1.0, 1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # create the disv grid
-
 # outer grid
 nlay = 1
 nrow = ncol = 7
@@ -107,19 +104,20 @@ sg2 = flopy.discretization.StructuredGrid(
 gridprops = flopy.utils.cvfdutil.gridlist_to_disv_gridprops([sg1, sg2])
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 USG1DISV model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name, xt3d):
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models(sim_name, xt3d):
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -181,32 +179,31 @@ def build_model(sim_name, xt3d):
     return sim
 
 
-# Function to write MODFLOW 6 USG1DISV model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the FHB model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=False):
+def run_models(sim, silent=False):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the USG1DISV model results.
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 6)
+
+
 def plot_grid(idx, sim):
     with styles.USGSMap() as fs:
         sim_name = list(parameters.keys())[idx]
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=figure_size)
@@ -253,7 +250,7 @@ def plot_grid(idx, sim):
 def plot_head(idx, sim):
     with styles.USGSMap() as fs:
         sim_name = list(parameters.keys())[idx]
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=(7.5, 5))
@@ -308,30 +305,26 @@ def plot_results(idx, sim, silent=True):
     plot_head(idx, sim)
 
 
-# Function that wraps all of the steps for the FHB model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def simulation(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### USG1DISV Simulation
-#
 # Simulated heads in the USG1DISV model without XT3D.
-
 simulation(0)
 
 # Simulated heads in the USG1DISV model with XT3D.
-
 simulation(1)
+# -

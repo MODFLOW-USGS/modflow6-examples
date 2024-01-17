@@ -14,8 +14,13 @@
 #    Oxford. England: Clarendon.
 # The equation is transformed here to use head instead of concentration
 
-# Imports
+# ### Initial setup
+#
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import copy
 import os
 import pathlib as pl
@@ -29,9 +34,23 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Curvilinear grid
+# Example name and base workspace
+sim_name = "ex-gwf-curve-90"
+workspace = pl.Path("../examples")
+
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
+runModel = str(environ.get("RUN", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
+
+# ### Curvilinear grid
+#
+# Define some utilities to construct a curvilinear grid.
 
 
+# +
 class DisvPropertyContainer:
 
     """
@@ -2156,69 +2175,48 @@ def analytical_model(r1, h1, r2, h2, r):
     return num / den
 
 
-# Set default figure properties
+# -
 
-figure_size_grid = (6, 6)
-figure_size_head = (7, 6)
-figure_size_obsv = (6, 6)
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
-# Base simulation and model name and workspace
-
-sim_name = "ex-gwf-curve-90"
-ws = pl.Path("../examples")
-
-# Configuration
-
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
-
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Table Model Parameters
-
+# Model parameters
 _ = "Steady-State"  # Simulation Type
 nper = 1  # Number of periods
 _ = 1  # Number of time steps
-
 nlay = 1  # Number of layers
 nradial = 16  # Number of radial direction cells (radial bands)
 ncol = 18  # Number of columns in radial band (ncol)
-
 _ = "0"  # Degree angle of column 1 boundary
 _ = "90"  # Degree angle of column ncol boundary
 _ = "5"  # Degree angle width of each column
-
 r_inner = 4  # Model inner radius ($ft$)
 r_outer = 20  # Model outer radius ($ft$)
 r_width = 1  # Model radial band width ($ft$)
-
 surface_elevation = 10.0  # Top of the model ($ft$)
 model_base = 0.0  # Base of the model ($ft$)
-
 Tran = 0.19  # Horizontal transmissivity ($ft^2/day$)
 k11 = 0.019  # Horizontal hydraulic conductivity ($ft/day$)
-
 bc0 = 10  # Inner Constant Head Boundary ($ft$)
 _ = "3.334"  # Outer Constant Head Boundary ($ft$)
 
 # Input specified in table as text
 bc1 = bc0 / 3
-
 angle_start = 0
 angle_stop = 90
 angle_step = 5
 
 # Radius for each radial band.
 #   First value is inner radius, the remaining are outer radii
-
 radii = np.arange(r_inner, r_outer + r_width, r_width)
 
 # Get the curvilinear model properties and vertices
-
 curvlin = DisvCurvilinearBuilder(
     nlay,
     radii,
@@ -2233,7 +2231,6 @@ curvlin = DisvCurvilinearBuilder(
 # Constant head boundary condition
 # Constant head is located along the innermost radial band (rad = 0)
 # and outermost radial band (rad = nradial-1)
-
 chd_inner = []
 chd_outer = []
 for lay in range(nlay):
@@ -2244,29 +2241,27 @@ for lay in range(nlay):
         chd_outer.append([(lay, node), bc1])
 
 chd_inner = {sp: chd_inner for sp in range(nper)}
-
 chd_outer = {sp: chd_outer for sp in range(nper)}
 
 # Static temporal data used by TDIS file
 # Simulation is steady state so setup only a one day stress period.
-
 tdis_ds = ((1.0, 1, 1),)
 
 # Solver parameters
-
 nouter = 500
 ninner = 300
 hclose = 1e-4
 rclose = 1e-4
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Curvilinear Model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name):
-    sim_ws = os.path.join(ws, name)
+# +
+def build_models(name):
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -2329,26 +2324,29 @@ def build_model(name):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the curvilinear model.
-# True is returned if the model runs successfully.
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the curvilinear model grid.
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size_grid = (6, 6)
+figure_size_head = (7, 6)
+figure_size_obsv = (6, 6)
 
 
 def plot_grid(sim, verbose=False):
@@ -2395,9 +2393,6 @@ def plot_grid(sim, verbose=False):
         if plotSave:
             fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
-
-
-# Function to plot the curvilinear model results.
 
 
 def plot_head(sim):
@@ -2469,16 +2464,13 @@ def plot_analytical(sim, verbose=False):
             fig.savefig(fpth)
 
 
-# Function to plot the model results.
-
-
 def plot_results(silent=True):
     if silent:
         verbosity_level = 0
     else:
         verbosity_level = 1
 
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
     )
@@ -2490,7 +2482,7 @@ def plot_results(silent=True):
 
 
 def calculate_model_error():
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=0
     )
@@ -2532,29 +2524,28 @@ def check_model_error():
     assert rel_error < 0.001
 
 
-# Function that wraps all of the steps for the curvilinear model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
+# +
+def scenario(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
-    sim = build_model(sim_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(sim_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
 
-# ### Curvilinear Example
+# Run simulation
+scenario()
 
-# MF6 Curvilinear Model
-simulation()
-
-# Solve analytical and plot results with MF6 results
+# Solve analytical solution and plot results with MF6 results
 plot_results()
 
+# Check error
 check_model_error()
+# -

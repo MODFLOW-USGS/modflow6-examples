@@ -1,14 +1,19 @@
-# ## Stream-Lake Interaction with Solute Transport
+# ## Stream-lake interaction with solute transport
 #
-# SFR1 Package Documentation Test Problem 2
+# This problem is based on the stream-aquifer interaction problem
+# described as Test 2 by Prudic et al 2004, which modifies another
+# problem originally described by Merritt et al 2000. The purpose
+# for including this problem is to demonstrate the use of MODFLOW 6
+# to simulate solute transport through a coupled system consisting
+# of an aquifer, streams, and lakes. The example requires accurate
+# simulation of transport within the streams and lakes and also
+# between the surface water features and the underlying aquifer.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Stream-Lake Interaction with Solute Transport Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -21,32 +26,27 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 6)
-
-# Base simulation and model name and workspace
-
+# Example name and base workspace
 example_name = "ex-gwt-prudic2004t2"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 hk = 250.0  # Horizontal hydraulic conductivity ($ft d^{-1}$)
 vk = 125.0  # Vertical hydraulic conductivity ($ft d^{-1}$)
 ss = 0.0  # Storage coefficient (unitless)
@@ -74,7 +74,6 @@ top = 100.0  # Top of the model ($ft$)
 total_time = 9131.0  # Total simulation time ($d$)
 
 # Load Data Arrays
-
 fname = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bot1.dat",
     known_hash="md5:c510defe0eb1ba1fbfab5663ff63cd83",
@@ -92,17 +91,14 @@ fname = pooch.retrieve(
     known_hash="md5:18c90af94c34825a206935b7ddace2f9",
 )
 lakibd = np.loadtxt(fname, dtype=int)
+# -
 
-
-# Other model information
-
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def get_stream_data():
     fname = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/stream.csv",
@@ -176,7 +172,7 @@ def build_mf6gwf(sim_folder):
     global idomain
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_data = [(total_time, 1, 1.0)]
     flopy.mf6.ModflowTdis(
@@ -332,13 +328,10 @@ def build_mf6gwf(sim_folder):
     return sim
 
 
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-
-
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_data = ((total_time, 300, 1.0),)
     flopy.mf6.ModflowTdis(
@@ -492,28 +485,21 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_model(sim_name):
+def build_models(sim_name):
     sims = None
     sim_mf6gwf = build_mf6gwf(sim_name)
     sim_mf6gwt = build_mf6gwt(sim_name)
     return sim_mf6gwf, sim_mf6gwt
 
 
-# Function to write model files
-
-
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     if not runModel:
         return
     sim_mf6gwf, sim_mf6gwt = sims
@@ -523,7 +509,15 @@ def run_model(sims, silent=True):
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 6)
 
 
 def plot_bcmap(ax, gwf, layer=0):
@@ -584,7 +578,7 @@ def plot_gwf_results(sims):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-head.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
@@ -644,7 +638,7 @@ def plot_gwt_results(sims):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
         # create concentration timeseries plot
@@ -693,28 +687,24 @@ def plot_gwt_results(sims):
                 sim_folder = os.path.split(sim_ws)[0]
                 sim_folder = os.path.basename(sim_folder)
                 fname = f"{sim_folder}-cvt.png"
-                fpth = os.path.join(ws, "..", "figures", fname)
+                fpth = os.path.join(workspace, "..", "figures", fname)
                 fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(silent=True):
-    sims = build_model(example_name)
-    write_model(sims, silent=silent)
-    run_model(sims, silent=silent)
+    sims = build_models(example_name)
+    write_models(sims, silent=silent)
+    run_models(sims, silent=silent)
     plot_results(sims)
 
 
-# ### Model
-
-# Model run
-
 scenario()
+# -

@@ -18,10 +18,11 @@
 #   9.  Two-Dimensional Application Example
 #   10. Three-Dimensional Field Case Study
 
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-# ### MODFLOW 6 GWT MT3DMS Example 3 Problem Setup
-
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -33,32 +34,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 4.5)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-mt3dms-p03"
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table
-
+# Model parameters
 nlay = 1  # Number of layers
 nrow = 31  # Number of rows
 ncol = 46  # Number of columns
@@ -75,7 +71,6 @@ al = 10.0  # Longitudinal dispersivity ($m$)
 trpt = 0.3  # Ratio of transverse to longitudinal dispersivity
 
 # Additional model input
-
 perlen = [1, 365.0]
 nper = len(perlen)
 nstp = [2, 730]
@@ -91,7 +86,6 @@ k33 = k11  # Vertical hydraulic conductivity ($m/d$)
 icelltype = 0
 
 # Initial conditions
-
 Lx = (ncol - 1) * delr
 v = 1.0 / 3.0
 prsity = 0.3
@@ -112,9 +106,7 @@ spd = {0: [0, 15, 15, cwell, 2]}  # Well pupming info for MT3DMS
 #              (k,  i,  j),  flow, conc
 spd_mf6 = {0: [[(0, 15, 15), qwell, cwell]]}  # MF6 pumping information
 
-
 # Set solver parameter values (and related)
-
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-6, 1e-6, 1.0
 ttsmult = 1.0
@@ -131,24 +123,24 @@ dchmoc = 1.0e-3  # HMOC
 nlsink = nplane  # HMOC
 npsink = nph  # HMOC
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_rc = []
 tdis_rc.append((perlen, nstp, 1.0))
+# -
 
-
-# ### Functions to build, write, and run models and plot MT3DMS Example 10 Problem results
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name, mixelm=0, silent=False):
-    mt3d_ws = os.path.join(ws, sim_name, "mt3d")
+# +
+def build_models(sim_name, mixelm=0, silent=False):
+    mt3d_ws = os.path.join(workspace, sim_name, "mt3d")
     modelname_mf = "p03-mf"
 
     # Instantiate the MODFLOW model
     mf = flopy.modflow.Modflow(
-        modelname=modelname_mf, model_ws=mt3d_ws, exe_name=exe_name_mf
+        modelname=modelname_mf, model_ws=mt3d_ws, exe_name="mf2005"
     )
 
     # Instantiate discretization package
@@ -189,7 +181,7 @@ def build_model(sim_name, mixelm=0, silent=False):
     mt = flopy.mt3d.Mt3dms(
         modelname=modelname_mt,
         model_ws=mt3d_ws,
-        exe_name=exe_name_mt,
+        exe_name="mt3dms",
         modflowmodel=mf,
     )
 
@@ -232,8 +224,8 @@ def build_model(sim_name, mixelm=0, silent=False):
     # MODFLOW 6
     name = "p03-mf6"
     gwfname = "gwf-" + name
-    sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 time discretization
     tdis_rc = []
@@ -453,20 +445,15 @@ def build_model(sim_name, mixelm=0, silent=False):
     return mf, mt, sim
 
 
-# Function to write model files
-
-
-def write_model(mf2k5, mt3d, sim, silent=True):
+def write_models(mf2k5, mt3d, sim, silent=True):
     mf2k5.write_input()
     mt3d.write_input()
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully.
-
-
 @timed
-def run_model(mf2k5, mt3d, sim, silent=True):
+def run_models(mf2k5, mt3d, sim, silent=True):
+    """Run models and assert successful completion."""
     if not runModel:
         return
     success, buff = mf2k5.run_model(silent=silent, report=True)
@@ -479,7 +466,15 @@ def run_model(mf2k5, mt3d, sim, silent=True):
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 4.5)
 
 
 def plot_results(mt3d, mf6, idx, ax=None):
@@ -542,23 +537,20 @@ def plot_results(mt3d, mf6, idx, ax=None):
             fig.savefig(fpth)
 
 
-# ### Function that wraps all of the steps for each MT3DMS Example 10 Problem scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    mf2k5, mt3d, sim = build_model(example_name)
-    write_model(mf2k5, mt3d, sim, silent=silent)
-    run_model(mf2k5, mt3d, sim, silent=silent)
+    mf2k5, mt3d, sim = build_models(example_name)
+    write_models(mf2k5, mt3d, sim, silent=silent)
+    run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mt3d, sim, idx)
 
 
-# ### Two-Dimensional Transport in a Uniform Flow Field
-#
-# Describe what is plotted here...
-
 scenario(0)
+# -

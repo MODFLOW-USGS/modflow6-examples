@@ -1,15 +1,17 @@
-# ## One-dimensional compaction
+# ## One-dimensional compaction example
 #
 # A one-dimensional MODFLOW 6 model was developed by Sneed (2008) to simulate
 # aquitard drainage, compaction and, land subsidence at the Holly site, located at
 # the Edwards Air Force base, in response to effective stress changes caused by
 # groundwater pumpage in the Antelope Valley in southern California.
-#
 
-# ### Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import datetime
 import os
 import pathlib as pl
@@ -20,28 +22,27 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from flopy.plot.styles import styles
-from modflow_devtools.latex import (build_table, exp_format, float_format,
-                                    int_format)
-from modflow_devtools.misc import timed
 import pooch
+from flopy.plot.styles import styles
+from modflow_devtools.latex import build_table, exp_format, float_format, int_format
+from modflow_devtools.misc import timed
 
-# Set figure properties specific to the problem
-
-figure_size = (6.8, 3.4)
-arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
-
-# Base simulation and model name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-csub-p03"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Load the constant time series
 pth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
@@ -50,7 +51,6 @@ pth = pooch.retrieve(
 csv_head = np.genfromtxt(pth, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file
-
 chd_ts = []
 for idx in range(csv_head.shape[0]):
     chd_ts.append(
@@ -63,16 +63,12 @@ for idx in range(csv_head.shape[0]):
     )
 
 # Simulation starting date and time
-
 dstart = datetime.datetime(1907, 1, 1, 0, 0, 0)
 
 # Create a datetime list for the simulation
-
 date_list = [dstart + datetime.timedelta(days=x) for x in csv_head["time"]]
 
-
 # Scenario parameters
-
 parameters = {
     "ex-gwf-csub-p03a": {
         "head_based": True,
@@ -205,12 +201,10 @@ parameters = {
 }
 
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
 # Model parameters
-
 nper = 353
 nlay = 14
 ncol = 1
@@ -393,8 +387,7 @@ ib_name = (
     "DELAY",
 )
 
-# Static temporal data used by TDIS file
-
+# Temporal discretization
 tdis_ds = []
 for idx in range(82):
     tdis_ds.append((365.25, 12, 1.0))
@@ -402,7 +395,6 @@ for idx in range(82, nper):
     tdis_ds.append((22.0, 22, 1.0))
 
 # Constant head cells
-
 c6 = []
 for k, tag in zip(
     (
@@ -416,68 +408,21 @@ for k, tag in zip(
     c6.append([k, 0, 0, tag])
 
 # Solver parameters
-
 nouter = 200
 ninner = 100
 hclose = 1e-6
 rclose = 1e-3
 linaccel = "cg"
 relax = 0.97
+# -
 
-# Create data for plotting
-
-xticks = (1907, 1917, 1927, 1937, 1947, 1957, 1967, 1977, 1987, 1997, 2007)
-s = (
-    "01-01-1907",
-    "01-01-1917",
-    "01-01-1927",
-    "01-01-1937",
-    "01-01-1947",
-    "01-01-1957",
-    "01-01-1967",
-    "01-01-1977",
-    "01-01-1987",
-    "01-01-1997",
-    "01-01-2007",
-)
-
-df_xticks = [datetime.datetime.strptime(ss, "%m-%d-%Y").date() for ss in s]
-df_xticks1 = [
-    datetime.datetime.strptime(f"{yr:04d}-01-01", "%Y-%m-%d").date()
-    for yr in range(1990, 2007)
-]
-
-pcomp = (
-    "TOTAL",
-    "AQUITARD",
-    "DELAY",
-    "CUNIT",
-    "NODELAY",
-    "SKELETAL",
-)
-clabels = (
-    "Total compaction",
-    "Thick aquitard compaction",
-    "Delay interbed compaction",
-    "Confining unit compaction",
-    "No-delay interbed compaction",
-    "Elastic coarse-grained material compaction",
-)
-llabels = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
-
-zelevs = [top]
-edges = [(0, 0)]
-for z in botm:
-    zelevs.append(z)
-    edges.append((-z, -z))
-
-
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     subdir_name=".",
     head_based=True,
@@ -486,7 +431,7 @@ def build_model(
     ssv=1e-1,
     sse=1e-3,
 ):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     if subdir_name is not None:
         sim_ws = os.path.join(sim_ws, subdir_name)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
@@ -653,27 +598,73 @@ def build_model(
     return sim
 
 
-# Function to write MODFLOW 6 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to make summary tables
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+xticks = (1907, 1917, 1927, 1937, 1947, 1957, 1967, 1977, 1987, 1997, 2007)
+s = (
+    "01-01-1907",
+    "01-01-1917",
+    "01-01-1927",
+    "01-01-1937",
+    "01-01-1947",
+    "01-01-1957",
+    "01-01-1967",
+    "01-01-1977",
+    "01-01-1987",
+    "01-01-1997",
+    "01-01-2007",
+)
+
+df_xticks = [datetime.datetime.strptime(ss, "%m-%d-%Y").date() for ss in s]
+df_xticks1 = [
+    datetime.datetime.strptime(f"{yr:04d}-01-01", "%Y-%m-%d").date()
+    for yr in range(1990, 2007)
+]
+
+pcomp = (
+    "TOTAL",
+    "AQUITARD",
+    "DELAY",
+    "CUNIT",
+    "NODELAY",
+    "SKELETAL",
+)
+clabels = (
+    "Total compaction",
+    "Thick aquitard compaction",
+    "Delay interbed compaction",
+    "Confining unit compaction",
+    "No-delay interbed compaction",
+    "Elastic coarse-grained material compaction",
+)
+llabels = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+
+zelevs = [top]
+edges = [(0, 0)]
+for z in botm:
+    zelevs.append(z)
+    edges.append((-z, -z))
+
+figure_size = (6.8, 3.4)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 
 def export_tables(silent=True):
@@ -781,9 +772,6 @@ def export_tables(silent=True):
         )
 
 
-# Function to get observed data as a pandas dataframe
-
-
 def get_obs_dataframe(file_name, hash):
     fpth = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{file_name}",
@@ -793,9 +781,6 @@ def get_obs_dataframe(file_name, hash):
     df.index = pd.to_datetime(df.index.values)
     df.rename({"mean": "observed"}, inplace=True, axis=1)
     return df
-
-
-# Function to get simulation data as a pandas dataframe
 
 
 def process_sim_csv(
@@ -810,9 +795,6 @@ def process_sim_csv(
     col_list = list(v.columns)
 
     return v, col_list
-
-
-# Function to process compaction data and return a pandas dataframe
 
 
 def get_sim_dataframe(fpth, index_tag="time", origin_str="1908-05-09 00:00:00.000000"):
@@ -839,9 +821,6 @@ def get_sim_dataframe(fpth, index_tag="time", origin_str="1908-05-09 00:00:00.00
     return v
 
 
-# Function to new DataFrame with all columns values interpolated to new_index values
-
-
 def dataframe_interp(df_in, new_index):
     df_out = pd.DataFrame(index=new_index)
     df_out.index.name = df_in.index.name
@@ -850,9 +829,6 @@ def dataframe_interp(df_in, new_index):
         df_out[colname] = np.interp(new_index, df_in.index, col)
 
     return df_out
-
-
-# Function to process compaction data
 
 
 def process_csub_obs(fpth):
@@ -889,9 +865,6 @@ def process_csub_obs(fpth):
             v["TOTAL"] += tdata[key]
 
     return v
-
-
-# Function used for plots
 
 
 def set_label(label, text="text"):
@@ -994,11 +967,8 @@ def constant_heads(ax, annotate=False, fontsize=6, xrange=(0, 1)):
     return
 
 
-# Function to plot the model grid
-
-
 def plot_grid(silent=True):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         # # load the model
         # sim = flopy.mf6.MFSimulation.load(sim_name=name, sim_ws=sim_ws)
         # gwf = sim.get_model(name)
@@ -1120,9 +1090,6 @@ def plot_grid(silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the boundary heads
-
-
 def plot_boundary_heads(silent=True):
     with styles.USGSPlot():
 
@@ -1135,7 +1102,7 @@ def plot_boundary_heads(silent=True):
             return v
 
         name = list(parameters.keys())[0]
-        pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
+        pth = os.path.join(workspace, name, f"{name}.gwf.obs.csv")
         hdata = process_dtw_obs(pth)
 
         pheads = ("HD01", "HD12", "HD14")
@@ -1175,17 +1142,14 @@ def plot_boundary_heads(silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the head and effective stress based results
-
-
 def plot_head_es_comparison(silent=True):
     with styles.USGSPlot() as fs:
         name = list(parameters.keys())[0]
-        pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
+        pth = os.path.join(workspace, name, f"{name}.csub.obs.csv")
         hb = process_csub_obs(pth)
 
         name = list(parameters.keys())[1]
-        pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
+        pth = os.path.join(workspace, name, f"{name}.csub.obs.csv")
         es = process_csub_obs(pth)
 
         ymin = (2.0, 1, 1, 1, 0.1, 0.1)
@@ -1265,13 +1229,13 @@ def plot_head_es_comparison(silent=True):
 def plot_calibration(silent=True):
     with styles.USGSPlot() as fs:
         name = list(parameters.keys())[1]
-        pth = os.path.join(ws, name, f"{name}.csub.obs.csv")
+        pth = os.path.join(workspace, name, f"{name}.csub.obs.csv")
         df_sim = get_sim_dataframe(pth)
         df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
         pth = pooch.retrieve(
             url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
-            known_hash="md5:8177e15feeeedcdd59ee15745e796e59"
+            known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
         )
         df_obs_heads, col_list = process_sim_csv(pth)
 
@@ -1294,7 +1258,9 @@ def plot_calibration(silent=True):
         xca = xc0 + dx / 2
 
         # get observation data
-        df = get_obs_dataframe(file_name="008N010W01Q005S_obs.csv", hash="96dd2d0f0eca8c0293275bf87073547e")
+        df = get_obs_dataframe(
+            file_name="008N010W01Q005S_obs.csv", hash="96dd2d0f0eca8c0293275bf87073547e"
+        )
         ix0 = df.index.get_loc("2006-09-04 00:00:00")
         offset = df_sim["simulated"].values[-1] - df.observed.values[ix0]
         df.observed += offset
@@ -1308,7 +1274,9 @@ def plot_calibration(silent=True):
 
         # -- subplot c -----------------------------------------------------------
         # get observations
-        df_pc = get_obs_dataframe(file_name="008N010W01Q005S_1D.csv", hash="167f83f51692165394442b0eb1fec45e")
+        df_pc = get_obs_dataframe(
+            file_name="008N010W01Q005S_1D.csv", hash="167f83f51692165394442b0eb1fec45e"
+        )
 
         # get index for start of calibration period for subplot c
         ix0 = df_sim.index.get_loc("1992-10-01 12:00:00")
@@ -1537,13 +1505,10 @@ def plot_calibration(silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot vertical head profiles
-
-
 def plot_vertical_head(silent=True):
     with styles.USGSPlot() as fs:
         name = list(parameters.keys())[1]
-        pth = os.path.join(ws, name, f"{name}.gwf.obs.csv")
+        pth = os.path.join(workspace, name, f"{name}.gwf.obs.csv")
         df_heads, col_list = process_sim_csv(
             pth, origin_str="1908-05-09 00:00:00.000000"
         )
@@ -1676,9 +1641,6 @@ def plot_vertical_head(silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the model results.
-
-
 def plot_results(silent=True):
     plot_grid(silent=silent)
     plot_boundary_heads(silent=silent)
@@ -1687,37 +1649,31 @@ def plot_results(silent=True):
     plot_vertical_head()
 
 
-# Function that wraps all of the steps for the model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenarios, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
 
-# ### One-dimensional compaction
-#
-# #### Head based solution
+# Head based solution
+scenario(0)
 
-simulation(0)
+# Effective stress solution
+scenario(1)
 
-# #### Effective stress solution
-
-simulation(1)
-
-# #### Plot results
-
+# Plot results
 plot_results()
 
-# #### Export tables
-
+# Export tables
 export_tables()
+# -

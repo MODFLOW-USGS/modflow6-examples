@@ -1,12 +1,12 @@
-# ## Reilly Multi-Aquifer Well Problem,
+# ## Reilly multi-aquifer well example
 #
-# This is the Multi-Aquifer Well from Reilly and others (1989).
-#
+# This is the multi-aquifer well example from Reilly and others (1989).
 
-# ### Reilly MAW Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -17,30 +17,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (6.3, 4.3)
-masked_values = (0, 1e30, -1e30)
-arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-maw-p03"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-maw-p03a": {
         "simulation": "regional",
@@ -55,16 +52,13 @@ parameters = {
 
 
 # function to calculate the well connection conductance
-
-
 def calc_cond(area, l1, l2, k1, k2):
     c1 = area * k1 / l1
     c2 = area * k2 / l2
     return c1 * c2 / (c1 + c2)
 
 
-# Table Reilly MAW Problem Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay_r = 21  # Number of layers (regional)
 nrow_r = 1  # Number of rows (regional)
@@ -88,7 +82,6 @@ maw_bot = -65.0  # Bottom of the well ($ft$)
 maw_highK = 1e9  # Hydraulic conductivity for well ($ft/d$)
 
 # set delr and delc for the local model
-
 delr = [
     10.0,
     10.0,
@@ -118,7 +111,6 @@ delr = [
     10.0,
     10.0,
 ]
-
 delc = [
     10,
     9.38,
@@ -138,25 +130,19 @@ delc = [
     0.1665,
 ]
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((1.0, 1, 1.0),)
 
 # Define dimensions
-
 extents = (0.0, np.array(delr).sum(), 0.0, np.array(delc).sum())
 shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
-# ### Create Reilly MAW Problem Model Boundary Conditions
-
-# MAW Package
-
+# MAW Package boundary conditions
 nconn = 2 + 3 * (maw_lay[1] - maw_lay[0] + 1)
 maw_packagedata = [[0, maw_radius, maw_bot, strt, "SPECIFIED", nconn]]
 
 # Build the MAW connection data
-
 i, j = maw_loc
 obs_elev = {}
 maw_conn = []
@@ -235,19 +221,19 @@ for k in range(maw_lay[0], maw_lay[1] + 1, 1):
         iconn += 1
 
 # Solver parameters
-
 nouter = 500
 ninner = 100
 hclose = 1e-9
 rclose = 1e-4
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Reilly MAW Problem model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name, simulation="regional"):
+# +
+def build_models(name, simulation="regional"):
     if simulation == "regional":
         return build_regional(name)
     else:
@@ -420,31 +406,33 @@ def build_local(name, simulation):
     return sim
 
 
-# Function to write MODFLOW 6 Reilly MAW Problem model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the Reilly MAW Problem model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot the lake results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.3, 4.3)
+masked_values = (0, 1e30, -1e30)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.25, shrinkA=0.1, shrinkB=0.1)
 
 
 def plot_maw_results(silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # load the observations
         name = list(parameters.keys())[1]
         fpth = os.path.join(ws, name, f"{sim_name}.maw.obs.csv")
@@ -562,9 +550,6 @@ def plot_maw_results(silent=True):
                 f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
-
-
-# Plot the regional grid
 
 
 def plot_regional_grid(silent=True):
@@ -688,9 +673,6 @@ def plot_regional_grid(silent=True):
                 f"{sim_name}-regional-grid.png",
             )
             fig.savefig(fpth)
-
-
-# Plot the local grid
 
 
 def plot_local_grid(silent=True):
@@ -828,46 +810,37 @@ def plot_local_grid(silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the Reilly MAW Problem model results.
-
-
 def plot_results(silent=True):
     plot_regional_grid(silent=silent)
     plot_local_grid(silent=silent)
     plot_maw_results(silent=silent)
 
 
-# Function that wraps all of the steps for the Reilly MAW Problem model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx=0, silent=True):
+# +
+def scenario(idx=0, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
 
-# ### Reilly MAW Problem Simulation
-#
 # Regional model
-
-simulation(0)
+scenario(0)
 
 # Local model with MAW well
-
-simulation(1)
+scenario(1)
 
 # Local model with high K well
-
-simulation(2)
+scenario(2)
 
 # Plot the results
-
 plot_results()
+# -

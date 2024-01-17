@@ -1,14 +1,12 @@
 # ## Henry Problem
 #
 # Classic saltwater intrusion
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Henry Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -18,26 +16,22 @@ import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
+# Base workspace
+workspace = pl.Path("../examples")
 
-# Set figure properties specific to this problem
-
-figure_size = (6, 4)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
-# Scenario parameters - make sure there is at least one blank line before next item
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
+# +
+# Scenario-specific parameters - make sure there is at least one blank line before next item
 parameters = {
     "ex-gwt-henry-a": {
         "inflow": 5.7024,
@@ -49,18 +43,15 @@ parameters = {
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
-
 parameter_units = {
     "inflow": "$m^3/d$",
 }
 
 # Model units
-
 length_units = "centimeters"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nstp = 500  # Number of time steps
 perlen = 0.5  # Simulation time length ($d$)
@@ -81,18 +72,18 @@ botm = [top - k * delv for k in range(1, nlay + 1)]
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-10, 1e-6, 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_folder, inflow):
+# +
+def build_models(sim_folder, inflow):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((perlen, nstp, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -209,26 +200,27 @@ def build_model(sim_folder, inflow):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 4)
 
 
 def plot_conc(sim, idx):
@@ -264,28 +256,26 @@ def plot_results(sim, idx):
     plot_conc(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    sim = build_model(key, **parameter_dict)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **parameter_dict)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
-
-# ### Henry Problem
 
 # Scenario 1 - Classic henry problem
 scenario(0)
 
 # Scenario 2 - Modified Henry problem with half the inflow rate
 scenario(1)
+# -

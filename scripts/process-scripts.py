@@ -195,7 +195,7 @@ def make_tables():
         table_text = []
         table_value = []
         for lineno, line in enumerate(lines, 1):
-            if line.lower().startswith("# table"):
+            if line.lower().startswith("# model parameters"):
                 scanning_table = True
                 continue
             if scanning_table:

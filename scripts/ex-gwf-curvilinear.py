@@ -14,8 +14,13 @@
 #    3) 90 to 0 degree curvilinear grid
 # that are merged, as 1-2-3, to make the final multipart curvilinear grid.
 
-# Imports
+# ### Initial setup
+#
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import copy
 import os
 import pathlib as pl
@@ -28,9 +33,23 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Curvilinear grid
+# Example name and base workspace
+sim_name = "ex-gwf-curvilin"
+workspace = pl.Path("../examples")
+
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
+runModel = str(environ.get("RUN", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
+
+# ### Curvilinear grid
+#
+# Define some utilities to construct a curvilinear grid.
 
 
+# +
 class DisvPropertyContainer:
 
     """
@@ -2146,74 +2165,49 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
         return ncol, angle_step
 
 
-# Set default figure properties
+# -
 
-figure_size_grid_com = (6.5, 2.5)
-figure_size_grid = (6.5, 3)
-figure_size_head = (6.5, 2.5)
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
-# Simulation name and workspace
-
-sim_name = "ex-gwf-curvilin"
-ws = pl.Path("../examples")
-
-# Configuration
-
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
-
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Table Model Parameters
-
+# Model parameters
 _ = "Steady-State"  # Simulation Type
 nper = 1  # Number of periods
 _ = 1  # Number of time steps
-
 nlay = 1  # Number of layers
 _ = 864  # Number cells per layer
-
 surface_elevation = 10.0  # Top of the model ($ft$)
 model_base = 0.0  # Base of the model ($ft$)
-
 Tran = 0.19  # Horizontal transmissivity ($ft^2/day$)
 k11 = 0.019  # Horizontal hydraulic conductivity ($ft/day$)
-
 bc0 = 10  # Left constant head boundary ($ft$)
 _ = "3.334"  # Right constant head boundary ($ft$)
-
 _ = " "  # --- Left Curvilinear Grid Properties ---
-
 _ = "180"  # Degree angle of column 1 boundary
 _ = "270"  # Degree angle of column ncol boundary
 _ = "5"  # Degree angle width of each column
-
 nradial1 = 16  # Number of radial direction cells (radial bands)
 _ = 18  # Number of columns in radial band (ncol)
-
 r_inner1 = 4  # Grid inner radius ($ft$)
 r_outer1 = 20  # Grid outer radius ($ft$)
 r_width1 = 1  # Radial band width ($ft$)
-
 _ = " "  # --- Middle Structured Grid Properties ---
 nrow = 16  # Number of rows
 ncol = 18  # Number of columns
 row_width = 1  # Row width ($ft$)
 col_width = 1  # Column width ($ft$)
-
 _ = " "  # --- Right Curvilinear Grid Properties ---
-
 _ = "0"  # Degree angle of column 1 boundary
 _ = "90"  # Degree angle of column ncol boundary
 _ = "5"  # Degree angle width of each column
-
 nradial2 = 16  # Number of radial direction cells (radial bands)
 _ = 18  # Number of columns in radial band (ncol)
-
 r_inner2 = 4  # Grid inner radius ($ft$)
 r_outer2 = 20  # Grid outer radius ($ft$)
 r_width2 = 1  # Grid radial band width ($ft$)
@@ -2229,17 +2223,14 @@ angle_start2 = 0
 angle_stop2 = 90
 angle_step2 = 5
 
-
 # Right Curvilinear Model Boundary Condition
 bc1 = bc0 / 3
 
 # Radius for each radial band.
 #   First value is inner radius, the remaining are outer radii
-
 radii = np.arange(r_inner1, r_outer1 + r_width1, r_width1)
 
-# Get the curvilinear model properties and vertices
-
+# Get the curvilinear model properties and vertices.
 # Left Curvilinear Model
 curvlin1 = DisvCurvilinearBuilder(
     nlay,
@@ -2278,9 +2269,7 @@ curvlin2 = DisvCurvilinearBuilder(
 )
 
 # Combine the three models into one new vertex grid
-
 grid_merger = DisvGridMerger()
-
 grid_merger.add_grid("curvlin1", curvlin1)
 grid_merger.add_grid("rectgrid", rectgrid)
 grid_merger.add_grid("curvlin2", curvlin2)
@@ -2320,29 +2309,27 @@ for lay in range(nlay):
         chd_right.append([(lay, node), bc1])
 
 chd_left = {sp: chd_left for sp in range(nper)}
-
 chd_right = {sp: chd_right for sp in range(nper)}
 
 # Static temporal data used by TDIS file
 # Simulation is steady state so setup only a one day stress period.
-
 tdis_ds = ((1.0, 1, 1),)
 
 # Solver parameters
-
 nouter = 500
 ninner = 300
 hclose = 1e-4
 rclose = 1e-4
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Curvilinear Model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name):
-    sim_ws = os.path.join(ws, name)
+# +
+def build_models(name):
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -2416,26 +2403,29 @@ def build_model(name):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the curvilinear model.
-# True is returned if the model runs successfully.
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the curvilinear model grid.
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size_grid_com = (6.5, 2.5)
+figure_size_grid = (6.5, 3)
+figure_size_head = (6.5, 2.5)
 
 
 def plot_grid(sim, verbose=False):
@@ -2581,9 +2571,6 @@ def plot_grid(sim, verbose=False):
             fig2.savefig(fpth2, dpi=300)
 
 
-# Function to plot the curvilinear model results.
-
-
 def plot_head(sim):
     with styles.USGSMap() as fs:
         gwf = sim.get_model(sim_name)
@@ -2620,16 +2607,13 @@ def plot_head(sim):
             fig.savefig(fpth, dpi=300)
 
 
-# Function to plot the model results.
-
-
 def plot_results(silent=True):
     if silent:
         verbosity_level = 0
     else:
         verbosity_level = 1
 
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
     )
@@ -2639,27 +2623,25 @@ def plot_results(silent=True):
     plot_head(sim)
 
 
-# Function that wraps all of the steps for the curvilinear model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
+# +
+def scenario(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
-    sim = build_model(sim_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(sim_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
 
-# ### Curvilinear Example
+# Run simulation
+scenario()
 
-# MF6 Curvilinear Model
-simulation()
-
-# Solve analytical and plot results with MF6 results
+# Solve analytical solution and plot results with MF6 results
 plot_results()
+# -

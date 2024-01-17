@@ -18,10 +18,11 @@
 #   9. Two-Dimensional Application Example
 #   10. Three-Dimensional Field Case Study
 
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-# ### MODFLOW 6 GWT MT3DMS Example 4 Problem Setup
-
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -33,52 +34,44 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 4.5)
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
 
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-mt3dms-p04"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Set scenario parameters (make sure there is at least one blank line before next item)
-# This entire dictionary is passed to _build_model()_ using the kwargs argument
-
+# This entire dictionary is passed to _build_models()_ using the kwargs argument
 parameters = {
     "ex-gwt-mt3dms-p04a": {"mixelm": 0},
     "ex-gwt-mt3dms-p04b": {"mixelm": -1},
     "ex-gwt-mt3dms-p04c": {"mixelm": 1},
 }
+
 # Scenario parameter units
-#
 # add parameter_units to add units to the scenario parameter table that is automatically
 # built and used by the .tex input
-
 parameter_units = {"mixelm": "unitless"}
 
 # Setup some lists that will assist with labeling contours in the figures
-
 legendtxt_mod1 = ["MT3DMS - FD", "MT3DMS - TVD", "MT3DMS - MOC", "MF6 - FD"]
 legendtxt_mod2 = ["MF6 - FD", "MF6 - TVD", "MF6 - FD", "MF6 - TVD"]
 
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table
-
+# Model parameters
 nlay = 1  # Number of layers
 nrow = 100  # Number of rows
 ncol = 100  # Number of columns
@@ -96,7 +89,6 @@ trpt = 0.1  # Ratio of transverse to longitudinal dispersitivity
 dmcoef = 1.0e-9  # Molecular diffusion coefficient ($m^2/d$)
 
 # Additional model input
-
 perlen = [1000.0]
 nper = len(perlen)
 nstp = [100]
@@ -110,7 +102,6 @@ k33 = k11  # Vertical hydraulic conductivity ($m/d$)
 icelltype = 0
 
 # Initial conditions
-
 Lx = (ncol - 1) * delr
 Ly = (nrow - 1) * delc
 Ls = np.sqrt(Lx**2 + Ly**2)
@@ -122,7 +113,6 @@ b = -1
 c = 1
 
 # Active model domain
-
 ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=int) * -1
 ibound_mf2k5[:, 1 : nrow - 1, 1 : ncol - 1] = 1
 idomain = np.ones((nlay, nrow, ncol), dtype=int)
@@ -130,20 +120,17 @@ icbund = 1
 
 # Boundary conditions
 # MF2K5 pumping info:
-
 welspd = {0: [[0, 79, 20, qwell]]}  # Well pumping info for MF2K5
 spd = {0: [0, 79, 20, cwell, 2]}  # Well pupming info for MT3DMS
 
 # MF6 pumping information
 #              (k,  i,  j),  flow,   conc
-
 spd_mf6 = {0: [[(0, 79, 20), qwell, cwell]]}
 
 # MF6 constant head boundaries are defined below because additional variables
 # from the instantiation of model properties are required
 
 # Solver settings
-
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-6, 1e-6, 1.0
 
@@ -161,23 +148,23 @@ nlsink = nplane
 npsink = nph
 
 # Static temporal data used by TDIS file
-
 tdis_rc = []
 tdis_rc.append((perlen, nstp, 1.0))
+# -
 
-
-# ### Functions to build, write, and run models and plot MT3DMS Example 10 Problem results
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name, mixelm=0, silent=False):
-    mt3d_ws = os.path.join(ws, sim_name, "mt3d")
+# +
+def build_models(sim_name, mixelm=0, silent=False):
+    mt3d_ws = os.path.join(workspace, sim_name, "mt3d")
     modelname_mf = "p04-mf"
 
     # Instantiate the MODFLOW model
     mf = flopy.modflow.Modflow(
-        modelname=modelname_mf, model_ws=mt3d_ws, exe_name=exe_name_mf
+        modelname=modelname_mf, model_ws=mt3d_ws, exe_name="mf2005"
     )
 
     # Instantiate discretization package
@@ -222,7 +209,7 @@ def build_model(sim_name, mixelm=0, silent=False):
     mt = flopy.mt3d.Mt3dms(
         modelname=modelname_mt,
         model_ws=mt3d_ws,
-        exe_name=exe_name_mt,
+        exe_name="mt3dms",
         modflowmodel=mf,
     )
 
@@ -265,8 +252,8 @@ def build_model(sim_name, mixelm=0, silent=False):
     # MODFLOW 6
     name = "p04-mf6"
     gwfname = "gwf-" + name
-    sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 time discretization
     tdis_rc = []
@@ -479,20 +466,14 @@ def build_model(sim_name, mixelm=0, silent=False):
     return mf, mt, sim
 
 
-# Function to write model files
-
-
-def write_model(mf2k5, mt3d, sim, silent=True):
+def write_models(mf2k5, mt3d, sim, silent=True):
     mf2k5.write_input()
     mt3d.write_input()
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully.
-
-
 @timed
-def run_model(mf2k5, mt3d, sim, silent=True):
+def run_models(mf2k5, mt3d, sim, silent=True):
     if not runModel:
         return
     success, buff = mf2k5.run_model(silent=silent, report=True)
@@ -505,7 +486,14 @@ def run_model(mf2k5, mt3d, sim, silent=True):
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 4.5)
 
 
 def plot_results(mt3d, mf6, idx, leglab1, leglab2, ax=None):
@@ -562,34 +550,29 @@ def plot_results(mt3d, mf6, idx, leglab1, leglab2, ax=None):
             fig.savefig(fpth)
 
 
-# ### Function that wraps all of the steps for each MT3DMS Example 10 Problem scenario
+# -
+
+# ### Plotting results
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define functions to plot model results.
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    mf2k5, mt3d, sim = build_model(key, **parameter_dict)
-    write_model(mf2k5, mt3d, sim, silent=silent)
-    run_model(mf2k5, mt3d, sim, silent=silent)
+    mf2k5, mt3d, sim = build_models(key, **parameter_dict)
+    write_models(mf2k5, mt3d, sim, silent=silent)
+    run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mt3d, sim, idx, legendtxt_mod1[idx], legendtxt_mod2[idx])
 
 
-# ### Two-Dimensional Transport in a Diagonal Flow Field
-
-# Compares the standard finite difference solutions between MT3D MF 6
-
+# Compares the standard finite difference solutions between MT3D and MF6
 scenario(0)
 
-# Compares the respective TVD solutions between MT3D MF 6
-
+# Compares the respective TVD solutions between MT3D and MF6
 scenario(1)
 
-# Compares a MOC solution in MT3D with the standard FD method of MF 6
-
+# Compares a MOC solution in MT3D with the standard FD method of MF6
 scenario(2)
+# -

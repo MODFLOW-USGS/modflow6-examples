@@ -1,14 +1,17 @@
-# ## Three-Dimensional Steady Flow with Transport
+# ## Three-dimensional steady flow with transport
 #
-# MOC3D Problem 2
+# This problem corresponds to the second problem presented in the MOC3D report
+# Konikow 1996, which involves the transport of a dissolved constituent in a
+# steady, three-dimensional flow field. An analytical solution for this problem
+# is given by Wexler 1992. This example is simulated with a GWT model, which
+# receives flow information from a separate GWF model. Results from the GWT
+# model are compared with results from the Wexler 1992 analytical solution.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Three-Dimensional Steady Flow with Transport Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -20,32 +23,27 @@ from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 from scipy.special import erfc
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 4)
-
-# Base simulation and model name and workspace
-
+# Example name and base workspace
 example_name = "ex-gwt-moc3d-p02"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 40  # Number of layers
 nrow = 12  # Number of rows
@@ -68,10 +66,14 @@ source_location = (1, 12, 8)  # Source location (layer, row, column)
 botm = [-(k + 1) * delv for k in range(nlay)]
 specific_discharge = velocity_x * porosity
 source_location0 = tuple([idx - 1 for idx in source_location])
+# -
 
-# Wexler 3D analytical solution
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 class Wexler3d:
     """
     Analytical solution for 3D transport with inflow at a well with a
@@ -118,12 +120,6 @@ class Wexler3d:
                 x, y, z, t, v, xx, yy, zz, dx, dy, dz, n, q, lam, c0
             )
         return result
-
-
-# ### Functions to build, write, run, and plot models
-#
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
 
 
 def build_mf6gwf(sim_folder):
@@ -173,9 +169,6 @@ def build_mf6gwf(sim_folder):
         saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
     )
     return sim
-
-
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
 
 
 def build_mf6gwt(sim_folder):
@@ -235,24 +228,17 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_model(sim_name):
+def build_models(sim_name):
     return build_mf6gwf(sim_name), build_mf6gwt(sim_name)
 
 
-# Function to write model files
-
-
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     for sim in sims:
         sim.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     if not runModel:
         return
     for sim in sims:
@@ -260,7 +246,15 @@ def run_model(sims, silent=True):
         assert success, buff
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 4)
 
 
 def plot_analytical(ax, levels):
@@ -316,24 +310,20 @@ def plot_results(sims):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(silent=True):
-    sims = build_model(example_name)
-    write_model(sims, silent=silent)
-    run_model(sims, silent=silent)
+    sims = build_models(example_name)
+    write_models(sims, silent=silent)
+    run_models(sims, silent=silent)
     plot_results(sims)
 
 
-# ### Model
-
-# Model run
-
 scenario()
+# -

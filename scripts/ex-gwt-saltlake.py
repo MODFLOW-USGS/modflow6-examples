@@ -1,14 +1,19 @@
 # ## Salt Lake Problem
 #
-# Density driven groundwater flow
+# The salt lake problem was suggested by Simmons 1999 as a comprehensive benchmark
+# test for variable-density groundwater flow models. The problem is based on dense
+# salt fingers that descend from an evaporating salt lake. Although an analytical
+# solution is not available for the salt lake problem, an equivalent Hele-Shaw
+# analysis was performed in the laboratory to investigate the movement of dense
+# salt fingers Wooding 1997. In addition to the SUTRA simulation, this salt lake
+# problem was simulated by Langevin et al 2003 using SEAWAT-2000. The approach
+# described by Langevin et al 2003 is reproduced here with MODFLOW 6.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Salt Lake Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -20,32 +25,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 8)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-saltlake"
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "mm"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nstp = 400  # Number of time steps
 perlen = 24000  # Simulation time length ($s$)
@@ -80,18 +80,18 @@ for k in range(nlay):
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_folder):
+# +
+def build_models(sim_folder):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -218,32 +218,33 @@ def build_model(sim_folder):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 8)
 
 
 def plot_conc(sim, idx):
     with styles.USGSMap() as fs:
         sim_name = example_name
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model("flow")
         gwt = sim.get_model("trans")
 
@@ -310,7 +311,7 @@ def make_animated_gif(sim, idx):
 
     with styles.USGSMap() as fs:
         sim_name = example_name
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model("flow")
         gwt = sim.get_model("trans")
 
@@ -345,24 +346,20 @@ def plot_results(sim, idx):
         make_animated_gif(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(example_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 
-# ### Salt Lake Problem
-
-# Plot showing MODFLOW 6 results
-
 scenario(0)
+# -

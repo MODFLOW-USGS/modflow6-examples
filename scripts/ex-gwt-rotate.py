@@ -1,14 +1,12 @@
-# ## Rotating Interface Problem
+# ## Rotating interface example
 #
-# Density driven groundwater flow
+# This example demonstrates density-driven groundwater flow.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define some variables, and read settings from environment variables.
 
-
-# ### Rotating Interface Problem Setup
-
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -20,32 +18,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
+# Example name and base workspace
+sim_name = "ex-gwt-rotate"
+workspace = pl.Path("../examples")
 
-# Set figure properties specific to this problem
-
-figure_size = (6, 4)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
-example_name = "ex-gwt-rotate"
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nstp = 1000  # Number of time steps
 perlen = 10000  # Simulation time length ($d$)
@@ -75,17 +68,22 @@ x1 = 170.0  # X-midpoint location for zone 1 and 2 interface
 x2 = 130.0  # X-midpoint location for zone 2 and 3 interface
 porosity = 0.2  # Porosity (unitless)
 
+# Grid bottom elevations
 botm = [top - k * delv for k in range(1, nlay + 1)]
 
+# Solver criteria
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+# -
 
-# Bakker rotating interface analytical solution
+# ### Analytical solution
+#
+# Define an analytical solution for rotating interfaces (from [Bakker et al 2004](https://doi.org/10.1016/j.jhydrol.2003.10.007))
 
 
 class BakkerRotatingInterface:
     """
-    Analytical solution for rotating interfaces (Bakker et al. 2004)
+    Analytical solution for rotating interfaces.
 
     """
 
@@ -159,12 +157,12 @@ class BakkerRotatingInterface:
         return qxg, qyg
 
 
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def get_cstrt(nlay, ncol, length, x1, x2, a1, a2, b, c1, c2, c3):
     cstrt = c1 * np.ones((nlay, ncol), dtype=float)
     from flopy.utils.gridintersect import GridIntersect
@@ -183,10 +181,10 @@ def get_cstrt(nlay, ncol, length, x1, x2, a1, a2, b, c1, c2, c3):
     return cstrt
 
 
-def build_model(sim_folder):
+def build_models(sim_folder):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -287,32 +285,30 @@ def build_model(sim_folder):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sim, silent=True):
-    if not runModel:
-        return
+def run_models(sim, silent=True):
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 4)
 
 
 def plot_velocity_profile(sim, idx):
     with styles.USGSMap() as fs:
-        sim_name = example_name
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model("flow")
         gwt = sim.get_model("trans")
         print("Creating velocity profile plot...")
@@ -388,8 +384,7 @@ def plot_velocity_profile(sim, idx):
 
 def plot_conc(sim, idx):
     with styles.USGSMap() as fs:
-        sim_name = example_name
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model("flow")
         gwt = sim.get_model("trans")
 
@@ -451,8 +446,7 @@ def make_animated_gif(sim, idx):
 
     print("Creating animation...")
     with styles.USGSMap() as fs:
-        sim_name = example_name
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model("flow")
         gwt = sim.get_model("trans")
 
@@ -488,24 +482,20 @@ def plot_results(sim, idx):
         make_animated_gif(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the entire scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(sim_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 
-# ### Rotating Interface Problem
-
-# Plot showing MODFLOW 6 results
-
 scenario(0)
+# -

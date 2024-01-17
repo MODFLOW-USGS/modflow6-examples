@@ -4,12 +4,12 @@
 # response of an anisotropic confined aquifer to a pumping well. A
 # constant-head boundary condition surrounds the active domain.  K22 is set
 # to 0.01.  Drawdown is more pronounced in the K11 direction.
-#
 
-# ### Hani Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -21,35 +21,33 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set default figure properties
-
-figure_size = (3.5, 3.5)
-
-# Simulation workspace
-
+# Base workspace
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-hanir": {"angle1": 0, "xt3d": False},
     "ex-gwf-hanix": {"angle1": 25, "xt3d": True},
     "ex-gwf-hanic": {"angle1": 90, "xt3d": False},
 }
 
-# Table Hani Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 51  # Number of rows
@@ -76,13 +74,15 @@ nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 Hani model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name, angle1, xt3d):
+# +
+def build_models(sim_name, angle1, xt3d):
     sim_ws = os.path.join(ws, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -142,28 +142,29 @@ def build_model(sim_name, angle1, xt3d):
     return sim
 
 
-# Function to write MODFLOW 6 Hani model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the FHB model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=False):
+def run_models(sim, silent=False):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the Hani model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Set default figure properties
+figure_size = (3.5, 3.5)
+
+
 def plot_grid(idx, sim):
     with styles.USGSMap() as fs:
         sim_name = list(parameters.keys())[idx]
@@ -219,34 +220,29 @@ def plot_results(idx, sim, silent=True):
     plot_head(idx, sim)
 
 
-# Function that wraps all of the steps for the FHB model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### Hani Simulation
-#
 # Simulated heads in the Hani model with anisotropy in x direction.
-
-simulation(0)
+scenario(0)
 
 # Simulated heads in the Hani model with anisotropy in y direction.
-
-simulation(1)
+scenario(1)
 
 # Simulated heads in the Hani model with anisotropy rotated 15 degrees.
-
-simulation(2)
+scenario(2)
+# -

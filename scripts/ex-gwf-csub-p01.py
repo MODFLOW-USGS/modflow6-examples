@@ -1,15 +1,17 @@
-# ## Jacob (1939) Elastic Aquifer Loading
+# ## Jacob (1939) elastic aquifer loading example
 #
 # This problem simulates elastic compaction of aquifer materials in response to the
 # loading of an aquifer by a passing train. Water-level responses were simulated for
 # an eastbound train leaving the Smithtown Station in Long Island, New York at 13:04
 # on April 23, 1937
-#
 
-# ### Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import datetime
 import os
 import pathlib as pl
@@ -23,32 +25,30 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-csub-p01"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "seconds"
 
-# Set figure properties
-
-figure_size = (6.8, 4.5)
-
 # Simulation starting date and time
-
 dstart = datetime.datetime(1937, 4, 23, 13, 5, 55)
 
-# Table
-
+# Model parameters
 nper = 2  # Number of periods
 nlay = 3  # Number of layers
 ncol = 35  # Number of columns
@@ -68,7 +68,6 @@ cg_ske_str = "3.3e-5, 6.6e-4, 4.5e-7"  # Coarse grained elastic storativity (1/$
 cg_theta_str = "0.25, 0.50, 0.30"  # Coarse-grained porosity (unitless)
 
 # Create delr from delr0 and delrmac
-
 delr = np.ones(ncol, dtype=float) * 0.5
 xmax = delr[0]
 for idx in range(1, ncol):
@@ -77,11 +76,9 @@ for idx in range(1, ncol):
     delr[idx] = dx
 
 # Location of the observation well
-
 locw201 = 11
 
 # Load the aquifer load time series
-
 pth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/train_load_193704231304.csv",
     known_hash="md5:32dc8e7b7e39876374af43605e264725",
@@ -89,29 +86,23 @@ pth = pooch.retrieve(
 csv_load = np.genfromtxt(pth, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file
-
 csub_ts = []
 for idx in range(csv_load.shape[0]):
     csub_ts.append((csv_load["sim_time"][idx], csv_load["load"][idx]))
 
 # Static temporal data used by TDIS file
-
 tdis_ds = (
     (0.5, 1, 1.0),
     (csv_load["sim_time"][-1] - 0.5, csv_load["sim_time"].shape[0] - 2, 1),
 )
 
-
 # Simulation starting date and time
-
 dstart = datetime.datetime(1937, 4, 23, 13, 5, 55)
 
 # Create a datetime list
-
 date_list = [dstart + datetime.timedelta(seconds=x) for x in csv_load["sim_time"]]
 
 # parse parameter strings into tuples
-
 botm = [float(value) for value in botm_str.split(",")]
 k11 = [float(value) for value in k11_str.split(",")]
 icelltype = [int(value) for value in icelltype_str.split(",")]
@@ -120,22 +111,22 @@ cg_ske = [float(value) for value in cg_ske_str.split(",")]
 cg_theta = [float(value) for value in cg_theta_str.split(",")]
 
 # Solver parameters
-
 nouter = 500
 ninner = 300
 hclose = 1e-9
 rclose = 1e-6
 linaccel = "bicgstab"
 relax = 1.0
+# -
 
-
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -212,28 +203,27 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.8, 4.5)
 
 
 def plot_results(sim, silent=True):
@@ -388,22 +378,20 @@ def plot_results(sim, silent=True):
                 fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+# +
+def scenario(silent=True):
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### Jacob (1939) Elastic Aquifer Loading
-#
-simulation(silent=False)
+scenario(silent=False)
+# -

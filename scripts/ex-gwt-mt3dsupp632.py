@@ -1,14 +1,18 @@
-# ## Zero-Order Production in a Dual-Domain System
+# ## Zero-order production in a dual-domain system
 #
-# MT3DMS Supplemental Guide Problem 6.3.2
-#
-#
-#
+# This example tests the capabilities of the GWT model to simulate
+# 0-order production in a dual-domain system with & without sorption.
+# Results from a GWT model are compared with results from an MT3DMS
+# simulation that uses flows from a separate MODFLOW-2005 simulation.
+# It is based on example problem 6.3.2 described in Zheng 2010. The
+# problem consists of a one-dimensional model grid with inflow into
+# the first cell and outflow through the last cell.
 
-# ### Zero-Order Production in a Dual-Domain System Problem Setup
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-# Imports
-
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -19,22 +23,22 @@ import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
+# Base workspace
+workspace = pl.Path("../examples")
 
-figure_size = (3, 3)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
-# Scenario parameters - make sure there is at least one blank line before next item
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
+# +
+# Scenario-specific parameters - make sure there is at least one blank line before next item
 parameters = {
     "ex-gwt-mt3dsupp632a": {
         "distribution_coefficient": 0.25,
@@ -63,12 +67,10 @@ parameter_units = {
 }
 
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -93,17 +95,18 @@ obs_xloc = 200.0  # Observation x location ($m$)
 
 zero_order_decay = True  # Flag indicating whether decay is zero or first order
 dual_domain = True  # Flag indicating that dual domain is active
+# -
 
-# ### Functions to build, write, run and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = (
         (source_duration, 1, 1.0),
@@ -151,7 +154,7 @@ def build_mf6gwf(sim_folder):
 def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     pertim1 = source_duration
     pertim2 = total_time - source_duration
@@ -243,7 +246,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
 def build_mf2005(sim_folder):
     print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf2005")
+    sim_ws = os.path.join(workspace, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(modelname=name, model_ws=sim_ws, exe_name="mf2005")
     pertim1 = source_duration
     pertim2 = total_time - source_duration
@@ -278,7 +281,7 @@ def build_mt3dms(
 ):
     print(f"Building mt3dms model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mt3d")
+    sim_ws = os.path.join(workspace, sim_folder, "mt3d")
     mt = flopy.mt3d.Mt3dms(
         modelname=name,
         model_ws=sim_ws,
@@ -334,7 +337,7 @@ def build_mt3dms(
     return mt
 
 
-def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
+def build_models(sim_name, distribution_coefficient, decay, decay_sorbed):
     sim_mf6gwf = build_mf6gwf(sim_name)
     sim_mf6gwt = build_mf6gwt(sim_name, distribution_coefficient, decay, decay_sorbed)
     sim_mf2005 = build_mf2005(sim_name)
@@ -344,10 +347,7 @@ def build_model(sim_name, distribution_coefficient, decay, decay_sorbed):
     return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
-# Function to write model files
-
-
-def write_model(sims, silent=True):
+def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
@@ -355,12 +355,8 @@ def write_model(sims, silent=True):
     sim_mt3dms.write_input()
 
 
-# Function to run the model
-# True is returned if the model runs successfully
-
-
 @timed
-def run_model(sims, silent=True):
+def run_models(sims, silent=True):
     if not runModel:
         return
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
@@ -376,7 +372,15 @@ def run_model(sims, silent=True):
     assert success, pformat(buff)
 
 
-# Functions to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (3, 3)
 
 
 def plot_results():
@@ -385,7 +389,7 @@ def plot_results():
 
         case_colors = ["blue", "green", "red"]
         for icase, sim_name in enumerate(parameters.keys()):
-            sim_ws = os.path.join(ws, sim_name)
+            sim_ws = os.path.join(workspace, sim_name)
 
             fname = os.path.join(sim_ws, "mf6gwt", "trans.obs.csv")
             mf6gwt_ra = flopy.utils.Mf6Obs(fname).data
@@ -455,24 +459,24 @@ def plot_scenario_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    sims = build_model(key, **parameter_dict)
-    write_model(sims, silent=silent)
-    run_model(sims, silent=silent)
+    sims = build_models(key, **parameter_dict)
+    write_models(sims, silent=silent)
+    run_models(sims, silent=silent)
     plot_scenario_results(sims, idx)
 
 
@@ -482,7 +486,6 @@ def scenario(idx, silent=True):
 # * distribution_coefficient = 0.25
 # * decay = 0.0
 # * decay_sorbed = -1.0e-3
-
 scenario(0)
 
 # ### Case 2
@@ -491,7 +494,6 @@ scenario(0)
 # * distribution_coefficient = 0.25
 # * decay = -5.e-4
 # * decay_sorbed = -5.e-4
-
 scenario(1)
 
 # ### Case 3
@@ -500,11 +502,8 @@ scenario(1)
 # * distribution_coefficient = 0.
 # * decay = -1.0e-3
 # * decay_sorbed = 0.
-
 scenario(2)
 
-# ### Plot the Zero-Order Production in a Dual-Domain System Problem results
-#
 # Plot the results for all 3 scenarios in one plot
-
 plot_results()
+# -

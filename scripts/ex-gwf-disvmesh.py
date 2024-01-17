@@ -5,12 +5,12 @@
 # uses 2778 vertices (NVERT) to delineate 5240 cells per layer (NCPL).
 # General-head boundaries are assigned to model layer 1 for cells outside of
 # a 1025 m radius circle.  Recharge is applied to the top of the model.
-#
 
-# ### USG1DISV Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -26,27 +26,27 @@ from flopy.utils.gridintersect import GridIntersect
 from modflow_devtools.misc import timed
 from shapely.geometry import Polygon
 
-# Set default figure properties
-
-figure_size = (5, 5)
-
-# Simulation name and workspace
+# Example name and base workspace
 sim_name = "ex-gwf-disvmesh"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table USG1DISV Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 2  # Number of layers
 top = 0.0  # Top of the model ($m$)
@@ -59,19 +59,16 @@ recharge = 4.0e-3  # Recharge rate ($m/d$)
 
 # Static temporal data used by TDIS file
 # Simulation has 1 steady stress period (1 day).
-
 perlen = [1.0]
 nstp = [1]
 tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # Parse strings into lists
-
 botm = [float(value) for value in botm_str.split(",")]
 
+
 # create the disv grid
-
-
 def from_argus_export(fname):
     f = open(fname)
     line = f.readline()
@@ -109,7 +106,6 @@ def from_argus_export(fname):
 
 
 # Load argus mesh and get disv grid properties
-
 fname = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-disvmesh/argus.exp",
     known_hash="md5:072a758ca3d35831acb7e1e27e7b8524",
@@ -124,19 +120,20 @@ for i in range(gridprops["ncpl"]):
     cell_areas.append(get_polygon_area(cell_verts))
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 DISVMESH model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name):
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models(sim_name):
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -209,31 +206,32 @@ def build_model(sim_name):
     return sim
 
 
-# Function to write MODFLOW 6 DISVMESH model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the FHB model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=False):
+def run_models(sim, silent=False):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the DISVMESH model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5, 5)
+
+
 def plot_grid(idx, sim):
-    with styles.USGSMap() as fs:
-        sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSMap():
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=figure_size)
@@ -253,8 +251,8 @@ def plot_grid(idx, sim):
 
 
 def plot_head(idx, sim):
-    with styles.USGSMap() as fs:
-        sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSMap():
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=(7.5, 5))
@@ -310,24 +308,20 @@ def plot_results(idx, sim, silent=True):
     plot_head(idx, sim)
 
 
-# Function that wraps all of the steps for the FHB model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
-    sim = build_model(sim_name)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+# +
+def scenario(idx, silent=True):
+    sim = build_models(sim_name)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### DISVMESH Simulation
-#
-# Model grid and simulated heads in the DISVMESH model
-
-simulation(0)
+scenario(0)
+# -

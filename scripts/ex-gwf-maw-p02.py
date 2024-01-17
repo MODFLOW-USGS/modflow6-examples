@@ -2,12 +2,12 @@
 #
 # This is a modified version of the Neville-Tonkin Multi-Aquifer Well problem
 # from Neville and Tonkin, 2004 that uses the flowing well option.
-#
 
-# ### Flowing Well Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -19,29 +19,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (6.3, 4.3)
-masked_values = (0, 1e30, -1e30)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-maw-p02"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table Flowing Well Problem Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 2  # Number of layers
 nrow = 101  # Number of rows
@@ -58,22 +56,18 @@ maw_radius = 0.15  # Well radius ($m$)
 maw_rate = 0.0  # Well pumping rate ($m^{3}/d$)
 
 # parse parameter strings into tuples
-
 botm = [float(value) for value in botm_str.split(",")]
 strt = [float(value) for value in strt_str.split(",")]
 
 # Static temporal data used by TDIS file
-
 tdis_ds = ((2.314815, 50, 1.2),)
 
 # Define dimensions
-
 extents = (0.0, delr * ncol, 0.0, delc * nrow)
 shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # create idomain
-
 idomain = np.ones(shape3d, dtype=float)
 xw, yw = (ncol / 2) * delr, (nrow / 2) * delc
 y = 0.0
@@ -86,36 +80,30 @@ for i in range(nrow):
         if r > 7163.0:
             idomain[:, i, j] = 0
 
-# ### Create Flowing Well Problem Model Boundary Conditions
-
-# MAW Package
-
+# MAW Package boundary conditions
 maw_row = int(nrow / 2)
 maw_col = int(ncol / 2)
-
 maw_packagedata = [[0, maw_radius, botm[-1], strt[-1], "SPECIFIED", 2]]
-
 maw_conn = [
     [0, 0, 0, maw_row, maw_col, top, botm[-1], 111.3763, -999.0],
     [0, 1, 1, maw_row, maw_col, top, botm[-1], 445.9849, -999.0],
 ]
-
 maw_spd = [[0, "rate", maw_rate], [0, "flowing_well", 0.0, 7500.0, 0.5]]
 
 # Solver parameters
-
 nouter = 500
 ninner = 100
 hclose = 1e-9
 rclose = 1e-4
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Flowing Well Problem model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
+# +
+def build_models():
     sim_ws = os.path.join(ws, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -184,31 +172,32 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 Flowing Well Problem model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the Flowing Well Problem model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot the lake results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Set figure properties specific to the
+figure_size = (6.3, 4.3)
+masked_values = (0, 1e30, -1e30)
 
 
 def plot_maw_results(silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # load the observations
         fpth = os.path.join(ws, sim_name, f"{sim_name}.maw.obs.csv")
         maw = flopy.utils.Mf6Obs(fpth).data
@@ -311,12 +300,9 @@ def plot_maw_results(silent=True):
             fig.savefig(fpth)
 
 
-# Plot the grid
-
-
 def plot_grid(sim, silent=True):
     gwf = sim.get_model(sim_name)
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig = plt.figure(
             figsize=(4, 4.3),
             tight_layout=True,
@@ -391,29 +377,25 @@ def plot_grid(sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the Flowing Well Problem model results.
-
-
 def plot_results(sim, silent=True):
     plot_grid(sim, silent=silent)
     plot_maw_results(silent=silent)
 
 
-# Function that wraps all of the steps for the Flowing Well Problem model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+# +
+def scenario(silent=True):
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### Flowing Well Problem Simulation
-simulation()
+scenario()
+# -

@@ -4,12 +4,12 @@
 # Streamflow Routing Package documentation (Prudic, 1989) with a couple of
 # modifications for demonstrating MVR connections among the advanced packages.
 # All reaches have been converted to rectangular reaches.
-#
 
-# ### SFR Package Problem 1 with MVR Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -23,29 +23,27 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (6.3, 5.6)
-masked_values = (0, 1e30, -1e30)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-sfr-p01b"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "seconds"
 
-# Table SFR Package Problem 1 with MVR Model Parameters
-
+# Model parameters
 nper = 24  # Number of periods
 nlay = 2  # Number of layers
 nrow = 15  # Number of rows
@@ -62,8 +60,7 @@ sy_basin = 0.1  # Specific yield in the basin (unitless)
 evap_rate = 9.5e-8  # Evapotranspiration rate ($ft/s$)
 ext_depth = 15.0  # Evapotranspiration extinction depth ($ft$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = (
     (2628000.0, 1, 1.0),
     (2628000.0, 15, 1.0),
@@ -97,7 +94,6 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, lake locations, top, bottom, and evapotranspiration surface arrays
-
 fpth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/strt1.txt",
     known_hash="md5:273db6e876e7cfb4985b0b09c232f7cc",
@@ -132,7 +128,6 @@ bot2 = np.ones_like(bot1) * 300.0
 botm = [bot1, bot2]
 
 # Create hydraulic conductivity and specific yield
-
 fpth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/k11_lay1.txt",
     known_hash="md5:287160064d1a9bc0bae94b018bf187d7",
@@ -149,18 +144,13 @@ sy1 = np.loadtxt(fpth, dtype=float)
 sy2 = np.ones_like(sy1) * 0.20
 sy = [sy1, sy2]
 
-# ### Create SFR Package Problem 1 Model Boundary Conditions
-#
 # General head boundary conditions
-#
-
 ghb_spd = [
     [0, 12, 0, 988.0, 0.038],
     [0, 13, 8, 1045.0, 0.038],
 ]
 
 # Well boundary conditions
-
 wel_spd = {
     0: [
         [0, 5, 3, 0],
@@ -285,7 +275,6 @@ wel_spd = {
 }
 
 # SFR Package
-
 sfr_pakdata = [
     (
         0,
@@ -798,7 +787,6 @@ sfr_spd = [
 ]
 
 # UZF Package
-
 uzf_pakdata = [
     (0, (0, 0, 0), 1, 100, 0.1, 0.000001, 0.1, 0.3, 0.11, 3.5, "uzfcells"),
     (1, (0, 0, 1), 1, 101, 0.1, 0.000001, 0.1, 0.3, 0.11, 3.5, "uzfcells"),
@@ -3570,52 +3558,6 @@ for tm in range(len(tdis_ds)):
         iuzno += 1
     uzf_spd.update({int(tm): sp})
 
-# LAK Package
-
-#
-# lak_pakdata = [[0, 1040.0, 12], [1, 1010.0, 26]]
-#
-# lak_conn = [
-#     [0, 0, (0, 8, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 1, (0, 8, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 2, (0, 9, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 3, (0, 9, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 5, (0, 10, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 6, (0, 11, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 7, (0, 11, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 8, (1, 9, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [0, 9, (1, 9, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [0, 10, (1, 10, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [0, 11, (1, 10, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 0, (0, 9, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 1, (0, 9, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 2, (0, 9, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 3, (0, 10, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 5, (0, 11, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 6, (0, 11, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 7, (0, 12, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 8, (0, 12, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 9, (0, 13, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 10, (0, 13, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 11, (0, 14, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 12, (0, 14, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 13, (0, 14, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 14, (1, 10, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 15, (1, 10, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 16, (1, 10, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 17, (1, 11, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 18, (1, 11, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 19, (1, 11, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 20, (1, 12, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 21, (1, 12, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 22, (1, 12, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 23, (1, 13, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 24, (1, 13, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 25, (1, 13, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-# ]
-
 lak_stage = (
     1040.0,
     1010.0,
@@ -3763,19 +3705,19 @@ mvr_spd = {
 }
 
 # Solver parameters
-
 nouter = 100
 ninner = 50
 hclose = 1e-6
 rclose = 1e-6
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 SFR Package Problem 1 model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
+# +
+def build_models():
     sim_ws = os.path.join(ws, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -4046,27 +3988,28 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 SFR Package Problem 1 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the SFR Package Problem 1 model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot grid
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.3, 5.6)
+masked_values = (0, 1e30, -1e30)
 
 
 def plot_grid(gwf, silent=True):
@@ -4238,9 +4181,6 @@ def plot_grid(gwf, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot grid
-
-
 def plot_head_results(gwf, silent=True):
     # create MODFLOW 6 head object
     hobj = gwf.output.head()
@@ -4372,9 +4312,6 @@ def plot_head_results(gwf, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the mvr results
-
-
 def plot_mvr_results(idx, gwf, silent=True):
     with styles.USGSPlot() as fs:
         # load the observations
@@ -4502,9 +4439,6 @@ def plot_mvr_results(idx, gwf, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the mvr results
-
-
 def plot_uzfcolumn_results(idx, gwf, silent=True):
     with styles.USGSPlot() as fs:
         sim_ws = os.path.join(ws, sim_name)
@@ -4554,9 +4488,6 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the SFR Package Problem 1 model results.
-
-
 def plot_results(idx, sim, silent=True):
     gwf = sim.get_model(sim_name)
     plot_grid(gwf, silent=silent)
@@ -4565,28 +4496,25 @@ def plot_results(idx, sim, silent=True):
     plot_uzfcolumn_results(idx, gwf, silent=silent)
 
 
-# Function that wraps all of the steps for the SFR Package Problem 1 model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def simulation(idx, silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### SFR Package Problem 1 Simulation
-#
 # Simulated heads in model the unconfined, middle, and lower aquifers (model layers
 # 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
 # model are also shown. The location of drain (green) and well (gray) boundary
 # conditions, normalized specific discharge, and head contours (25 ft contour
 # intervals) are also shown.
-
 simulation(0)
+# -

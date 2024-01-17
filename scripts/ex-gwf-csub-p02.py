@@ -1,14 +1,16 @@
-# ## Delay interbed drainage
+# ## Delay interbed drainage example
 #
 # This problem simulates the drainage of a thick interbed caused by a step
 # decrease in hydraulic head in the aquifer and is based on MODFLOW-2000 subsidence
 # package sample problem 1.
-#
 
-# ### Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -20,24 +22,23 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the problem
-
-figure_size = (6.8, 3.4)
-arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
-
-# Configuration
-
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-csub-p02"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Scenario parameters
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
+runModel = str(environ.get("RUN", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-csub-p02a": {
         "head_based": True,
@@ -60,12 +61,10 @@ parameters = {
 }
 
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 ncol = 3  # Number of columns
@@ -87,32 +86,30 @@ theta = 0.45  # Interbed porosity (unitless)
 h0 = 1.0  # Initial interbed head ($m$)
 head_offset = 1.0  # Initial preconsolidation head ($m$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((1000.0, 100, 1.05),)
 
 # Constant head cells
-
 c6 = []
 for j in range(0, ncol, 2):
     c6.append([0, 0, j, strt])
 
 # Solver parameters
-
 nouter = 1000
 ninner = 300
 hclose = 1e-9
 rclose = 1e-6
 linaccel = "bicgstab"
 relax = 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     subdir_name=".",
     head_based=True,
@@ -120,7 +117,7 @@ def build_model(
     kv=2e-6,
     ndelaycells=19,
 ):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     if subdir_name is not None:
         sim_ws = os.path.join(sim_ws, subdir_name)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
@@ -243,29 +240,26 @@ def build_model(
     return sim
 
 
-# Function to write MODFLOW 6 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Analytical solution for plotting
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results, beginning with an analytical solution to superimpose over the simulated solution.
 
 
+# +
 def analytical_solution(z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent=True):
     v = 0.0
     e = np.exp(1)
@@ -283,7 +277,9 @@ def analytical_solution(z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent
     return dh - 4.0 * dh * v / pi
 
 
-# Function to plot the model grid
+# Set figure properties specific to the problem
+figure_size = (6.8, 3.4)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 
 def plot_grid(sim, silent=True):
@@ -349,9 +345,6 @@ def plot_grid(sim, silent=True):
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
-
-
-# Function to plot the head based results
 
 
 def plot_head_based(sim, silent=True):
@@ -454,7 +447,7 @@ def plot_effstress(sim, silent=True):
 
         # get head-based csub observations
         name0 = name.replace("-p02b", "-p02a")
-        ws0 = os.path.join(ws, name0)
+        ws0 = os.path.join(workspace, name0)
         sim0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
         gwf0 = sim0.get_model(name0)
         cobs0 = gwf0.csub.output.obs().data
@@ -523,13 +516,11 @@ def plot_effstress(sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function to get subdirectory names
-
-
 def get_subdirs(sim):
+    """Get subdirectory names"""
     name = sim.name
     # get the subdirectory names
-    pth = os.path.join(ws, name)
+    pth = os.path.join(workspace, name)
     hb_dirs = [
         name
         for name in sorted(os.listdir(pth))
@@ -543,10 +534,8 @@ def get_subdirs(sim):
     return hb_dirs, es_dirs
 
 
-# Function to process interbed heads
-
-
 def fill_heads(rec_arr, ndcells):
+    """Process interbed heads"""
     arr = np.zeros((rec_arr.shape[0], ndcells), dtype=float)
     for i in range(100):
         for j in range(ndcells):
@@ -555,10 +544,8 @@ def fill_heads(rec_arr, ndcells):
     return arr
 
 
-# Function to plot the results for multiple interbed thicknesses
-
-
 def plot_comp_q_comparison(sim, silent=True):
+    """Plot the results for multiple interbed thicknesses"""
     with styles.USGSPlot():
         name = sim.name
         thicknesses = parameters[name]["bed_thickness"]
@@ -599,12 +586,12 @@ def plot_comp_q_comparison(sim, silent=True):
             axes.append(ax)
 
         for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-            sim_ws = os.path.join(ws, name, hb_dir)
+            sim_ws = os.path.join(workspace, name, hb_dir)
             s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
             g = s.get_model(name)
             hb_obs = g.csub.output.obs().data
 
-            ws0 = os.path.join(ws, name, es_dir)
+            ws0 = os.path.join(workspace, name, es_dir)
             s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
             g0 = s0.get_model(name)
             es_obs = g0.csub.output.obs().data
@@ -640,10 +627,8 @@ def plot_comp_q_comparison(sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the interbed head results for multiple interbed thicknesses
-
-
 def plot_head_comparison(sim, silent=True):
+    """Plot the interbed head results for multiple interbed thicknesses"""
     with styles.USGSPlot():
         name = sim.name
         ndcells = parameters[name]["ndelaycells"]
@@ -709,13 +694,13 @@ def plot_head_comparison(sim, silent=True):
             axes.append(ax)
 
         for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-            sim_ws = os.path.join(ws, name, hb_dir)
+            sim_ws = os.path.join(workspace, name, hb_dir)
             s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
             g = s.get_model(name)
             hb_obs = g.csub.output.obs().data
             hb_arr = fill_heads(hb_obs, ndcells)
 
-            ws0 = os.path.join(ws, name, es_dir)
+            ws0 = os.path.join(workspace, name, es_dir)
             s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
             g0 = s0.get_model(name)
             es_obs = g0.csub.output.obs().data
@@ -778,9 +763,6 @@ def plot_head_comparison(sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the model results.
-
-
 def plot_results(sim, silent=True):
     name = sim.name
     if name.endswith("a"):
@@ -793,16 +775,15 @@ def plot_results(sim, silent=True):
         plot_head_comparison(sim, silent=silent)
 
 
-# Function that wraps all of the steps for the model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenarios, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenarios(idx, silent=True):
     key = list(parameters.keys())[idx]
     interbed_thickness = parameters[key]["bed_thickness"]
     interbed_kv = parameters[key]["kv"]
@@ -811,9 +792,9 @@ def simulation(idx, silent=True):
         params["bed_thickness"] = interbed_thickness[0]
         params["kv"] = interbed_kv[0]
 
-        sim = build_model(key, **params)
-        write_model(sim, silent=silent)
-        run_model(sim, silent=silent)
+        sim = build_models(key, **params)
+        write_models(sim, silent=silent)
+        run_models(sim, silent=silent)
     else:
         for b, kv in zip(interbed_thickness, interbed_kv):
             for head_based in (
@@ -829,22 +810,18 @@ def simulation(idx, silent=True):
                 params["bed_thickness"] = b
                 params["kv"] = kv
 
-                sim = build_model(key, subdir_name=subdir_name, **params)
-                write_model(sim, silent=silent)
-                run_model(sim, silent=silent)
+                sim = build_models(key, subdir_name=subdir_name, **params)
+                write_models(sim, silent=silent)
+                run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### Delay interbed drainage
-#
-# #### Head based solution
+# Head based solution
+scenarios(0)
 
-simulation(0)
+# Effective stress solution
+scenarios(1)
 
-# #### Effective stress solution
-
-simulation(1)
-
-# #### Head based for multiple interbed thicknesses
-
-simulation(2)
+# Head based for multiple interbed thicknesses
+scenarios(2)
+# -

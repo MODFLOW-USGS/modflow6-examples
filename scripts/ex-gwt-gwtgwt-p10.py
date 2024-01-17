@@ -6,6 +6,11 @@
 # The results are checked for equivalence with the MODFLOW 6 GWT
 # solutions as produced by the example 'MT3DMS problem 10'.
 
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
+
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -17,28 +22,27 @@ import pooch
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
 
-mf6exe = "mf6"
-
-# ### Model Input Parameters
-
-# Set figure properties specific to this problem
-figure_size = (6, 8)
-
 # Base simulation and model name and workspace
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-gwtgwt-mt3dms-p10"
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings. Note: the (relative) dimensions of the two models are not configurable.
+
+# +
 # Model units
 length_units = "feet"
 time_units = "days"
 
-# Note: the (relative) dimensions of the two models are not configurable
+# Model parameters
 nlay = 4  # Number of layers
 nlay_inn = 4  # Number of layers
 nrow = 61  # Number of rows
@@ -49,10 +53,8 @@ delr = "varies"  # Column width ($ft$)
 delr_inn = 50  # Column width inner model ($ft$)
 delc = "varies"  # Row width ($ft$)
 delc_inn = 50  # Row width inner model ($ft$)
-
 xshift = 5100.0  # X offset inner model
 yshift = 9100.0  # Y offset inner model
-
 delz = 25.0  # Layer thickness ($ft$)
 top = 780.0  # Top of the model ($ft$)
 satthk = 100.0  # Saturated thickness ($ft$)
@@ -143,7 +145,6 @@ ath1 = al * trpt
 atv = al * trpv
 dmcoef = 0.0  # ft^2/day
 
-#
 c0 = 0.0
 botm = [top - delz * k for k in range(1, nlay + 1)]
 mixelm = 0
@@ -204,12 +205,17 @@ exgdata = None
 
 # Advection
 scheme = "Undefined"
+# -
+
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
 
 
-# ### Build the MODFLOW 6 simulation
-def build_model(sim_name):
-    sim_ws = os.path.join(ws, sim_name)
-    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name=mf6exe)
+# +
+def build_models(sim_name):
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating time discretization
     tdis_rc = [(perlen, nstp, 1.0)]
@@ -240,7 +246,6 @@ def build_model(sim_name):
     return sim
 
 
-# Function to add the two GWF models, and their exchange
 def add_flow(sim):
     global exgdata
 
@@ -358,8 +363,8 @@ def add_flow(sim):
     # )
 
 
-# Create the outer GWF model
 def add_outer_gwfmodel(sim):
+    """Create the outer GWF model"""
     mname = gwfname_out
 
     # Instantiating groundwater flow model
@@ -461,8 +466,8 @@ def add_outer_gwfmodel(sim):
     return gwf
 
 
-# Create the inner GWF model
 def add_inner_gwfmodel(sim):
+    """Create the inner GWF model"""
     mname = gwfname_inn
 
     # Instantiating groundwater flow submodel
@@ -550,8 +555,8 @@ def add_inner_gwfmodel(sim):
     return gwf
 
 
-# Function to add the transport models and exchange to the simulation
 def add_transport(sim):
+    """Add the transport models and exchange to the simulation"""
     # Create iterative model solution
     imsgwt = flopy.mf6.ModflowIms(
         sim,
@@ -613,8 +618,8 @@ def add_transport(sim):
     return sim
 
 
-# Create the outer GWT model
 def add_outer_gwtmodel(sim):
+    """Create the outer GWT model"""
     mname = gwtname_out
     gwt = flopy.mf6.MFModel(
         sim,
@@ -696,10 +701,9 @@ def add_outer_gwtmodel(sim):
     return gwt
 
 
-# Create the inner GWT model
 def add_inner_gwtmodel(sim):
+    """Create the inner GWT model"""
     mname = gwtname_inn
-
     gwt = flopy.mf6.MFModel(
         sim,
         model_type="gwt6",
@@ -782,17 +786,24 @@ def add_inner_gwtmodel(sim):
     return gwt
 
 
-# ### Simulation Run and Results
-
-
-# Run the simulation and generate the results
-def run_model(sim):
+def run_models(sim):
     success = True
     if runModel:
         success, buff = sim.run_simulation()
         if not success:
             print(buff)
     return success
+
+
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 8)
 
 
 # Load MODFLOW 6 reference for the concentrations (GWT MT3DMS p10)
@@ -1188,14 +1199,19 @@ def plot_results(sim):
     plot_difference_heads(sim)
 
 
-def test_01():
-    sim = build_model(example_name)
-    run_model(sim)
+# -
+
+# ### Running the example
+#
+# Define and invoke a function to run the example scenario, then plot results.
+
+
+# +
+def scenario():
+    sim = build_models(example_name)
+    run_models(sim)
     plot_results(sim)
 
 
-# Main
-if __name__ == "__main__":
-    sim = build_model(example_name)
-    run_model(sim)
-    plot_results(sim)
+scenario()
+# -

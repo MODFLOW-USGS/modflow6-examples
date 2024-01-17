@@ -6,10 +6,11 @@
 # versions of MODFLOW.
 #
 
-# ### FHB Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -19,28 +20,27 @@ import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set default figure properties
-
-figure_size = (4, 4)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-fhb"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table FHB Model Parameters
-
+# Model parameters
 nper = 3  # Number of periods
 nlay = 1  # Number of layers
 ncol = 10  # Number of columns
@@ -58,31 +58,30 @@ ss = 0.01  # Specific storage ($/m$)
 # Simulation has 1 steady stress period (1 day)
 # and 3 transient stress periods (10 days each).
 # Each transient stress period has 120 2-hour time steps.
-
 perlen = [400.0, 200.0, 400.0]
 nstp = [10, 4, 6]
 tsmult = [1.0, 1.0, 1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
-# parse parameter strings into tuples
-
+# Parse parameter strings into tuples
 botm = [float(value) for value in botm_str.split(",")]
 k11 = [float(value) for value in k11_str.split(",")]
 icelltype = [int(value) for value in icelltype_str.split(",")]
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 FHB model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
+# +
+def build_models():
     sim_ws = os.path.join(ws, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -181,31 +180,31 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 FHB model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the FHB model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=False):
+def run_models(sim, silent=False):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the FHB model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (4, 4)
+
+
 def plot_grid(sim):
-    with styles.USGSMap() as fs:
-        sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=(4, 3.0))
@@ -226,8 +225,7 @@ def plot_grid(sim):
 
 
 def plot_ts(sim):
-    with styles.USGSPlot() as fs:
-        sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSPlot():
         gwf = sim.get_model(sim_name)
         obsnames = gwf.obs.output.obs_names
         obs_list = [
@@ -259,24 +257,20 @@ def plot_results(sim, silent=True):
     plot_ts(sim)
 
 
-# Function that wraps all of the steps for the FHB model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+# +
+def scenario(silent=True):
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### FHB Simulation
-#
-# Model grid and simulation results
-
-simulation()
+scenario()
+# -

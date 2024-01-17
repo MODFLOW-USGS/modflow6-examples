@@ -14,24 +14,30 @@ EXCLUDE = []
 
 
 @pytest.fixture(scope="session")
+def write(request) -> bool:
+    return not request.config.getoption("--no-write")
+
+
+@pytest.fixture(scope="session")
 def run(request) -> bool:
-    return request.config.getoption("--run")
+    return not request.config.getoption("--no-run")
 
 
 @pytest.fixture(scope="session")
 def plot(request) -> bool:
-    return request.config.getoption("--plot")
+    return not request.config.getoption("--no-plot")
 
 
 @pytest.fixture(scope="session")
-def save(request) -> bool:
-    return request.config.getoption("--save")
+def gif(request) -> bool:
+    return not request.config.getoption("--no-gif")
 
 
 def pytest_addoption(parser):
-    parser.addoption("--run", action="store_true", default=False, help="Whether to run models")
-    parser.addoption("--plot", action="store_true", default=False, help="Whether to plot results (requires --run)")
-    parser.addoption("--save", action="store_true", default=False, help="Whether to save plots (requires --run and --plot)")
+    parser.addoption("--no-write", action="store_true", default=False, help="Disable model input file creation")
+    parser.addoption("--no-run", action="store_true", default=False, help="Disable model runs")
+    parser.addoption("--no-plot", action="store_true", default=False, help="Disable static plot creation")
+    parser.addoption("--no-gif", action="store_true", default=False, help="Disable GIF creation")
 
 
 def pytest_generate_tests(metafunc):

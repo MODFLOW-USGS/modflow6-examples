@@ -1,11 +1,14 @@
 # ## Flow diversion example
 #
-#
+# This example simulates unconfined groundwater flow in an aquifer with a high bottom elevation in the center of the aquifer and groundwater flow around a high bottom elevation.
 
-# ### Flow diversion Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -14,33 +17,31 @@ import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
-import pooch
 
-# Set figure properties
-
-figure_size = (4, 5.33)
-masked_values = (1e30, -1e30)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-bump"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
+runModel = str(environ.get("RUN", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
+createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Configuration
-
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
-
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-bump-p01a": {
         "newton": "newton",
@@ -58,8 +59,7 @@ parameters = {
     },
 }
 
-# Table
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 51  # Number of rows
@@ -71,37 +71,23 @@ k11 = 1.0  # Horizontal hydraulic conductivity ($m/day$)
 H1 = 7.5  # Constant head in column 1 and starting head ($m$)
 H2 = 2.5  # Constant head in column 51 ($m$)
 
-# plotting ranges and contour levels
-
-vmin, vmax = H2, H1
-bmin, bmax = 0, 10
-vlevels = np.arange(vmin + 0.5, vmax, 1)
-blevels = np.arange(bmin + 2, bmax, 2)
-bcolor = "black"
-vcolor = "black"
-
-
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((1.0, 1, 1.0),)
 
 # Calculate delr, delc, extents, and shape3d
-
 delr = xlen / float(ncol)
 delc = ylen / float(nrow)
 extents = (0, xlen, 0, ylen)
 shape3d = (nlay, nrow, ncol)
 
 # Load the bottom
-
 fpth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
     known_hash="md5:9287f9e214147d95e6ed159732079a0b",
 )
 botm = np.loadtxt(fpth).reshape(shape3d)
 
-# create a cylinder
-
+# Create a cylinder
 cylinder = botm.copy()
 cylinder[cylinder < 7.5] = 0.0
 cylinder[cylinder >= 7.5] = 20.0
@@ -111,18 +97,19 @@ chd_spd = [[0, i, 0, H1] for i in range(nrow)]
 chd_spd += [[0, i, ncol - 1, H2] for i in range(nrow)]
 
 # Solver parameters
-
 nouter = 500
 ninner = 500
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     newton=False,
     rewet=False,
@@ -132,7 +119,7 @@ def build_model(
     ihdwet=None,
     wetdry=None,
 ):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     if newton:
@@ -206,26 +193,35 @@ def build_model(
     return sim
 
 
-# Function to write flow diversion model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully.
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to create a figure
+# -
+
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties, plotting ranges and contour levels
+figure_size = (4, 5.33)
+masked_values = (1e30, -1e30)
+vmin, vmax = H2, H1
+bmin, bmax = 0, 10
+vlevels = np.arange(vmin + 0.5, vmax, 1)
+blevels = np.arange(bmin + 2, bmax, 2)
+bcolor = "black"
+vcolor = "black"
 
 
 def create_figure():
@@ -259,9 +255,6 @@ def create_figure():
     axes = [ax1, ax2]
 
     return fig, axes
-
-
-# Function to plot the grid
 
 
 def plot_grid(gwf, silent=True):
@@ -324,9 +317,6 @@ def plot_grid(gwf, silent=True):
                 f"{sim_name}-grid.png",
             )
             fig.savefig(fpth)
-
-
-# Function to plot the model results.
 
 
 def plot_results(idx, sim, silent=True):
@@ -442,34 +432,30 @@ def plot_results(idx, sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the TWRI model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenarios, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### Zaidel Simulation
-#
 # Simulated heads in the flow diversion model with Newton-Raphson.
-simulation(0, silent=False)
-
+scenario(0, silent=False)
 
 # Simulated heads in the flow diversion model with rewetting.
-simulation(1, silent=False)
-
+scenario(1, silent=False)
 
 # Simulated heads in the flow diversion model with Newton-Raphson and
 # cylinderical topography.
-simulation(2, silent=False)
+scenario(2, silent=False)
+# -

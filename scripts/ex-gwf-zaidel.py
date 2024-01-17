@@ -1,13 +1,13 @@
 # ## Zaidel (2013) example
 #
-# This problem is described in Zaidel (2013) and represents a discontinuous
+# Described in Zaidel (2013), representing a discontinuous
 # water table configuration over a stairway impervious base.
-#
 
-# ### Zaidel (2013) Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -18,27 +18,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (6.3, 2.5)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-zaidel"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
-# Scenario parameters
 
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-zaidel-p01a": {
         "H2": 1.0,
@@ -48,8 +48,7 @@ parameters = {
     },
 }
 
-# Table
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -62,12 +61,10 @@ icelltype = 1  # Cell conversion type
 k11 = 0.0001  # Horizontal hydraulic conductivity ($m/day$)
 H1 = 23.0  # Constant head in column 1 ($m$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((1.0, 1, 1.0),)
 
 # Build stairway bottom
-
 botm = np.zeros((nlay, nrow, ncol), dtype=float)
 base = 20.0
 for j in range(ncol):
@@ -76,18 +73,19 @@ for j in range(ncol):
         base -= 5
 
 # Solver parameters
-
 nouter = 500
 ninner = 50
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the Zaidel model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(H2=1.0):
+# +
+def build_models(H2=1.0):
     # Constant head cells are specified on the left and right edge of the model
     chd_spd = [
         [0, 0, 0, H1],
@@ -135,28 +133,27 @@ def build_model(H2=1.0):
     return sim
 
 
-# Function to write Zaidel model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the Zaidel model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot the Zaidel model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.3, 2.5)
 
 
 def plot_results(idx, sim, silent=True):
@@ -234,30 +231,26 @@ def plot_results(idx, sim, silent=True):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the TWRI model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(**params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(**params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### Zaidel Simulation
-#
 # Simulated heads in the Zaidel model with H2 = 1.
-
-simulation(0)
+scenario(0)
 
 # Simulated heads in the Zaidel model with H2 = 10.
-
-simulation(1)
+scenario(1)
+# -

@@ -1,14 +1,19 @@
-# ## Original BCF2SS MODFLOW example
+# ## BCF2SS example
 #
-# This problem is described in McDonald and Harbaugh (1988) and duplicated in
-# Harbaugh and McDonald (1996). This problem is also is distributed with
+# This problem is described in McDonald and Harbaugh (1988) and duplicated
+# in Harbaugh and McDonald (1996). This problem is also is distributed with
 # MODFLOW-2005 (Harbaugh, 2005) and MODFLOW 6 (Langevin and others, 2017).
 #
+# Two scenarios are included, first solved with the standard method,
+# then with the Newton-Raphson formulation.
 
-# ### BCF2SS Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -21,39 +26,34 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-bcf2ss"
 ws = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Set figure properties
-
-figure_size = (6, 6)
-
 # Load the wetdry array for layer 1
-
 pth = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/wetdry01.txt",
     known_hash="md5:3a4b357b7d2cd5175a205f3347ab973d",
 )
-wetdry_layer0 = np.loadtxt(
-    pth,
-)
+wetdry_layer0 = np.loadtxt(pth)
 
-
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-bcf2ss-p01a": {
         "rewet": True,
@@ -73,8 +73,7 @@ parameters = {
     },
 }
 
-# Table BCF2SS Model Parameters
-
+# Model parameters
 nper = 2  # Number of periods
 nlay = 2  # Number of layers
 nrow = 10  # Number of rows
@@ -89,24 +88,18 @@ k33 = 0.1  # Vertical hydraulic conductivity ($ft/d$)
 strt = 0.0  # Starting head ($ft$)
 recharge = 0.004  # Recharge rate ($ft/d$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = (
     (1.0, 1.0, 1),
     (1.0, 1.0, 1),
 )
 
-# parse parameter strings into tuples
-
+# Parse parameter strings into tuples
 botm = [float(value) for value in botm_str.split(",")]
 icelltype = [int(value) for value in icelltype_str.split(",")]
 k11 = [float(value) for value in k11_str.split(",")]
 
-
-# ### Create BCF2SS Model Boundary Conditions
-
 # Well boundary conditions
-
 wel_spd = {
     1: [
         [1, 2, 3, -35000.0],
@@ -115,23 +108,23 @@ wel_spd = {
 }
 
 # River boundary conditions
-
 riv_spd = {0: [[1, i, 14, 0.0, 10000.0, -5] for i in range(nrow)]}
 
 # Solver parameters
-
 nouter = 500
 ninner = 100
 hclose = 1e-6
 rclose = 1e-3
 relax = 0.97
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 TWRI model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton):
+# +
+def build_models(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton):
     sim_ws = os.path.join(ws, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
@@ -197,28 +190,28 @@ def build_model(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton
     return sim
 
 
-# Function to write MODFLOW 6 TWRI model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the TWRI model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot the BCF2SS model results with heads in each layer.
+# -
+
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6, 6)
 
 
 def plot_simulated_results(num, gwf, ho, co, silent=True):
@@ -370,9 +363,6 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot simulated results for a simulation
-
-
 def plot_results(silent=True):
     if silent:
         verbosity_level = 0
@@ -519,32 +509,27 @@ def plot_results(silent=True):
         plot_simulated_results(3, gwf, hobj, cobj)
 
 
-# Function that wraps all of the steps for the TWRI model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model, and
-# 3. run_model
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenarios, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
 
-# ### BCF2SS Simulation
-#
-#  Node Property Flow Package with rewetting option
-
-simulation(0)
+# Default formulation
+scenario(0)
 
 # Newton-Raphson formulation
-
-simulation(1)
+scenario(1)
 
 # Simulated water levels and normalized specific discharge vectors in the
 # upper and lower aquifers under natural and pumping conditions using (1) the
@@ -553,5 +538,5 @@ simulation(1)
 # A. Upper aquifer results under natural conditions. B. Lower aquifer results
 # under natural conditions C. Upper aquifer results under pumping conditions.
 # D. Lower aquifer results under pumping conditions
-
 plot_results()
+# -

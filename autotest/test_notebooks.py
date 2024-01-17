@@ -7,8 +7,8 @@ from conftest import NOTEBOOKS_PATH
 
 
 @requires_exe("jupytext")
-def test_notebooks(example_script, run, plot, save):
-    with set_env(RUN=str(run), PLOT=str(plot), SAVE=str(save)):
+def test_notebooks(example_script, write, run, plot, gif):
+    with set_env(WRITE=str(write), RUN=str(run), PLOT=str(plot), GIF=str(gif)):
         args = [
             "jupytext",
             "--from",

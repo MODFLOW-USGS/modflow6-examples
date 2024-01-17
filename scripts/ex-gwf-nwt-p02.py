@@ -1,11 +1,15 @@
 # ## Flow diversion example
 #
-#
+# This example is based on problem 2 in Niswonger et al 2011, which
+# used the Newton-Raphson formulation to simulate dry cells under a
+# recharge pond. The problem is also described in McDonald et al 1991
+# and used the \MF rewetting option to rewet dry cells.
 
-# ### Flow diversion Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -16,29 +20,27 @@ import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties
-
-figure_size = (6.3, 6.3)
-masked_values = (1e30, -1e30)
-
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-nwt-p02"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-nwt-p02a": {
         "newton": "newton",
@@ -52,8 +54,7 @@ parameters = {
     },
 }
 
-# Table
-
+# Model parameters
 nper = 4  # Number of periods
 nlay = 14  # Number of layers
 nrow = 40  # Number of rows
@@ -69,8 +70,7 @@ H1 = 25.0  # Constant head along left and lower edges and starting head ($ft$)
 rech = 0.05  # Recharge rate ($ft/day$)
 
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = (
     (190.0, 10, 1.0),
     (518.0, 2, 1.0),
@@ -79,20 +79,16 @@ tdis_ds = (
 )
 
 # Calculate extents, and shape3d
-
 extents = (0, delr * ncol, 20, 65)
 shape3d = (nlay, nrow, ncol)
 
 # Create the bottom
-
 botm = np.arange(65.0, -5.0, -5.0)
 
 # Create icelltype (which is the same as iconvert)
-
 icelltype = 9 * [1] + 5 * [0]
 
 # Constant head boundary conditions
-
 chd_spd = []
 for k in range(9, nlay, 1):
     chd_spd += [[k, i, ncol - 1, H1] for i in range(nrow - 1)]
@@ -100,25 +96,25 @@ for k in range(9, nlay, 1):
 
 
 # Recharge boundary conditions
-
 rch_spd = []
 for i in range(0, 2, 1):
     for j in range(0, 2, 1):
         rch_spd.append([0, i, j, rech])
 
 # Solver parameters
-
 nouter = 500
 ninner = 100
 hclose = 1e-6
 rclose = 1000.0
+# -
 
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     newton=False,
     rewet=False,
@@ -127,7 +123,7 @@ def build_model(
     ihdwet=None,
     wetdry=None,
 ):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     if newton:
@@ -206,35 +202,34 @@ def build_model(
     return sim
 
 
-# Function to write flow diversion model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model. True is returned if the model runs successfully.
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Create a water-table array
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (6.3, 6.3)
+masked_values = (1e30, -1e30)
 
 
 def get_water_table(h, bot):
     imask = (h > -1e30) & (h <= bot)
     h[imask] = -1e30
     return np.amax(h, axis=0)
-
-
-# Function to plot the model results.
 
 
 def plot_results(silent=True):
@@ -247,7 +242,7 @@ def plot_results(silent=True):
     with styles.USGSMap():
         # load the newton model
         name = list(parameters.keys())[0]
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -263,7 +258,7 @@ def plot_results(silent=True):
 
         # load rewet model
         name = list(parameters.keys())[1]
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(workspace, name)
         sim1 = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -383,33 +378,28 @@ def plot_results(silent=True):
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the TWRI model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
 
 
-# ### MODFLOW-NWT Problem 2 Simulation
-#
-# Newton-Raphson.
+# Newton-Raphson
+scenario(0)
 
-simulation(0)
-
-# Rewetting.
-
-simulation(1)
+# Rewetting
+scenario(1)
 
 # Plot results
-
 plot_results()
+# -

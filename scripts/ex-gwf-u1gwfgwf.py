@@ -12,11 +12,12 @@
 # 2. with XT3D enabled in both models
 # 3. with XT3D enabled in both models and at the interface
 # 4. with XT3D enabled _only_ at the interface between the models
-#
-# ### Setup
-#
-# Imports
 
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
+
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -29,28 +30,26 @@ from flopy.utils.lgrutil import Lgr
 from matplotlib.colors import ListedColormap
 from modflow_devtools.misc import timed
 
-# Set default figure properties
+# Base workspace
+workspace = pl.Path("../examples")
 
-figure_size = (5, 5)
-figure_size_double = (7, 3)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-u1gwfgwf-s1": {
         "XT3D_in_models": False,
@@ -70,8 +69,7 @@ parameters = {
     },
 }
 
-# Table with Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 top = 0.0  # Top of the model ($m$)
@@ -85,14 +83,12 @@ k11 = 1.0  # Horizontal hydraulic conductivity ($m/d$)
 # Static temporal data used by TDIS file
 # Simulation has 1 steady stress period (1 day)
 # with 1 time step
-
 perlen = [1.0]
 nstp = [1]
 tsmult = [1.0, 1.0, 1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # Coarse model grid
-
 nlay = 1
 nrow = ncol = 7
 delr = 100.0
@@ -104,7 +100,6 @@ idomain[:, 2:5, 2:5] = 0
 gwfname_outer = "outer"
 
 # Refined model grid
-
 rfct = 3
 nrow_inner = ncol_inner = 9
 delr_inner = 100.0 / rfct
@@ -115,20 +110,20 @@ yorigin = 200.0
 gwfname_inner = "inner"
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models(sim_name, XT3D_in_models, XT3D_at_exchange):
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -289,28 +284,28 @@ def build_model(sim_name, XT3D_in_models, XT3D_at_exchange):
     return sim
 
 
-# Function to write model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=False):
+def run_models(sim, silent=False):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Functions to plot model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5, 5)
+figure_size_double = (7, 3)
 
 
 def plot_grid(idx, sim):
@@ -552,38 +547,32 @@ def plot_results(idx, sim, silent=True):
     plot_head(idx, sim)
 
 
-# Function that wraps all of the steps for the FHB model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def simulation(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-    sim = build_model(key, **params)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    sim = build_models(key, **params)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# ### USG-ex1 GWF-GWF Exchange Simulation
-#
 # Simulated heads without XT3D.
-
 simulation(0)
 
 # Simulated heads with XT3D enabled globally, but not at the exchange
-
 simulation(1)
 
 # Simulated heads with XT3D enabled globally
-
 simulation(2)
 
 # Simulated heads with XT3D enabled _only_ at the model interface.
-
 simulation(3)
+# -

@@ -2,12 +2,12 @@
 #
 # These are the models described in Vilhelmsen et al. (2012).  The parent
 # model is 9 layers, the child model is 25 layers.
-#
 
-# ### LGRV Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -20,35 +20,33 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set default figure properties
+# Base workspace
+workspace = pl.Path("../examples")
 
-figure_size = (5, 4)
-
-# Base simulation and data workspace
-
-ws = pl.Path("../examples")
-
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "seconds"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-lgrv-gr": {"configuration": "Refined"},
     "ex-gwf-lgrv-gc": {"configuration": "Coarse"},
     "ex-gwf-lgrv-lgr": {"configuration": "LGR"},
 }
 
-# Table LGRV Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 25  # Number of layers in refined model
 nrow = 183  # Number of rows in refined model
@@ -70,14 +68,12 @@ k11_str = "5.e-07, 1.e-06, 5.e-05"  # Horizontal hydraulic conductivity ($m/s$)
 
 # Static temporal data used by TDIS file
 # Simulation has 1 steady stress period (1 day)
-
 perlen = [1.0]
 nstp = [1]
 tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # load data files and process into arrays
-
 fname = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/top.dat",
     known_hash="md5:7e95923e78d0a2e2133929376d913ecf",
@@ -143,7 +139,6 @@ for i, kval in enumerate(k11_values):
     k11 = np.where(ikzone == i + 1, kval, k11)
 
 # Define model extent and child model extent
-
 xmin = 0
 xmax = ncol * delr
 ymin = 0.0
@@ -157,17 +152,18 @@ child_domain = [
 ]
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-6
 rclose = 100.0
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 LGRV model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def coarsen_shape(icoarsen, nrow, ncol):
     nrowc = int(np.ceil(nrow / icoarsen))
     ncolc = int(np.ceil(ncol / icoarsen))
@@ -243,7 +239,7 @@ def riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan):
 
 
 def build_lgr_model(name):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -319,7 +315,7 @@ def build_parent_model(sim, name, icoarsen, ncppl):
     nlayp = len(ncppl)
     idomain = np.ones((nlayp, nrowp, ncolp), dtype=int)
     idomain[:, istart:istop, jstart:jstop] = 0
-    sim = build_model(
+    sim = build_models(
         name,
         icoarsen=icoarsen,
         ncppl=ncppl,
@@ -341,7 +337,7 @@ def build_child_model(sim, name):
     jstart = int((xminc - xminp) / delrp)
     jstop = int((xmaxc - xminp) / delrp)
     nrowp, ncolp = coarsen_shape(icoarsen, nrow, ncol)
-    sim = build_model(
+    sim = build_models(
         name,
         rowcolspan=[istart, istop, jstart, jstop],
         sim=sim,
@@ -352,7 +348,7 @@ def build_child_model(sim, name):
     return sim
 
 
-def build_model(
+def build_models(
     name,
     icoarsen=1,
     ncppl=None,
@@ -364,7 +360,7 @@ def build_model(
     yorigin=None,
 ):
     if sim is None:
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
         flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
         flopy.mf6.ModflowIms(
@@ -454,28 +450,29 @@ def build_model(
     return sim
 
 
-# Function to write MODFLOW 6 LGRV model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the LGRV model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=False):
+def run_models(sim, silent=False):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
 
-# Function to plot the LGRV model results.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5, 4)
+
+
 def plot_grid(sim):
     with styles.USGSMap():
         name = sim.name
@@ -535,7 +532,7 @@ def plot_grid(sim):
 
 def plot_xsect(sim):
     print(f"Plotting cross section for {sim.name}...")
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         name = sim.name
         gwf = sim.get_model("parent")
 
@@ -561,10 +558,9 @@ def plot_xsect(sim):
 
 def plot_heads(sim):
     print(f"Plotting results for {sim.name} ...")
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         name = sim.name
         gwf = sim.get_model("parent")
-        modelname = gwf.name
         gwfc = None
         if "child" in list(sim.model_names):
             gwfc = sim.get_model("child")
@@ -620,40 +616,35 @@ def plot_results(sim, silent=True):
     plot_heads(sim)
 
 
-# Function that wraps all of the steps for the LGRV model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     if params["configuration"] == "Refined":
-        sim = build_model(key, modelname="parent")
+        sim = build_models(key, modelname="parent")
     elif params["configuration"] == "Coarse":
         ncppl = [1, 3, 3, 3, 3, 3, 3, 3, 3]
-        sim = build_model(key, icoarsen=3, ncppl=ncppl, modelname="parent")
+        sim = build_models(key, icoarsen=3, ncppl=ncppl, modelname="parent")
     elif params["configuration"] == "LGR":
         sim = build_lgr_model(key)
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### LGRV Simulation
-#
 # Global Refined Model
-
-simulation(0)
+scenario(0)
 
 # Global Coarse Model
-
-simulation(1)
+scenario(1)
 
 # Locally Refined Grid Model
-
-simulation(2)
+scenario(2)
+# -

@@ -2,12 +2,12 @@
 #
 # This is the lake package example problem (test 2) from the
 # Lake Package documentation (Merritt and Konikow, 2000).
-#
 
-# ### LAK Package problem 2 Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -20,29 +20,31 @@ import shapefile as shp
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
+# Figure properties
 figure_size = (6.3, 5.6)
 masked_values = (0, 1e30, -1e30)
 
-# Simulation name and workspace
-
+# Example name and base workspace
 sim_name = "ex-gwf-lak-p02"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
+writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("SAVE", True)).lower() == "true"
+plotSave = str(environ.get("PLOT", True)).lower() == "true"
 createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Table LAK Package problem 2 Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 5  # Number of layers
 nrow = 27  # Number of rows
@@ -63,12 +65,10 @@ lak_strt = 130.0  # Starting lake stage ($ft$)
 lak_etrate = 0.0103  # Lake evaporation rate ($ft/d$)
 lak_bedleak = 0.1  # Lakebed leakance ($1/d$)
 
-# parse parameter strings into tuples
-
+# Parse parameter strings into tuples
 botm = [float(value) for value in botm_str.split(",")]
 
 # Static temporal data used by TDIS file
-
 tdis_ds = ((1500.0, 200, 1.005),)
 
 # define delr and delc
@@ -144,7 +144,6 @@ fpth = pooch.retrieve(
 lake_map[1, :, :] = np.loadtxt(fpth, dtype=int) - 1
 
 # create linearly varying evapotranspiration surface
-
 xlen = delr.sum() - 0.5 * (delr[0] + delr[-1])
 x = 0.0
 s1d = H1 * np.ones(ncol, dtype=float)
@@ -156,26 +155,19 @@ surf = np.tile(s1d, (nrow, 1))
 surf[lake_map[0, :, :] > -1] = botm[0] - 2
 surf[lake_map[1, :, :] > -1] = botm[1] - 2
 
-# ### Create LAK Package problem 2 Model Boundary Conditions
-#
 # Constant head boundary conditions
-#
-
 chd_spd = []
 for k in range(nlay):
     chd_spd += [[k, i, 0, H1] for i in range(nrow)]
     chd_spd += [[k, i, ncol - 1, H2] for i in range(nrow)]
 
 # LAK Package
-
 lak_time_conv = 86400.0
 lak_len_conv = 3.28081
-
 lak_outlets = [
     [0, 0, -1, "manning", 114.85, 5.0, 0.05, 8.206324419006205e-4],
     [1, 1, -1, "manning", 109.4286, 5.0, 0.05, 9.458197164349258e-4],
 ]
-
 lak_spd = [
     [0, "rainfall", recharge],
     [0, "evaporation", lak_etrate],
@@ -184,7 +176,6 @@ lak_spd = [
 ]
 
 # SFR package
-
 sfr_pakdata = [
     [
         0,
@@ -568,12 +559,10 @@ sfr_conn = [
 sfr_spd = [[0, "inflow", 691200.0]]
 
 # MVR package
-
 mvr_paks = [
     ["SFR-1"],
     ["LAK-1"],
 ]
-
 mvr_spd = [
     ["SFR-1", 7, "LAK-1", 0, "FACTOR", 1.0],
     ["LAK-1", 0, "SFR-1", 8, "FACTOR", 1.0],
@@ -582,20 +571,20 @@ mvr_spd = [
 ]
 
 # Solver parameters
-
 nouter = 500
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 LAK Package problem 2 model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    sim_ws = os.path.join(ws, sim_name)
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -722,31 +711,31 @@ def build_model():
     return sim
 
 
-# Function to write MODFLOW 6 LAK Package problem 2 model files
-
-
-def write_model(sim, silent=True):
+def write_models(sim, silent=True):
     sim.write_simulation(silent=silent)
 
 
-# Function to run the LAK Package problem 2 model.
-# True is returned if the model runs successfully
-#
-
-
 @timed
-def run_model(sim, silent=True):
+def run_models(sim, silent=True):
     if not runModel:
         return
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
 
-# Function to plot grid
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+figure_size = (6.3, 5.6)
+masked_values = (0, 1e30, -1e30)
 
 
 def plot_grid(gwf, silent=True):
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
 
     # create lake array
     ilake = gwf.dis.idomain.array
@@ -782,7 +771,7 @@ def plot_grid(gwf, silent=True):
         [xedges[16], ycenters[22]],
     ]
     parts = [poly0, poly1, poly2]
-    shape_pth = os.path.join(ws, sim_name, "sfr.shp")
+    shape_pth = os.path.join(workspace, sim_name, "sfr.shp")
     w = shp.Writer(target=shape_pth, shapeType=shp.POLYLINE)
     w.field("no", "C")
     w.line([poly0])
@@ -824,7 +813,7 @@ def plot_grid(gwf, silent=True):
     pl1 = (xcenters[8], ycenters[8])
     pl2 = (xcenters[8], ycenters[18])
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig = plt.figure(
             figsize=(4, 6.9),
             tight_layout=True,
@@ -1010,11 +999,8 @@ def plot_grid(gwf, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the lake results
-
-
 def plot_lak_results(gwf, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # load the observations
         lak_results = gwf.lak.output.obs().data
         gwf_results = gwf.obs[0].output.obs().data
@@ -1119,32 +1105,26 @@ def plot_lak_results(gwf, silent=True):
             fig.savefig(fpth)
 
 
-# Function to plot the LAK Package problem 2 model results.
-
-
 def plot_results(sim, silent=True):
     gwf = sim.get_model(sim_name)
     plot_grid(gwf, silent=silent)
     plot_lak_results(gwf, silent=silent)
 
 
-# Function that wraps all of the steps for the LAK Package problem 2 model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-    write_model(sim, silent=silent)
-    run_model(sim, silent=silent)
+# +
+def scenario(silent=True):
+    sim = build_models()
+    write_models(sim, silent=silent)
+    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# ### LAK Package problem 2 Simulation
-#
-
-simulation()
+scenario()
+# -
