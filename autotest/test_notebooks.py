@@ -1,3 +1,5 @@
+"""Convert example scripts to notebooks and test notebook execution."""
+
 from os import environ
 
 from modflow_devtools.markers import requires_exe

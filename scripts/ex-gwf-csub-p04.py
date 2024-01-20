@@ -7,8 +7,6 @@
 
 # ### Initial setup
 #
-# ### Initial setup
-#
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
 
 # +
@@ -401,7 +399,7 @@ def plot_compaction_values(ax, sim, tagbase="W1L"):
     for k in range(nlay):
         fc = colors[k]
         tag = f"{tagbase}{k + 1}"
-        label = f"Model layer {k + 1}"
+        label = f"Layer {k + 1}"
         ax.fill_between(obs["totim"], obs[tag], y2=0, color=fc, label=label)
 
 
@@ -433,7 +431,7 @@ def plot_grid(sim, silent=True):
         w2loc = (6.5 * 2000.0, 8.5 * 2000.0)
 
         fig = plt.figure(figsize=(6.8, 5), constrained_layout=True)
-        gs = mpl.gridspec.GridSpec(7, 10, figure=fig, wspace=5)
+        gs = mpl.gridspec.GridSpec(7, 10, figure=fig, wspace=100)
         plt.axis("off")
 
         ax = fig.add_subplot(gs[:, 0:6])
@@ -643,14 +641,14 @@ def plot_grid(sim, silent=True):
             lw=0.75,
             color="black",
             ls="dashed",
-            label="Water-level at the end\nof stress-period 2",
+            label="Water-level\nafter period 2",
         )
         ax.set_ylabel("Elevation, in meters")
         ax.set_xlabel("x-coordinate along model row 9, in meters")
         styles.graph_legend(
             mm.ax,
             ncol=2,
-            bbox_to_anchor=(0.5, -0.6),
+            bbox_to_anchor=(0.7, -0.6),
             borderaxespad=0,
             frameon=False,
             loc="lower center",
@@ -723,7 +721,11 @@ def plot_stresses(sim, silent=True):
         )
         ax.plot([-100, -50], [-100, -100], color="red", lw=1, label="Effective stress")
         ax.plot(cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress")
-        styles.graph_legend(ax, ncol=3, loc="upper center")
+        styles.graph_legend(
+            ax,
+            ncol=3,
+            bbox_to_anchor=(0.9, -0.6),
+        )
         styles.heading(ax, letter="D", heading="Model layer 2, row 9, column 10")
         styles.remove_edge_ticks(ax)
         ax.set_xlabel("Simulation time, in years")
@@ -741,7 +743,7 @@ def plot_stresses(sim, silent=True):
 
 
 def plot_compaction(sim, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         name = sim.name
 
         fig, axes = plt.subplots(
@@ -758,7 +760,7 @@ def plot_compaction(sim, silent=True):
         ax.set_xlim(0, 120)
         ax.set_ylim(0, 1)
         plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-        ht = "{} {}".format("Interbed compaction", compaction_heading[0])
+        ht = f"Interbed compaction\n{compaction_heading[0]}"
         styles.heading(ax, letter="A", heading=ht)
         styles.remove_edge_ticks(ax)
 
@@ -766,8 +768,7 @@ def plot_compaction(sim, silent=True):
         ax = axes[idx]
         ax.set_ylim(0, 1)
         plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-        styles.graph_legend(ax, ncol=2, loc="upper center")
-        ht = "{} {}".format("Interbed compaction", compaction_heading[1])
+        ht = f"Interbed compaction\n{compaction_heading[1]}"
         styles.heading(ax, letter="B", heading=ht)
         styles.remove_edge_ticks(ax)
 
@@ -775,7 +776,7 @@ def plot_compaction(sim, silent=True):
         ax = axes[idx]
         ax.set_ylim(0, 1)
         plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-        ht = "{} {}".format("Coarse-grained compaction", compaction_heading[0])
+        ht = f"Coarse-grained compaction\n{compaction_heading[0]}"
         styles.heading(ax, letter="C", heading=ht)
         styles.remove_edge_ticks(ax)
 
@@ -783,15 +784,16 @@ def plot_compaction(sim, silent=True):
         ax = axes[idx]
         ax.set_ylim(0, 1)
         plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-        ht = "{} {}".format("Coarse-grained compaction", compaction_heading[1])
+        ht = f"Coarse-grained compaction\n{compaction_heading[1]}"
         styles.heading(ax, letter="D", heading=ht)
         styles.remove_edge_ticks(ax)
+        styles.graph_legend(ax, ncol=2, loc="lower right")
 
         idx += 1
         ax = axes[idx]
         ax.set_ylim(0, 1)
         plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-        ht = "{} {}".format("Total compaction", compaction_heading[0])
+        ht = f"Total compaction\n{compaction_heading[0]}"
         styles.heading(ax, letter="E", heading=ht)
         styles.remove_edge_ticks(ax)
         ax.set_ylabel(" ")
@@ -801,7 +803,7 @@ def plot_compaction(sim, silent=True):
         ax = axes.flat[idx]
         ax.set_ylim(0, 1)
         plot_compaction_values(ax, sim, tagbase=plot_tags[idx])
-        ht = "{} {}".format("Total compaction", compaction_heading[1])
+        ht = f"Total compaction\n{compaction_heading[1]}"
         styles.heading(ax, letter="F", heading=ht)
         styles.remove_edge_ticks(ax)
 
@@ -823,6 +825,7 @@ def plot_results(sim, silent=True):
     plot_grid(sim, silent=silent)
     plot_stresses(sim, silent=silent)
     plot_compaction(sim, silent=silent)
+    plt.show()
 
 
 # -
@@ -840,6 +843,5 @@ def scenario(silent=True):
     plot_results(sim, silent=silent)
 
 
-# One-dimensional compaction in a three-dimensional flow field
 scenario()
 # -

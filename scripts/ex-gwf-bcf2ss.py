@@ -28,7 +28,7 @@ from modflow_devtools.misc import timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-bcf2ss"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
@@ -125,7 +125,7 @@ relax = 0.97
 
 # +
 def build_models(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newton):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -271,7 +271,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
                     linewidths=0.5,
                 )
                 plt.clabel(cn, fmt="%3.0f")
-                heading = f"{aquifer[k]} under {cond[totim - 1]}"
+                heading = f"{aquifer[k]} under\n{cond[totim - 1]}"
                 styles.heading(ax, letter=labels[plot_number], heading=heading)
                 styles.remove_edge_ticks(ax)
 
@@ -336,13 +336,13 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
             mec="0.75",
             label="Normalized specific discharge",
         )
-        ax.plot(
-            -1000,
-            -1000,
-            lw=0.5,
-            color="black",
-            label="Head, in feet",
-        )
+        # ax.plot(
+        #     -1000,
+        #     -1000,
+        #     lw=0.5,
+        #     color="black",
+        #     label="Head, in feet",
+        # )
         styles.graph_legend(
             ax,
             ncol=5,
@@ -350,7 +350,9 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
             loc="upper center",
         )
 
-        cbar = plt.colorbar(cm, ax=ax, shrink=0.5, orientation="horizontal")
+        cbar = plt.colorbar(
+            cm, ax=ax, shrink=0.5, orientation="horizontal", location="bottom"
+        )
         cbar.ax.set_xlabel("Head, in feet")
 
         # save figure
@@ -371,7 +373,7 @@ def plot_results(silent=True):
 
     with styles.USGSMap() as fs:
         name = list(parameters.keys())[0]
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -388,7 +390,7 @@ def plot_results(silent=True):
 
         # plot grid
         fig = plt.figure(figsize=(6.8, 3.5), constrained_layout=True)
-        gs = mpl.gridspec.GridSpec(nrows=8, ncols=10, figure=fig, wspace=5)
+        gs = mpl.gridspec.GridSpec(nrows=8, ncols=10, figure=fig, hspace=40, wspace=10)
         plt.axis("off")
 
         ax = fig.add_subplot(gs[:7, 0:7])
@@ -409,7 +411,7 @@ def plot_results(silent=True):
         mm.plot_bc(ftype="RIV", color="green", head=head)
         mm.plot_grid(lw=0.5, color="0.5")
         ax.set_ylabel("Elevation, in feet")
-        ax.set_xlabel("x-coordinate along model row 8, in feet")
+        ax.set_xlabel("x-coordinate along \nrow 8, in feet")
         styles.heading(ax, letter="B", heading="Cross-section view")
         styles.remove_edge_ticks(ax)
 
@@ -425,8 +427,8 @@ def plot_results(silent=True):
         ax.spines["right"].set_color("none")
         ax.patch.set_alpha(0.0)
         ax.plot(
-            -1000,
-            -1000,
+            -1100,
+            -1100,
             "s",
             ms=5,
             color="green",
@@ -435,8 +437,8 @@ def plot_results(silent=True):
             label="River",
         )
         ax.plot(
-            -1000,
-            -1000,
+            -1100,
+            -1100,
             "s",
             ms=5,
             color="red",
@@ -445,8 +447,8 @@ def plot_results(silent=True):
             label="Well",
         )
         ax.plot(
-            -1000,
-            -1000,
+            -1100,
+            -1100,
             "s",
             ms=5,
             color="blue",
@@ -493,7 +495,7 @@ def plot_results(silent=True):
 
         # plot simulated newton results
         name = list(parameters.keys())[1]
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -507,13 +509,14 @@ def plot_results(silent=True):
 
         # plot the newton results
         plot_simulated_results(3, gwf, hobj, cobj)
+        plt.show()
 
 
 # -
 
 # ### Running the example
 #
-# Define and invoke a function to run the example scenarios, then plot results.
+# Define a function to run the example scenarios.
 
 
 # +
@@ -525,12 +528,19 @@ def scenario(idx, silent=True):
     run_models(sim, silent=silent)
 
 
-# Default formulation
+# -
+
+# Solve the model by the default means.
+
 scenario(0)
 
-# Newton-Raphson formulation
+# Solve the model with the Newton-Raphson formulation.
+
 scenario(1)
 
+# Plot results.
+
+# +
 # Simulated water levels and normalized specific discharge vectors in the
 # upper and lower aquifers under natural and pumping conditions using (1) the
 # rewetting option in the Node Property Flow (NPF) Package with the

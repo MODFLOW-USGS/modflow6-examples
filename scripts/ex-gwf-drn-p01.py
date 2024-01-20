@@ -1264,6 +1264,7 @@ def export_tables(silent=True):
 def plot_results(silent=True):
     plot_gwseep_results(silent=silent)
     export_tables(silent=silent)
+    plt.show()
 
 
 # -
@@ -1282,12 +1283,17 @@ def scenario(idx, silent=True):
     run_models(sim, silent=silent)
 
 
-# drain used to simulate discharge to the land surface
+# -
+
+
+# Use the drain approach to simulate discharge to the land surface.
+
 scenario(0)
 
-# uzf used to simulate discharge to the land surface
+# Use UZF to simulate discharge to the land surface.
+
 scenario(1)
 
-# plot the results
+# Plot the results.
+
 plot_results()
-# -

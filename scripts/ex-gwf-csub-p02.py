@@ -6,8 +6,6 @@
 
 # ### Initial setup
 #
-# ### Initial setup
-#
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
 
 # +
@@ -571,19 +569,20 @@ def plot_comp_q_comparison(sim, silent=True):
                 ax.set_xlim(0, 100)
                 ylabel = (
                     "Head-based minus effective stress-based\nsubsidence, "
-                    + "in percent of ultimate value"
+                    + "in % of ultimate value"
                 )
             else:
                 ax.set_ylim(0, 8)
                 ax.set_xlim(0, 100)
                 ylabel = (
-                    "Top minus bottom interbed effective stress-based\ndrainage "
-                    + "rate, in percent of head-based drainage rate"
+                    "Top minus bottom interbed effective stress-\nbased "
+                    + "rate, in % of head-based drainage rate"
                 )
             ax.set_xlabel("Percent of time constant")
             ax.set_ylabel(ylabel)
             styles.heading(ax, letter=chr(ord("A") + idx))
             axes.append(ax)
+        plt.subplots_adjust(wspace=0.36)
 
         for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
             sim_ws = os.path.join(workspace, name, hb_dir)
@@ -773,13 +772,14 @@ def plot_results(sim, silent=True):
     elif name.endswith("c"):
         plot_comp_q_comparison(sim, silent=silent)
         plot_head_comparison(sim, silent=silent)
+    plt.show()
 
 
 # -
 
 # ### Running the example
 #
-# Define and invoke a function to run the example scenarios, then plot results.
+# Define a function to run the example scenarios, then plot results.
 
 
 # +
@@ -816,12 +816,17 @@ def scenarios(idx, silent=True):
     plot_results(sim, silent=silent)
 
 
-# Head based solution
+# -
+
+
+# Run and plot the head based solution.
+
 scenarios(0)
 
-# Effective stress solution
+# Run and plot the effective stress solution.
+
 scenarios(1)
 
-# Head based for multiple interbed thicknesses
+# Run and plot the head based for multiple interbed thicknesses.
+
 scenarios(2)
-# -

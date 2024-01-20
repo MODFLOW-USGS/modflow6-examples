@@ -1,3 +1,5 @@
+"""Test run example scripts."""
+
 import sys
 from os import environ
 

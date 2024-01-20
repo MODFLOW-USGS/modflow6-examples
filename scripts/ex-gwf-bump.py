@@ -431,12 +431,14 @@ def plot_results(idx, sim, silent=True):
             )
             fig.savefig(fpth)
 
+        plt.show()
+
 
 # -
 
 # ### Running the example
 #
-# Define and invoke a function to run the example scenarios, then plot results.
+# Define a function to run the example scenarios and plot results.
 
 
 # +
@@ -449,13 +451,18 @@ def scenario(idx, silent=True):
     plot_results(idx, sim, silent=silent)
 
 
-# Simulated heads in the flow diversion model with Newton-Raphson.
+# -
+
+
+# Run the flow diversion model with Newton-Raphson and plot simulated heads.
+
 scenario(0, silent=False)
 
-# Simulated heads in the flow diversion model with rewetting.
+# Run the flow diversion model with rewetting and plot simulated heads.
+
 scenario(1, silent=False)
 
-# Simulated heads in the flow diversion model with Newton-Raphson and
-# cylinderical topography.
+# Run the flow diversion model with Newton-Raphson and
+# cylindrical topography and plot simulated heads.
+
 scenario(2, silent=False)
-# -

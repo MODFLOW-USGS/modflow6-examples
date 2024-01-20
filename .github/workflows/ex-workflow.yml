@@ -124,13 +124,9 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Create notebooks and model input files
-        # don't run the models though
-        run: pytest -v -n=auto --durations=0 test_notebooks.py
+      - name: Create model input files
+        run: pytest -v -n=auto --durations=0 test_scripts.py --no-run
         working-directory: ${{env.test-directory}}
-
-      - name: Copy notebooks to RTD directory
-        run: cp -R notebooks/*.ipynb .doc/_notebooks/
 
       - name: Run processing script
         if: matrix.python == '3.9'

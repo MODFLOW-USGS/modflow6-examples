@@ -7,8 +7,6 @@
 
 # ### Initial setup
 #
-# ### Initial setup
-#
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
 
 # +
@@ -977,6 +975,7 @@ def plot_grid(silent=True):
         chds = (5, 10, 12)
 
         fig, axes = plt.subplots(nrows=1, ncols=3, sharey=True, figsize=(5.1, 4.0))
+        plt.subplots_adjust(wspace=1)
 
         for idx, ax in enumerate(axes):
             ax.set_xlim(xrange)
@@ -1033,7 +1032,7 @@ def plot_grid(silent=True):
         styles.graph_legend(ax, loc="lower right", frameon=True, framealpha=1)
         styles.heading(ax=ax, letter="A", heading="Hydrostratigraphy")
         styles.remove_edge_ticks(ax)
-        ax.set_ylabel("Depth below land surface, in meters")
+        ax.set_ylabel("Depth below land\nsurface, in meters")
 
         # csub interbeds
         ax = axes[1]
@@ -1076,7 +1075,7 @@ def plot_grid(silent=True):
         for k in llabels:
             print_label(ax, edges, k)
 
-        styles.graph_legend(ax, loc="lower left")
+        styles.graph_legend(ax, loc="lower left", frameon=True)
         styles.heading(ax=ax, letter="C", heading="Boundary conditions")
         styles.remove_edge_ticks(ax)
 
@@ -1647,6 +1646,7 @@ def plot_results(silent=True):
     plot_head_es_comparison(silent=silent)
     plot_calibration(silent=silent)
     plot_vertical_head()
+    plt.show()
 
 
 # -
@@ -1665,15 +1665,21 @@ def scenario(idx, silent=True):
     run_models(sim, silent=silent)
 
 
-# Head based solution
+# -
+
+
+# Run the head based solution.
 scenario(0)
 
-# Effective stress solution
+# Run the effective stress solution.
+
 scenario(1)
 
-# Plot results
+# Plot results.
+
 plot_results()
 
-# Export tables
+# Export tables.
+
 export_tables()
 # -
