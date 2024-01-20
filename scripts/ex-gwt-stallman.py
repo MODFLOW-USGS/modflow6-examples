@@ -252,8 +252,6 @@ def write_models(sim, silent=True):
 
 @timed
 def run_models(sim, silent=True):
-    if not runModel:
-        return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)
 

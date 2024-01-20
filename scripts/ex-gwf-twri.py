@@ -242,8 +242,6 @@ def write_models(sim, mf, silent=True):
 
 @timed
 def run_models(sim, mf, silent=True):
-    if not runModel:
-        return
     success, buff = sim.run_simulation(silent=silent)
     if not success:
         print(buff)

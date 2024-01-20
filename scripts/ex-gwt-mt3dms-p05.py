@@ -453,8 +453,6 @@ def write_models(mf2k5, mt3d, sim, silent=True):
 
 @timed
 def run_models(mf2k5, mt3d, sim, silent=True):
-    if not runModel:
-        return
     success, buff = mf2k5.run_model(silent=silent, report=True)
     assert success, pformat(buff)
     success, buff = mt3d.run_model(
@@ -491,7 +489,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
     conc_mf6 = ucnobj_mf6.get_alldata()
 
     # Create figure for scenario
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         sim_name = mf6.name
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
         if ax is None:

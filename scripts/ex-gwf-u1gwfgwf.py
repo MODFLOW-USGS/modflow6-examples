@@ -289,8 +289,6 @@ def write_models(sim, silent=True):
 
 @timed
 def run_models(sim, silent=False):
-    if not runModel:
-        return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 

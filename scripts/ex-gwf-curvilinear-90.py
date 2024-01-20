@@ -2329,8 +2329,6 @@ def write_models(sim, silent=True):
 
 @timed
 def run_models(sim, silent=True):
-    if not runModel:
-        return
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, buff
 
@@ -2517,8 +2515,6 @@ def calculate_model_error():
 
 
 def check_model_error():
-    if not runModel:
-        return
     rel_error, rmse = calculate_model_error()
     assert rel_error < 0.001
 

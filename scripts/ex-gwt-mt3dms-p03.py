@@ -453,8 +453,6 @@ def write_models(mf2k5, mt3d, sim, silent=True):
 @timed
 def run_models(mf2k5, mt3d, sim, silent=True):
     """Run models and assert successful completion."""
-    if not runModel:
-        return
     success, buff = mf2k5.run_model(silent=silent, report=True)
     assert success, pformat(buff)
     success, buff = mt3d.run_model(

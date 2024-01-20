@@ -499,8 +499,6 @@ def write_models(sims, silent=True):
 
 @timed
 def run_models(sims, silent=True):
-    if not runModel:
-        return
     sim_mf6gwf, sim_mf6gwt = sims
     success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)

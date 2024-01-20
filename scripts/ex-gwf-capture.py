@@ -240,9 +240,6 @@ def get_streamflow(mobj):
 
 @timed
 def run_models():
-    if not runModel:
-        return
-
     soext = ".so"
     if sys.platform.lower() == "win32":
         soext = ".dll"
