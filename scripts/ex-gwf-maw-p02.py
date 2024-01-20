@@ -21,13 +21,12 @@ from modflow_devtools.misc import timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-maw-p02"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -104,7 +103,7 @@ rclose = 1e-4
 
 # +
 def build_models():
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -199,7 +198,7 @@ masked_values = (0, 1e30, -1e30)
 def plot_maw_results(silent=True):
     with styles.USGSPlot():
         # load the observations
-        fpth = os.path.join(ws, sim_name, f"{sim_name}.maw.obs.csv")
+        fpth = os.path.join(workspace, sim_name, f"{sim_name}.maw.obs.csv")
         maw = flopy.utils.Mf6Obs(fpth).data
 
         time = maw["totim"] * 86400.0
@@ -392,8 +391,10 @@ def plot_results(sim, silent=True):
 # +
 def scenario(silent=True):
     sim = build_models()
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 

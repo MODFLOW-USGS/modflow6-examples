@@ -28,7 +28,6 @@ example_name = "ex-gwt-moc3dp1"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -566,22 +565,34 @@ def plot_results_cd(
 #
 # Define and invoke a function to run the example scenario, then plot results.
 
-# +
-
 
 # +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     sims = build_models(key, **parameter_dict)
-    write_models(sims, silent=silent)
-    run_models(sims, silent=silent)
+    if writeModel:
+        write_models(sims, silent=silent)
+    if runModel:
+        run_models(sims, silent=silent)
     plot_results_ct(sims, idx, **parameter_dict)
     plot_results_cd(sims, idx, **parameter_dict)
 
 
+# -
+
+# +
 scenario(0)
+# -
+
+# +
 scenario(1)
+# -
+
+# +
 scenario(2)
+# -
+
+# +
 scenario(3)
 # -

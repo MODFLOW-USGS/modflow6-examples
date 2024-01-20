@@ -38,7 +38,6 @@ from modflow_devtools.misc import timed
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Base workspace
 workspace = pl.Path("../examples")
@@ -577,20 +576,28 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     mf2k5, mt3d, sim = build_models(key, **parameter_dict)
-    write_models(mf2k5, mt3d, sim, silent=silent)
-    run_models(mf2k5, mt3d, sim, silent=silent)
+    if writeModel:
+        write_models(mf2k5, mt3d, sim, silent=silent)
+    if runModel:
+        run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mt3d, sim, idx)
 
 
-# Advection only
+# -
+
+
+# Run advection only scenario.
+
 scenario(0)
 
-# Advection and dispersion
+# Run advection and dispersion scenario.
+
 scenario(1)
 
-# Advection, dispersion, and retardation
+# Run advection, dispersion, and retardation scenario.
+
 scenario(2)
 
-# Advection, dispersion, retardation, and decay
+# Run advection, dispersion, retardation, and decay scenario.
+
 scenario(3)
-# -

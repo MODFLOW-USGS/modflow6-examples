@@ -27,7 +27,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -634,17 +633,22 @@ def scenario(idx, silent=True):
         sim = build_models(key, icoarsen=3, ncppl=ncppl, modelname="parent")
     elif params["configuration"] == "LGR":
         sim = build_lgr_model(key)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 
-# Global Refined Model
+# Run the global refined model and plot results.
+
 scenario(0)
 
-# Global Coarse Model
+# Run the global coarse model and plot results.
+
 scenario(1)
 
-# Locally Refined Grid Model
+# Run the locally refined grid model and plot results.
+
 scenario(2)
 # -

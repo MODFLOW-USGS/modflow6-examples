@@ -20,13 +20,12 @@ from modflow_devtools.misc import timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-zaidel"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -92,7 +91,7 @@ def build_models(H2=1.0):
         [0, 0, ncol - 1, H2],
     ]
 
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -243,14 +242,20 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(**params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# Simulated heads in the Zaidel model with H2 = 1.
+# -
+
+
+# Run the Zaidel model with H2 = 1, then plot simulated heads.
+
 scenario(0)
 
-# Simulated heads in the Zaidel model with H2 = 10.
+# Run the Zaidel model with H2 = 10, then plot simulated heads.
+
 scenario(1)
-# -

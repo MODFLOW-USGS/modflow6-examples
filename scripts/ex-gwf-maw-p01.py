@@ -27,7 +27,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -409,16 +408,23 @@ def scenario(idx=0, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
 
 
-# No pumping case
+# -
+
+
+# Run the no pumping case.
+
 scenario(0)
 
-# Pumping case
+# Run the pumping case.
+
 scenario(1)
 
-# Plot the results
+# Plot the results.
+
 plot_results()
-# -

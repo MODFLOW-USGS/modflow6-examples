@@ -28,7 +28,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -390,16 +389,23 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
 
 
-# Newton-Raphson
+# -
+
+
+# Run with Newton-Raphson.
+
 scenario(0)
 
-# Rewetting
+# Run with rewetting.
+
 scenario(1)
 
-# Plot results
+# Plot results.
+
 plot_results()
-# -

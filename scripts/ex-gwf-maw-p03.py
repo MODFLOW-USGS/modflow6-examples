@@ -19,13 +19,12 @@ from modflow_devtools.misc import timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-maw-p03"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -241,7 +240,7 @@ def build_models(name, simulation="regional"):
 
 
 def build_regional(name):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -291,7 +290,7 @@ def build_regional(name):
 def build_local(name, simulation):
     # get regional heads for constant head boundaries
     pth = list(parameters.keys())[0]
-    fpth = os.path.join(ws, pth, f"{sim_name}.hds")
+    fpth = os.path.join(workspace, pth, f"{sim_name}.hds")
     try:
         h = flopy.utils.HeadFile(fpth).get_data()
     except:
@@ -317,7 +316,7 @@ def build_local(name, simulation):
                 chd_spd.append([k, il, 0, hi1])
                 chd_spd.append([k, il, ncol - 1, hi2])
 
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -435,10 +434,10 @@ def plot_maw_results(silent=True):
     with styles.USGSPlot():
         # load the observations
         name = list(parameters.keys())[1]
-        fpth = os.path.join(ws, name, f"{sim_name}.maw.obs.csv")
+        fpth = os.path.join(workspace, name, f"{sim_name}.maw.obs.csv")
         maw = flopy.utils.Mf6Obs(fpth).data
         name = list(parameters.keys())[2]
-        fpth = os.path.join(ws, name, f"{sim_name}.gwf.obs.csv")
+        fpth = os.path.join(workspace, name, f"{sim_name}.gwf.obs.csv")
         gwf = flopy.utils.Mf6Obs(fpth).data
 
         # process heads
@@ -558,7 +557,7 @@ def plot_regional_grid(silent=True):
     else:
         verbosity = 1
     name = list(parameters.keys())[0]
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity
     )
@@ -681,7 +680,7 @@ def plot_local_grid(silent=True):
     else:
         verbosity = 1
     name = list(parameters.keys())[1]
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity
     )
@@ -828,19 +827,27 @@ def scenario(idx=0, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
 
 
-# Regional model
+# -
+
+
+# Run the regional model.
+
 scenario(0)
 
-# Local model with MAW well
+# Run the local model with MAW well.
+
 scenario(1)
 
-# Local model with high K well
+# Run the local model with high K well.
+
 scenario(2)
 
-# Plot the results
+# Plot the results.
+
 plot_results()
-# -

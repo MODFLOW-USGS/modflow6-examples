@@ -22,13 +22,12 @@ from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
 # Base workspace
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -83,7 +82,7 @@ rclose = 1e-6
 
 # +
 def build_models(sim_name, angle1, xt3d):
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -168,7 +167,7 @@ figure_size = (3.5, 3.5)
 def plot_grid(idx, sim):
     with styles.USGSMap() as fs:
         sim_name = list(parameters.keys())[idx]
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=figure_size)
@@ -191,7 +190,7 @@ def plot_grid(idx, sim):
 def plot_head(idx, sim):
     with styles.USGSMap() as fs:
         sim_name = list(parameters.keys())[idx]
-        sim_ws = os.path.join(ws, sim_name)
+        sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
 
         fig = plt.figure(figsize=figure_size)
@@ -232,17 +231,22 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# Simulated heads in the Hani model with anisotropy in x direction.
+# Run the Hani model with anisotropy in x direction and plot heads.
+
 scenario(0)
 
-# Simulated heads in the Hani model with anisotropy in y direction.
+# Run the Hani model with anisotropy in y direction and plot heads.
+
 scenario(1)
 
-# Simulated heads in the Hani model with anisotropy rotated 15 degrees.
+# Run the Hani model with anisotropy rotated 15 degrees and plot heads.
+
 scenario(2)
 # -

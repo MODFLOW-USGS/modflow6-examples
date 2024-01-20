@@ -42,7 +42,6 @@ example_name = "ex-gwt-mt3dms-p03"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -547,8 +546,10 @@ def plot_results(mt3d, mf6, idx, ax=None):
 # +
 def scenario(idx, silent=True):
     mf2k5, mt3d, sim = build_models(example_name)
-    write_models(mf2k5, mt3d, sim, silent=silent)
-    run_models(mf2k5, mt3d, sim, silent=silent)
+    if writeModel:
+        write_models(mf2k5, mt3d, sim, silent=silent)
+    if runModel:
+        run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mt3d, sim, idx)
 
 

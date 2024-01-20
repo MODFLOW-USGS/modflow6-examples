@@ -27,7 +27,6 @@ example_name = "ex-gwf-lgr"
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -1083,8 +1082,10 @@ def plot_results(mf6, idx):
 # +
 def scenario(idx, silent=True):
     sim = build_models(example_name)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 

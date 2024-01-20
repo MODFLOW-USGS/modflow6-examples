@@ -4,7 +4,7 @@
 
 # ### Initial setup
 #
-# Import dependencies, define the example name and workspace, and read settings from environment variables.
+# Import dependencies, define the example name and workspace, read settings from environment variables, and define some general utilities.
 
 # +
 import os
@@ -31,7 +31,6 @@ from shapely.geometry import LineString, Polygon
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Groundwater 2023 utilities
 
@@ -1235,8 +1234,10 @@ def plot_conc_results(sims):
 # +
 def scenario(idx, silent=True):
     sim = build_models(example_name)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 

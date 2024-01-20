@@ -21,14 +21,13 @@ from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
 # Example name and base workspace
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-mt3dms-p02"
 
 # Settings from an environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -111,7 +110,7 @@ system_length = ncol * delr
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
@@ -181,7 +180,7 @@ def build_mf6gwt(
 ):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = (
         (period1, int(period1 / delta_time), 1.0),
@@ -268,7 +267,7 @@ def build_mf6gwt(
 def build_mf2005(sim_folder):
     print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf2005")
+    sim_ws = os.path.join(workspace, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(modelname=name, model_ws=sim_ws, exe_name="mf2005")
     perlen = [period1, period2]
     dis = flopy.modflow.ModflowDis(
@@ -309,7 +308,7 @@ def build_mt3dms(
 ):
     print(f"Building mt3dms model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mt3d")
+    sim_ws = os.path.join(workspace, sim_folder, "mt3d")
     mt = flopy.mt3d.Mt3dms(
         modelname=name,
         model_ws=sim_ws,
@@ -435,7 +434,7 @@ def plot_results_ct(sims, idx, **kwargs):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-ct.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
@@ -445,7 +444,7 @@ def plot_results():
         case_colors = ["blue", "green", "red", "yellow"]
         pkeys = list(parameters.keys())
         for icase, sim_name in enumerate(pkeys[2:]):
-            sim_ws = os.path.join(ws, sim_name)
+            sim_ws = os.path.join(workspace, sim_name)
             beta = parameters[sim_name]["beta"]
 
             fname = os.path.join(sim_ws, "mf6gwt", "trans.obs.csv")
@@ -495,8 +494,10 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     sims = build_models(key, **parameter_dict)
-    write_models(sims, silent=silent)
-    run_models(sims, silent=silent)
+    if writeModel:
+        write_models(sims, silent=silent)
+    if runModel:
+        run_models(sims, silent=silent)
     plot_results_ct(sims, idx, **parameter_dict)
 
 
@@ -506,5 +507,6 @@ scenario(2)
 scenario(3)
 scenario(4)
 scenario(5)
+
 plot_results()
 # -

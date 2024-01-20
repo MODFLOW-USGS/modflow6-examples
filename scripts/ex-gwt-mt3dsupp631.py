@@ -1,13 +1,18 @@
 # ## Zero-Order Growth in a Uniform Flow Field
 #
-# MT3DMS Supplemental Guide Problem 6.3.1
-#
-#
+# This example is for zero-order production in a uniform flow field.
+# It is based on example problem 6.3.1 described in Zheng 2010. The
+# problem consists of a one-dimensional model grid with inflow into
+# the first cell and outflow through the last cell. This example is
+# simulated with a GWT model in, which receives flow information from
+# a GWF model. Results from the GWT model are compared with the results
+# from a MT3DMS simulation that uses flows from a MODFLOW-2005 simulation.
 
-# ### Zero-Order Growth in a Uniform Flow Field Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 from os import environ
@@ -18,29 +23,26 @@ import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import timed
 
-# Set figure properties specific to the
-
-figure_size = (5, 3)
-
-# Base simulation and model name and workspace
-
-ws = pl.Path("../examples")
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-mt3dsupp631"
 
-# Configuration
-
+# Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
 # Model parameters
-
 nper = 2  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -56,18 +58,18 @@ zero_order_decay = -2.0e-3  # Zero-order production rate ($mg/L d^{-1}$)
 source_duration = 160.0  # Source duration ($d$)
 total_time = 840.0  # Simulation time ($t$)
 obs_xloc = 8.0  # Observation x location ($m$)
+# -
 
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
-# recharge is the only variable
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = (
         (source_duration, 1, 1.0),
@@ -120,7 +122,7 @@ def build_mf6gwf(sim_folder):
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     pertim1 = source_duration
     pertim2 = total_time - source_duration
@@ -172,7 +174,7 @@ def build_mf6gwt(sim_folder):
 def build_mf2005(sim_folder):
     print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf2005")
+    sim_ws = os.path.join(workspace, sim_folder, "mf2005")
     mf = flopy.modflow.Modflow(modelname=name, model_ws=sim_ws, exe_name="mf2005")
     pertim1 = source_duration
     pertim2 = total_time - source_duration
@@ -205,7 +207,7 @@ def build_mf2005(sim_folder):
 def build_mt3dms(sim_folder, modflowmodel):
     print(f"Building mt3dms model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mt3d")
+    sim_ws = os.path.join(workspace, sim_folder, "mt3d")
     mt = flopy.mt3d.Mt3dms(
         modelname=name,
         model_ws=sim_ws,
@@ -237,19 +239,12 @@ def build_models(sim_name):
     return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
-# Function to write model files
-
-
 def write_models(sims, silent=True):
     sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
     sim_mf6gwf.write_simulation(silent=silent)
     sim_mf6gwt.write_simulation(silent=silent)
     sim_mf2005.write_input()
     sim_mt3dms.write_input()
-
-
-# Function to run the model
-# True is returned if the model runs successfully
 
 
 @timed
@@ -269,7 +264,15 @@ def run_models(sims, silent=True):
     assert success, pformat(buff)
 
 
-# Function to plot the model results
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5, 3)
 
 
 def plot_results(sims, idx):
@@ -308,27 +311,26 @@ def plot_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}.png"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
     sim = build_models(example_name)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(sim, idx)
 
 
-# ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-# Add a description of the plot(s)
-
 scenario(0)
+# -

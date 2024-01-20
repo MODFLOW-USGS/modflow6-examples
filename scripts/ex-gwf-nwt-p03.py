@@ -25,13 +25,12 @@ from modflow_devtools.misc import timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-nwt-p03"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -131,7 +130,7 @@ def build_models(
     name,
     recharge="high",
 ):
-    sim_ws = os.path.join(ws, name)
+    sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -539,14 +538,20 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# Simulated heads in the MODFLOW-NWT Problem 3 model with high recharge.
+# -
+
+
+# Run the MODFLOW-NWT Problem 3 model with high recharge, then plot heads.
+
 scenario(0)
 
-# Simulated heads in the MODFLOW-NWT Problem 3 model with low recharge.
+# Run the MODFLOW-NWT Problem 3 model with low recharge, then plot heads.
+
 scenario(1)
-# -

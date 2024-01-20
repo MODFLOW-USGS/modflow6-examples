@@ -38,7 +38,6 @@ from modflow_devtools.misc import timed
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 
 # Example name and base workspace
 workspace = pl.Path("../examples")
@@ -562,17 +561,24 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     mf2k5, mt3d, sim = build_models(key, **parameter_dict)
-    write_models(mf2k5, mt3d, sim, silent=silent)
-    run_models(mf2k5, mt3d, sim, silent=silent)
+    if writeModel:
+        write_models(mf2k5, mt3d, sim, silent=silent)
+    if runModel:
+        run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mt3d, sim, idx, legendtxt_mod1[idx], legendtxt_mod2[idx])
 
 
-# Compares the standard finite difference solutions between MT3D and MF6
+# -
+
+
+# Compares the standard finite difference solutions between MT3D and MF6.
+
 scenario(0)
 
-# Compares the respective TVD solutions between MT3D and MF6
+# Compares the respective TVD solutions between MT3D and MF6.
+
 scenario(1)
 
-# Compares a MOC solution in MT3D with the standard FD method of MF6
+# Compares a MOC solution in MT3D with the standard FD method of MF6.
+
 scenario(2)
-# -

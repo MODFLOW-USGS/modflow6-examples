@@ -26,7 +26,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -955,11 +954,19 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     mf2k5, mt3d, sim = build_models(key, mixelm=mixelm, **parameter_dict)
-    write_models(mf2k5, mt3d, sim, silent=silent)
-    run_models(mf2k5, mt3d, sim, silent=silent)
+    if writeModel:
+        write_models(mf2k5, mt3d, sim, silent=silent)
+    if runModel:
+        run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mf2k5, mt3d, sim, idx)
 
 
+# -
+
+# +
 scenario(0, silent=True)
+# -
+
+# +
 scenario(1, silent=True)
 # -

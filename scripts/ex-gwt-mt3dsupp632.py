@@ -30,7 +30,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -475,8 +474,10 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     sims = build_models(key, **parameter_dict)
-    write_models(sims, silent=silent)
-    run_models(sims, silent=silent)
+    if writeModel:
+        write_models(sims, silent=silent)
+    if runModel:
+        run_models(sims, silent=silent)
     plot_scenario_results(sims, idx)
 
 
@@ -486,6 +487,7 @@ def scenario(idx, silent=True):
 # * distribution_coefficient = 0.25
 # * decay = 0.0
 # * decay_sorbed = -1.0e-3
+
 scenario(0)
 
 # ### Case 2
@@ -494,6 +496,7 @@ scenario(0)
 # * distribution_coefficient = 0.25
 # * decay = -5.e-4
 # * decay_sorbed = -5.e-4
+
 scenario(1)
 
 # ### Case 3
@@ -502,8 +505,9 @@ scenario(1)
 # * distribution_coefficient = 0.
 # * decay = -1.0e-3
 # * decay_sorbed = 0.
+
 scenario(2)
 
-# Plot the results for all 3 scenarios in one plot
+# Plot the results for all 3 scenarios in one plot.
+
 plot_results()
-# -

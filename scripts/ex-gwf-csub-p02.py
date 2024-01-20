@@ -28,8 +28,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
-# -
 
 # ### Define parameters
 #
@@ -772,7 +770,6 @@ def plot_results(sim, silent=True):
     elif name.endswith("c"):
         plot_comp_q_comparison(sim, silent=silent)
         plot_head_comparison(sim, silent=silent)
-    plt.show()
 
 
 # -
@@ -793,8 +790,10 @@ def scenarios(idx, silent=True):
         params["kv"] = interbed_kv[0]
 
         sim = build_models(key, **params)
-        write_models(sim, silent=silent)
-        run_models(sim, silent=silent)
+        if writeModel:
+            write_models(sim, silent=silent)
+        if runModel:
+            run_models(sim, silent=silent)
     else:
         for b, kv in zip(interbed_thickness, interbed_kv):
             for head_based in (
@@ -811,8 +810,10 @@ def scenarios(idx, silent=True):
                 params["kv"] = kv
 
                 sim = build_models(key, subdir_name=subdir_name, **params)
-                write_models(sim, silent=silent)
-                run_models(sim, silent=silent)
+                if writeModel:
+                    write_models(sim, silent=silent)
+                if runModel:
+                    run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 
 

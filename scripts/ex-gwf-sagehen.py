@@ -22,13 +22,12 @@ from modflow_devtools.misc import timed
 
 # Example name and base workspace
 example_name = "ex-gwf-sagehen"
-ws = pl.Path("../examples")
+workspace = pl.Path("../examples")
 
 # Settings from environment variables
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -1903,7 +1902,7 @@ maxmvr = 10000  # Something arbitrarily high
 # +
 def build_models(sim_name, silent=False):
     # Instantiate the MODFLOW 6 simulation
-    sim_ws = os.path.join(ws, example_name)
+    sim_ws = os.path.join(workspace, example_name)
     sim = flopy.mf6.MFSimulation(
         sim_name=example_name,
         version="mf6",
@@ -2367,8 +2366,10 @@ def plot_results(mf6):
 # +
 def scenario(silent=True):
     sim = build_models(example_name)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(sim)
 
 

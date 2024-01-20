@@ -42,7 +42,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Curvilinear grid
@@ -2536,8 +2535,10 @@ def scenario(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
     sim = build_models(sim_name)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
 
 
 # Run simulation

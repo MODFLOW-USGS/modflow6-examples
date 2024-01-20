@@ -37,7 +37,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -559,20 +558,28 @@ def simulation(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# Simulated heads without XT3D.
+# -
+
+
+# Run without XT3D, then plot simulated heads.
+
 simulation(0)
 
-# Simulated heads with XT3D enabled globally, but not at the exchange
+# Run with XT3D enabled globally, but not at the exchange, then plot simulated heads.
+
 simulation(1)
 
-# Simulated heads with XT3D enabled globally
+# Run with XT3D enabled globally, then plot simulated heads.
+
 simulation(2)
 
-# Simulated heads with XT3D enabled _only_ at the model interface.
+# Run with XT3D enabled _only_ at the model interface, then plot simulated heads.
+
 simulation(3)
-# -

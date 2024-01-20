@@ -38,7 +38,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -404,8 +403,10 @@ def plot_results(silent=True):
 # +
 def scenario(silent=True):
     sim = build_models()
-    write_models(sim, silent=silent)
-    run_models()
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models()
 
 
 scenario()

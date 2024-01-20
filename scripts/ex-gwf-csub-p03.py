@@ -33,7 +33,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -1646,7 +1645,6 @@ def plot_results(silent=True):
     plot_head_es_comparison(silent=silent)
     plot_calibration(silent=silent)
     plot_vertical_head()
-    plt.show()
 
 
 # -
@@ -1661,14 +1659,17 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
 
 
 # -
 
 
 # Run the head based solution.
+
 scenario(0)
 
 # Run the effective stress solution.

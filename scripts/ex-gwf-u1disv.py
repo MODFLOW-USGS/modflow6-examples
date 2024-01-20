@@ -29,7 +29,6 @@ workspace = pl.Path("../examples")
 writeModel = str(environ.get("WRITE", True)).lower() == "true"
 runModel = str(environ.get("RUN", True)).lower() == "true"
 plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
 # -
 
 # ### Define parameters
@@ -317,14 +316,20 @@ def simulation(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
+    if writeModel:
+        write_models(sim, silent=silent)
+    if runModel:
+        run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 
 
-# Simulated heads in the USG1DISV model without XT3D.
+# -
+
+
+# Run the USG1DISV model without XT3D, then plot heads.
+
 simulation(0)
 
-# Simulated heads in the USG1DISV model with XT3D.
+# Run the USG1DISV model with XT3D, then plot heads.
+
 simulation(1)
-# -
