@@ -52,7 +52,7 @@ jobs:
       - name: Create model
         working-directory: autotest
         # run the scripts via pytest without running the models, just build input files
-        run: pytest -v -n=auto --durations=0 test_scripts.py
+        run: pytest -v -n=auto --durations=0 test_scripts.py --init
 
       - name: zip input files
         run: |
@@ -73,10 +73,6 @@ jobs:
       fail-fast: false
       matrix:
         python: [3.9, "3.10", "3.11", "3.12"]
-    env:
-      script-directory: scripts
-      etc-directory: etc
-      test-directory: autotest
     defaults:
       run:
         shell: bash
@@ -106,12 +102,12 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install Python packages
+        working-directory: etc
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
-        working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
@@ -125,13 +121,13 @@ jobs:
           repo: modflow6-nightly-build
 
       - name: Test example scripts and create input files
-        run: pytest -v -n=auto --durations=0 test_scripts.py
-        working-directory: ${{env.test-directory}}
+        working-directory: autotest
+        run: pytest -v -n=auto --durations=0 test_scripts.py --plot
 
       - name: Run processing script
+        working-directory: scripts
         if: matrix.python == '3.9'
         run: python process-scripts.py
-        working-directory: ${{env.script-directory}}
 
       - name: Build mf6examples LaTeX document
         if: matrix.python == '3.9'
@@ -177,7 +173,6 @@ jobs:
         with:
           name: current
           path: mf6examples.pdf
-
 
   # make the release if the "build" job was successful
   release:
