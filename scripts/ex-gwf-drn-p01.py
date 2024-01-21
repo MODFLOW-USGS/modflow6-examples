@@ -1297,4 +1297,5 @@ scenario(1)
 
 # Plot the results.
 
-plot_results()
+if plot:
+    plot_results()

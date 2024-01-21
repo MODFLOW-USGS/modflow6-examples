@@ -325,11 +325,11 @@ def plot_results(sim, mf, silent=True):
         # Create figure for simulation
         extents = (0, ncol * delc, 0, nrow * delr)
         fig, axes = plt.subplots(
-            3,
+            2,
             3,
             figsize=figure_size,
             dpi=300,
-            constrained_layout=True,
+            # constrained_layout=True,
             sharey=True,
         )
         for ax in axes.flatten():
@@ -379,16 +379,22 @@ def plot_results(sim, mf, silent=True):
             styles.heading(letter=letter, heading=title, ax=ax)
 
         # create legend
-        ax = plt.subplot(313)
+        ax = fig.add_subplot()
         ax.set_xlim(extents[:2])
         ax.set_ylim(extents[2:])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
         # ax = axes.flatten()[-2]
-        ax.axis("off")
+        # ax.axis("off")
         ax.plot(
             -10000,
             -10000,
-            lw=0,
             marker="s",
             ms=10,
             mfc="green",
@@ -398,7 +404,6 @@ def plot_results(sim, mf, silent=True):
         ax.plot(
             -10000,
             -10000,
-            lw=0,
             marker="s",
             ms=10,
             mfc="0.5",
@@ -408,7 +413,6 @@ def plot_results(sim, mf, silent=True):
         ax.plot(
             -10000,
             -10000,
-            lw=0,
             marker="$\u2192$",
             ms=10,
             mfc="0.75",
@@ -416,10 +420,13 @@ def plot_results(sim, mf, silent=True):
             label="Normalized specific discharge",
         )
         ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
-        styles.graph_legend(ax, loc="upper center")
+        styles.graph_legend(ax, ncol=1, frameon=False, loc="center left")
+
+        # plt.tight_layout(h_pad=-15)
+        plt.subplots_adjust(top=0.9, hspace=0.5)
 
         # plot colorbar
-        cax = plt.axes([0.325, 0.125, 0.35, 0.025])
+        cax = plt.axes([0.525, 0.55, 0.35, 0.025])
         cbar = plt.colorbar(plot_obj, shrink=0.8, orientation="horizontal", cax=cax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)

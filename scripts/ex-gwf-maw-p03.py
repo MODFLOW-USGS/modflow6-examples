@@ -854,4 +854,5 @@ scenario(2)
 
 # Plot the results.
 
-plot_results()
+if plot:
+    plot_results()

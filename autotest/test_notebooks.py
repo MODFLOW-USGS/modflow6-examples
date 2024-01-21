@@ -9,12 +9,12 @@ from conftest import NOTEBOOKS_PATH
 
 
 @requires_exe("jupytext")
-def test_notebooks(example_script, write, run, plot, plot_show, plot_save, gif):
+def test_notebooks(example_script, write, run, plot, plot_save, gif):
     with set_env(
         WRITE=str(write),
         RUN=str(run),
         PLOT=str(plot),
-        PLOT_SHOW=str(plot_show),
+        PLOT_SHOW=str(True),
         PLOT_SAVE=str(plot_save),
         GIF=str(gif),
     ):

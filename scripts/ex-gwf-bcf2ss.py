@@ -546,12 +546,13 @@ scenario(1)
 # Plot results.
 
 # +
-# Simulated water levels and normalized specific discharge vectors in the
-# upper and lower aquifers under natural and pumping conditions using (1) the
-# rewetting option in the Node Property Flow (NPF) Package with the
-# Standard Conductance Formulation and (2) the Newton-Raphson formulation.
-# A. Upper aquifer results under natural conditions. B. Lower aquifer results
-# under natural conditions C. Upper aquifer results under pumping conditions.
-# D. Lower aquifer results under pumping conditions
-plot_results()
+if plot:
+    # Simulated water levels and normalized specific discharge vectors in the
+    # upper and lower aquifers under natural and pumping conditions using (1) the
+    # rewetting option in the Node Property Flow (NPF) Package with the
+    # Standard Conductance Formulation and (2) the Newton-Raphson formulation.
+    # A. Upper aquifer results under natural conditions. B. Lower aquifer results
+    # under natural conditions C. Upper aquifer results under pumping conditions.
+    # D. Lower aquifer results under pumping conditions
+    plot_results()
 # -

@@ -411,4 +411,5 @@ scenario(1)
 
 # Plot results.
 
-plot_results()
+if plot:
+    plot_results()

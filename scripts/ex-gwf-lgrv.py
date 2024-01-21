@@ -643,6 +643,9 @@ def scenario(idx, silent=True):
         plot_results(sim, silent=silent)
 
 
+# -
+
+
 # Run the global refined model and plot results.
 
 scenario(0)
@@ -654,4 +657,3 @@ scenario(1)
 # Run the locally refined grid model and plot results.
 
 scenario(2)
-# -

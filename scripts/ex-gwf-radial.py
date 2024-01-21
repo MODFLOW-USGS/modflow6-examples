@@ -1995,6 +1995,7 @@ def scenario(silent=True):
 # MF6 Axisymmetric Model
 scenario()
 
-# Solve analytical and plot results with MF6 results
-plot_results()
+if plot:
+    # Solve analytical and plot results with MF6 results
+    plot_results()
 # -

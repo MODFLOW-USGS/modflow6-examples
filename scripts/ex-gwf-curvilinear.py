@@ -2647,6 +2647,7 @@ def scenario(silent=True):
 # Run simulation
 scenario()
 
-# Solve analytical solution and plot results with MF6 results
-plot_results()
+if plot:
+    # Solve analytical solution and plot results with MF6 results
+    plot_results()
 # -

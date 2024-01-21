@@ -1682,11 +1682,10 @@ scenario(0)
 
 scenario(1)
 
-# Plot results.
+# Plot results and export tables.
 
-plot_results()
-
-# Export tables.
-
-export_tables()
+# +
+if plot:
+    plot_results()
+    export_tables()
 # -
