@@ -14,13 +14,12 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 from scipy.special import erfc
 
 # Example name and base workspace
@@ -28,9 +27,11 @@ example_name = "ex-gwt-moc3d-p02"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -297,8 +298,9 @@ def plot_results(sims):
         lines = [cs1.collections[0], cs2.collections[0]]
         axs.legend(lines, labels, loc="upper left")
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
@@ -317,9 +319,9 @@ def plot_results(sims):
 # +
 def scenario(silent=True):
     sims = build_models(example_name)
-    if writeModel:
+    if write:
         write_models(sims, silent=silent)
-    if runModel:
+    if run:
         run_models(sims, silent=silent)
     plot_results(sims)
 

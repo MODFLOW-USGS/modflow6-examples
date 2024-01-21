@@ -9,22 +9,23 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-maw-p03"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -539,8 +540,9 @@ def plot_maw_results(silent=True):
         ax.set_xlabel("Discharge rate, in cubic feet per day")
         ax.set_ylabel("Elevation, in feet")
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -662,8 +664,9 @@ def plot_regional_grid(silent=True):
         cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
         styles.graph_legend(ax, loc="lower center", ncol=4)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -797,8 +800,9 @@ def plot_local_grid(silent=True):
         )
         styles.graph_legend(ax, loc="lower center", ncol=3)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -825,9 +829,9 @@ def scenario(idx=0, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
 
 

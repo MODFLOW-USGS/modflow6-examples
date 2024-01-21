@@ -14,15 +14,15 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.latex import build_table, exp_format, float_format, int_format
-from modflow_devtools.misc import timed
+from modflow_devtools.latex import (build_table, exp_format, float_format,
+                                    int_format)
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-drn-p01"
@@ -30,9 +30,11 @@ workspace = pl.Path("../examples")
 
 # Configuration
 
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -1223,8 +1225,9 @@ def plot_gwseep_results(silent=True):
             "Groundwater seepage to the land surface,\nin cubic feet per second"
         )
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -1234,7 +1237,7 @@ def plot_gwseep_results(silent=True):
 
 
 def export_tables(silent=True):
-    if plotSave:
+    if plot_save:
         caption = "Infiltration and pumping rates for example {}.".format(sim_name)
         headings = (
             "Stress period",
@@ -1275,9 +1278,9 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
 
 

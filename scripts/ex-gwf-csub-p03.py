@@ -13,7 +13,6 @@
 import datetime
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib as mpl
@@ -22,17 +21,20 @@ import numpy as np
 import pandas as pd
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.latex import build_table, exp_format, float_format, int_format
-from modflow_devtools.misc import timed
+from modflow_devtools.latex import (build_table, exp_format, float_format,
+                                    int_format)
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-csub-p03"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -663,7 +665,7 @@ arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 
 def export_tables(silent=True):
-    if plotSave:
+    if plot_save:
         name = list(parameters.keys())[1]
 
         caption = f"Aquifer properties for example {sim_name}."
@@ -1078,8 +1080,9 @@ def plot_grid(silent=True):
 
         fig.tight_layout(pad=0.5)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1130,8 +1133,9 @@ def plot_boundary_heads(silent=True):
 
         fig.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1214,8 +1218,9 @@ def plot_head_es_comparison(silent=True):
 
         fig.tight_layout(pad=0.0001)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-02.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1493,8 +1498,9 @@ def plot_calibration(silent=True):
         # finalize figure
         fig.tight_layout(pad=0.01)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-03.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1629,8 +1635,9 @@ def plot_vertical_head(silent=True):
 
         fig.tight_layout(pad=0.5)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-04.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -1657,9 +1664,9 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
 
 

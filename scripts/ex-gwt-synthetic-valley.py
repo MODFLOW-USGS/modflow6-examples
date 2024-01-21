@@ -9,7 +9,6 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 from pprint import pformat
 
 import flopy
@@ -24,13 +23,15 @@ from flopy.discretization import VertexGrid
 from flopy.utils.triangle import Triangle
 from flopy.utils.voronoi import VoronoiGrid
 from matplotlib import colors
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 from shapely.geometry import LineString, Polygon
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 
 # Groundwater 2023 utilities
 
@@ -915,8 +916,9 @@ def plot_river_mapping(sims, idx):
             handletextpad=0.3,
         )
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-river-discretization.png"
             fig.savefig(os.path.join(workspace, "..", "figures", fname))
@@ -1094,8 +1096,9 @@ def plot_head_results(sims, idx):
             handletextpad=0.3,
         )
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-head.png"
             fig.savefig(os.path.join(workspace, "..", "figures", fname))
@@ -1214,8 +1217,9 @@ def plot_conc_results(sims):
             frameon=False,
         )
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
@@ -1232,9 +1236,9 @@ def plot_conc_results(sims):
 # +
 def scenario(idx, silent=True):
     sim = build_models(example_name)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
     plot_results(sim, idx)
 

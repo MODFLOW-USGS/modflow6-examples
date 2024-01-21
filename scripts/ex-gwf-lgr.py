@@ -9,7 +9,6 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import flopy.utils.binaryfile as bf
@@ -17,16 +16,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 workspace = pl.Path("../examples")
 example_name = "ex-gwf-lgr"
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -1064,8 +1065,9 @@ def plot_results(mf6, idx):
         letter = chr(ord("@") + idx + 1)
         styles.heading(letter=letter, heading=title)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}.png")
             fig.savefig(fpth)
 
@@ -1080,9 +1082,9 @@ def plot_results(mf6, idx):
 # +
 def scenario(idx, silent=True):
     sim = build_models(example_name)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
     plot_results(sim, idx)
 

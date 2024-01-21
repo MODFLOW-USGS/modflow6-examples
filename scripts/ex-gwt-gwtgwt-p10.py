@@ -13,7 +13,6 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
@@ -21,15 +20,18 @@ import numpy as np
 import pooch
 from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
+from modflow_devtools.misc import get_env
 
 # Base simulation and model name and workspace
 workspace = pl.Path("../examples")
 example_name = "ex-gwt-gwtgwt-mt3dms-p10"
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -787,7 +789,7 @@ def add_inner_gwtmodel(sim):
 
 def run_models(sim):
     success = True
-    if runModel:
+    if run:
         success, buff = sim.run_simulation()
         if not success:
             print(buff)

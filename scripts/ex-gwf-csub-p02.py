@@ -11,23 +11,24 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-csub-p02"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 
 # ### Define parameters
 #
@@ -333,8 +334,9 @@ def plot_grid(sim, silent=True):
 
         plt.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -422,8 +424,9 @@ def plot_head_based(sim, silent=True):
 
         plt.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -502,8 +505,9 @@ def plot_effstress(sim, silent=True):
 
         plt.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -614,8 +618,9 @@ def plot_comp_q_comparison(sim, silent=True):
         ax = axes[-1]
         leg = styles.graph_legend(ax, loc="upper right")
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{name}-01.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -750,8 +755,9 @@ def plot_head_comparison(sim, silent=True):
 
         leg = styles.graph_legend(ax, loc="center", bbox_to_anchor=(0.64, 0.5))
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{name}-02.png")
             if not silent:
                 print(f"saving...'{fpth}'")
@@ -788,9 +794,9 @@ def scenarios(idx, silent=True):
         params["kv"] = interbed_kv[0]
 
         sim = build_models(key, **params)
-        if writeModel:
+        if write:
             write_models(sim, silent=silent)
-        if runModel:
+        if run:
             run_models(sim, silent=silent)
     else:
         for b, kv in zip(interbed_thickness, interbed_kv):
@@ -808,9 +814,9 @@ def scenarios(idx, silent=True):
                 params["kv"] = kv
 
                 sim = build_models(key, subdir_name=subdir_name, **params)
-                if writeModel:
+                if write:
                     write_models(sim, silent=silent)
-                if runModel:
+                if run:
                     run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 

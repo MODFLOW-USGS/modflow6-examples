@@ -9,20 +9,21 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Base workspace
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -243,8 +244,9 @@ def plot_conc(sim, idx):
         ax.set_ylabel("z position (m)")
         plt.clabel(cs, fmt="%4.2f", fontsize=5)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
             fig.savefig(fpth)
 

@@ -25,19 +25,55 @@ def run(request) -> bool:
 
 @pytest.fixture(scope="session")
 def plot(request) -> bool:
-    return not request.config.getoption("--no-plot")
+    return not (request.config.getoption("--no-plot"))
+
+
+@pytest.fixture(scope="session")
+def plot_show(request) -> bool:
+    return not request.config.getoption("--no-plot") and request.config.getoption(
+        "--show"
+    )
+
+
+@pytest.fixture(scope="session")
+def plot_save(request) -> bool:
+    return not (
+        request.config.getoption("--no-plot") or request.config.getoption("--no-save")
+    )
 
 
 @pytest.fixture(scope="session")
 def gif(request) -> bool:
-    return not request.config.getoption("--no-gif")
+    return not (
+        request.config.getoption("--no-plot") or request.config.getoption("--no-gif")
+    )
 
 
 def pytest_addoption(parser):
-    parser.addoption("--no-write", action="store_true", default=False, help="Disable model input file creation")
-    parser.addoption("--no-run", action="store_true", default=False, help="Disable model runs")
-    parser.addoption("--no-plot", action="store_true", default=False, help="Disable static plot creation")
-    parser.addoption("--no-gif", action="store_true", default=False, help="Disable GIF creation")
+    parser.addoption(
+        "--no-write",
+        action="store_true",
+        default=False,
+        help="Disable model input file creation",
+    )
+    parser.addoption(
+        "--no-run", action="store_true", default=False, help="Disable model runs"
+    )
+    parser.addoption(
+        "--no-plot", action="store_true", default=False, help="Disable plot creation"
+    )
+    parser.addoption(
+        "--show",
+        action="store_true",
+        default=False,
+        help="Show plots (disabled by default)",
+    )
+    parser.addoption(
+        "--no-save", action="store_true", default=False, help="Disable plot saving"
+    )
+    parser.addoption(
+        "--no-gif", action="store_true", default=False, help="Disable GIF creation"
+    )
 
 
 def pytest_generate_tests(metafunc):

@@ -25,19 +25,20 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 
 # Example name and base workspace
 workspace = pl.Path("../examples")
@@ -515,8 +516,9 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         letter = chr(ord("@") + idx + 1)
         styles.heading(letter=letter, heading=title)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -556,8 +558,9 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         letter = chr(ord("@") + idx + 2)
         styles.heading(letter=letter, heading=title)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -576,9 +579,9 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
 # +
 def scenario(idx, silent=True):
     mf2k5, mt3d, sim = build_models(example_name)
-    if writeModel:
+    if write:
         write_models(mf2k5, mt3d, sim, silent=silent)
-    if runModel:
+    if run:
         run_models(mf2k5, mt3d, sim, silent=silent)
     plot_results(mt3d, sim, idx)
 

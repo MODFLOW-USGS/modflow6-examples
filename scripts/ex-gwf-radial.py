@@ -21,21 +21,17 @@
 import os
 import pathlib as pl
 from math import sqrt
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from matplotlib.patches import Circle
-from modflow_devtools.misc import timed
-
+from modflow_devtools.misc import get_env, timed
 # Solve definite integral using Fortran library QUADPACK
 from scipy.integrate import quad
-
 # Find a root of a function using Brent's method within a bracketed range
 from scipy.optimize import brentq
-
 # Zero Order Bessel Function
 from scipy.special import j0, jn_zeros
 
@@ -44,9 +40,11 @@ sim_name = "ex-gwf-rad-disu"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # Define some utilities for creating the grid and solving the radial solution
@@ -1818,7 +1816,7 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
 
         fig.tight_layout()
 
-        if plotSave:
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -1864,7 +1862,7 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
 
         fig.tight_layout()
 
-        if plotSave:
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -1940,8 +1938,9 @@ def plot_grid(verbose=False):
 
         fig.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", "{}-grid{}".format(sim_name, ".png"))
             fig.savefig(fpth)
 
@@ -1981,9 +1980,9 @@ def scenario(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
     sim = build_models(sim_name)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
 
 

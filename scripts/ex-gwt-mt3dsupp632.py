@@ -15,21 +15,22 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Base workspace
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -414,8 +415,9 @@ def plot_results():
         axs.set_ylabel("Normalized Concentration (unitless)")
         axs.legend()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fname = "{}{}".format("ex-gwt-mt3dsupp632", ".png")
             fpth = os.path.join("..", "figures", fname)
             fig.savefig(fpth)
@@ -451,8 +453,9 @@ def plot_scenario_results(sims, idx):
         letter = chr(ord("@") + idx + 1)
         styles.heading(letter=letter, heading=title)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}.png"
@@ -472,9 +475,9 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     sims = build_models(key, **parameter_dict)
-    if writeModel:
+    if write:
         write_models(sims, silent=silent)
-    if runModel:
+    if run:
         run_models(sims, silent=silent)
     plot_scenario_results(sims, idx)
 

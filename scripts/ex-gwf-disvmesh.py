@@ -13,7 +13,6 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import flopy.utils.cvfdutil
@@ -23,7 +22,7 @@ import pooch
 from flopy.plot.styles import styles
 from flopy.utils.geometry import get_polygon_area
 from flopy.utils.gridintersect import GridIntersect
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 from shapely.geometry import Polygon
 
 # Example name and base workspace
@@ -31,9 +30,11 @@ sim_name = "ex-gwf-disvmesh"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -241,8 +242,9 @@ def plot_grid(idx, sim):
         ax.set_xlabel("x position (m)")
         ax.set_ylabel("y position (m)")
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
 
@@ -293,8 +295,9 @@ def plot_head(idx, sim):
         ax.set_ylabel("y position (m)")
         styles.heading(ax, letter="B", heading="Layer 2")
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
             fig.savefig(fpth)
 
@@ -315,9 +318,9 @@ def plot_results(idx, sim, silent=True):
 # +
 def scenario(idx, silent=True):
     sim = build_models(sim_name)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 

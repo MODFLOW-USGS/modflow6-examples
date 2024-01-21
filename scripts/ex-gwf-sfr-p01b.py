@@ -12,7 +12,6 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib as mpl
@@ -21,16 +20,18 @@ import numpy as np
 import pandas as pd
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-sfr-p01b"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Model setup
@@ -4168,8 +4169,9 @@ def plot_grid(gwf, silent=True):
         )
         styles.graph_legend(ax, loc="center", ncol=3)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -4299,8 +4301,9 @@ def plot_head_results(gwf, silent=True):
         ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
         styles.graph_legend(ax, loc="upper center", ncol=2)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -4426,8 +4429,9 @@ def plot_mvr_results(idx, gwf, silent=True):
         letter = chr(ord("@") + idx + 1)
         styles.heading(letter=letter, heading=title)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -4475,8 +4479,9 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
         letter = chr(ord("@") + idx + 2)
         styles.heading(letter=letter, heading=title)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -4503,9 +4508,9 @@ def plot_results(idx, sim, silent=True):
 # +
 def simulation(idx, silent=True):
     sim = build_models()
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
     plot_results(idx, sim, silent=silent)
 

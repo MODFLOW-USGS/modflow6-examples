@@ -30,14 +30,16 @@ Scripts may contain one or more example scenarios. Each script creates one or mo
 3. Run models
 4. Plot results
 
-Each script parses environment variables to control several behaviors, all of which accept case-insensitive `true/false` strings:
+The scripts parse environment variables to control several behaviors, all of which accept case-insensitive `true/false` strings:
 
 - `WRITE`: whether to write model input files to subdirectories of `examples/`
 - `RUN`: whether to run models
-- `PLOT`: whether to create and save static plots to `figures/`
-- `GIF`: whether to create and save GIFs to `figures/`
+- `PLOT`: whether to create plots of results
+- `PLOT_SHOW`: whether to show static plots (disabled by default when run with `pytest`)
+- `PLOT_SAVE`: whether to save static plots to `figures/`
+- `GIF`: whether to save GIFs to `figures/` (only relevant for a small subset of scripts)
 
-If variables are not found, behaviors are enabled by default. If `BUILD` is false, none of the other
+If variables are not found when a script is run directly, behaviors are enabled by default. When scripts are run via `pytest`, by default plots are not shown (to avoid the need to manually close plot widgets).
 
 ## Prerequisites
 
@@ -96,13 +98,12 @@ The example scripts can be run directly from the `scripts/` directory, e.g. `pyt
 
 The examples can be tested from the `autotest/` directory, either directly as scripts, or as notebooks.
 
-When run via `pytest`, behaviors can be disabled with `pytest` CLI flags, one for each environment variable: `--no-build`, `--no-write`, `--no-run`, `--no-plot`, `--no-gif`.
+When run via `pytest`, behaviors can be disabled with `pytest` CLI flags, one for each environment variable: `--no-write`, `--no-run`, `--no-plot`, `--no-save`, and `--no-gif`. There is one flag which must explicitly be enabled: `--show`, to show plots.
 
-For instance:
+For instance, to create model input files without running models:
 
 ```shell
-pytest -v -n auto test_scripts.py --no-run --no-plot --no-gif
-pytest -v -n auto test_notebooks.py
+pytest -v -n auto test_scripts.py --no-run
 ```
 
 ### Running with `jupytext`

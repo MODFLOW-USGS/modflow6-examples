@@ -12,7 +12,6 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.patches
@@ -20,17 +19,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 example_name = "ex-gwt-keating"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+gif_save = get_env("GIF", True)
 # -
 
 # ### Define parameters
@@ -321,7 +322,7 @@ def plot_results(sims, idx):
     plot_head_results(sims, idx)
     plot_conc_results(sims, idx)
     plot_cvt_results(sims, idx)
-    if plotSave and createGif:
+    if plot_save and gif_save:
         make_animated_gif(sims, idx)
 
 
@@ -349,8 +350,9 @@ def plot_head_results(sims, idx):
         ax.set_ylabel("elevation (m)")
         ax.set_aspect(plotaspect)
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-head.png"
@@ -412,8 +414,9 @@ def plot_conc_results(sims, idx):
                     marker="o",
                     markersize="4",
                 )
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
@@ -548,8 +551,9 @@ def plot_cvt_results(sims, idx):
         ax.set_xlabel("time, in days")
         ax.set_ylabel("normalized concentration, unitless")
         styles.graph_legend(ax)
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-cvt.png"

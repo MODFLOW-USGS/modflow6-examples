@@ -9,24 +9,25 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwt-rotate"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
-createGif = str(environ.get("GIF", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+gif_save = get_env("GIF", True)
 # -
 
 # ### Define parameters
@@ -376,8 +377,9 @@ def plot_velocity_profile(sim, idx):
         ax.set_ylim(-b, b)
         ax.set_ylabel("z location of left interface (m)")
         ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-vh.png")
             fig.savefig(fpth)
 
@@ -397,7 +399,7 @@ def plot_conc(sim, idx):
         pxs.plot_grid(linewidth=0.1)
         ax.set_ylabel("z position (m)")
         ax.set_xlabel("x position (m)")
-        if plotSave:
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-bc.png")
             fig.savefig(fpth)
         plt.close("all")
@@ -435,8 +437,9 @@ def plot_conc(sim, idx):
             ax.set_title(f"Time = {time_this_plot} days")
         plt.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
             fig.savefig(fpth)
 
@@ -478,7 +481,7 @@ def make_animated_gif(sim, idx):
 def plot_results(sim, idx):
     plot_conc(sim, idx)
     plot_velocity_profile(sim, idx)
-    if plotSave and createGif:
+    if plot_save and gif_save:
         make_animated_gif(sim, idx)
 
 
@@ -492,9 +495,9 @@ def plot_results(sim, idx):
 # +
 def scenario(idx, silent=True):
     sim = build_models(sim_name)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
     plot_results(sim, idx)
 

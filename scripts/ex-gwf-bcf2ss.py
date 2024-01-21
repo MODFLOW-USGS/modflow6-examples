@@ -16,7 +16,6 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib as mpl
@@ -24,16 +23,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-bcf2ss"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -195,7 +196,6 @@ def write_models(sim, silent=True):
 
 @timed
 def run_models(sim, silent=True):
-    
     success, buff = sim.run_simulation(silent=silent)
     assert success, buff
 
@@ -353,14 +353,16 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         )
         cbar.ax.set_xlabel("Head, in feet")
 
-        # save figure
-        if plotSave:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-{num:02d}.png",
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(
+                os.path.join(
+                    "..",
+                    "figures",
+                    f"{sim_name}-{num:02d}.png",
+                )
             )
-            fig.savefig(fpth)
 
 
 def plot_results(silent=True):
@@ -461,8 +463,9 @@ def plot_results(silent=True):
             loc="upper center",
         )
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -483,10 +486,10 @@ def plot_results(silent=True):
         ax.set_xlabel("x-coordinate, in feet")
         styles.remove_edge_ticks(ax)
 
-        # save figure
-        if plotSave:
-            fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
-            fig.savefig(fpth)
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(os.path.join("..", "figures", f"{sim_name}-01.png"))
 
         # plot simulated rewetting results
         plot_simulated_results(2, gwf, hobj, cobj)
@@ -521,9 +524,9 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
     sim = build_models(key, **params)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
 
 

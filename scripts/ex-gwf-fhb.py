@@ -13,21 +13,22 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-fhb"
 ws = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -215,8 +216,9 @@ def plot_grid(sim):
         ax.set_xlabel("x position (m)")
         ax.set_ylabel("y position (m)")
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
             fig.savefig(fpth)
 
@@ -240,7 +242,7 @@ def plot_ts(sim):
             ax.set_xlabel("time (d)")
             ax.set_ylabel(ylabel[iplot])
             styles.graph_legend(ax)
-            if plotSave:
+            if plot_save:
                 fpth = os.path.join(
                     "..",
                     "figures",
@@ -264,9 +266,9 @@ def plot_results(sim, silent=True):
 # +
 def scenario(silent=True):
     sim = build_models()
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
     plot_results(sim, silent=silent)
 

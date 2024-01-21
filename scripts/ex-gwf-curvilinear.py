@@ -25,22 +25,23 @@ import copy
 import os
 import pathlib as pl
 from itertools import cycle
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-curvilin"
 workspace = pl.Path("../examples")
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Curvilinear grid
@@ -2551,8 +2552,9 @@ def plot_grid(sim, verbose=False):
 
         fig2.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
@@ -2598,8 +2600,9 @@ def plot_head(sim):
 
         fig.tight_layout()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
             fig.savefig(fpth, dpi=300)
 
@@ -2632,9 +2635,9 @@ def scenario(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
     sim = build_models(sim_name)
-    if writeModel:
+    if write:
         write_models(sim, silent=silent)
-    if runModel:
+    if run:
         run_models(sim, silent=silent)
 
 

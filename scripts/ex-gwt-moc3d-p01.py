@@ -12,22 +12,23 @@
 # +
 import os
 import pathlib as pl
-from os import environ
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
-from modflow_devtools.misc import timed
+from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 workspace = pl.Path("../examples")
 example_name = "ex-gwt-moc3dp1"
 
 # Settings from environment variables
-writeModel = str(environ.get("WRITE", True)).lower() == "true"
-runModel = str(environ.get("RUN", True)).lower() == "true"
-plotSave = str(environ.get("PLOT", True)).lower() == "true"
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 # -
 
 # ### Define parameters
@@ -485,8 +486,9 @@ def plot_results_ct(
             axs.text(100, 0.5, "x=11.05")
         axs.legend()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-ct.png"
@@ -549,8 +551,9 @@ def plot_results_cd(
         axs.set_ylabel("Normalized Concentration (unitless)")
         plt.legend()
 
-        # save figure
-        if plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
@@ -571,9 +574,9 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     sims = build_models(key, **parameter_dict)
-    if writeModel:
+    if write:
         write_models(sims, silent=silent)
-    if runModel:
+    if run:
         run_models(sims, silent=silent)
     plot_results_ct(sims, idx, **parameter_dict)
     plot_results_cd(sims, idx, **parameter_dict)
