@@ -62,3 +62,7 @@ MODFLOW 6 – Example problems
    _examples/ex-gwt-rotate.rst
    _examples/ex-gwt-hecht-mendez.rst
    _examples/ex-gwt-stallman.rst
+   _examples/ex-gwt-synthetic-valley.rst
+   _examples/ex-gwf-radial.rst
+   _examples/ex-gwf-curvilinear-90.rst
+   _examples/ex-gwf-curvilinear.rst

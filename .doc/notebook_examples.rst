@@ -38,6 +38,9 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwf-drn-p01 <_notebooks/ex-gwf-drn-p01.ipynb>
    ex-gwf-sagehen <_notebooks/ex-gwf-sagehen.ipynb>
    ex-gwf-capture <_notebooks/ex-gwf-capture.ipynb>
+   ex-gwf-radial <_notebooks/ex-gwf-radial.ipynb>
+   ex-gwf-curvilinear-90 <_notebooks/ex-gwf-curvilinear-90.ipynb>
+   ex-gwf-curvilinear <_notebooks/ex-gwf-curvilinear.ipynb>
    ex-gwt-keating <_notebooks/ex-gwt-keating.ipynb>
    ex-gwt-moc3d-p01 <_notebooks/ex-gwt-moc3d-p01.ipynb>
    ex-gwt-moc3d-p02 <_notebooks/ex-gwt-moc3d-p02.ipynb>
@@ -62,5 +65,7 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    ex-gwt-saltlake <_notebooks/ex-gwt-saltlake.ipynb>
    ex-gwt-rotate <_notebooks/ex-gwt-rotate.ipynb>
    ex-gwt-hecht-mendez <_notebooks/ex-gwt-hecht-mendez.ipynb>
+   ex-gwt-stallman <_notebooks/ex-gwt-stallman.ipynb>
+   ex-gwt-synthetic-valley <_notebooks/ex-gwt-synthetic-valley.ipynb>
 
 

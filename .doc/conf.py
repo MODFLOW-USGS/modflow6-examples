@@ -94,7 +94,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "nbsphinx",
     "nbsphinx_link",
-    "recommonmark",
+    "myst_parser",
     "sphinx_markdown_tables",
 ]
 
@@ -167,10 +167,6 @@ html_context = {
     "github_repo": "modflow6-examples",
     "github_version": "master",
     "doc_path": ".doc",
-    "css_files": [
-        "_static/theme_overrides.css",  # override wide tables in RTD theme
-        "_static/custom.css",
-    ],
 }
 
 numfig = True
