@@ -288,6 +288,9 @@ figure_size = (6, 6)
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
+
     if silent:
         verbosity_level = 0
     else:
@@ -388,8 +391,7 @@ def plot_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
-            fig.savefig(fpth)
+            fig.savefig(os.path.join("..", "figures", f"{sim_name}-01.png"))
 
 
 # -
@@ -410,6 +412,7 @@ def scenario(silent=True):
 
 scenario()
 
-# Simulated streamflow capture fraction map for the Freyberg (1988) groundwater flow model.
-plot_results()
+if plot:
+    # Simulated streamflow capture fraction map for the Freyberg (1988) groundwater flow model.
+    plot_results()
 # -

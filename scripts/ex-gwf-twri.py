@@ -446,7 +446,8 @@ def scenario(silent=True):
         write_models(sim, mf, silent=silent)
     if run:
         run_models(sim, mf, silent=silent)
-    plot_results(sim, mf, silent=silent)
+    if plot:
+        plot_results(sim, mf, silent=silent)
 
 
 # Simulated heads in model the unconfined, middle, and lower aquifers (model layers

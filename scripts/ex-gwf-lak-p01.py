@@ -21,8 +21,7 @@ from modflow_devtools.misc import get_env, timed
 workspace = pl.Path("../examples")
 sim_name = "ex-gwf-lak-p01"
 
-# Configuration
-
+# Settings from environment variables
 write = get_env("WRITE", True)
 run = get_env("RUN", True)
 plot = get_env("PLOT", True)
@@ -566,7 +565,8 @@ def scenario(silent=True):
         write_models(sim, silent=silent)
     if run:
         run_models(sim, silent=silent)
-    plot_results(sim, silent=silent)
+    if plot:
+        plot_results(sim, silent=silent)
 
 
 scenario()

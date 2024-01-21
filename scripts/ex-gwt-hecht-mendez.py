@@ -976,19 +976,21 @@ def scenario(idx, runMT3D=False, silent=True):
     sim_mf6gwf = build_mf6_flow_model(key, **parameter_dict)
     sim_mf6gwt = build_mf6_transport_model(key, **parameter_dict)
 
-    if runMT3D:
-        write_mf2k5_models(mf2k5, mt3d, silent=silent)
-    write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=silent)
-
-    run_models(sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent)
-    plot_results(
-        sim_mf6gwf,
-        sim_mf6gwt,
-        idx,
-        mf2k5=mf2k5,
-        mt3d=mt3d,
-        **parameter_dict,
-    )
+    if write:
+        if runMT3D:
+            write_mf2k5_models(mf2k5, mt3d, silent=silent)
+        write_mf6_models(sim_mf6gwf, sim_mf6gwt, silent=silent)
+    if run:
+        run_models(sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent)
+    if plot:
+        plot_results(
+            sim_mf6gwf,
+            sim_mf6gwt,
+            idx,
+            mf2k5=mf2k5,
+            mt3d=mt3d,
+            **parameter_dict,
+        )
 
 
 # ### Two-Dimensional Transport in a Diagonal Flow Field

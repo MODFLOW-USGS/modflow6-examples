@@ -499,7 +499,8 @@ def scenario(idx, silent=True):
         write_models(sims, silent=silent)
     if run:
         run_models(sims, silent=silent)
-    plot_results_ct(sims, idx, **parameter_dict)
+    if plot:
+        plot_results_ct(sims, idx, **parameter_dict)
 
 
 scenario(0)
@@ -509,5 +510,6 @@ scenario(3)
 scenario(4)
 scenario(5)
 
-plot_results()
+if plot:
+    plot_results()
 # -

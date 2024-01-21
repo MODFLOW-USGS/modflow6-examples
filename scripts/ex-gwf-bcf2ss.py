@@ -366,12 +366,15 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
+
     if silent:
         verbosity_level = 0
     else:
         verbosity_level = 1
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         name = list(parameters.keys())[0]
         sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation.load(

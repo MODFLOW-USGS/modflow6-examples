@@ -393,6 +393,8 @@ def plot_grid(silent=True):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
     plot_grid(silent=silent)
     plot_maw_results(silent=silent)
 

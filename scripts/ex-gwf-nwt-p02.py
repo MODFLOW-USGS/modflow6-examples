@@ -231,6 +231,9 @@ def get_water_table(h, bot):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
+
     verbose = not silent
     if verbose:
         verbosity_level = 1

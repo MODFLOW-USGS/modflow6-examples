@@ -479,7 +479,8 @@ def scenario(idx, silent=True):
         write_models(sims, silent=silent)
     if run:
         run_models(sims, silent=silent)
-    plot_scenario_results(sims, idx)
+    if plot:
+        plot_scenario_results(sims, idx)
 
 
 # ### Case 1
@@ -511,4 +512,5 @@ scenario(2)
 
 # Plot the results for all 3 scenarios in one plot.
 
-plot_results()
+if plot:
+    plot_results()

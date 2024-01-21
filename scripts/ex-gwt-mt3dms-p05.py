@@ -583,7 +583,8 @@ def scenario(idx, silent=True):
         write_models(mf2k5, mt3d, sim, silent=silent)
     if run:
         run_models(mf2k5, mt3d, sim, silent=silent)
-    plot_results(mt3d, sim, idx)
+    if plot:
+        plot_results(mt3d, sim, idx)
 
 
 # Compares the standard finite difference solutions between MT3D MF 6

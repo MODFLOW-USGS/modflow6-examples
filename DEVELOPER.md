@@ -98,12 +98,22 @@ The example scripts can be run directly from the `scripts/` directory, e.g. `pyt
 
 The examples can be tested from the `autotest/` directory, either directly as scripts, or as notebooks.
 
-When run via `pytest`, behaviors can be disabled with `pytest` CLI flags, one for each environment variable: `--no-write`, `--no-run`, `--no-plot`, `--no-save`, and `--no-gif`. There is one flag which must explicitly be enabled: `--show`, to show plots.
+When run via `pytest`, behaviors can be controlled with `pytest` CLI flags:
 
-For instance, to create model input files without running models:
+- `--init`: just build models and write input files, defaults false
+- `--no-write`: don't write models, defaults false
+- `--no-run`: don't run models, defaults false
+- `--plot`: enable plot creation, defaults false
+- `--show`: show plots, defaults false
+- `--no-save`: don't save static plots, defaults false
+- `--no-gif`: don't create/save gifs, defaults false
+
+The last three only apply if `--plot` is enabled. Plotting is disabled by default to avoid having to manually close plot widgets while running tests.
+
+For instance, to create model input files (without running models or plotting results, to save time):
 
 ```shell
-pytest -v -n auto test_scripts.py --no-run
+pytest -v -n auto test_scripts.py --init
 ```
 
 ### Running with `jupytext`

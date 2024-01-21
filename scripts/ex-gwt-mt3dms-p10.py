@@ -759,7 +759,8 @@ def scenario(idx, silent=True):
         write_models(mf2k5, mt3d, sim, silent=silent)
     if run:
         run_models(mf2k5, mt3d, sim, silent=silent)
-    plot_results(mf2k5, mt3d, sim, idx)
+    if plot:
+        plot_results(mf2k5, mt3d, sim, idx)
 
 
 # -

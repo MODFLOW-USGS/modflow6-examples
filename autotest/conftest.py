@@ -20,47 +20,47 @@ def write(request) -> bool:
 
 @pytest.fixture(scope="session")
 def run(request) -> bool:
-    return not request.config.getoption("--no-run")
+    return not (request.config.getoption("--init") or request.config.getoption("--no-run"))
 
 
 @pytest.fixture(scope="session")
 def plot(request) -> bool:
-    return not (request.config.getoption("--no-plot"))
+    return request.config.getoption("--plot")
 
 
 @pytest.fixture(scope="session")
-def plot_show(request) -> bool:
-    return not request.config.getoption("--no-plot") and request.config.getoption(
-        "--show"
-    )
+def plot_show(request, plot) -> bool:
+    return plot and request.config.getoption("--show")
 
 
 @pytest.fixture(scope="session")
-def plot_save(request) -> bool:
-    return not (
-        request.config.getoption("--no-plot") or request.config.getoption("--no-save")
-    )
+def plot_save(request, plot) -> bool:
+    return plot and not request.config.getoption("--no-save")
 
 
 @pytest.fixture(scope="session")
-def gif(request) -> bool:
-    return not (
-        request.config.getoption("--no-plot") or request.config.getoption("--no-gif")
-    )
+def gif(request, plot) -> bool:
+    return plot and not request.config.getoption("--no-gif")
 
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--no-write",
+        "--init",
         action="store_true",
         default=False,
-        help="Disable model input file creation",
+        help="Just build and write model input files",
+    )
+    parser.addoption(
+        "--no-write", action="store_true", default=False, help="Disable model build/write"
     )
     parser.addoption(
         "--no-run", action="store_true", default=False, help="Disable model runs"
     )
     parser.addoption(
-        "--no-plot", action="store_true", default=False, help="Disable plot creation"
+        "--plot",
+        action="store_true",
+        default=False,
+        help="Create plots (disabled by default)",
     )
     parser.addoption(
         "--show",

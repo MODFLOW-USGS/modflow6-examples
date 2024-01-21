@@ -2608,6 +2608,9 @@ def plot_head(sim):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
+
     if silent:
         verbosity_level = 0
     else:

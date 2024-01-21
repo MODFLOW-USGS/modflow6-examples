@@ -242,8 +242,6 @@ def build_models(sim_name):
         filename="{}.gwfgwt".format("inner"),
     )
 
-    sim.write_simulation()
-
     return sim
 
 
@@ -1210,8 +1208,12 @@ def plot_results(sim):
 # +
 def scenario():
     sim = build_models(example_name)
-    run_models(sim)
-    plot_results(sim)
+    if write:
+        sim.write_simulation()
+    if run:
+        run_models(sim)
+    if plot:
+        plot_results(sim)
 
 
 scenario()

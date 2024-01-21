@@ -20,16 +20,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.latex import (build_table, exp_format, float_format,
-                                    int_format)
+from modflow_devtools.latex import build_table, exp_format, float_format, int_format
 from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
 sim_name = "ex-gwf-drn-p01"
 workspace = pl.Path("../examples")
 
-# Configuration
-
+# Settings from environment variables
 write = get_env("WRITE", True)
 run = get_env("RUN", True)
 plot = get_env("PLOT", True)
@@ -1262,6 +1260,8 @@ def export_tables(silent=True):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
     plot_gwseep_results(silent=silent)
     export_tables(silent=silent)
 

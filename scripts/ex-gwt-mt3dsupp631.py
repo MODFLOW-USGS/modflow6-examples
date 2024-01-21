@@ -329,7 +329,8 @@ def scenario(idx, silent=True):
         write_models(sim, silent=silent)
     if run:
         run_models(sim, silent=silent)
-    plot_results(sim, idx)
+    if plot:
+        plot_results(sim, idx)
 
 
 scenario(0)

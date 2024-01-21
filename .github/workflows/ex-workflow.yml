@@ -125,7 +125,7 @@ jobs:
           repo: modflow6-nightly-build
 
       - name: Test example scripts and create input files
-        run: pytest -v -n=auto --durations=0 test_scripts.py
+        run: pytest -v -n=auto --durations=0 test_scripts.py --init
         working-directory: ${{env.test-directory}}
 
       - name: Run processing script

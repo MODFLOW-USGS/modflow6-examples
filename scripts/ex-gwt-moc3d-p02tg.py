@@ -442,8 +442,9 @@ def scenario(idx, silent=True):
         write_models(sims, silent=silent)
     if run:
         run_models(sims, silent=silent)
-    plot_grid(sims)
-    plot_results(sims)
+    if plot:
+        plot_grid(sims)
+        plot_results(sims)
 
 
 scenario(0)

@@ -21,8 +21,7 @@ import numpy as np
 import pandas as pd
 import pooch
 from flopy.plot.styles import styles
-from modflow_devtools.latex import (build_table, exp_format, float_format,
-                                    int_format)
+from modflow_devtools.latex import build_table, exp_format, float_format, int_format
 from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
@@ -1645,6 +1644,8 @@ def plot_vertical_head(silent=True):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
     plot_grid(silent=silent)
     plot_boundary_heads(silent=silent)
     plot_head_es_comparison(silent=silent)

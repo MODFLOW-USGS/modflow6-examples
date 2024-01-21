@@ -28,10 +28,13 @@ import numpy as np
 from flopy.plot.styles import styles
 from matplotlib.patches import Circle
 from modflow_devtools.misc import get_env, timed
+
 # Solve definite integral using Fortran library QUADPACK
 from scipy.integrate import quad
+
 # Find a root of a function using Brent's method within a bracketed range
 from scipy.optimize import brentq
+
 # Zero Order Bessel Function
 from scipy.special import j0, jn_zeros
 
@@ -1949,6 +1952,9 @@ def plot_grid(verbose=False):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
+
     if silent:
         verbosity_level = 0
     else:

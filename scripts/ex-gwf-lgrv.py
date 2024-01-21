@@ -639,7 +639,8 @@ def scenario(idx, silent=True):
         write_models(sim, silent=silent)
     if run:
         run_models(sim, silent=silent)
-    plot_results(sim, silent=silent)
+    if plot:
+        plot_results(sim, silent=silent)
 
 
 # Run the global refined model and plot results.

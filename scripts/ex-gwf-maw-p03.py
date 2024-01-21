@@ -812,6 +812,8 @@ def plot_local_grid(silent=True):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
     plot_regional_grid(silent=silent)
     plot_local_grid(silent=silent)
     plot_maw_results(silent=silent)

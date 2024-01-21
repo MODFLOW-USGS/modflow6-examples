@@ -267,9 +267,12 @@ def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
     sim = build_models(key, **parameter_dict)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
-    plot_results(sim, idx)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
+        plot_results(sim, idx)
 
 
 # Scenario 1 - Classic henry problem

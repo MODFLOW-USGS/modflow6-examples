@@ -2465,6 +2465,9 @@ def plot_analytical(sim, verbose=False):
 
 
 def plot_results(silent=True):
+    if not plot:
+        return
+
     if silent:
         verbosity_level = 0
     else:
@@ -2543,9 +2546,10 @@ def scenario(silent=True):
 # Run simulation
 scenario()
 
-# Solve analytical solution and plot results with MF6 results
-plot_results()
+if plot:
+    # Solve analytical solution and plot results with MF6 results
+    plot_results()
 
-# Check error
-check_model_error()
+    # Check error
+    check_model_error()
 # -

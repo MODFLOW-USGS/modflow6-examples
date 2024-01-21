@@ -571,9 +571,12 @@ def plot_cvt_results(sims, idx):
 # +
 def scenario(idx, silent=True):
     sim = build_models(example_name)
-    write_models(sim, silent=silent)
-    run_models(sim, silent=silent)
-    plot_results(sim, idx)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
+        plot_results(sim, idx)
 
 
 scenario(0)
