@@ -1,49 +1,52 @@
 # ## Stallman Problem
 #
-# Periodic heat boundary condition at surface
-# Transient heat transfer problem in vertical
+# Stallman 1965 presents an analytical solution for transient heat flow
+# in the subsurface in response to a sinusoidally varying temperature
+# boundary imposed at the land surface, involving heat convection in
+# response to downward groundwater flow. The problem also includes
+# heat conduction through the fully saturated aquifer material. The
+# analytical solution quantifies the temperature variation as a function
+# of depth and time for this one-dimensional transient problem.
+
+# ### Initial setup
 #
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-# ### Stallman Problem Setup
-
-# Imports
-
+# +
 import os
-import sys
+import pathlib as pl
+from pprint import pformat
 
 import flopy
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
-from analytical import Stallman
-from figspecs import USGSFigure
-
-mf6exe = "mf6"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 8)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
+# Example namd and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-stallman"
 
-# Model units
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+gif_save = get_env("GIF", True)
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Model units
 length_units = "meters"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 600  # Number of periods
 nstp = 6  # Number of time steps
 perlen = 525600  # Simulation time length ($s$)
@@ -100,25 +103,42 @@ cnc_mf6 = cnc_data
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+# -
 
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_folder):
+# +
+# Analytical solution for Stallman analysis (Stallman 1965, JGR)
+def Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay):
+    zstallman = np.zeros((nlay, 2))
+    K = np.pi * c_rho / ko / tau
+    V = darcy_flux * c_w * rho_w / 2 / ko
+    a = ((K**2 + V**4 / 4) ** 0.5 + V**2 / 2) ** 0.5 - V
+    b = ((K**2 + V**4 / 4) ** 0.5 - V**2 / 2) ** 0.5
+    for i in range(len(zstallman)):
+        zstallman[i, 0] = zbotm[i]
+        zstallman[i, 1] = (
+            dT
+            * np.exp(-a * (-zstallman[i, 0]))
+            * np.sin(2 * np.pi * t / tau - b * (-zstallman[i, 0]))
+            + T_az
+        )
+    return zstallman
+
+
+def build_models(sim_folder):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
         exe_name="mf6",
     )
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=per_mf6, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=per_mf6, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -207,9 +227,7 @@ def build_model(sim_folder):
     )
     flopy.mf6.ModflowGwtic(gwt, strt=strt_conc)
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc)
     flopy.mf6.ModflowGwtssm(gwt, sources=[[]])
     flopy.mf6.ModflowGwtcnc(
         gwt,
@@ -219,9 +237,7 @@ def build_model(sim_folder):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "LAST")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -231,107 +247,95 @@ def build_model(sim_folder):
     return sim
 
 
-# Function to write model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sim, silent=True):
-    print("Running model...")
-    success = True
-    if config.runModel:
-        success = False
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (6, 8)
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    # create MODFLOW 6 head object
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
+        # create MODFLOW 6 head object
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
 
-    time_in_pub = 284349600.0
-    idx_conc = (np.abs(times - time_in_pub)).argmin()
-    time_this_plot = times[idx_conc]
-    conc = cobj.get_data(totim=time_this_plot)
+        time_in_pub = 284349600.0
+        idx_conc = (np.abs(times - time_in_pub)).argmin()
+        time_this_plot = times[idx_conc]
+        conc = cobj.get_data(totim=time_this_plot)
 
-    zconc = np.zeros(nlay)
-    zbotm = np.zeros(nlay)
-    for i in range(len(zconc)):
-        zconc[i] = conc[i][0][0]
-        if i != (nlay - 1):
-            zbotm[i + 1] = -(60 - botm[i])
+        zconc = np.zeros(nlay)
+        zbotm = np.zeros(nlay)
+        for i in range(len(zconc)):
+            zconc[i] = conc[i][0][0]
+            if i != (nlay - 1):
+                zbotm[i + 1] = -(60 - botm[i])
 
-    # Analytical solution - Stallman analysis
-    tau = 365 * 86400
-    # t =  283824000.0
-    t = 284349600.0
-    c_w = 4174
-    rho_w = 1000
-    c_r = 800
-    rho_r = bulk_dens
-    c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
-    darcy_flux = 5.00e-07
-    ko = 1.503
-    zanal = Stallman(
-        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
-    )
-
-    # make conc figure
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1)
-
-    # configure plot and save
-    ax.plot(zconc, zbotm, "bo", mfc="none", label="MODFLOW6-GWT")
-    ax.plot(
-        zanal[:, 1],
-        zanal[:, 0],
-        "k--",
-        linewidth=1.0,
-        label="Analytical solution",
-    )
-    ax.set_xlim(T_az - dT, T_az + dT)
-    ax.set_ylim(-top, 0)
-    ax.set_ylabel("Depth (m)")
-    ax.set_xlabel("Temperature (deg C)")
-    ax.legend()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+        # Analytical solution - Stallman analysis
+        tau = 365 * 86400
+        # t =  283824000.0
+        t = 284349600.0
+        c_w = 4174
+        rho_w = 1000
+        c_r = 800
+        rho_r = bulk_dens
+        c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
+        darcy_flux = 5.00e-07
+        ko = 1.503
+        zanal = Stallman(
+            T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
         )
-        fig.savefig(fpth)
-    return
 
+        # make conc figure
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1)
 
-# Function to make animation
+        # configure plot and save
+        ax.plot(zconc, zbotm, "bo", mfc="none", label="MODFLOW6-GWT")
+        ax.plot(
+            zanal[:, 1],
+            zanal[:, 0],
+            "k--",
+            linewidth=1.0,
+            label="Analytical solution",
+        )
+        ax.set_xlim(T_az - dT, T_az + dT)
+        ax.set_ylim(-top, 0)
+        ax.set_ylabel("Depth (m)")
+        ax.set_xlabel("Temperature (deg C)")
+        ax.legend()
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
+            fig.savefig(fpth)
 
 
 def make_animated_gif(sim, idx):
     sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     gwf = sim.get_model("flow")
     gwt = sim.get_model("trans")
 
@@ -357,9 +361,7 @@ def make_animated_gif(sim, idx):
     c_rho = c_r * rho_r * (1 - porosity) + c_w * rho_w * porosity
     darcy_flux = 5.00e-07
     ko = 1.503
-    zanal = Stallman(
-        T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay
-    )
+    zanal = Stallman(T_az, dT, tau, t, c_rho, darcy_flux, ko, c_w, rho_w, zbotm, nlay)
 
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.set_ylabel("Depth (m)")
@@ -389,46 +391,31 @@ def make_animated_gif(sim, idx):
     ani = animation.FuncAnimation(fig, update, times.shape[0], init_func=init)
     fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
     ani.save(fpth, fps=50)
-    return
 
 
 def plot_results(sim, idx):
-    print("Plotting results...")
-    if config.plotModel:
-        plot_conc(sim, idx)
-        if config.plotSave and config.createGif:
-            print("Making animation...")
-            make_animated_gif(sim, idx)
-    return
+    plot_conc(sim, idx)
+    if plot_save and gif_save:
+        make_animated_gif(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
+    sim = build_models(example_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Salt Lake Problem
-
-    # Plot showing MODFLOW 6 results
-
-    scenario(0)
+scenario(0)
+# -

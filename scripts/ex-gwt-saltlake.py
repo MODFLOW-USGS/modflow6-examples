@@ -1,50 +1,52 @@
 # ## Salt Lake Problem
 #
-# Density driven groundwater flow
+# The salt lake problem was suggested by Simmons 1999 as a comprehensive benchmark
+# test for variable-density groundwater flow models. The problem is based on dense
+# salt fingers that descend from an evaporating salt lake. Although an analytical
+# solution is not available for the salt lake problem, an equivalent Hele-Shaw
+# analysis was performed in the laboratory to investigate the movement of dense
+# salt fingers Wooding 1997. In addition to the SUTRA simulation, this salt lake
+# problem was simulated by Langevin et al 2003 using SEAWAT-2000. The approach
+# described by Langevin et al 2003 is reproduced here with MODFLOW 6.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Salt Lake Problem Setup
-
-# Imports
-
+# +
 import os
-import sys
+import pathlib as pl
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
-from figspecs import USGSFigure
-
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 8)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-saltlake"
 
-# Model units
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+gif_save = get_env("GIF", True)
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Model units
 length_units = "mm"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nstp = 400  # Number of time steps
 perlen = 24000  # Simulation time length ($s$)
@@ -79,27 +81,25 @@ for k in range(nlay):
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_folder):
+# +
+def build_models(sim_folder):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
         exe_name="mf6",
     )
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -191,9 +191,7 @@ def build_model(sim_folder):
     flopy.mf6.ModflowGwtmst(gwt, porosity=porosity)
     flopy.mf6.ModflowGwtic(gwt, strt=conc_inflow)
     flopy.mf6.ModflowGwtadv(gwt, scheme="UPSTREAM")
-    flopy.mf6.ModflowGwtdsp(
-        gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc
-    )
+    flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc)
     sourcerecarray = [
         ("CHD-1", "AUX", "CONCENTRATION"),
     ]
@@ -211,9 +209,7 @@ def build_model(sim_folder):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -223,173 +219,150 @@ def build_model(sim_folder):
     return sim
 
 
-# Function to write model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (6, 8)
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    # make bc figure
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pxs.plot_grid(linewidth=0.1)
-    pxs.plot_bc("RCH-1", color="red")
-    pxs.plot_bc("CHD-1", color="blue")
-    ax.set_ylabel("z position (m)")
-    ax.set_xlabel("x position (m)")
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-bc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    plt.close("all")
-
-    # make results plot
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
-
-    # create MODFLOW 6 head object
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-
-    # plot times in the original publication
-    plot_times = [
-        2581.0,
-        15485.0,
-        5162.0,
-        18053.0,
-        10311.0,
-        20634.0,
-        12904.0,
-        23215.0,
-    ]
-
-    nplots = len(plot_times)
-    for iplot in range(nplots):
-        time_in_pub = plot_times[iplot]
-        idx_conc = (np.abs(times - time_in_pub)).argmin()
-        time_this_plot = times[idx_conc]
-        conc = cobj.get_data(totim=time_this_plot)
-
-        ax = fig.add_subplot(4, 2, iplot + 1)
+        # make bc figure
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-        pxs.plot_array(conc, cmap="jet", vmin=conc_inflow, vmax=conc_sat)
-        ax.set_xlim(0, 75.0)
+        pxs.plot_grid(linewidth=0.1)
+        pxs.plot_bc("RCH-1", color="red")
+        pxs.plot_bc("CHD-1", color="blue")
         ax.set_ylabel("z position (m)")
-        if iplot in [6, 7]:
-            ax.set_xlabel("x position (m)")
-        ax.set_title(f"Time = {time_this_plot} seconds")
-    plt.tight_layout()
+        ax.set_xlabel("x position (m)")
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-bc.png")
+            fig.savefig(fpth)
+        plt.close("all")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # make results plot
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
+
+        # create MODFLOW 6 head object
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+
+        # plot times in the original publication
+        plot_times = [
+            2581.0,
+            15485.0,
+            5162.0,
+            18053.0,
+            10311.0,
+            20634.0,
+            12904.0,
+            23215.0,
+        ]
+
+        nplots = len(plot_times)
+        for iplot in range(nplots):
+            time_in_pub = plot_times[iplot]
+            idx_conc = (np.abs(times - time_in_pub)).argmin()
+            time_this_plot = times[idx_conc]
+            conc = cobj.get_data(totim=time_this_plot)
+
+            ax = fig.add_subplot(4, 2, iplot + 1)
+            pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+            pxs.plot_array(conc, cmap="jet", vmin=conc_inflow, vmax=conc_sat)
+            ax.set_xlim(0, 75.0)
+            ax.set_ylabel("z position (m)")
+            if iplot in [6, 7]:
+                ax.set_xlabel("x position (m)")
+            ax.set_title(f"Time = {time_this_plot} seconds")
+        plt.tight_layout()
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
+            fig.savefig(fpth)
 
 
 def make_animated_gif(sim, idx):
     from matplotlib.animation import FuncAnimation, PillowWriter
 
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_name = example_name
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-    conc = cobj.get_alldata()
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+        conc = cobj.get_alldata()
 
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pc = pxs.plot_array(conc[0], cmap="jet", vmin=conc_inflow, vmax=conc_sat)
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+        pc = pxs.plot_array(conc[0], cmap="jet", vmin=conc_inflow, vmax=conc_sat)
 
-    def init():
-        ax.set_xlim(0, 75.0)
-        ax.set_ylim(0, 75.0)
-        ax.set_title(f"Time = {times[0]} seconds")
+        def init():
+            ax.set_xlim(0, 75.0)
+            ax.set_ylim(0, 75.0)
+            ax.set_title(f"Time = {times[0]} seconds")
 
-    def update(i):
-        pc.set_array(conc[i].flatten())
-        ax.set_title(f"Time = {times[i]} seconds")
+        def update(i):
+            pc.set_array(conc[i].flatten())
+            ax.set_title(f"Time = {times[i]} seconds")
 
-    ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
-    writer = PillowWriter(fps=50)
-    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
-    ani.save(fpth, writer=writer)
-    return
+        ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
+        writer = PillowWriter(fps=50)
+        fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+        ani.save(fpth, writer=writer)
 
 
 def plot_results(sim, idx):
-    if config.plotModel:
-        plot_conc(sim, idx)
-        if config.plotSave and config.createGif:
-            make_animated_gif(sim, idx)
-    return
+    plot_conc(sim, idx)
+    if plot_save and gif_save:
+        make_animated_gif(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
+    sim = build_models(example_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Salt Lake Problem
-
-    # Plot showing MODFLOW 6 results
-
-    scenario(0)
+scenario(0)
+# -

@@ -3,49 +3,45 @@
 # This is the stream-aquifer interaction example problem (test 1) from the
 # Streamflow Routing Package documentation (Prudic, 1989). All reaches have
 # been converted to rectangular reaches.
-#
 
-# ### SFR Package Problem 1 Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties specific to the
-
-figure_size = (6.3, 5.6)
-masked_values = (0, 1e30, -1e30)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-sfr-p01"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "seconds"
 
-# Table SFR Package Problem 1 Model Parameters
-
+# Model parameters
 nper = 3  # Number of periods
 nlay = 1  # Number of layers
 nrow = 15  # Number of rows
@@ -61,8 +57,7 @@ sy_basin = 0.1  # Specific yield in the basin (unitless)
 evap_rate = 9.5e-8  # Evapotranspiration rate ($ft/s$)
 ext_depth = 15.0  # Evapotranspiration extinction depth ($ft$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = (
     (0.0, 1, 1.0),
     (1.577880e9, 50, 1.1),
@@ -75,21 +70,33 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and evapotranspiration surface arrays
-
-data_pth = os.path.join("..", "data", sim_name)
-fpth = os.path.join(data_pth, "idomain.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+    known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
+)
 idomain = np.loadtxt(fpth, dtype=int)
-fpth = os.path.join(data_pth, "top.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top.txt",
+    known_hash="md5:ab5097c1dc22e60fb313bf7f10dd8efe",
+)
 top = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "bottom.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+    known_hash="md5:fa5fe276f4f58a01eabfe88516cc90af",
+)
 botm = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "recharge.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge.txt",
+    known_hash="md5:82ed1ed29a457f1f38e51cd2657676e1",
+)
 recharge = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "surf.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/surf.txt",
+    known_hash="md5:743ce03e5e46867cf5af94f1ac283514",
+)
 surf = np.loadtxt(fpth, dtype=float)
 
 # Create hydraulic conductivity and specific yield
-
 k11 = np.zeros(shape2d, dtype=float)
 k11[idomain == 1] = k11_stream
 k11[idomain == 2] = k11_basin
@@ -97,18 +104,13 @@ sy = np.zeros(shape2d, dtype=float)
 sy[idomain == 1] = sy_stream
 sy[idomain == 2] = sy_basin
 
-# ### Create SFR Package Problem 1 Model Boundary Conditions
-#
 # General head boundary conditions
-#
-
 ghb_spd = [
     [0, 12, 0, 988.0, 0.038],
     [0, 13, 8, 1045.0, 0.038],
 ]
 
 # Well boundary conditions
-
 wel_spd = {
     1: [
         [0, 5, 3, -10.0],
@@ -128,7 +130,6 @@ wel_spd = {
 }
 
 # SFR Package
-
 sfr_pakdata = [
     [
         0,
@@ -769,317 +770,299 @@ sfr_spd = [
 ]
 
 # Solver parameters
-
 nouter = 100
 ninner = 50
 hclose = 1e-6
 rclose = 1e-6
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 SFR Package Problem 1 model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    if config.buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="newton", save_flows=True
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            idomain=idomain,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=1,
-            k=k11,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-            steady_state={0: True},
-            transient={1: True},
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
-        flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfevta(
-            gwf, surface=surf, rate=evap_rate, depth=ext_depth
-        )
-        sfr = flopy.mf6.ModflowGwfsfr(
-            gwf,
-            length_conversion=3.28081,
-            nreaches=len(sfr_pakdata),
-            packagedata=sfr_pakdata,
-            connectiondata=sfr_conn,
-            diversions=sfr_div,
-            perioddata=sfr_spd,
-        )
-        obs_file = f"{sim_name}.sfr.obs"
-        csv_file = obs_file + ".csv"
-        obs_dict = {
-            csv_file: [
-                ("r01_stage", "stage", (3,)),
-                ("r02_stage", "stage", (14,)),
-                ("r03_stage", "stage", (26,)),
-                ("r04_stage", "stage", (35,)),
-                ("r01_flow", "downstream-flow", (3,)),
-                ("r02_flow", "downstream-flow", (14,)),
-                ("r03_flow", "downstream-flow", (26,)),
-                ("r04_flow", "downstream-flow", (35,)),
-            ]
-        }
-        sfr.obs.initialize(
-            filename=obs_file, digits=10, print_input=True, continuous=obs_dict
-        )
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=sim_name, newtonoptions="newton", save_flows=True
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        idomain=idomain,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=1,
+        k=k11,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+        steady_state={0: True},
+        transient={1: True},
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd)
+    flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
+    flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=evap_rate, depth=ext_depth)
+    sfr = flopy.mf6.ModflowGwfsfr(
+        gwf,
+        length_conversion=3.28081,
+        nreaches=len(sfr_pakdata),
+        packagedata=sfr_pakdata,
+        connectiondata=sfr_conn,
+        diversions=sfr_div,
+        perioddata=sfr_spd,
+    )
+    obs_file = f"{sim_name}.sfr.obs"
+    csv_file = obs_file + ".csv"
+    obs_dict = {
+        csv_file: [
+            ("r01_stage", "stage", (3,)),
+            ("r02_stage", "stage", (14,)),
+            ("r03_stage", "stage", (26,)),
+            ("r04_stage", "stage", (35,)),
+            ("r01_flow", "downstream-flow", (3,)),
+            ("r02_flow", "downstream-flow", (14,)),
+            ("r03_flow", "downstream-flow", (26,)),
+            ("r04_flow", "downstream-flow", (35,)),
+        ]
+    }
+    sfr.obs.initialize(
+        filename=obs_file, digits=10, print_input=True, continuous=obs_dict
+    )
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+    )
+    return sim
 
 
-# Function to write MODFLOW 6 SFR Package Problem 1 model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the SFR Package Problem 1 model.
-# True is returned if the model runs successfully
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
 
-
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot grid
+# +
+# Figure properties
+figure_size = (6.3, 5.6)
+masked_values = (0, 1e30, -1e30)
 
 
 def plot_grid(gwf, silent=True):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
+    with styles.USGSMap() as fs:
+        fig = plt.figure(figsize=figure_size, constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
 
-    axes = []
-    axes.append(fig.add_subplot(gs[:6, :5]))
-    axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
+        axes = []
+        axes.append(fig.add_subplot(gs[:6, :5]))
+        axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
 
-    for ax in axes:
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
-        # ax.set_xticks(ticklabels)
-        # ax.set_yticks(ticklabels)
+        for ax in axes:
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
+            # ax.set_xticks(ticklabels)
+            # ax.set_yticks(ticklabels)
 
-    # legend axis
-    axes.append(fig.add_subplot(gs[6:, :]))
+        # legend axis
+        axes.append(fig.add_subplot(gs[6:, :]))
 
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    top_coll = mm.plot_array(
-        top, vmin=1000, vmax=1120, masked_values=masked_values, alpha=0.5
-    )
-    mm.plot_bc("SFR", color="green")
-    cv = mm.contour_array(
-        top,
-        levels=np.arange(1000, 1100, 20),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    cbar = plt.colorbar(
-        top_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Land surface elevation, $ft$")
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Land surface elevation", idx=0)
-    fs.remove_edge_ticks(ax)
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    bot_coll = mm.plot_array(
-        botm, vmin=500, vmax=1000, masked_values=masked_values, alpha=0.5
-    )
-    mm.plot_bc("GHB", color="purple")
-    mm.plot_bc("WEL", color="red", kper=1)
-    cv = mm.contour_array(
-        botm,
-        levels=np.arange(600, 1000, 100),
-        linewidths=0.5,
-        linestyles=":",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    cbar = plt.colorbar(
-        bot_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Bottom elevation, $ft$")
-    ax.set_xlabel("x-coordinate, in feet")
-    fs.heading(ax, heading="Bottom elevation", idx=1)
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="0.5",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Inactive cells",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="green",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Stream boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="purple",
-        mec="black",
-        markeredgewidth=0.5,
-        label="General head boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="red",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Well boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls="-",
-        color="black",
-        label=r"Land surface elevation contour, $ft$",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls=":",
-        color="black",
-        label=r"Bottom elevation contour, $ft$",
-    )
-    fs.graph_legend(ax, loc="center", ncol=3)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        top_coll = mm.plot_array(
+            top, vmin=1000, vmax=1120, masked_values=masked_values, alpha=0.5
         )
-        fig.savefig(fpth)
+        mm.plot_bc("SFR", color="green")
+        cv = mm.contour_array(
+            top,
+            levels=np.arange(1000, 1100, 20),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        cbar = plt.colorbar(
+            top_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Land surface elevation, $ft$")
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.heading(ax, heading="Land surface elevation", idx=0)
+        styles.remove_edge_ticks(ax)
 
-    return
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        bot_coll = mm.plot_array(
+            botm, vmin=500, vmax=1000, masked_values=masked_values, alpha=0.5
+        )
+        mm.plot_bc("GHB", color="purple")
+        mm.plot_bc("WEL", color="red", kper=1)
+        cv = mm.contour_array(
+            botm,
+            levels=np.arange(600, 1000, 100),
+            linewidths=0.5,
+            linestyles=":",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        cbar = plt.colorbar(
+            bot_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Bottom elevation, $ft$")
+        ax.set_xlabel("x-coordinate, in feet")
+        styles.heading(ax, heading="Bottom elevation", idx=1)
+        styles.remove_edge_ticks(ax)
 
+        # legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="0.5",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Inactive cells",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="green",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Stream boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="purple",
+            mec="black",
+            markeredgewidth=0.5,
+            label="General head boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="red",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Well boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color="black",
+            label=r"Land surface elevation contour, $ft$",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls=":",
+            color="black",
+            label=r"Bottom elevation contour, $ft$",
+        )
+        styles.graph_legend(ax, loc="center", ncol=3)
 
-# Function to plot grid
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_head_results(gwf, silent=True):
-    sim_ws = os.path.join(ws, sim_name)
-
     # create MODFLOW 6 head object
     hobj = gwf.output.head()
 
@@ -1088,276 +1071,250 @@ def plot_head_results(gwf, silent=True):
 
     kstpkper = hobj.get_kstpkper()
 
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
+    with styles.USGSMap() as fs:
+        fig = plt.figure(figsize=figure_size, constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
 
-    axes = [fig.add_subplot(gs[:6, :5])]
-    axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
+        axes = [fig.add_subplot(gs[:6, :5])]
+        axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
 
-    for ax in axes:
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
+        for ax in axes:
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
 
-    # legend axis
-    axes.append(fig.add_subplot(gs[6:, :]))
+        # legend axis
+        axes.append(fig.add_subplot(gs[6:, :]))
 
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
-    # extract heads and specific discharge for first stress period
-    head = hobj.get_data(kstpkper=kstpkper[0])
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
-        gwf,
-    )
-
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(900, 1100, 10),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Steady-state", idx=0)
-    fs.remove_edge_ticks(ax)
-
-    # extract heads and specific discharge for second stress period
-    head = hobj.get_data(kstpkper=kstpkper[1])
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
-        gwf,
-    )
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(900, 1100, 10),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    ax.set_xlabel("x-coordinate, in feet")
-    fs.heading(ax, heading="Pumping", idx=1)
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    cbar = plt.colorbar(
-        head_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Head, $ft$")
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="$\u2192$",
-        ms=10,
-        mfc="0.75",
-        mec="0.75",
-        label="Normalized specific discharge",
-    )
-    ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
-    fs.graph_legend(ax, loc="upper center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+        # extract heads and specific discharge for first stress period
+        head = hobj.get_data(kstpkper=kstpkper[0])
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+            gwf,
         )
-        fig.savefig(fpth)
 
-    return
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        head_coll = mm.plot_array(
+            head, vmin=900, vmax=1120, masked_values=masked_values
+        )
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(900, 1100, 10),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.heading(ax, heading="Steady-state", idx=0)
+        styles.remove_edge_ticks(ax)
 
+        # extract heads and specific discharge for second stress period
+        head = hobj.get_data(kstpkper=kstpkper[1])
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
+            gwf,
+        )
 
-# Function to plot the sfr results
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        head_coll = mm.plot_array(
+            head, vmin=900, vmax=1120, masked_values=masked_values
+        )
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(900, 1100, 10),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        ax.set_xlabel("x-coordinate, in feet")
+        styles.heading(ax, heading="Pumping", idx=1)
+        styles.remove_edge_ticks(ax)
+
+        # legend
+        ax = axes[-1]
+        cbar = plt.colorbar(
+            head_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Head, $ft$")
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
+        styles.graph_legend(ax, loc="upper center", ncol=2)
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_sfr_results(gwf, silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
+    with styles.USGSPlot() as fs:
+        # load the observations
+        results = gwf.sfr.output.obs().data
 
-    # load the observations
-    results = gwf.sfr.output.obs().data
+        # modify the time
+        results["totim"] /= 365.25 * 86400.0
 
-    # modify the time
-    results["totim"] /= 365.25 * 86400.0
-
-    rnos = (
-        3,
-        14,
-        26,
-        35,
-    )
-    sfr = gwf.sfr.packagedata.array["rtp"]
-    offsets = []
-    for rno in rnos:
-        offsets.append(sfr[rno])
-
-    # create the figure
-    fig, axes = plt.subplots(
-        ncols=2,
-        nrows=4,
-        sharex=True,
-        figsize=(6.3, 6.3),
-        constrained_layout=True,
-    )
-    ipos = 0
-    for i in range(4):
-        heading = f"Reach {rnos[i] + 1}"
-        for j in range(2):
-            ax = axes[i, j]
-            ax.set_xlim(0, 100)
-            if j == 0:
-                tag = f"R{i + 1:02d}_STAGE"
-                offset = offsets[i]
-                scale = 1.0
-                ylabel = "Reach depth, in feet"
-                color = "blue"
-            else:
-                tag = f"R{i + 1:02d}_FLOW"
-                offset = 0.0
-                scale = -1.0
-                ylabel = "Downstream reach flow,\nin cubic feet per second"
-                color = "red"
-
-            ax.plot(
-                results["totim"],
-                scale * results[tag] - offset,
-                lw=0.5,
-                color=color,
-                zorder=10,
-            )
-            ax.axvline(50, lw=0.5, ls="--", color="black", zorder=10)
-            if ax.get_ylim()[0] < 0.0:
-                ax.axhline(0, lw=0.5, color="0.5", zorder=9)
-            fs.add_text(
-                ax,
-                text="Pumping",
-                x=0.49,
-                y=0.8,
-                ha="right",
-                bold=False,
-                fontsize=7,
-            )
-            fs.add_text(
-                ax,
-                text="Recovery",
-                x=0.51,
-                y=0.8,
-                ha="left",
-                bold=False,
-                fontsize=7,
-            )
-            ax.set_ylabel(ylabel)
-            ax.yaxis.set_label_coords(-0.1, 0.5)
-            fs.heading(ax, heading=heading, idx=ipos)
-            if i == 3:
-                ax.set_xlabel("Time since pumping began, in years")
-            ipos += 1
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-02{config.figure_ext}",
+        rnos = (
+            3,
+            14,
+            26,
+            35,
         )
-        fig.savefig(fpth)
+        sfr = gwf.sfr.packagedata.array["rtp"]
+        offsets = []
+        for rno in rnos:
+            offsets.append(sfr[rno])
 
-    return
+        # create the figure
+        fig, axes = plt.subplots(
+            ncols=2,
+            nrows=4,
+            sharex=True,
+            figsize=(6.3, 6.3),
+            constrained_layout=True,
+        )
+        ipos = 0
+        for i in range(4):
+            heading = f"Reach {rnos[i] + 1}"
+            for j in range(2):
+                ax = axes[i, j]
+                ax.set_xlim(0, 100)
+                if j == 0:
+                    tag = f"R{i + 1:02d}_STAGE"
+                    offset = offsets[i]
+                    scale = 1.0
+                    ylabel = "Reach depth, in feet"
+                    color = "blue"
+                else:
+                    tag = f"R{i + 1:02d}_FLOW"
+                    offset = 0.0
+                    scale = -1.0
+                    ylabel = "Downstream reach flow,\nin cubic feet per second"
+                    color = "red"
 
+                ax.plot(
+                    results["totim"],
+                    scale * results[tag] - offset,
+                    lw=0.5,
+                    color=color,
+                    zorder=10,
+                )
+                ax.axvline(50, lw=0.5, ls="--", color="black", zorder=10)
+                if ax.get_ylim()[0] < 0.0:
+                    ax.axhline(0, lw=0.5, color="0.5", zorder=9)
+                styles.add_text(
+                    ax,
+                    text="Pumping",
+                    x=0.49,
+                    y=0.8,
+                    ha="right",
+                    bold=False,
+                    fontsize=7,
+                )
+                styles.add_text(
+                    ax,
+                    text="Recovery",
+                    x=0.51,
+                    y=0.8,
+                    ha="left",
+                    bold=False,
+                    fontsize=7,
+                )
+                ax.set_ylabel(ylabel)
+                ax.yaxis.set_label_coords(-0.1, 0.5)
+                styles.heading(ax, heading=heading, idx=ipos)
+                if i == 3:
+                    ax.set_xlabel("Time since pumping began, in years")
+                ipos += 1
 
-# Function to plot the SFR Package Problem 1 model results.
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-02.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
-        gwf = sim.get_model(sim_name)
-
-        plot_grid(gwf, silent=silent)
-
-        plot_sfr_results(gwf, silent=silent)
-
-        plot_head_results(gwf, silent=silent)
+    gwf = sim.get_model(sim_name)
+    plot_grid(gwf, silent=silent)
+    plot_sfr_results(gwf, silent=silent)
+    plot_head_results(gwf, silent=silent)
 
 
-# Function that wraps all of the steps for the SFR Package Problem 1 model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-
-    write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-    assert success, f"could not run...{sim_name}"
-
-    if success:
+# +
+def scenario(silent=True):
+    sim = build_models()
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### SFR Package Problem 1 Simulation
-    #
-    # Simulated heads in model the unconfined, middle, and lower aquifers (model layers
-    # 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
-    # model are also shown. The location of drain (green) and well (gray) boundary
-    # conditions, normalized specific discharge, and head contours (25 ft contour
-    # intervals) are also shown.
-
-    simulation()
+# Simulated heads in model the unconfined, middle, and lower aquifers (model layers
+# 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
+# model are also shown. The location of drain (green) and well (gray) boundary
+# conditions, normalized specific discharge, and head contours (25 ft contour
+# intervals) are also shown.
+scenario()
+# -

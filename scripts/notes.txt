@@ -1,9 +1,0 @@
-Some common commands include:
-
-python process-scripts.py
-
-black --line-length 79 *.py
-
-When model has been created and run, use no write and no run to just make figs
-python ex-gwt-prudic2004t2.py -nw -nr
-

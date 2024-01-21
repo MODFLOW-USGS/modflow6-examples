@@ -1,45 +1,52 @@
-# ## Simulating Effect of Recirculation Well
+# ## Simulating effect of recirculation well
 #
-# MT3DMS Supplemental Guide Problem 8.2
-#
-#
+# This example is for a recirculating well.  It is based on example problem 8.2
+# described in Zheng 2010. The problem consists of a two-dimensional, one-layer
+# model with flow from left to right. A solute is introduced into the flow field
+# by an injection well. Downgradient, an extraction well pumps at the same rate
+# as the injection well. This extracted water is then injected into two other
+# injection wells. This example is simulated with a GWT model, which receives
+# flow information from a separate GWF model. Results from the GWT Model are
+# compared with the results from an MT3DMS simulation that uses flows from a
+# separate MODFLOW-2005 simulation.
 
-# ### Simulating Effect of Recirculation Well Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties specific to the
-
-figure_size = (5, 3)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-mt3dsupp82"
 
-# Model units
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Model units
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 31  # Number of rows
@@ -54,24 +61,21 @@ alpha_th = 3.0  # Transverse horizontal dispersivity ($m$)
 alpha_tv = 0.3  # Transverse vertical dispersivity ($m$)
 total_time = 365.0  # Simulation time ($d$)
 porosity = 0.3  # Porosity of mobile domain (unitless)
+# -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
-# recharge is the only variable
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -172,12 +176,10 @@ def build_mf6gwf(sim_folder):
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 20, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -260,10 +262,8 @@ def build_mf6gwt(sim_folder):
 def build_mf2005(sim_folder):
     print(f"Building mf2005 model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf2005")
-    mf = flopy.modflow.Modflow(
-        modelname=name, model_ws=sim_ws, exe_name="mf2005"
-    )
+    sim_ws = os.path.join(workspace, sim_folder, "mf2005")
+    mf = flopy.modflow.Modflow(modelname=name, model_ws=sim_ws, exe_name="mf2005")
     perlen = [total_time]
     dis = flopy.modflow.ModflowDis(
         mf,
@@ -302,7 +302,7 @@ def build_mf2005(sim_folder):
 def build_mt3dms(sim_folder, modflowmodel):
     print(f"Building mt3dms model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mt3d")
+    sim_ws = os.path.join(workspace, sim_folder, "mt3d")
     mt = flopy.mt3d.Mt3dms(
         modelname=name,
         model_ws=sim_ws,
@@ -327,68 +327,55 @@ def build_mt3dms(sim_folder, modflowmodel):
     return mt
 
 
-def build_model(sim_name):
-    sims = None
-    if config.buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name)
-        sim_mf2005 = build_mf2005(sim_name)
-        sim_mt3dms = build_mt3dms(sim_name, sim_mf2005)
-        sims = (sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms)
-    return sims
+def build_models(sim_name):
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(sim_name)
+    sim_mf2005 = build_mf2005(sim_name)
+    sim_mt3dms = build_mt3dms(sim_name, sim_mf2005)
+    return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
-# Function to write model files
+def write_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
+    sim_mf2005.write_input()
+    sim_mt3dms.write_input()
 
 
-def write_model(sims, silent=True):
-    if config.writeModel:
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
-        sim_mf2005.write_input()
-        sim_mt3dms.write_input()
-    return
+@timed
+def run_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf2005.run_model(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mt3dms.run_model(
+        silent=silent, normal_msg="Program completed", report=True
+    )
+    assert success, pformat(buff)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sims, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf2005.run_model(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mt3dms.run_model(
-            silent=silent, normal_msg="Program completed"
-        )
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (5, 3)
 
 
 def plot_results(sims, idx):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        gwf = sim_mf6gwf.flow
-        gwt = sim_mf6gwt.trans
-        fs = USGSFigure(figure_type="map", verbose=False)
+    print("Plotting model results...")
+    sim_mf6gwf, sim_mf6gwt, _, sim_mt3dms = sims
+    gwf = sim_mf6gwf.flow
+    gwt = sim_mf6gwt.trans
 
+    with styles.USGSMap() as fs:
         conc = gwt.output.concentration().get_data()
 
         sim_ws = sim_mt3dms.model_ws
@@ -396,9 +383,7 @@ def plot_results(sims, idx):
         cobjmt = flopy.utils.UcnFile(fname)
         concmt = cobjmt.get_data()
 
-        fig, ax = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, ax = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
         pmv.plot_bc(ftype="MAW", color="red")
         pmv.plot_bc(ftype="CHD")
@@ -411,9 +396,7 @@ def plot_results(sims, idx):
         levels = [0.01, 0.1, 1, 10, 100]
         cs1 = pmv.contour_array(concmt, levels=levels, colors="r")
 
-        cs2 = pmv.contour_array(
-            conc, levels=levels, colors="b", linestyles="--"
-        )
+        cs2 = pmv.contour_array(conc, levels=levels, colors="b", linestyles="--")
         ax.clabel(cs2, cs2.levels[::1], fmt="%3.2f", colors="b")
 
         labels = ["MT3DMS", "MODFLOW 6"]
@@ -423,41 +406,33 @@ def plot_results(sims, idx):
         ax.set_xlabel("x position (m)")
         ax.set_ylabel("y position (m)")
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-map{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fname = f"{sim_folder}-map.png"
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
+    sim = build_models(example_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-    # Add a description of the plot(s)
-
-    scenario(0)
+scenario(0)
+# -

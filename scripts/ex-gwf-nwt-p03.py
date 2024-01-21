@@ -1,48 +1,49 @@
 # ## MODFLOW-NWT Problem 3 example
 #
-#
+# This example is based on problem 3 in Niswonder et al 2011, which used
+# the Newton-Raphson formulation to simulate water levels in a rectangular,
+# unconfined aquifer with a complex bottom elevation and receiving areally
+# distributed recharge. This problem provides a good example of the utility
+# of Newton-Raphson for solving problems with wetting and drying of cells.
 
-# ### MODFLOW-NWT Problem 3 Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties
-
-figure_size = (6.3, 5.6)
-masked_values = (1e30, -1e30)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-nwt-p03"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-nwt-p03a": {
         "recharge": "high",
@@ -52,8 +53,7 @@ parameters = {
     },
 }
 
-# Table
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 80  # Number of rows
@@ -65,7 +65,6 @@ k11 = 1.0  # Horizontal hydraulic conductivity ($m/day$)
 H1 = 24.0  # Constant head water level ($m$)
 
 # plotting ranges and contour levels
-
 vmin, vmax = 20, 60
 smin, smax = 0, 25
 bmin, bmax = 0, 90
@@ -77,32 +76,32 @@ scolor = "black"
 bcolor = "black"
 
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((365.0, 1, 1.0),)
 
 # Calculate extents, and shape3d
-
 extents = (0, delr * ncol, 0, delc * nrow)
 shape3d = (nlay, nrow, ncol)
 ticklabels = np.arange(0, 10000, 2000)
 
 # Load the bottom
-
-fpth = os.path.join("..", "data", sim_name, "bottom.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+    known_hash="md5:0fd4b16db652808c7e36a5a2a25da0a2",
+)
 botm = np.loadtxt(fpth).reshape(shape3d)
 
 # Set the starting heads
-
 strt = botm + 20.0
 
 # Load the high recharge rate
-
-fpth = os.path.join("..", "data", sim_name, "recharge_high.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge_high.txt",
+    known_hash="md5:8d8f8bb3cec22e7a0cbe6aba95da8f35",
+)
 rch_high = np.loadtxt(fpth)
 
 # Generate the low recharge rate from the high recharge rate
-
 rch_low = rch_high.copy() * 1e-3
 
 # Constant head boundary conditions
@@ -116,104 +115,95 @@ chd_spd = [
 ]
 
 # Solver parameters
-
 nouter = 500
 ninner = 500
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     recharge="high",
 ):
-    if config.buildModel:
-        sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="all",
-            complexity="simple",
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=rclose,
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim,
-            modelname=sim_name,
-            newtonoptions="newton under_relaxation",
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=1,
-            k=k11,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+    sim_ws = os.path.join(workspace, name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="all",
+        complexity="simple",
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=rclose,
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim,
+        modelname=sim_name,
+        newtonoptions="newton under_relaxation",
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=1,
+        k=k11,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
 
-        if recharge == "high":
-            rch = rch_high
-        elif recharge == "low":
-            rch = rch_low
-        flopy.mf6.ModflowGwfrcha(gwf, recharge=rch)
+    if recharge == "high":
+        rch = rch_high
+    elif recharge == "low":
+        rch = rch_low
+    flopy.mf6.ModflowGwfrcha(gwf, recharge=rch)
 
-        head_filerecord = f"{sim_name}.hds"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            saverecord=[("HEAD", "ALL")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        saverecord=[("HEAD", "ALL")],
+    )
+    return sim
 
 
-# Function to write MODFLOW-NWT Problem 3 model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the model. True is returned if the model runs successfully.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
 
-
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-
-    return success
-
-
-# Function to create a figure
+# +
+# Figure properties
+figure_size = (6.3, 5.6)
+masked_values = (1e30, -1e30)
 
 
 def create_figure(nsubs=1, size=(4, 4)):
@@ -256,175 +246,159 @@ def create_figure(nsubs=1, size=(4, 4)):
     return fig, axes
 
 
-# Function to plot the grid
-
-
 def plot_grid(gwf, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
+    with styles.USGSMap() as fs:
+        bot = gwf.dis.botm.array
 
-    bot = gwf.dis.botm.array
-
-    fig, axes = create_figure(size=(3.15, 4))
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    bot_coll = mm.plot_array(bot, vmin=bmin, vmax=bmax)
-    mm.plot_bc("CHD", color="cyan")
-    cv = mm.contour_array(
-        bot,
-        levels=blevels,
-        linewidths=0.5,
-        linestyles="-",
-        colors=bcolor,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    ax.set_xlabel("x-coordinate, in meters")
-    ax.set_ylabel("y-coordinate, in meters")
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="cyan",
-        mec="cyan",
-        label="Constant Head",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls="-",
-        color=bcolor,
-        label="Bottom elevation contour, m",
-    )
-    fs.graph_legend(ax, loc="center", ncol=2)
-
-    cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-    cbar = plt.colorbar(
-        bot_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        cax=cax,
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Bottom Elevation, $m$")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+        fig, axes = create_figure(size=(3.15, 4))
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        bot_coll = mm.plot_array(bot, vmin=bmin, vmax=bmax)
+        mm.plot_bc("CHD", color="cyan")
+        cv = mm.contour_array(
+            bot,
+            levels=blevels,
+            linewidths=0.5,
+            linestyles="-",
+            colors=bcolor,
         )
-        fig.savefig(fpth)
+        plt.clabel(cv, fmt="%1.0f")
+        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("y-coordinate, in meters")
+        styles.remove_edge_ticks(ax)
 
-    return
+        # legend
+        ax = axes[1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="cyan",
+            mec="cyan",
+            label="Constant Head",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color=bcolor,
+            label="Bottom elevation contour, m",
+        )
+        styles.graph_legend(ax, loc="center", ncol=2)
+
+        cax = plt.axes([0.275, 0.125, 0.45, 0.025])
+        cbar = plt.colorbar(
+            bot_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            cax=cax,
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Bottom Elevation, $m$")
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_recharge(gwf, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-
-    fig, axes = create_figure(nsubs=2, size=figure_size)
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    rch_coll = mm.plot_array(rch_high)
-    mm.plot_bc("CHD", color="cyan")
-    cv = mm.contour_array(
-        rch_high,
-        levels=[1e-6, 2e-6, 3e-6, 4e-6, 5e-6, 6e-6, 7e-6],
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-    )
-    plt.clabel(cv, fmt="%1.0e")
-    cbar = plt.colorbar(
-        rch_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0e",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
-    ax.set_xlabel("x-coordinate, in meters")
-    ax.set_ylabel("y-coordinate, in meters")
-    fs.heading(ax, letter="A")
-    fs.remove_edge_ticks(ax)
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    rch_coll = mm.plot_array(rch_low)
-    mm.plot_bc("CHD", color="cyan")
-    cv = mm.contour_array(
-        rch_low,
-        levels=[1e-9, 2e-9, 3e-9, 4e-9, 5e-9, 6e-9, 7e-9],
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-    )
-    plt.clabel(cv, fmt="%1.0e")
-    cbar = plt.colorbar(
-        rch_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0e",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
-    ax.set_xlabel("x-coordinate, in meters")
-    fs.heading(ax, letter="B")
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="cyan",
-        mec="cyan",
-        label="Constant Head",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls="-",
-        color=bcolor,
-        label=r"Recharge rate contour, $m/day$",
-    )
-    fs.graph_legend(ax, loc="center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+    with styles.USGSMap():
+        fig, axes = create_figure(nsubs=2, size=figure_size)
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        rch_coll = mm.plot_array(rch_high)
+        mm.plot_bc("CHD", color="cyan")
+        cv = mm.contour_array(
+            rch_high,
+            levels=[1e-6, 2e-6, 3e-6, 4e-6, 5e-6, 6e-6, 7e-6],
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
         )
-        fig.savefig(fpth)
+        plt.clabel(cv, fmt="%1.0e")
+        cbar = plt.colorbar(
+            rch_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0e",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
+        ax.set_xlabel("x-coordinate, in meters")
+        ax.set_ylabel("y-coordinate, in meters")
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
-    return
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        rch_coll = mm.plot_array(rch_low)
+        mm.plot_bc("CHD", color="cyan")
+        cv = mm.contour_array(
+            rch_low,
+            levels=[1e-9, 2e-9, 3e-9, 4e-9, 5e-9, 6e-9, 7e-9],
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+        )
+        plt.clabel(cv, fmt="%1.0e")
+        cbar = plt.colorbar(
+            rch_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0e",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Recharge rate, $m/day$")
+        ax.set_xlabel("x-coordinate, in meters")
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
 
+        # legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="cyan",
+            mec="cyan",
+            label="Constant Head",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color=bcolor,
+            label=r"Recharge rate contour, $m/day$",
+        )
+        styles.graph_legend(ax, loc="center", ncol=2)
 
-# Function to plot the model results.
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
-    verbose = not silent
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=verbose)
-        name = list(parameters.keys())[idx]
-        sim_ws = os.path.join(ws, name)
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
 
         bot = gwf.dis.botm.array
@@ -476,8 +450,8 @@ def plot_results(idx, sim, silent=True):
         cbar.ax.set_xlabel(r"Water level, $m$")
         ax.set_xlabel("x-coordinate, in meters")
         ax.set_ylabel("y-coordinate, in meters")
-        fs.heading(ax, letter="A")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
         ax = axes[1]
         mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
@@ -510,8 +484,8 @@ def plot_results(idx, sim, silent=True):
         cbar.ax.set_xlabel(r"Saturated thickness, $m$")
         ax.set_xlabel("x-coordinate, in meters")
         # ax.set_ylabel("y-coordinate, in meters")
-        fs.heading(ax, letter="B")
-        fs.remove_edge_ticks(ax)
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
 
         # create legend
         ax = axes[-1]
@@ -541,59 +515,46 @@ def plot_results(idx, sim, silent=True):
             color=scolor,
             label="Saturated thickness contour, m",
         )
-        fs.graph_legend(ax, loc="center", ncol=3)
+        styles.graph_legend(ax, loc="center", ncol=3)
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-{idx + 2:02d}{config.figure_ext}",
+                f"{sim_name}-{idx + 2:02d}.png",
             )
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for MODFLOW-NWT Problem 3 model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-
-    sim = build_model(key, **params)
-
-    write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-
-    if success:
+    sim = build_models(key, **params)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(idx, sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# -
 
 
-def test_02():
-    simulation(1, silent=False)
+# Run the MODFLOW-NWT Problem 3 model with high recharge, then plot heads.
 
+scenario(0)
 
-# nosetest end
+# Run the MODFLOW-NWT Problem 3 model with low recharge, then plot heads.
 
-if __name__ == "__main__":
-    # ### MODFLOW-NWT Problem 3 Simulation
-    #
-    # Simulated heads in the MODFLOW-NWT Problem 3 model with high recharge.
-
-    simulation(0)
-
-    # Simulated heads in the MODFLOW-NWT Problem 3 model with low recharge.
-
-    simulation(1)
+scenario(1)

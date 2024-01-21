@@ -19,14 +19,6 @@ jobs:
   zip_files:
     name: zip input files
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    env:
-      script-directory: scripts
-      etc-directory: etc
-    defaults:
-      run:
-        shell: bash
 
     steps:
       - name: Checkout MODFLOW6 examples repo
@@ -35,15 +27,16 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install Python packages
+        working-directory: etc
         run: |
           python --version
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
-        working-directory: ${{env.etc-directory}}
+          python -m ipykernel install --name python_kernel --user
 
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
@@ -56,9 +49,10 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Run scripts without model runs
-        run: pytest -v -n=auto --durations=0 ci_build_files.py
-        working-directory: ${{env.etc-directory}}
+      - name: Create model
+        working-directory: autotest
+        # run the scripts via pytest without running the models, just build input files
+        run: pytest -v -n=auto --durations=0 test_scripts.py --init
 
       - name: zip input files
         run: |
@@ -78,10 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: [3.8, 3.9, "3.10", "3.11"]
-    env:
-      script-directory: scripts
-      etc-directory: etc
+        python: [3.9, "3.10", "3.11", "3.12"]
     defaults:
       run:
         shell: bash
@@ -111,11 +102,12 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install Python packages
+        working-directory: etc
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
-        working-directory: ${{env.etc-directory}}
+          python -m ipykernel install --name python_kernel --user
 
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
@@ -128,15 +120,14 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Run scripts
-        run: pytest -v -n=auto --durations=0 --run=True ci_build_files.py
-        working-directory: ${{env.etc-directory}}
+      - name: Test example scripts and create input files
+        working-directory: autotest
+        run: pytest -v -n=auto --durations=0 test_scripts.py --plot
 
       - name: Run processing script
+        working-directory: scripts
         if: matrix.python == '3.9'
-        run: |
-          python process-scripts.py
-        working-directory: ${{env.script-directory}}
+        run: python process-scripts.py
 
       - name: Build mf6examples LaTeX document
         if: matrix.python == '3.9'
@@ -181,9 +172,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: current
-          path: |
-            ./mf6examples.pdf
-
+          path: mf6examples.pdf
 
   # make the release if the "build" job was successful
   release:

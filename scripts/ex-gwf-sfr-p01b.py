@@ -4,51 +4,46 @@
 # Streamflow Routing Package documentation (Prudic, 1989) with a couple of
 # modifications for demonstrating MVR connections among the advanced packages.
 # All reaches have been converted to rectangular reaches.
-#
 
-# ### SFR Package Problem 1 with MVR Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
-import flopy.utils.binaryfile as bf
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pooch
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties specific to the
-
-figure_size = (6.3, 5.6)
-masked_values = (0, 1e30, -1e30)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-sfr-p01b"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "seconds"
 
-# Table SFR Package Problem 1 with MVR Model Parameters
-
+# Model parameters
 nper = 24  # Number of periods
 nlay = 2  # Number of layers
 nrow = 15  # Number of rows
@@ -65,8 +60,7 @@ sy_basin = 0.1  # Specific yield in the basin (unitless)
 evap_rate = 9.5e-8  # Evapotranspiration rate ($ft/s$)
 ext_depth = 15.0  # Evapotranspiration extinction depth ($ft$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = (
     (2628000.0, 1, 1.0),
     (2628000.0, 15, 1.0),
@@ -100,50 +94,63 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, lake locations, top, bottom, and evapotranspiration surface arrays
-
-data_pth = os.path.join("..", "data", sim_name)
-fpth = os.path.join(data_pth, "strt1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/strt1.txt",
+    known_hash="md5:273db6e876e7cfb4985b0b09c232f7cc",
+)
 strt1 = np.loadtxt(fpth, dtype=float)
 strt2 = strt1
 strt = [strt1, strt2]
-fpth = os.path.join(data_pth, "idomain.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+    known_hash="md5:3fb0b80939ff6ccc9dc47d010e002a3c",
+)
 idomain1 = np.loadtxt(fpth, dtype=int)
 idomain = [idomain1, idomain1]
 lake_map = np.ones(shape3d, dtype=int) * -1
-fpth = os.path.join(data_pth, "lakes.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes.txt",
+    known_hash="md5:c344195438bda85738cab2ce34a16733",
+)
 lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
 lake_map = np.ma.masked_where(lake_map < 0, lake_map)
-fpth = os.path.join(data_pth, "top1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top1.txt",
+    known_hash="md5:ba3f1422f45388b19dc1ef6b3076fa96",
+)
 top = np.loadtxt(fpth, dtype=float)
-fpth = os.path.join(data_pth, "bot1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bot1.txt",
+    known_hash="md5:4343c79bbf3ad039638d2379d335d06e",
+)
 bot1 = np.loadtxt(fpth, dtype=float)
 bot2 = np.ones_like(bot1) * 300.0
 botm = [bot1, bot2]
 
 # Create hydraulic conductivity and specific yield
-
-fpth = os.path.join(data_pth, "k11_lay1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/k11_lay1.txt",
+    known_hash="md5:287160064d1a9bc0bae94b018bf187d7",
+)
 k11_lay1 = np.loadtxt(fpth, dtype=float) * 2.5
 k11_lay2 = np.ones_like(k11_lay1) * 0.35e-2
 k11 = [k11_lay1, k11_lay2]
 k33 = 0.5e-5
-fpth = os.path.join(data_pth, "sy1.txt")
+fpth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/sy1.txt",
+    known_hash="md5:80be4a9ba817465cf5c05934f94dd675",
+)
 sy1 = np.loadtxt(fpth, dtype=float)
 sy2 = np.ones_like(sy1) * 0.20
 sy = [sy1, sy2]
 
-# ### Create SFR Package Problem 1 Model Boundary Conditions
-#
 # General head boundary conditions
-#
-
 ghb_spd = [
     [0, 12, 0, 988.0, 0.038],
     [0, 13, 8, 1045.0, 0.038],
 ]
 
 # Well boundary conditions
-
 wel_spd = {
     0: [
         [0, 5, 3, 0],
@@ -268,7 +275,6 @@ wel_spd = {
 }
 
 # SFR Package
-
 sfr_pakdata = [
     (
         0,
@@ -781,7 +787,6 @@ sfr_spd = [
 ]
 
 # UZF Package
-
 uzf_pakdata = [
     (0, (0, 0, 0), 1, 100, 0.1, 0.000001, 0.1, 0.3, 0.11, 3.5, "uzfcells"),
     (1, (0, 0, 1), 1, 101, 0.1, 0.000001, 0.1, 0.3, 0.11, 3.5, "uzfcells"),
@@ -3549,57 +3554,9 @@ for tm in range(len(tdis_ds)):
     sp = []
     iuzno = 0
     for i in range(len(extwc)):
-        sp.append(
-            (iuzno, finf[tm][i], pET, extdp, extwc[i], ha, hroot, rootact)
-        )
+        sp.append((iuzno, finf[tm][i], pET, extdp, extwc[i], ha, hroot, rootact))
         iuzno += 1
     uzf_spd.update({int(tm): sp})
-
-# LAK Package
-
-#
-# lak_pakdata = [[0, 1040.0, 12], [1, 1010.0, 26]]
-#
-# lak_conn = [
-#     [0, 0, (0, 8, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 1, (0, 8, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 2, (0, 9, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 3, (0, 9, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 5, (0, 10, 8), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 6, (0, 11, 6), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 7, (0, 11, 7), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [0, 8, (1, 9, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [0, 9, (1, 9, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [0, 10, (1, 10, 6), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [0, 11, (1, 10, 7), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 0, (0, 9, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 1, (0, 9, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 2, (0, 9, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 3, (0, 10, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 4, (0, 10, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 5, (0, 11, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 6, (0, 11, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 7, (0, 12, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 8, (0, 12, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 9, (0, 13, 1), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 10, (0, 13, 5), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 11, (0, 14, 2), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 12, (0, 14, 3), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 13, (0, 14, 4), "HORIZONTAL", 2.00e-09, 0.0, 0.0, 2500.0, 5000.0],
-#     [1, 14, (1, 10, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 15, (1, 10, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 16, (1, 10, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 17, (1, 11, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 18, (1, 11, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 19, (1, 11, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 20, (1, 12, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 21, (1, 12, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 22, (1, 12, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 23, (1, 13, 2), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 24, (1, 13, 3), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-#     [1, 25, (1, 13, 4), "VERTICAL", 2.00e-09, 0.0, 0.0, 0.0, 0.0],
-# ]
 
 lak_stage = (
     1040.0,
@@ -3748,502 +3705,482 @@ mvr_spd = {
 }
 
 # Solver parameters
-
 nouter = 100
 ninner = 50
 hclose = 1e-6
 rclose = 1e-6
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 SFR Package Problem 1 model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    if config.buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            complexity="complex",
-            outer_dvclose=1.0e-4,
-            outer_maximum=2000,
-            under_relaxation="dbd",
-            linear_acceleration="BICGSTAB",
-            under_relaxation_theta=0.7,
-            under_relaxation_kappa=0.08,
-            under_relaxation_gamma=0.05,
-            under_relaxation_momentum=0.0,
-            backtracking_number=20,
-            backtracking_tolerance=2.0,
-            backtracking_reduction_factor=0.2,
-            backtracking_residual_limit=5.0e-4,
-            inner_dvclose=1.0e-5,
-            rcloserecord="0.0001 relative_rclose",
-            inner_maximum=100,
-            relaxation_factor=0.0,
-            number_orthogonalizations=2,
-            preconditioner_levels=8,
-            preconditioner_drop_tolerance=0.001,
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="newton", save_flows=True
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            idomain=idomain,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            alternative_cell_averaging="AMT-HMK",
-            icelltype=1,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-            steady_state={0: True},
-            transient={1: True},
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
-        flopy.mf6.ModflowGwfwel(
-            gwf,
-            print_input=True,
-            print_flows=True,
-            save_flows=True,
-            mover=True,
-            pname="WEL-1",
-            stress_period_data=wel_spd,
-        )
-        sfr = flopy.mf6.ModflowGwfsfr(
-            gwf,
-            print_flows=True,
-            print_stage=True,
-            save_flows=True,
-            boundnames=True,
-            budget_filerecord=sim_name + ".sfr.bud",
-            mover=True,
-            pname="SFR-1",
-            maximum_depth_change=0.1e-05,
-            length_conversion=3.28081,
-            nreaches=len(sfr_pakdata),
-            packagedata=sfr_pakdata,
-            connectiondata=sfr_conn,
-            diversions=sfr_div,
-            perioddata=sfr_spd,
-            filename=f"{sim_name}.sfr",
-        )
-        sfr_obs_file = f"{sim_name}.sfr.obs"
-        sfr_obs_dict = {
-            "sfr.reach01.csv": [
-                ("extin", "ext-inflow", (0,)),
-                ("inflow", "inflow", (0,)),
-                ("frommvr", "from-mvr", (0,)),
-                ("gwf", "sfr", (0,)),
-                ("outflow", "outflow", (0,)),
-                ("extout", "ext-outflow", (0,)),
-                ("tomvr", "to-mvr", (0,)),
-            ],
-            "sfr.reach24.csv": [
-                ("extin", "ext-inflow", (23,)),
-                ("inflow", "inflow", (23,)),
-                ("frommvr", "from-mvr", (23,)),
-                ("gwf", "sfr", (23,)),
-                ("outflow", "outflow", (23,)),
-                ("extout", "ext-outflow", (23,)),
-                ("tomvr", "to-mvr", (23,)),
-            ],
-            "sfr.reach29.csv": [
-                ("extin", "ext-inflow", (28,)),
-                ("inflow", "inflow", (28,)),
-                ("frommvr", "from-mvr", (28,)),
-                ("gwf", "sfr", (28,)),
-                ("outflow", "outflow", (28,)),
-                ("extout", "ext-outflow", (28,)),
-                ("tomvr", "to-mvr", (28,)),
-            ],
-            "sfr.reach31.csv": [
-                ("extin", "ext-inflow", (30,)),
-                ("inflow", "inflow", (30,)),
-                ("frommvr", "from-mvr", (30,)),
-                ("gwf", "sfr", (30,)),
-                ("outflow", "outflow", (30,)),
-                ("extout", "ext-outflow", (30,)),
-                ("tomvr", "to-mvr", (30,)),
-            ],
-            "sfr.allreaches.csv": [
-                ("extin", "ext-inflow", "allreaches"),
-                ("inflow", "inflow", "allreaches"),
-                ("frommvr", "from-mvr", "allreaches"),
-                ("gwf", "sfr", "allreaches"),
-                ("outflow", "outflow", "allreaches"),
-                ("extout", "ext-outflow", "allreaches"),
-                ("tomvr", "to-mvr", "allreaches"),
-            ],
-            "sfr.stage.csv": [
-                ("s01", "stage", (0,)),
-                ("s24", "stage", (23,)),
-                ("s29", "stage", (28,)),
-                ("s31", "stage", (30,)),
-            ],
-        }
-        sfr.obs.initialize(
-            filename=sfr_obs_file,
-            digits=10,
-            print_input=True,
-            continuous=sfr_obs_dict,
-        )
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        complexity="complex",
+        outer_dvclose=1.0e-4,
+        outer_maximum=2000,
+        under_relaxation="dbd",
+        linear_acceleration="BICGSTAB",
+        under_relaxation_theta=0.7,
+        under_relaxation_kappa=0.08,
+        under_relaxation_gamma=0.05,
+        under_relaxation_momentum=0.0,
+        backtracking_number=20,
+        backtracking_tolerance=2.0,
+        backtracking_reduction_factor=0.2,
+        backtracking_residual_limit=5.0e-4,
+        inner_dvclose=1.0e-5,
+        rcloserecord="0.0001 relative_rclose",
+        inner_maximum=100,
+        relaxation_factor=0.0,
+        number_orthogonalizations=2,
+        preconditioner_levels=8,
+        preconditioner_drop_tolerance=0.001,
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=sim_name, newtonoptions="newton", save_flows=True
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        idomain=idomain,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        alternative_cell_averaging="AMT-HMK",
+        icelltype=1,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+        steady_state={0: True},
+        transient={1: True},
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfghb(gwf, stress_period_data=ghb_spd)
+    flopy.mf6.ModflowGwfwel(
+        gwf,
+        print_input=True,
+        print_flows=True,
+        save_flows=True,
+        mover=True,
+        pname="WEL-1",
+        stress_period_data=wel_spd,
+    )
+    sfr = flopy.mf6.ModflowGwfsfr(
+        gwf,
+        print_flows=True,
+        print_stage=True,
+        save_flows=True,
+        boundnames=True,
+        budget_filerecord=sim_name + ".sfr.bud",
+        mover=True,
+        pname="SFR-1",
+        maximum_depth_change=0.1e-05,
+        length_conversion=3.28081,
+        nreaches=len(sfr_pakdata),
+        packagedata=sfr_pakdata,
+        connectiondata=sfr_conn,
+        diversions=sfr_div,
+        perioddata=sfr_spd,
+        filename=f"{sim_name}.sfr",
+    )
+    sfr_obs_file = f"{sim_name}.sfr.obs"
+    sfr_obs_dict = {
+        "sfr.reach01.csv": [
+            ("extin", "ext-inflow", (0,)),
+            ("inflow", "inflow", (0,)),
+            ("frommvr", "from-mvr", (0,)),
+            ("gwf", "sfr", (0,)),
+            ("outflow", "outflow", (0,)),
+            ("extout", "ext-outflow", (0,)),
+            ("tomvr", "to-mvr", (0,)),
+        ],
+        "sfr.reach24.csv": [
+            ("extin", "ext-inflow", (23,)),
+            ("inflow", "inflow", (23,)),
+            ("frommvr", "from-mvr", (23,)),
+            ("gwf", "sfr", (23,)),
+            ("outflow", "outflow", (23,)),
+            ("extout", "ext-outflow", (23,)),
+            ("tomvr", "to-mvr", (23,)),
+        ],
+        "sfr.reach29.csv": [
+            ("extin", "ext-inflow", (28,)),
+            ("inflow", "inflow", (28,)),
+            ("frommvr", "from-mvr", (28,)),
+            ("gwf", "sfr", (28,)),
+            ("outflow", "outflow", (28,)),
+            ("extout", "ext-outflow", (28,)),
+            ("tomvr", "to-mvr", (28,)),
+        ],
+        "sfr.reach31.csv": [
+            ("extin", "ext-inflow", (30,)),
+            ("inflow", "inflow", (30,)),
+            ("frommvr", "from-mvr", (30,)),
+            ("gwf", "sfr", (30,)),
+            ("outflow", "outflow", (30,)),
+            ("extout", "ext-outflow", (30,)),
+            ("tomvr", "to-mvr", (30,)),
+        ],
+        "sfr.allreaches.csv": [
+            ("extin", "ext-inflow", "allreaches"),
+            ("inflow", "inflow", "allreaches"),
+            ("frommvr", "from-mvr", "allreaches"),
+            ("gwf", "sfr", "allreaches"),
+            ("outflow", "outflow", "allreaches"),
+            ("extout", "ext-outflow", "allreaches"),
+            ("tomvr", "to-mvr", "allreaches"),
+        ],
+        "sfr.stage.csv": [
+            ("s01", "stage", (0,)),
+            ("s24", "stage", (23,)),
+            ("s29", "stage", (28,)),
+            ("s31", "stage", (30,)),
+        ],
+    }
+    sfr.obs.initialize(
+        filename=sfr_obs_file,
+        digits=10,
+        print_input=True,
+        continuous=sfr_obs_dict,
+    )
 
-        (
-            idomain_wlakes,
-            lakepakdata_dict,
-            lakeconnectiondata,
-        ) = flopy.mf6.utils.get_lak_connections(
-            gwf.modelgrid,
-            lake_map,
-            idomain=gwf.dis.idomain.array,
-            bedleak=lake_leakance,
-        )
-        lak_pakdata = []
-        for key in lakepakdata_dict.keys():
-            lak_pakdata.append([key, lak_stage[key], lakepakdata_dict[key]])
-        lak = flopy.mf6.ModflowGwflak(
-            gwf,
-            print_stage=True,
-            print_flows=True,
-            save_flows=True,
-            budget_filerecord=sim_name + ".lak.bud",
-            length_conversion=3.28081,
-            mover=True,
-            pname="LAK-1",
-            boundnames=False,
-            nlakes=len(lak_pakdata),
-            noutlets=len(lak_outlets),
-            outlets=lak_outlets,
-            packagedata=lak_pakdata,
-            connectiondata=lakeconnectiondata,
-            perioddata=lk_spd,
-            filename=f"{sim_name}.lak",
-        )
-        lak_obs_file = f"{sim_name}.lak.obs"
-        lak_obs_dict = {
-            "obs_lak.csv": [
-                ("LAK1_STAGE", "STAGE", 1),
-                ("LAK2_STAGE", "STAGE", 2),
-                ("LAK1_TO-MVR", "TO-MVR", 1),
-                ("LAK1_FROM-MVR", "FROM-MVR", 1),
-                ("LAK2_TO-MVR", "TO-MVR", 2),
-                ("LAK2_FROM-MVR", "FROM-MVR", 2),
-            ]
-        }
-        lak.obs.initialize(
-            filename=lak_obs_file, digits=10, continuous=lak_obs_dict
-        )
-        uzf = flopy.mf6.ModflowGwfuzf(
-            gwf,
-            nuzfcells=len(uzf_pakdata),
-            boundnames=True,
-            ntrailwaves=10,
-            nwavesets=50,
-            print_flows=False,
-            save_flows=True,
-            simulate_et=True,
-            linear_gwet=True,
-            simulate_gwseep=True,
-            mover=True,
-            packagedata=uzf_pakdata,
-            perioddata=uzf_spd,
-            budget_filerecord=f"{sim_name}.uzf.bud",
-            pname="UZF-1",
-            filename=f"{sim_name}.uzf",
-        )
-        uzf_obs_file = f"{sim_name}.uzf.obs"
-        uzf_obs_dict = {
-            "obs_uzf.csv": [
-                ("ninfil", "net-infiltration", "ag"),
-                ("rejinf", "rej-inf", "ag"),
-                ("rejinfmvr", "rej-inf-to-mvr", "ag"),
-                ("infil", "infiltration", "ag"),
-                ("frommvr", "from-mvr", "ag"),
-                ("gwrch", "uzf-gwrch", "ag"),
-                ("gwet", "uzf-gwet", "ag"),
-                ("uzet", "uzet", "ag"),
-            ],
-            "obs_uzf_column.csv": [
-                ("id26_infil", "infiltration", 26),
-                ("id126_infil", "infiltration", 126),
-                ("id26_dpth=20", "water-content", 26, 20.0),
-                (
-                    "id126_dpth=51",
-                    "water-content",
-                    126,
-                    1.0,
-                ),  # DEPTH IS BELOW CELTOP
-                ("id26_rch", "uzf-gwrch", 26),
-                ("id126_rch", "uzf-gwrch", 126),
-                ("id26_gwet", "uzf-gwet", 26),
-                ("id126_gwet", "uzf-gwet", 126),
-                ("id26_uzet", "uzet", 26),
-                ("id126_uzet", "uzet", 126),
-                ("id26_gwd2mvr", "uzf-gwd-to-mvr", 26),
-                ("id126_gwd2mvr", "uzf-gwd-to-mvr", 126),
-                ("id26_rejinf", "rej-inf-to-mvr", 26),
-                ("id126_rejinf", "rej-inf-to-mvr", 126),
-            ],
-        }
-        uzf.obs.initialize(
-            filename=uzf_obs_file, print_input=True, continuous=uzf_obs_dict
-        )
-        flopy.mf6.ModflowGwfmvr(
-            gwf,
-            maxmvr=max_mvr,
-            print_flows=True,
-            maxpackages=maxpackages,
-            packages=mvr_pack,
-            perioddata=mvr_spd,
-            pname="MVR-1",
-            budget_filerecord=sim_name + ".mvr.bud",
-            filename=f"{sim_name}.mvr",
-        )
+    (
+        idomain_wlakes,
+        lakepakdata_dict,
+        lakeconnectiondata,
+    ) = flopy.mf6.utils.get_lak_connections(
+        gwf.modelgrid,
+        lake_map,
+        idomain=gwf.dis.idomain.array,
+        bedleak=lake_leakance,
+    )
+    lak_pakdata = []
+    for key in lakepakdata_dict.keys():
+        lak_pakdata.append([key, lak_stage[key], lakepakdata_dict[key]])
+    lak = flopy.mf6.ModflowGwflak(
+        gwf,
+        print_stage=True,
+        print_flows=True,
+        save_flows=True,
+        budget_filerecord=sim_name + ".lak.bud",
+        length_conversion=3.28081,
+        mover=True,
+        pname="LAK-1",
+        boundnames=False,
+        nlakes=len(lak_pakdata),
+        noutlets=len(lak_outlets),
+        outlets=lak_outlets,
+        packagedata=lak_pakdata,
+        connectiondata=lakeconnectiondata,
+        perioddata=lk_spd,
+        filename=f"{sim_name}.lak",
+    )
+    lak_obs_file = f"{sim_name}.lak.obs"
+    lak_obs_dict = {
+        "obs_lak.csv": [
+            ("LAK1_STAGE", "STAGE", 1),
+            ("LAK2_STAGE", "STAGE", 2),
+            ("LAK1_TO-MVR", "TO-MVR", 1),
+            ("LAK1_FROM-MVR", "FROM-MVR", 1),
+            ("LAK2_TO-MVR", "TO-MVR", 2),
+            ("LAK2_FROM-MVR", "FROM-MVR", 2),
+        ]
+    }
+    lak.obs.initialize(filename=lak_obs_file, digits=10, continuous=lak_obs_dict)
+    uzf = flopy.mf6.ModflowGwfuzf(
+        gwf,
+        nuzfcells=len(uzf_pakdata),
+        boundnames=True,
+        ntrailwaves=10,
+        nwavesets=50,
+        print_flows=False,
+        save_flows=True,
+        simulate_et=True,
+        linear_gwet=True,
+        simulate_gwseep=True,
+        mover=True,
+        packagedata=uzf_pakdata,
+        perioddata=uzf_spd,
+        budget_filerecord=f"{sim_name}.uzf.bud",
+        pname="UZF-1",
+        filename=f"{sim_name}.uzf",
+    )
+    uzf_obs_file = f"{sim_name}.uzf.obs"
+    uzf_obs_dict = {
+        "obs_uzf.csv": [
+            ("ninfil", "net-infiltration", "ag"),
+            ("rejinf", "rej-inf", "ag"),
+            ("rejinfmvr", "rej-inf-to-mvr", "ag"),
+            ("infil", "infiltration", "ag"),
+            ("frommvr", "from-mvr", "ag"),
+            ("gwrch", "uzf-gwrch", "ag"),
+            ("gwet", "uzf-gwet", "ag"),
+            ("uzet", "uzet", "ag"),
+        ],
+        "obs_uzf_column.csv": [
+            ("id26_infil", "infiltration", 26),
+            ("id126_infil", "infiltration", 126),
+            ("id26_dpth=20", "water-content", 26, 20.0),
+            (
+                "id126_dpth=51",
+                "water-content",
+                126,
+                1.0,
+            ),  # DEPTH IS BELOW CELTOP
+            ("id26_rch", "uzf-gwrch", 26),
+            ("id126_rch", "uzf-gwrch", 126),
+            ("id26_gwet", "uzf-gwet", 26),
+            ("id126_gwet", "uzf-gwet", 126),
+            ("id26_uzet", "uzet", 26),
+            ("id126_uzet", "uzet", 126),
+            ("id26_gwd2mvr", "uzf-gwd-to-mvr", 26),
+            ("id126_gwd2mvr", "uzf-gwd-to-mvr", 126),
+            ("id26_rejinf", "rej-inf-to-mvr", 26),
+            ("id126_rejinf", "rej-inf-to-mvr", 126),
+        ],
+    }
+    uzf.obs.initialize(filename=uzf_obs_file, print_input=True, continuous=uzf_obs_dict)
+    flopy.mf6.ModflowGwfmvr(
+        gwf,
+        maxmvr=max_mvr,
+        print_flows=True,
+        maxpackages=maxpackages,
+        packages=mvr_pack,
+        perioddata=mvr_spd,
+        pname="MVR-1",
+        budget_filerecord=sim_name + ".mvr.bud",
+        filename=f"{sim_name}.mvr",
+    )
 
-        # rest idomain with lake adjustments
-        gwf.dis.idomain = idomain_wlakes
+    # rest idomain with lake adjustments
+    gwf.dis.idomain = idomain_wlakes
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+    )
+    return sim
 
 
-# Function to write MODFLOW 6 SFR Package Problem 1 model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the SFR Package Problem 1 model.
-# True is returned if the model runs successfully
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
 
-
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot grid
+# +
+# Figure properties
+figure_size = (6.3, 5.6)
+masked_values = (0, 1e30, -1e30)
 
 
 def plot_grid(gwf, silent=True):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
+    with styles.USGSMap() as fs:
+        fig = plt.figure(figsize=figure_size, constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
 
-    axes = []
-    axes.append(fig.add_subplot(gs[:6, :5]))
-    axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
+        axes = []
+        axes.append(fig.add_subplot(gs[:6, :5]))
+        axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
 
-    for ax in axes:
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
+        for ax in axes:
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
 
-    # legend axis
-    axes.append(fig.add_subplot(gs[6:, :]))
+        # legend axis
+        axes.append(fig.add_subplot(gs[6:, :]))
 
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    top_coll = mm.plot_array(
-        top, vmin=1000, vmax=1120, masked_values=masked_values, alpha=0.5
-    )
-    mm.plot_bc("SFR", color="green")
-    cv = mm.contour_array(
-        top,
-        levels=np.arange(1000, 1100, 20),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    cbar = plt.colorbar(
-        top_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Land surface elevation, $ft$")
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Land surface elevation", idx=0)
-    fs.remove_edge_ticks(ax)
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    bot_coll = mm.plot_array(
-        botm, vmin=950, vmax=1100, masked_values=masked_values, alpha=0.5
-    )
-    mm.plot_bc("GHB", color="purple")
-    mm.plot_bc("WEL", color="red", kper=1)
-    cv = mm.contour_array(
-        botm,
-        levels=np.arange(950, 1100, 20),
-        linewidths=0.5,
-        linestyles=":",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    cbar = plt.colorbar(
-        bot_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Bottom elevation, $ft$")
-    ax.set_xlabel("x-coordinate, in feet")
-    fs.heading(ax, heading="Bottom elevation", idx=1)
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="0.5",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Inactive cells",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="green",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Stream boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="purple",
-        mec="black",
-        markeredgewidth=0.5,
-        label="General head boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="s",
-        ms=10,
-        mfc="red",
-        mec="black",
-        markeredgewidth=0.5,
-        label="Well boundary",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls="-",
-        color="black",
-        label=r"Land surface elevation contour, $ft$",
-    )
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0.5,
-        ls=":",
-        color="black",
-        label=r"Bottom elevation contour, $ft$",
-    )
-    fs.graph_legend(ax, loc="center", ncol=3)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-grid{config.figure_ext}",
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        top_coll = mm.plot_array(
+            top, vmin=1000, vmax=1120, masked_values=masked_values, alpha=0.5
         )
-        fig.savefig(fpth)
+        mm.plot_bc("SFR", color="green")
+        cv = mm.contour_array(
+            top,
+            levels=np.arange(1000, 1100, 20),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        cbar = plt.colorbar(
+            top_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Land surface elevation, $ft$")
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.heading(ax, heading="Land surface elevation", idx=0)
+        styles.remove_edge_ticks(ax)
 
-    return
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        bot_coll = mm.plot_array(
+            botm, vmin=950, vmax=1100, masked_values=masked_values, alpha=0.5
+        )
+        mm.plot_bc("GHB", color="purple")
+        mm.plot_bc("WEL", color="red", kper=1)
+        cv = mm.contour_array(
+            botm,
+            levels=np.arange(950, 1100, 20),
+            linewidths=0.5,
+            linestyles=":",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        cbar = plt.colorbar(
+            bot_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Bottom elevation, $ft$")
+        ax.set_xlabel("x-coordinate, in feet")
+        styles.heading(ax, heading="Bottom elevation", idx=1)
+        styles.remove_edge_ticks(ax)
 
+        # legend
+        ax = axes[-1]
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="0.5",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Inactive cells",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="green",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Stream boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="purple",
+            mec="black",
+            markeredgewidth=0.5,
+            label="General head boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="s",
+            ms=10,
+            mfc="red",
+            mec="black",
+            markeredgewidth=0.5,
+            label="Well boundary",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls="-",
+            color="black",
+            label=r"Land surface elevation contour, $ft$",
+        )
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0.5,
+            ls=":",
+            color="black",
+            label=r"Bottom elevation contour, $ft$",
+        )
+        styles.graph_legend(ax, loc="center", ncol=3)
 
-# Function to plot grid
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-grid.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_head_results(gwf, silent=True):
-    sim_ws = os.path.join(ws, sim_name)
-
     # create MODFLOW 6 head object
     hobj = gwf.output.head()
 
@@ -4252,375 +4189,337 @@ def plot_head_results(gwf, silent=True):
 
     kstpkper = hobj.get_kstpkper()
 
-    fs = USGSFigure(figure_type="map", verbose=False)
-    fig = plt.figure(figsize=figure_size, constrained_layout=False)
-    gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
-    plt.axis("off")
+    with styles.USGSMap() as fs:
+        fig = plt.figure(figsize=figure_size, constrained_layout=False)
+        gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
+        plt.axis("off")
 
-    axes = [fig.add_subplot(gs[:6, :5])]
-    axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
+        axes = [fig.add_subplot(gs[:6, :5])]
+        axes.append(fig.add_subplot(gs[:6, 5:], sharey=axes[0]))
 
-    for ax in axes:
-        ax.set_xlim(extents[:2])
-        ax.set_ylim(extents[2:])
-        ax.set_aspect("equal")
+        for ax in axes:
+            ax.set_xlim(extents[:2])
+            ax.set_ylim(extents[2:])
+            ax.set_aspect("equal")
 
-    # legend axis
-    axes.append(fig.add_subplot(gs[6:, :]))
+        # legend axis
+        axes.append(fig.add_subplot(gs[6:, :]))
 
-    # set limits for legend area
-    ax = axes[-1]
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+        # set limits for legend area
+        ax = axes[-1]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
 
-    # get rid of ticks and spines for legend area
-    ax.axis("off")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
+        # get rid of ticks and spines for legend area
+        ax.axis("off")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
 
-    # extract heads and specific discharge for first stress period
-    head = hobj.get_data(kstpkper=kstpkper[0])
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
-        gwf,
-    )
-
-    ax = axes[0]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(900, 1100, 10),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    ax.set_xlabel("x-coordinate, in feet")
-    ax.set_ylabel("y-coordinate, in feet")
-    fs.heading(ax, heading="Steady-state", idx=0)
-    fs.remove_edge_ticks(ax)
-
-    # extract heads and specific discharge for second stress period
-    head = hobj.get_data(kstpkper=kstpkper[1])
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
-        gwf,
-    )
-
-    ax = axes[1]
-    mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
-    head_coll = mm.plot_array(
-        head, vmin=900, vmax=1120, masked_values=masked_values
-    )
-    cv = mm.contour_array(
-        head,
-        levels=np.arange(900, 1100, 10),
-        linewidths=0.5,
-        linestyles="-",
-        colors="black",
-        masked_values=masked_values,
-    )
-    plt.clabel(cv, fmt="%1.0f")
-    mm.plot_vector(qx, qy, normalize=True, color="0.75")
-    mm.plot_inactive(color_noflow="0.5")
-    mm.plot_grid(lw=0.5, color="black")
-    ax.set_xlabel("x-coordinate, in feet")
-    fs.heading(ax, heading="Pumping", idx=1)
-    fs.remove_edge_ticks(ax)
-
-    # legend
-    ax = axes[-1]
-    cbar = plt.colorbar(
-        head_coll,
-        shrink=0.8,
-        orientation="horizontal",
-        ax=ax,
-        format="%.0f",
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.ax.set_xlabel(r"Head, $ft$")
-    ax.plot(
-        -10000,
-        -10000,
-        lw=0,
-        marker="$\u2192$",
-        ms=10,
-        mfc="0.75",
-        mec="0.75",
-        label="Normalized specific discharge",
-    )
-    ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
-    fs.graph_legend(ax, loc="upper center", ncol=2)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-01{config.figure_ext}",
+        # extract heads and specific discharge for first stress period
+        head = hobj.get_data(kstpkper=kstpkper[0])
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
+            gwf,
         )
-        fig.savefig(fpth)
 
-    return
+        ax = axes[0]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        head_coll = mm.plot_array(
+            head, vmin=900, vmax=1120, masked_values=masked_values
+        )
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(900, 1100, 10),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        ax.set_xlabel("x-coordinate, in feet")
+        ax.set_ylabel("y-coordinate, in feet")
+        styles.heading(ax, heading="Steady-state", idx=0)
+        styles.remove_edge_ticks(ax)
 
+        # extract heads and specific discharge for second stress period
+        head = hobj.get_data(kstpkper=kstpkper[1])
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
+            gwf,
+        )
 
-# Function to plot the mvr results
+        ax = axes[1]
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, extent=extents)
+        head_coll = mm.plot_array(
+            head, vmin=900, vmax=1120, masked_values=masked_values
+        )
+        cv = mm.contour_array(
+            head,
+            levels=np.arange(900, 1100, 10),
+            linewidths=0.5,
+            linestyles="-",
+            colors="black",
+            masked_values=masked_values,
+        )
+        plt.clabel(cv, fmt="%1.0f")
+        mm.plot_vector(qx, qy, normalize=True, color="0.75")
+        mm.plot_inactive(color_noflow="0.5")
+        mm.plot_grid(lw=0.5, color="black")
+        ax.set_xlabel("x-coordinate, in feet")
+        styles.heading(ax, heading="Pumping", idx=1)
+        styles.remove_edge_ticks(ax)
+
+        # legend
+        ax = axes[-1]
+        cbar = plt.colorbar(
+            head_coll,
+            shrink=0.8,
+            orientation="horizontal",
+            ax=ax,
+            format="%.0f",
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.ax.set_xlabel(r"Head, $ft$")
+        ax.plot(
+            -10000,
+            -10000,
+            lw=0,
+            marker="$\u2192$",
+            ms=10,
+            mfc="0.75",
+            mec="0.75",
+            label="Normalized specific discharge",
+        )
+        ax.plot(-10000, -10000, lw=0.5, color="black", label=r"Head contour, $ft$")
+        styles.graph_legend(ax, loc="upper center", ncol=2)
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-01.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_mvr_results(idx, gwf, silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSPlot() as fs:
+        # load the observations
+        mvr = gwf.get_package("MVR-1")
+        mvr_Q = mvr.output.budget()
+        # This retrieves all of the MOVER fluxes:
+        mvr_all = mvr_Q.get_data(text="      MOVER-FLOW")
 
-    # load the observations
-    mvr = gwf.get_package("MVR-1")
-    mvr_Q = mvr.output.budget()
-    # This retrieves all of the MOVER fluxes:
-    mvr_all = mvr_Q.get_data(text="      MOVER-FLOW")
+        ckstpkper = mvr_Q.get_kstpkper()
 
-    ckstpkper = mvr_Q.get_kstpkper()
-
-    # The following will tell us the contents of MVR recarrays
-    # mvr_Q.list_records()
-    # Connections specified in MVR input include:
-    # SFR -> LAK
-    # LAK -> SFR
-    # UZF -> SFR
-    # UZF -> LAK
-    # WEL -> UZF
-    provider = b"WEL-1           "
-    receiver1 = b"UZF-1           "
-    gwirrig = []
-    for i, kstpkper in enumerate(ckstpkper):
-        # The following gets the actual indexes of where the conditions are
-        # satisfied, which is what the recarray needs
-        mvr_idxs = np.where(
-            np.all(
-                (
-                    np.array(mvr_Q.recordarray["kper"] == i),
-                    np.array(
-                        mvr_Q.recordarray["paknam"] == provider
-                    ),  # Provider
-                    np.array(mvr_Q.recordarray["paknam2"] == receiver1),
-                ),
-                axis=0,
-            )
-        )  # Receiver
-
-        tot_stp_gwirrig = 0
-        if len(mvr_idxs[0]) > 0:
-            mvr_welirrig = mvr_all[mvr_idxs[0][0]]
-            # Loop through each row of the mvr_welirrig recarray for tallying
-            # gw irrigation events on a cell-by-cell basis
-
-            for k, itm in enumerate(mvr_welirrig):
-                # itm[1]: the receiver identifier. 2.6280e6: len of stress
-                # period - about 1 month
-                tot_stp_gwirrig += itm[2]
-
-        gwirrig.append(
-            abs(tot_stp_gwirrig) * 2.6280e6 / 43560
-        )  # results in ac*ft
-
-    # Get all groundwater discharge:
-    provider = b"UZF-1           "
-    receiver1 = b"SFR-1           "
-    receiver2 = b"LAK-1           "
-    tot_mvr_runoff = []
-    for i, kstpkper in enumerate(ckstpkper):
-        mvr_runoff = 0  # Initialize
-        # The following gets the actual indexes of where the conditions are satisfied, which is what the recarray needs
-        mvr_idxs = np.where(
-            np.all(
-                (
-                    np.array(mvr_Q.recordarray["kper"] == i),
-                    np.array(
-                        mvr_Q.recordarray["paknam"] == provider
-                    ),  # Provider
-                    np.logical_or(
-                        mvr_Q.recordarray["paknam2"] == receiver1,  # Receiver
-                        mvr_Q.recordarray["paknam2"] == receiver2,
+        # The following will tell us the contents of MVR recarrays
+        # mvr_Q.list_records()
+        # Connections specified in MVR input include:
+        # SFR -> LAK
+        # LAK -> SFR
+        # UZF -> SFR
+        # UZF -> LAK
+        # WEL -> UZF
+        provider = b"WEL-1           "
+        receiver1 = b"UZF-1           "
+        gwirrig = []
+        for i, kstpkper in enumerate(ckstpkper):
+            # The following gets the actual indexes of where the conditions are
+            # satisfied, which is what the recarray needs
+            mvr_idxs = np.where(
+                np.all(
+                    (
+                        np.array(mvr_Q.recordarray["kper"] == i),
+                        np.array(mvr_Q.recordarray["paknam"] == provider),  # Provider
+                        np.array(mvr_Q.recordarray["paknam2"] == receiver1),
                     ),
-                ),
-                axis=0,
+                    axis=0,
+                )
+            )  # Receiver
+
+            tot_stp_gwirrig = 0
+            if len(mvr_idxs[0]) > 0:
+                mvr_welirrig = mvr_all[mvr_idxs[0][0]]
+                # Loop through each row of the mvr_welirrig recarray for tallying
+                # gw irrigation events on a cell-by-cell basis
+
+                for k, itm in enumerate(mvr_welirrig):
+                    # itm[1]: the receiver identifier. 2.6280e6: len of stress
+                    # period - about 1 month
+                    tot_stp_gwirrig += itm[2]
+
+            gwirrig.append(abs(tot_stp_gwirrig) * 2.6280e6 / 43560)  # results in ac*ft
+
+        # Get all groundwater discharge:
+        provider = b"UZF-1           "
+        receiver1 = b"SFR-1           "
+        receiver2 = b"LAK-1           "
+        tot_mvr_runoff = []
+        for i, kstpkper in enumerate(ckstpkper):
+            mvr_runoff = 0  # Initialize
+            # The following gets the actual indexes of where the conditions are satisfied, which is what the recarray needs
+            mvr_idxs = np.where(
+                np.all(
+                    (
+                        np.array(mvr_Q.recordarray["kper"] == i),
+                        np.array(mvr_Q.recordarray["paknam"] == provider),  # Provider
+                        np.logical_or(
+                            mvr_Q.recordarray["paknam2"] == receiver1,  # Receiver
+                            mvr_Q.recordarray["paknam2"] == receiver2,
+                        ),
+                    ),
+                    axis=0,
+                )
             )
+            # For each index (there will be two in this case because there are two receivers)
+            for j in range(len(mvr_idxs[0])):
+                mvr_rnf2sw = mvr_all[mvr_idxs[0][j]]
+                # Loop through each row of the mvr_uzf2sw for tallying flow totals
+                for k, itm in enumerate(mvr_rnf2sw):
+                    mvr_runoff += itm[2]
+            # Tally the result
+            tot_mvr_runoff.append(abs(mvr_runoff) * 2.6280e6 / 43560)
+
+        # Barplot of pumping and runoff
+        # set width of bar
+        barWidth = 0.25
+        fig, ax = plt.subplots(figsize=figure_size)
+
+        # set height of bar
+        bardat = [gwirrig, tot_mvr_runoff]
+
+        # Set position of bar on X axis
+        br1 = np.arange(len(gwirrig)) + 1
+        br2 = [x + barWidth for x in br1]
+
+        # Make the plot
+        plt.bar(
+            br1,
+            gwirrig,
+            color="r",
+            width=barWidth,
+            edgecolor="grey",
+            label="GW Irrig",
         )
-        # For each index (there will be two in this case because there are two receivers)
-        for j in range(len(mvr_idxs[0])):
-            mvr_rnf2sw = mvr_all[mvr_idxs[0][j]]
-            # Loop through each row of the mvr_uzf2sw for tallying flow totals
-            for k, itm in enumerate(mvr_rnf2sw):
-                mvr_runoff += itm[2]
-        # Tally the result
-        tot_mvr_runoff.append(abs(mvr_runoff) * 2.6280e6 / 43560)
-
-    # Barplot of pumping and runoff
-    # set width of bar
-    barWidth = 0.25
-    fig, ax = plt.subplots(figsize=figure_size)
-
-    # set height of bar
-    bardat = [gwirrig, tot_mvr_runoff]
-
-    # Set position of bar on X axis
-    br1 = np.arange(len(gwirrig)) + 1
-    br2 = [x + barWidth for x in br1]
-
-    # Make the plot
-    plt.bar(
-        br1,
-        gwirrig,
-        color="r",
-        width=barWidth,
-        edgecolor="grey",
-        label="GW Irrig",
-    )
-    plt.bar(
-        br2,
-        tot_mvr_runoff,
-        color="g",
-        width=barWidth,
-        edgecolor="grey",
-        label="Runoff",
-    )
-
-    # Adding Xticks
-    plt.xlabel("Month")
-    plt.ylabel("Acre-feet")
-    plt.legend()
-
-    title = "Total monthly mvr flux"
-    letter = chr(ord("@") + idx + 1)
-    fs.heading(letter=letter, heading=title)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-mvr{config.figure_ext}",
+        plt.bar(
+            br2,
+            tot_mvr_runoff,
+            color="g",
+            width=barWidth,
+            edgecolor="grey",
+            label="Runoff",
         )
-        fig.savefig(fpth)
 
-    return
+        # Adding Xticks
+        plt.xlabel("Month")
+        plt.ylabel("Acre-feet")
+        plt.legend()
 
+        title = "Total monthly mvr flux"
+        letter = chr(ord("@") + idx + 1)
+        styles.heading(letter=letter, heading=title)
 
-# Function to plot the mvr results
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-mvr.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_uzfcolumn_results(idx, gwf, silent=True):
-    fs = USGSFigure(figure_type="graph", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    fname = os.path.join(sim_ws, "obs_uzf_column.csv")
-    uzf_dat = pd.read_csv(fname, header=0)
-    uzf_dat["time_days"] = uzf_dat["time"] / 86400
-    x = uzf_dat["time_days"]
-    finf = uzf_dat["ID26_INFIL"] * 86400 / 43560
-    wc = uzf_dat["ID26_DPTH=20"]
-    rch = (uzf_dat["ID26_RCH"] + uzf_dat["ID126_RCH"]) * 86400 / 43560
-    gwet = (uzf_dat["ID26_GWET"] + uzf_dat["ID126_GWET"]) * 86400 / 43560
-    uzet = (uzf_dat["ID26_UZET"] + uzf_dat["ID126_UZET"]) * 86400 / 43560
-    gwdisq = (
-        (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
-    )
-    rejinf = (uzf_dat["ID26_REJINF"] + uzf_dat["ID126_REJINF"]) * 86400 / 43560
+    with styles.USGSPlot() as fs:
+        sim_ws = os.path.join(workspace, sim_name)
+        fname = os.path.join(sim_ws, "obs_uzf_column.csv")
+        uzf_dat = pd.read_csv(fname, header=0)
+        uzf_dat["time_days"] = uzf_dat["time"] / 86400
+        x = uzf_dat["time_days"]
+        finf = uzf_dat["ID26_INFIL"] * 86400 / 43560
+        wc = uzf_dat["ID26_DPTH=20"]
+        rch = (uzf_dat["ID26_RCH"] + uzf_dat["ID126_RCH"]) * 86400 / 43560
+        gwet = (uzf_dat["ID26_GWET"] + uzf_dat["ID126_GWET"]) * 86400 / 43560
+        uzet = (uzf_dat["ID26_UZET"] + uzf_dat["ID126_UZET"]) * 86400 / 43560
+        gwdisq = (uzf_dat["ID26_GWD2MVR"] + uzf_dat["ID126_GWD2MVR"]) * 86400 / 43560
+        rejinf = (uzf_dat["ID26_REJINF"] + uzf_dat["ID126_REJINF"]) * 86400 / 43560
 
-    fig = plt.figure(figsize=figure_size)
-    ax1 = fig.add_subplot(1, 1, 1)
+        fig = plt.figure(figsize=figure_size)
+        ax1 = fig.add_subplot(1, 1, 1)
 
-    ln1 = ax1.plot(x, finf, color="b", label="Infiltration")
-    ln2 = ax1.plot(x, rch, color="g", label="Recharge")
-    ax2 = ax1.twinx()
-    ln3 = ax2.plot(x, wc, "r--", label="Water Content")
+        ln1 = ax1.plot(x, finf, color="b", label="Infiltration")
+        ln2 = ax1.plot(x, rch, color="g", label="Recharge")
+        ax2 = ax1.twinx()
+        ln3 = ax2.plot(x, wc, "r--", label="Water Content")
 
-    ax1.set_xlabel("Days")
-    ax1.set_ylabel("UZ Fluxes - Row 5, Column 2,  in ac*ft")
-    ax1.set_xlim(0, 740)
-    ax1.set_ylim(0, 16)
-    ax2.set_ylim(0.14, 0.3)
-    ax2.set_ylabel("Water Content")
-    ax1.yaxis.grid("on")
+        ax1.set_xlabel("Days")
+        ax1.set_ylabel("UZ Fluxes - Row 5, Column 2,  in ac*ft")
+        ax1.set_xlim(0, 740)
+        ax1.set_ylim(0, 16)
+        ax2.set_ylim(0.14, 0.3)
+        ax2.set_ylabel("Water Content")
+        ax1.yaxis.grid("on")
 
-    lns = ln1 + ln2 + ln3
-    labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs, loc="upper left")
+        lns = ln1 + ln2 + ln3
+        labs = [l.get_label() for l in lns]
+        ax1.legend(lns, labs, loc="upper left")
 
-    title = "Time series of UZ fluxes for row 5, column 2"
-    letter = chr(ord("@") + idx + 2)
-    fs.heading(letter=letter, heading=title)
+        title = "Time series of UZ fluxes for row 5, column 2"
+        letter = chr(ord("@") + idx + 2)
+        styles.heading(letter=letter, heading=title)
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            f"{sim_name}-uz{config.figure_ext}",
-        )
-        fig.savefig(fpth)
-
-
-# Function to plot the SFR Package Problem 1 model results.
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                f"{sim_name}-uz.png",
+            )
+            fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
-    if config.plotModel:
-        gwf = sim.get_model(sim_name)
-
-        plot_grid(gwf, silent=silent)
-
-        plot_head_results(gwf, silent=silent)
-
-        plot_mvr_results(idx, gwf, silent=silent)
-
-        plot_uzfcolumn_results(idx, gwf, silent=silent)
+    gwf = sim.get_model(sim_name)
+    plot_grid(gwf, silent=silent)
+    plot_head_results(gwf, silent=silent)
+    plot_mvr_results(idx, gwf, silent=silent)
+    plot_uzfcolumn_results(idx, gwf, silent=silent)
 
 
-# Function that wraps all of the steps for the SFR Package Problem 1 model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def simulation(idx, silent=True):
-    sim = build_model()
-
-    write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-    assert success, f"could not run...{sim_name}"
-
-    if success:
+    sim = build_models()
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(idx, sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### SFR Package Problem 1 Simulation
-    #
-    # Simulated heads in model the unconfined, middle, and lower aquifers (model layers
-    # 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
-    # model are also shown. The location of drain (green) and well (gray) boundary
-    # conditions, normalized specific discharge, and head contours (25 ft contour
-    # intervals) are also shown.
-
-    simulation(0)
+# Simulated heads in model the unconfined, middle, and lower aquifers (model layers
+# 1, 3, and 5) are shown in the figure below. MODFLOW-2005 results for a quasi-3D
+# model are also shown. The location of drain (green) and well (gray) boundary
+# conditions, normalized specific discharge, and head contours (25 ft contour
+# intervals) are also shown.
+simulation(0)
+# -

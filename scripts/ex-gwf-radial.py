@@ -13,28 +13,995 @@
 #    unconfined aquifers considering delayed gravity response.
 #    Water resources research, 10(2), 303-312
 
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+import pathlib as pl
+from math import sqrt
+
 import flopy
+import matplotlib.pyplot as plt
+import numpy as np
+from flopy.plot.styles import styles
+from matplotlib.patches import Circle
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
+# Solve definite integral using Fortran library QUADPACK
+from scipy.integrate import quad
 
-sys.path.append(os.path.join("..", "common"))
+# Find a root of a function using Brent's method within a bracketed range
+from scipy.optimize import brentq
 
-# import common functionality
+# Zero Order Bessel Function
+from scipy.special import j0, jn_zeros
 
-import config
-from figspecs import USGSFigure
+# Example name and base workspace
+sim_name = "ex-gwf-rad-disu"
+workspace = pl.Path("../examples")
 
-from get_disu_radial_kwargs import get_disu_radial_kwargs
-from neuman1974_soln import RadialUnconfinedDrawdown
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
 
-# Utility function to return DISU node for given radial band and layer
+# Define some utilities for creating the grid and solving the radial solution
+
+# +
+# Radial unconfined drawdown solution from Neuman 1974
+pi = 3.141592653589793
+sin = np.sin
+cos = np.cos
+sinh = np.sinh
+cosh = np.cosh
+exp = np.exp
+
+
+def get_disu_radial_kwargs(
+    nlay,
+    nradial,
+    radius_outer,
+    surface_elevation,
+    layer_thickness,
+    get_vertex=False,
+):
+    """
+    Simple utility for creating radial unstructured elements
+    with the disu package.
+
+    Input assumes that each layer contains the same radial band,
+    but their thickness can be different.
+
+    Parameters
+    ----------
+    nlay: number of layers (int)
+    nradial: number of radial bands to construct (int)
+    radius_outer: Outer radius of each radial band (array-like float with nradial length)
+    surface_elevation: Top elevation of layer 1 as either a float or nradial array-like float values.
+                       If given as float, then value is replicated for each radial band.
+    layer_thickness: Thickness of each layer as either a float or nlay array-like float values.
+                     If given as float, then value is replicated for each layer.
+    """
+    pi = 3.141592653589793
+
+    def get_nn(lay, rad):
+        return nradial * lay + rad
+
+    def get_rad_array(var, rep):
+        try:
+            dim = len(var)
+        except:
+            dim, var = 1, [var]
+
+        if dim != 1 and dim != rep:
+            raise IndexError(
+                f"get_rad_array(var): var must be a scalar or have len(var)=={rep}"
+            )
+
+        if dim == 1:
+            return np.full(rep, var[0], dtype=np.float64)
+        else:
+            return np.array(var, dtype=np.float64)
+
+    nodes = nlay * nradial
+    surf = get_rad_array(surface_elevation, nradial)
+    thick = get_rad_array(layer_thickness, nlay)
+
+    iac = np.zeros(nodes, dtype=int)
+    ja = []
+    ihc = []
+    cl12 = []
+    hwva = []
+
+    area = np.zeros(nodes, dtype=float)
+    top = np.zeros(nodes, dtype=float)
+    bot = np.zeros(nodes, dtype=float)
+
+    for lay in range(nlay):
+        st = nradial * lay
+        sp = nradial * (lay + 1)
+        top[st:sp] = surf - thick[:lay].sum()
+        bot[st:sp] = surf - thick[: lay + 1].sum()
+
+    for lay in range(nlay):
+        for rad in range(nradial):
+            # diagonal/self
+            n = get_nn(lay, rad)
+            ja.append(n)
+            iac[n] += 1
+            if rad > 0:
+                area[n] = pi * (radius_outer[rad] ** 2 - radius_outer[rad - 1] ** 2)
+            else:
+                area[n] = pi * radius_outer[rad] ** 2
+            ihc.append(n + 1)
+            cl12.append(n + 1)
+            hwva.append(n + 1)
+            # up
+            if lay > 0:
+                ja.append(n - nradial)
+                iac[n] += 1
+                ihc.append(0)
+                cl12.append(0.5 * (top[n] - bot[n]))
+                hwva.append(area[n])
+            # to center
+            if rad > 0:
+                ja.append(n - 1)
+                iac[n] += 1
+                ihc.append(1)
+                cl12.append(0.5 * (radius_outer[rad] - radius_outer[rad - 1]))
+                hwva.append(2.0 * pi * radius_outer[rad - 1])
+
+            # to outer
+            if rad < nradial - 1:
+                ja.append(n + 1)
+                iac[n] += 1
+                ihc.append(1)
+                hwva.append(2.0 * pi * radius_outer[rad])
+                if rad > 0:
+                    cl12.append(0.5 * (radius_outer[rad] - radius_outer[rad - 1]))
+                else:
+                    cl12.append(radius_outer[rad])
+            # bottom
+            if lay < nlay - 1:
+                ja.append(n + nradial)
+                iac[n] += 1
+                ihc.append(0)
+                cl12.append(0.5 * (top[n] - bot[n]))
+                hwva.append(area[n])
+
+    # Build rectangular equivalent of radial coordinates (unwrap radial bands)
+    if get_vertex:
+        perimeter_outer = np.fromiter(
+            (2.0 * pi * rad for rad in radius_outer),
+            dtype=float,
+            count=nradial,
+        )
+        xc = 0.5 * radius_outer[0]
+        yc = 0.5 * perimeter_outer[-1]
+        # all cells have same y-axis cell center; yc is costant
+        #
+        # cell2d: [icell2d, xc, yc, ncvert, icvert]; first node: cell2d = [[0, xc, yc, [2, 1, 0]]]
+        cell2d = []
+        for lay in range(nlay):
+            n = get_nn(lay, 0)
+            cell2d.append([n, xc, yc, 3, 2, 1, 0])
+        #
+        xv = radius_outer[0]
+        # half perimeter is equal to the y shift for vertices
+        sh = 0.5 * perimeter_outer[0]
+        vertices = [
+            [0, 0.0, yc],
+            [1, xv, yc - sh],
+            [2, xv, yc + sh],
+        ]  # vertices: [iv, xv, yv]
+        iv = 3
+        for r in range(1, nradial):
+            # radius_outer[r-1] + 0.5*(radius_outer[r] - radius_outer[r-1])
+            xc = 0.5 * (radius_outer[r - 1] + radius_outer[r])
+            for lay in range(nlay):
+                n = get_nn(lay, r)
+                # cell2d: [icell2d, xc, yc, ncvert, icvert]
+                cell2d.append([n, xc, yc, 4, iv - 2, iv - 1, iv + 1, iv])
+
+            xv = radius_outer[r]
+            # half perimeter is equal to the y shift for vertices
+            sh = 0.5 * perimeter_outer[r]
+            vertices.append([iv, xv, yc - sh])  # vertices: [iv, xv, yv]
+            iv += 1
+            vertices.append([iv, xv, yc + sh])  # vertices: [iv, xv, yv]
+            iv += 1
+        cell2d.sort(key=lambda row: row[0])  # sort by node number
+
+    ja = np.array(ja, dtype=np.int32)
+    nja = ja.shape[0]
+    hwva = np.array(hwva, dtype=np.float64)
+    kw = {}
+    kw["nodes"] = nodes
+    kw["nja"] = nja
+    kw["nvert"] = None
+    kw["top"] = top
+    kw["bot"] = bot
+    kw["area"] = area
+    kw["iac"] = iac
+    kw["ja"] = ja
+    kw["ihc"] = ihc
+    kw["cl12"] = cl12
+    kw["hwva"] = hwva
+
+    if get_vertex:
+        kw["nvert"] = len(vertices)  # = 2*nradial + 1
+        kw["vertices"] = vertices
+        kw["cell2d"] = cell2d
+        kw["angldegx"] = np.zeros(nja, dtype=float)
+    else:
+        kw["nvert"] = 0
+
+    return kw
+
+
+def _find_hyperbolic_max_value():
+    seterr = np.seterr()
+    np.seterr(all="ignore")
+    inf = np.inf
+    x = 10.0
+    delt = 1.0
+    for i in range(1000000):
+        x += delt
+        try:
+            if inf == sinh(x):
+                break
+        except:
+            break
+    np.seterr(**seterr)
+    return x - delt
+
+
+_hyperbolic_max_value = _find_hyperbolic_max_value()
+
+
+def _find_hyperbolic_equivalent_value():
+    x = 10.0
+    delt = 0.0001
+    for i in range(1000000):
+        x += delt
+        if x > _hyperbolic_max_value:
+            break
+        try:
+            if sinh(x) == cosh(x):
+                return x
+        except:
+            break
+    return x - delt
+
+
+_hyperbolic_equivalence = _find_hyperbolic_equivalent_value()
+
+
+class RadialUnconfinedDrawdown:
+    """
+    Solves the drawdown that occurs from pumping from partial penetration
+    in an unconfined, radial aquifer. Uses the method described in:
+    Neuman, S. P. (1974). Effect of partial penetration on flow in
+    unconfined aquifers considering delayed gravity response.
+    Water resources research, 10(2), 303-312.
+    """
+
+    hyperbolic_max_value = _hyperbolic_max_value
+    hyperbolic_equivalence = _hyperbolic_equivalence
+
+    bottom: float
+    Kr: float
+    Kz: float
+    Ss: float
+    Sy: float
+    well_top: float
+    well_bot: float
+    saturated_thickness: float
+
+    _sigma: float
+    _beta: float
+
+    def __init__(
+        self,
+        bottom_elevation,
+        hydraulic_conductivity_radial=None,
+        hydraulic_conductivity_vertical=None,
+        specific_storage=None,
+        specific_yield=None,
+        well_screen_elevation_top=None,
+        well_screen_elevation_bottom=None,
+        water_table_elevation=None,
+        saturated_thickness=None,
+    ):
+        """
+        Initialize unconfined, radial groundwater model to solve drawdown
+        at an observation location in response to pumping at the center of
+        the model (that is, the well extracts water at radius = 0).
+
+        Parameters
+        ----------
+        rad : int
+            radial band number (0 to nradial-1)
+
+        bottom_elevation : float
+            Elevation of the impermeable base of the model ($L$)
+        hydraulic_conductivity_radial : float
+            Radial direction hydraulic conductivity of model ($L/T$)
+        hydraulic_conductivity_vertical : float
+            Vertical (z) direction hydraulic conductivity of model ($L/T$)
+        specific_storage : float
+            Specific storage of aquifer ($1/T$)
+        specific_yield : float
+            Specific yield of aquifer ($-$)
+        well_screen_elevation_top : float
+            Pumping well's top screen elevation ($L$)
+        well_screen_elevation_bottom : float
+            Pumping well's bottom screen elevation ($L$)
+        water_table_elevation : float
+            Initial water table elevation. Note, saturated_thickness (b) is
+            calculated as $water_table_elevation - bottom_elevation$ ($L$)
+        saturated_thickness : float
+            Specify the initial saturated thickness of the unconfined aquifer.
+            Value is used to calculate the water_table_elevation. If
+            water_table_elevation is defined, then saturated_thickness input
+            is ignored and set to
+            $water_table_elevation - bottom_elevation$ ($L$)
+        """
+
+        self.bottom = float(bottom_elevation)
+        self.Kr = self._float_or_none(hydraulic_conductivity_radial)
+        self.Kz = self._float_or_none(hydraulic_conductivity_vertical)
+        self.Ss = self._float_or_none(specific_storage)
+        self.Sy = self._float_or_none(specific_yield)
+        self.well_top = self._float_or_none(well_screen_elevation_top)
+        self.well_bot = self._float_or_none(well_screen_elevation_bottom)
+
+        if water_table_elevation is not None and saturated_thickness is not None:
+            raise RuntimeError(
+                "RadialUnconfinedDrawdown() must specify only "
+                + "water_table_elevation or saturated_thickness, but not "
+                + "both at the same time."
+            )
+
+        if water_table_elevation is not None:
+            self.saturated_thickness = float(water_table_elevation) - self.bottom
+        elif saturated_thickness is not None:
+            self.saturated_thickness = float(saturated_thickness)
+        else:
+            self.saturated_thickness = None
+
+    def _prop_check(self):
+        error = []
+        if self.Kr is None:
+            error.append("hydraulic_conductivity_radial")
+        if self.Kz is None:
+            error.append("hydraulic_conductivity_vertical")
+        if self.Ss is None:
+            error.append("specific_storage")
+        if self.Sy is None:
+            error.append("specific_yield")
+        if self.well_top is None:
+            error.append("well_screen_elevation_top")
+        if self.well_bot is None:
+            error.append("well_screen_elevation_bottom")
+        if error:
+            raise RuntimeError(
+                "RadialUnconfinedDrawdown: Attempted to solve radial "
+                + "groundwater model\nwith the following input not specified\n"
+                + "\n".join(error)
+            )
+        if self.well_top <= self.well_bot:
+            raise RuntimeError(
+                "RadialUnconfinedDrawdown: "
+                + "well_screen_elevation_top <= well_screen_elevation_bottom\n"
+                + f"That is: {well_screen_elevation_top} <= "
+                + f"{well_screen_elevation_bottom}"
+            )
+
+    def drawdown(
+        self,
+        pump,
+        time,
+        radius,
+        observation_elevation,
+        observation_elevation_bot=None,
+        sumrtol=1.0e-6,
+        u_n_rtol=1.0e-5,
+        epsabs=1.49e-8,
+        bessel_loop_limit=5,
+        quad_limit=128,
+        show_progress=False,
+        ty_time=False,
+        ts_time=False,
+        as_head=False,
+    ):
+        """
+        Solves the radial model's drawdown for a given pumping rate and
+        time at a given observation point
+        (radius, observation_elevation) or observation well screen interval
+        (radius, observation_elevation:observation_elevation_bot).
+        This solves drawdown by integrating equation 17 from
+        Neuman, S. P. (1974). Effect of partial penetration on flow in
+        unconfined aquifers considering delayed gravity response.
+        Water resources research, 10(2), 303-312
+
+        Parameters
+        ----------
+        pump : float
+            Pumping rate of well at center of radial model ($L^3/T$)
+            Positive values are the water extraction rate.
+            Negative or zero values indicate no pumping and result returns
+            the dimensionless drawdown instead of regular drawdown.
+        time : float or Sequence[float]
+            Time that observation is made
+        radius : float
+            Radius of the observation location (distance from well, $L$)
+        observation_elevation : float
+            Either the location of the observation point, or the top elevation
+            of the observation well screen ($L$)
+        observation_elevation_bot : float
+            If specified, then represents the bottom elevation of the
+            observation well screen. If not specified (or set to None), then
+            observation location is treated as a single point, located at
+            radius and observation_elevation ($L$)
+        sumrtol : float
+            Solution involves integration of $y$ variable from 0 to ∞ from
+            Equation 17 in:
+            Neuman, S. P. (1974). Effect of partial penetration on flow in
+            unconfined aquifers considering delayed gravity response.
+            Water resources research, 10(2), 303-312.
+
+            The integration is broken into subsections that are spaced around
+            bessel function roots. The integration is complete when a
+            three sequential subsection solutions are less than
+            sumrtol times the largest subsection.
+            That is, the last included subsection contributes a
+            relatively small value compared to the largest of the sum.
+        u_n_rtol : float
+            Terminates the solution of the infinite series:
+            $\\sum_{n=1}^{\\infty} u_n(y)$
+            when
+            $u_n(y) < u_n(0) * u_n_rtol$
+        epsabs : float or int
+            scipy.integrate.quad absolute error tolerance.
+            Passed directly to that function's `epsabs` kwarg.
+        bessel_loop_limit : int
+            the integral is solved along each bessel function root.
+            The first 1024 roots are precalculated and automatically increased
+            if more are required. The upper limit for calculated roots is
+            1024 * 2 ^ bessel_loop_limit
+            If this limit is reached, then a warning is raised.
+        quad_limit : int
+            scipy.integrate.quad upper bound on the number of
+            subintervals used in the adaptive algorithm.
+            Passed directly to that function's `limit` kwarg.
+        show_progress : bool
+           if True, then progress is printed to the command prompt in the form:
+        ty_time : bool
+           if True, then `time` kwarg is dimensionless time with
+           respect to Specific Yield
+        ts_time : bool
+           if True, then `time` kwarg is dimensionless time with
+           respect to Specific Storage.
+        as_head : bool
+            If true, then drawdown result is converted to
+            head using the model bottom and initial saturated thickness.
+            If pump > 0, then as_head is ignored.
+
+        Returns
+        -------
+        result : float or list[float]
+            If time is float, then result is float.
+            If time is Sequence[float], then result is list[float].
+
+            If pump > 0, then result is the drawdown that occurs
+            from pump at time and radius at observation point
+            observation_elevation or from the observation well
+            screen interval observation_elevation to
+            observation_elevation_top ($L$).
+
+
+            If pump <= 0, then result is converted to
+            dimensionless drawdown ($-$)
+        """
+        if not hasattr(time, "strip") and hasattr(time, "__iter__"):
+            return self.drawdown_times(
+                pump,
+                time,
+                radius,
+                observation_elevation,
+                observation_elevation_bot,
+                sumrtol,
+                u_n_rtol,
+                epsabs,
+                bessel_loop_limit,
+                quad_limit,
+                show_progress,
+                ty_time,
+                ts_time,
+                as_head,
+            )
+
+        return self.drawdown_times(
+            pump,
+            [time],
+            radius,
+            observation_elevation,
+            observation_elevation_bot,
+            sumrtol,
+            u_n_rtol,
+            epsabs,
+            bessel_loop_limit,
+            quad_limit,
+            show_progress,
+            ty_time,
+            ts_time,
+            as_head,
+        )[0]
+
+    def drawdown_times(
+        self,
+        pump,
+        times,
+        radius,
+        observation_elevation,
+        observation_elevation_bot=None,
+        sumrtol=1.0e-6,
+        u_n_rtol=1.0e-5,
+        epsabs=1.49e-8,
+        bessel_loop_limit=5,
+        quad_limit=128,
+        show_progress=False,
+        ty_time=False,
+        ts_time=False,
+        as_head=False,
+    ):
+        # Same as self.drawdown, but times is a list[float] of
+        # observation times and returns a list[float] drawdowns.
+
+        if bessel_loop_limit < 1:
+            bessel_loop_limit = 1
+
+        bessel_roots0 = 1024
+        bessel_roots = bessel_roots0
+        bessel_root_limit_reached = []
+
+        self._prop_check()
+        if ty_time and ts_time:
+            raise RuntimeError(
+                "RadialUnconfinedDrawdown.drawdown_times "
+                + "cannot set both ty_time and ts_time to True."
+            )
+
+        r = radius
+        b = self.saturated_thickness
+
+        sigma = self.Ss * b / self.Sy
+        beta = (r / b) * (r / b) * (self.Kz / self.Kr)
+        sqrt_beta = sqrt(beta)
+
+        if np.isnan(pump) or pump <= 0.0:
+            # Return dimensionless drawdown
+            coef = 1.0
+        else:
+            coef = pump / (4.0 * pi * b * self.Kr)
+
+        # dimensionless well screen top
+        dd = (self.saturated_thickness + self.bottom - self.well_top) / b
+        # dimensionless well screen bottom
+        ld = (self.saturated_thickness + self.bottom - self.well_bot) / b
+
+        # Solution must be in dimensionless time with respect to Ss;
+        # ts = kr*b*t/(Ss*b*r^2)
+        if ty_time:
+            ts_list = self.ty2ts(times)
+        elif ts_time:
+            ts_list = times
+        else:
+            ts_list = self.time2ts(times, r)
+
+        # distance above bottom to observation point or obs screen bottom
+        zt = observation_elevation - self.bottom
+        if observation_elevation_bot is None:
+            # Single Point Observation
+            zd = zt / b  # dimensionless elevation of observation point
+            neuman1974_integral = self.neuman1974_integral1
+            obs_arg = (zd,)
+        else:
+            # distance above bottom to observation screen top
+            zb = observation_elevation_bot - self.bottom
+            # dimensionless elevation of observation screen interval
+            ztd, zbd = zt / b, zb / b
+            # dz = 1 / (zt - zb)  -> implied in the
+            #                        modified u0 and uN functions
+            neuman1974_integral = self.neuman1974_integral2
+            obs_arg = (zbd, ztd)
+
+        s = []  # drawdown, one to one match with times
+        nstp = len(ts_list)
+        for stp, ts in enumerate(ts_list):
+            if show_progress:
+                print(
+                    f"Solving {stp+1:4d} of {nstp}; " + f"time = {self.ts2time(ts, r)}",
+                    end="",
+                )
+
+            args = (sigma, beta, sqrt_beta, ld, dd, ts, *obs_arg, u_n_rtol)
+            sol = 0.0
+            y0, y1 = 0.0, 0.0
+            mxdelt = 0.0
+
+            j0_roots = jn_zeros(0, bessel_roots) / sqrt_beta
+            jr0 = 0
+            jr1 = j0_roots.size
+
+            converged = 0
+            bessel_loop_count = 0
+            while converged < 3 and bessel_loop_count <= bessel_loop_limit:
+                if bessel_loop_count > 0:
+                    bessel_roots *= 2
+                    j0_roots = jn_zeros(0, bessel_roots) / sqrt_beta
+                    jr0, jr1 = jr1, j0_roots.size
+
+                j0_roots_iter = np.nditer(j0_roots[jr0:jr1])
+                bessel_loop_count += 1
+                # Iterate over two roots to get full cycle
+                for j0_root in j0_roots_iter:
+                    # First root
+                    y0, y1 = y1, j0_root
+                    delt1 = quad(
+                        neuman1974_integral,
+                        y0,
+                        y1,
+                        args,
+                        epsabs=epsabs,
+                        limit=quad_limit,
+                    )[0]
+                    #
+                    # Second root
+                    y0, y1 = y1, next(j0_roots_iter)
+                    delt2 = quad(
+                        neuman1974_integral,
+                        y0,
+                        y1,
+                        args,
+                        epsabs=epsabs,
+                        limit=quad_limit,
+                    )[0]
+
+                    if np.isnan(delt1) or np.isnan(delt2):
+                        break
+
+                    sol += delt1 + delt2
+
+                    adelt = abs(delt1 + delt2)
+                    if adelt > mxdelt:
+                        mxdelt = adelt
+                    elif adelt < mxdelt * sumrtol:
+                        converged += 1  # increment the convergence counter
+                        # Converged if three sequential solutions (adelt)
+                        # are less than mxdelt*sumrtol
+                        if converged >= 3:
+                            break
+                    else:
+                        converged = 0  # reset convergence counter
+            if sol < 0.0:
+                s.append(0.0)
+            else:
+                s.append(coef * sol)
+
+            if converged < 3:
+                bessel_root_limit_reached.append(stp)
+
+            if show_progress:
+                if converged < 3:
+                    print(f"\ts = {s[-1]}\tbessel_loop_limit reached")
+                else:
+                    print(f"\ts = {s[-1]}")
+
+        if pump > 0.0 and as_head:
+            initial_head = self.bottom + self.saturated_thickness
+            return [initial_head - drawdown for drawdown in s]
+
+        if len(bessel_root_limit_reached) > 0:
+            import warnings
+
+            root = j0_roots[-1]
+            bad_times = "\n".join([str(times[it]) for it in bessel_root_limit_reached])
+            warnings.warn(
+                f"\n\nRadialUnconfinedDrawdown.drawdown_times failed to "
+                + f"meet convergence sumrtol = {sumrtol}"
+                + "\nwithin the precalculated Bessel root solutions "
+                + "(convergence is evaluated at every second Bessel root).\n\n"
+                + "The number of Bessel roots are automatically increased "
+                + "up to:\n"
+                + f"   {bessel_roots0} * 2^bessel_loop_limit\nwhere:\n"
+                + "   bessel_loop_limit = {bessel_loop_limit}\n"
+                + f"resulting in {1024*2**bessel_loop_limit} roots evaluated, "
+                + "with the last root being {root}\n"
+                + f"(That is, the Neuman integral was solved form 0 to {root})"
+                + "\n\n"
+                + "You can either ignore this warning\n"
+                + "or to remove it attempt to increase bessel_loop_limit\n"
+                + "or increase sumrtol (reducing accuracy).\n\nThe following "
+                + "times are what triggered this warning:\n"
+                + bad_times
+                + "\n"
+            )
+        return s
+
+    @staticmethod
+    def neuman1974_integral1(y, σ, β, sqrt_β, ld, dd, ts, zd, uN_tol=1.0e-6):
+        """
+        Solves equation 17 from
+        Neuman, S. P. (1974). Effect of partial penetration on flow in
+        unconfined aquifers considering delayed gravity response.
+        Water resources research, 10(2), 303-312.
+        """
+        if y == 0.0 or ts == 0.0:
+            return 0.0
+
+        u0 = RadialUnconfinedDrawdown.u_0(σ, β, zd, ld, dd, ts, y)
+
+        if np.isnan(u0):
+            u0 = 0.0
+
+        uN_func = RadialUnconfinedDrawdown.u_n
+        mxdelt = 0.0
+        uN = 0.0
+        for n in range(1, 25001):
+            delt = uN_func(σ, β, zd, ld, dd, ts, y, n)
+            if np.isnan(delt):
+                break
+            uN += delt
+            adelt = abs(delt)
+            if adelt > mxdelt:
+                mxdelt = adelt
+            elif adelt < mxdelt * uN_tol:
+                break
+
+        return 4.0 * y * j0(y * sqrt_β) * (u0 + uN)
+
+    @staticmethod
+    def gamma0(g, y, s):
+        """
+        Gamma0 root function from equation 18 in:
+        Neuman, S. P. (1974). Effect of partial penetration on flow in
+        unconfined aquifers considering delayed gravity response.
+        Water resources research, 10(2), 303-312.
+            => Solution must be constrained by g^2 < y^2
+
+        To honor the constraint solution returns the absolute value
+         of the solution.
+        """
+        if g >= _hyperbolic_equivalence:
+            # sinh ≈ cosh for large g
+            return s * g - (y * y - g * g)
+
+        return s * g * sinh(g) - (y * y - g * g) * cosh(g)
+
+    @staticmethod
+    def gammaN(g, y, s):
+        """
+        GammaN root function from equation 19 in:
+        Neuman, S. P. (1974). Effect of partial penetration on flow in
+        unconfined aquifers considering delayed gravity response.
+        Water resources research, 10(2), 303-312.
+            => Solution must be constrained by (2n-1)(π/2)< g < nπ
+        """
+        return s * g * sin(g) + (y * y + g * g) * cos(g)
+
+    @staticmethod
+    def u_0(σ, β, z, l, d, ts, y):
+        gamma0 = RadialUnconfinedDrawdown.gamma0
+
+        a, b = 0.9 * y, y
+        try:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
+        except RuntimeError:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
+
+        g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+
+        # Check for cosh/sinh overflow
+        if g > _hyperbolic_max_value:
+            return 0.0
+
+        y2 = y * y
+        g2 = g * g
+        num1 = 1 - exp(-ts * β * (y2 - g2))
+        num2 = cosh(g * z)
+        num3 = sinh(g * (1 - d)) - sinh(g * (1 - l))
+        den1 = y2 + (1 + σ) * g2 - ((y2 - g2) ** 2) / σ
+        den2 = cosh(g)
+        den3 = (l - d) * sinh(g)
+        # num1*num2*num3 / (den1*den2*den3)
+        return (num1 / den1) * (num2 / den2) * (num3 / den3)
+
+    @staticmethod
+    def u_n(σ, β, z, l, d, ts, y, n):
+        gammaN = RadialUnconfinedDrawdown.gammaN
+
+        a, b = (2 * n - 1) * (pi / 2.0), n * pi
+        try:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
+        except RuntimeError:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
+
+        g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+
+        y2 = y * y
+        g2 = g * g
+        num1 = 1 - exp(-ts * β * (y2 + g2))
+        num2 = cos(g * z)
+        num3 = sin(g * (1 - d)) - sin(g * (1 - l))
+        den1 = y2 - (1 + σ) * g2 - ((y2 + g2) ** 2) / σ
+        den2 = cos(g)
+        den3 = (l - d) * sin(g)
+        return num1 * num2 * num3 / (den1 * den2 * den3)
+
+    @staticmethod
+    def neuman1974_integral2(y, σ, β, sqrt_β, ld, dd, ts, z1, z2, uN_tol=1.0e-10):
+        """
+        Solves equation 20 from
+        Neuman, S. P. (1974). Effect of partial penetration on flow in
+        unconfined aquifers considering delayed gravity response.
+        Water resources research, 10(2), 303-312.
+        """
+        if y == 0.0 or ts == 0.0:
+            return 0.0
+
+        u0 = RadialUnconfinedDrawdown.u_0_z1z2(σ, β, z1, z2, ld, dd, ts, y)
+
+        uN_func = RadialUnconfinedDrawdown.u_n_z1z2
+        mxdelt = 0.0
+        uN = 0.0
+        for n in range(1, 10001):
+            delt = uN_func(σ, β, z1, z2, ld, dd, ts, y, n)
+            uN += delt
+            adelt = abs(delt)
+            if adelt > mxdelt:
+                mxdelt = adelt
+            elif adelt < mxdelt * uN_tol:
+                break
+
+        return 4.0 * y * j0(y * sqrt_β) * (u0 + uN)
+
+    @staticmethod
+    def u_0_z1z2(σ, β, z1, z2, l, d, ts, y):
+        gamma0 = RadialUnconfinedDrawdown.gamma0
+
+        a, b = 0.9 * y, y
+        try:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
+        except RuntimeError:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
+
+        g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+
+        # Check for cosh/sinh overflow
+        if g > _hyperbolic_max_value:
+            return 0.0
+
+        y2 = y * y
+        g2 = g * g
+        num1 = 1 - exp(-ts * β * (y2 - g2))
+        num2 = sinh(g * z2) - sinh(g * z1)
+        num3 = sinh(g * (1 - d)) - sinh(g * (1 - l))
+        den1 = (y2 + (1 + σ) * g2 - ((y2 - g2) ** 2) / σ) * (z2 - z1) * g
+        den2 = cosh(g)
+        den3 = (l - d) * sinh(g)
+        # num1*num2*num3 / (den1*den2*den3)
+        return (num1 / den1) * (num2 / den2) * (num3 / den3)
+
+    @staticmethod
+    def u_n_z1z2(σ, β, z1, z2, l, d, ts, y, n):
+        gammaN = RadialUnconfinedDrawdown.gammaN
+
+        a, b = (2 * n - 1) * (pi / 2.0), n * pi
+        try:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
+        except RuntimeError:
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
+
+        g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+
+        y2 = y * y
+        g2 = g * g
+        num1 = 1 - exp(-ts * β * (y2 + g2))
+        num2 = sin(g * z2) - sin(g * z1)
+        num3 = sin(g * (1 - d)) - sin(g * (1 - l))
+        den1 = y2 - (1 + σ) * g2 - ((y2 + g2) ** 2) / σ
+        den2 = cos(g) * (z2 - z1) * g
+        den3 = (l - d) * sin(g)
+        return num1 * num2 * num3 / (den1 * den2 * den3)
+
+    def time2ty(self, time, radius):
+        # dimensionless time with respect to Sy
+        if hasattr(time, "__iter__"):
+            # can iterate to get multiple times
+            return [
+                self.Kr * self.saturated_thickness * t / (self.Sy * radius * radius)
+                for t in time
+            ]
+        return self.Kr * self.saturated_thickness * time / (self.Sy * radius * radius)
+
+    def time2ts(self, time, radius):
+        # dimensionless time with respect to Ss
+        if hasattr(time, "__iter__"):
+            # can iterate to get multiple times
+            return [self.Kr * t / (self.Ss * radius * radius) for t in time]
+        return self.Kr * time / (self.Ss * radius * radius)
+
+    def ty2time(self, ty, radius):
+        # dimensionless time with respect to Sy
+        if hasattr(ty, "__iter__"):
+            # can iterate to get multiple times
+            return [
+                t * self.Sy * radius * radius / (self.Kr * self.saturated_thickness)
+                for t in ty
+            ]
+        return ty * self.Sy * radius * radius / (self.Kr * self.saturated_thickness)
+
+    def ts2time(self, ts, radius):  # dimensionless time with respect to Ss
+        if hasattr(ts, "__iter__"):  # can iterate to get multiple times
+            return [t * self.Ss * radius * radius / self.Kr for t in ts]
+        return ts * self.Ss * radius * radius / self.Kr
+
+    def ty2ts(self, ty):
+        if hasattr(ty, "__iter__"):
+            # can iterate to get multiple times
+            return [t * self.Sy / (self.Ss * self.saturated_thickness) for t in ty]
+        return ty * self.Sy / (self.Ss * self.saturated_thickness)
+
+    def drawdown2unitless(self, s, pump):
+        # dimensionless drawdown
+        return 4 * pi * self.Kr * self.saturated_thickness * s / pump
+
+    def unitless2drawdown(self, s, pump):
+        # drawdown
+        return pump * s / (4 * pi * self.Kr * self.saturated_thickness)
+
+    @staticmethod
+    def _float_or_none(val):
+        if val is not None:
+            return float(val)
+        return None
+
+    @staticmethod
+    def _get_bracket(func, a, b, arg=(), internal_search_split=100):
+        """
+        Given initial range [a, b], search within the range for
+        root finding brackets.
+        That is, return [a, b] that results in f(a) * f(b) < 0.
+        """
+        if a > b:
+            a, b = b, a
+
+        f1 = func(a, *arg)
+        f2 = func(b, *arg)
+
+        if f1 * f2 <= 0.0:
+            return a, b
+
+        # same sign, search within for sign change
+        delt = abs(b - a) / internal_search_split
+        a -= delt
+        for _ in range(internal_search_split):
+            a += delt
+            f1 = func(a, *arg)
+            if f1 * f2 <= 0.0:
+                return a, b
+
+        raise RuntimeError(
+            "get_bracket: failed to find bracket interval with opposite "
+            + f"signs, that is: f(a)*f(b) < 0 for func: {func}"
+        )
 
 
 def get_radial_node(rad, lay, nradial):
@@ -86,56 +1053,35 @@ def get_radius_lay_from_node(node, nradial):
     return rad, lay
 
 
-# Run Analytical Model - Very slow
-# If True, solves the Neuman 1974 analytical model (very slow)
-# else uses stored results from solving the Neuman 1974 analytical model
+# -
 
-solve_analytical_solution = False
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
-
-# Set default figure properties
-
-figure_size = (6, 6)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
-sim_name = "ex-gwf-rad-disu"
-
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Table Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 _ = 24  # Number of time steps
 _ = "10"  # Simulation total time ($day$)
-
 nlay = 25  # Number of layers
 nradial = 22  # Number of radial direction cells (radial bands)
-
 initial_head = 50.0  # Initial water table elevation ($ft$)
-
 surface_elevation = 50.0  # Top of the radial model ($ft$)
 _ = 0.0  # Base of the radial model ($ft$)
 layer_thickness = 2.0  # Thickness of each radial layer ($ft$)
 _ = "0.25 to 2000"  # Outer radius of each radial band ($ft$)
-
 k11 = 20.0  # Horizontal hydraulic conductivity ($ft/day$)
 k33 = 20.0  # Vertical hydraulic conductivity ($ft/day$)
-
 ss = 1.0e-5  # Specific storage ($1/day$)
 sy = 0.1  # Specific yield (unitless)
-
 _ = "0.0 to 10"  # Well screen elevation ($ft$)
 _ = "1"  # Well radial band location (unitless)
 _ = "-4000.0"  # Well pumping rate ($ft^3/day$)
-
 _ = "40"  # Observation distance from well ($ft$)
 _ = "1"  # ``Top'' observation elevation ($ft$)
 _ = "25"  # ``Middle'' observation depth ($ft$)
@@ -175,9 +1121,7 @@ radius_outer = [
 # This example has the well screen interval from
 # layer 20 to 24 (zero-based index)
 wel_spd = {
-    sp: [
-        [(get_radial_node(0, lay, nradial),), -800.0] for lay in range(20, 25)
-    ]
+    sp: [[(get_radial_node(0, lay, nradial),), -800.0] for lay in range(20, 25)]
     for sp in range(nper)
 }
 
@@ -202,113 +1146,98 @@ nouter = 500
 ninner = 300
 hclose = 1e-4
 rclose = 1e-4
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Axisymmetric Model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(name):
-    if config.buildModel:
-        sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            print_option="summary",
-            complexity="complex",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-        )
+# +
+def build_models(name):
+    sim_ws = os.path.join(workspace, name)
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        print_option="summary",
+        complexity="complex",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+    )
 
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
 
-        disukwargs = get_disu_radial_kwargs(
-            nlay,
-            nradial,
-            radius_outer,
-            surface_elevation,
-            layer_thickness,
-            get_vertex=True,
-        )
+    disukwargs = get_disu_radial_kwargs(
+        nlay,
+        nradial,
+        radius_outer,
+        surface_elevation,
+        layer_thickness,
+        get_vertex=True,
+    )
 
-        disu = flopy.mf6.ModflowGwfdisu(
-            gwf, length_units=length_units, **disukwargs
-        )
+    disu = flopy.mf6.ModflowGwfdisu(gwf, length_units=length_units, **disukwargs)
 
-        npf = flopy.mf6.ModflowGwfnpf(
-            gwf,
-            k=k11,
-            k33=k33,
-            save_flows=True,
-            save_specific_discharge=True,
-        )
+    npf = flopy.mf6.ModflowGwfnpf(
+        gwf,
+        k=k11,
+        k33=k33,
+        save_flows=True,
+        save_specific_discharge=True,
+    )
 
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=1,
-            sy=sy,
-            ss=ss,
-            save_flows=True,
-        )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=1,
+        sy=sy,
+        ss=ss,
+        save_flows=True,
+    )
 
-        flopy.mf6.ModflowGwfic(gwf, strt=initial_head)
+    flopy.mf6.ModflowGwfic(gwf, strt=initial_head)
 
-        flopy.mf6.ModflowGwfwel(
-            gwf, stress_period_data=wel_spd, save_flows=True
-        )
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, save_flows=True)
 
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            budget_filerecord=f"{name}.cbc",
-            head_filerecord=f"{name}.hds",
-            headprintrecord=[
-                ("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-            printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-            filename=f"{name}.oc",
-        )
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        budget_filerecord=f"{name}.cbc",
+        head_filerecord=f"{name}.hds",
+        headprintrecord=[("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        filename=f"{name}.oc",
+    )
 
-        flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
-        return sim
-    return None
+    flopy.mf6.ModflowUtlobs(gwf, print_input=False, continuous=obsdict)
+    return sim
 
 
-# Function to write model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, buff
 
 
-# Function to run the Axisymmetric model.
-# True is returned if the model runs successfully.
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent, report=True)
-        if not success:
-            print("\n".join(buff))
-
-    return success
-
-
-# Function to solve Axisymmetric model using analytical equation.
+# +
+# Set default figure properties
+figure_size = (6, 6)
 
 
 def solve_analytical(obs2ana, times=None, no_solve=False):
+    """Solve Axisymmetric model using analytical equation."""
     # obs2ana = {obsdict[file][0] : analytical_name}
     disukwargs = get_disu_radial_kwargs(
         nlay, nradial, radius_outer, surface_elevation, layer_thickness
@@ -382,8 +1311,7 @@ def solve_analytical(obs2ana, times=None, no_solve=False):
                 ]
             else:
                 times_sy = [
-                    ty * k11 * sat_thick / (sy * obs_rad * obs_rad)
-                    for ty in times
+                    ty * k11 * sat_thick / (sy * obs_rad * obs_rad) for ty in times
                 ]
 
             times_ss = [ty * k11 / (ss * obs_rad * obs_rad) for ty in times]
@@ -857,178 +1785,174 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
             1.800648435,
         ]
 
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
+    with styles.USGSPlot() as fs:
+        obs_fig = "obs-head"
+        fig = plt.figure(figsize=(5, 3))
+        ax = fig.add_subplot()
+        ax.set_xlabel("time (d)")
+        ax.set_ylabel("head (ft)")
+        for name in tsdata.dtype.names[1:]:
+            ax.plot(
+                tsdata["totim"],
+                tsdata[name],
+                fmt[name],
+                label=obsnames[name],
+                markerfacecolor="none",
+            )
+            # , markersize=3
 
-    obs_fig = "obs-head"
-    fig = plt.figure(figsize=(5, 3))
-    ax = fig.add_subplot()
-    ax.set_xlabel("time (d)")
-    ax.set_ylabel("head (ft)")
-    for name in tsdata.dtype.names[1:]:
-        ax.plot(
-            tsdata["totim"],
-            tsdata[name],
-            fmt[name],
-            label=obsnames[name],
-            markerfacecolor="none",
-        )
-        # , markersize=3
+        for name in analytical:
+            n = len(analytical[name])
+            if solve_analytical_solution:
+                ana_times = ana_prop[name][0]
+            else:
+                ana_times = analytical_time
 
-    for name in analytical:
-        n = len(analytical[name])
-        if solve_analytical_solution:
-            ana_times = ana_prop[name][0]
-        else:
-            ana_times = analytical_time
+            ax.plot(
+                ana_times[:n],
+                [50.0 - h for h in analytical[name]],
+                fmt[name],
+                label=obsnames[name],
+            )
 
-        ax.plot(
-            ana_times[:n],
-            [50.0 - h for h in analytical[name]],
-            fmt[name],
-            label=obsnames[name],
-        )
+        styles.graph_legend(ax)
 
-    fs.graph_legend(ax)
+        fig.tight_layout()
 
-    fig.tight_layout()
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                "{}-{}{}".format(sim_name, obs_fig, ".png"),
+            )
+            fig.savefig(fpth)
 
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
-        )
-        fig.savefig(fpth)
+        obs_fig = "obs-dimensionless"
+        fig = plt.figure(figsize=(5, 3))
+        fig.tight_layout()
+        ax = fig.add_subplot()
+        ax.set_xlim(0.001, 100.0)
+        ax.set_ylim(0.001, 100.0)
+        ax.grid(visible=True, which="major", axis="both")
+        ax.set_ylabel("Dimensionless Drawdown, $s_d$")
+        ax.set_xlabel("Dimensionless Time, $t_y$")
+        for name in tsdata.dtype.names[1:]:
+            q = ana_prop[obs2ana[name]][3]
+            r = ana_prop[obs2ana[name]][4]
+            b = ana_prop[obs2ana[name]][5]
+            ax.loglog(
+                [k11 * b * ts / (sy * r * r) for ts in tsdata["totim"]],
+                [4 * pi * k11 * b * (initial_head - h) / q for h in tsdata[name]],
+                fmt[name],
+                label=obsnames[name],
+                markerfacecolor="none",
+            )
 
-    obs_fig = "obs-dimensionless"
-    fig = plt.figure(figsize=(5, 3))
-    fig.tight_layout()
-    ax = fig.add_subplot()
-    ax.set_xlim(0.001, 100.0)
-    ax.set_ylim(0.001, 100.0)
-    ax.grid(visible=True, which="major", axis="both")
-    ax.set_ylabel("Dimensionless Drawdown, $s_d$")
-    ax.set_xlabel("Dimensionless Time, $t_y$")
-    for name in tsdata.dtype.names[1:]:
-        q = ana_prop[obs2ana[name]][3]
-        r = ana_prop[obs2ana[name]][4]
-        b = ana_prop[obs2ana[name]][5]
-        ax.loglog(
-            [k11 * b * ts / (sy * r * r) for ts in tsdata["totim"]],
-            [4 * pi * k11 * b * (initial_head - h) / q for h in tsdata[name]],
-            fmt[name],
-            label=obsnames[name],
-            markerfacecolor="none",
-        )
+        for name in analytical:
+            q = ana_prop[name][3]
+            b = ana_prop[name][5]  # [pump, radius, sat_thick, model_bottom]
+            if solve_analytical_solution:
+                ana_times = ana_prop[name][0]
+            else:
+                ana_times = analytical_time
 
-    for name in analytical:
-        q = ana_prop[name][3]
-        b = ana_prop[name][5]  # [pump, radius, sat_thick, model_bottom]
-        if solve_analytical_solution:
-            ana_times = ana_prop[name][0]
-        else:
-            ana_times = analytical_time
+            n = len(analytical[name])
+            time_sy = [k11 * b * ts / (sy * r * r) for ts in ana_times[:n]]
+            ana = [4 * pi * k11 * b * s / q for s in analytical[name]]
+            ax.plot(time_sy, ana, fmt[name], label=obsnames[name])
 
-        n = len(analytical[name])
-        time_sy = [k11 * b * ts / (sy * r * r) for ts in ana_times[:n]]
-        ana = [4 * pi * k11 * b * s / q for s in analytical[name]]
-        ax.plot(time_sy, ana, fmt[name], label=obsnames[name])
+        styles.graph_legend(ax)
 
-    fs.graph_legend(ax)
+        fig.tight_layout()
 
-    fig.tight_layout()
-
-    if config.plotSave:
-        fpth = os.path.join(
-            "..",
-            "figures",
-            "{}-{}{}".format(sim_name, obs_fig, config.figure_ext),
-        )
-        fig.savefig(fpth)
+        if plot_save:
+            fpth = os.path.join(
+                "..",
+                "figures",
+                "{}-{}{}".format(sim_name, obs_fig, ".png"),
+            )
+            fig.savefig(fpth)
 
 
 # Function to plot the model radial bands.
 
 
 def plot_grid(verbose=False):
-    fs = USGSFigure(figure_type="map", verbose=verbose)
+    with styles.USGSMap() as fs:
+        # Print all radial bands
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(6.4, 3.1))
+        # fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4.5))
+        ax = axs[0]
 
-    # Print all radial bands
-    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(6.4, 3.1))
-    # fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4.5))
-    ax = axs[0]
+        max_rad = radius_outer[-1]
+        max_rad = max_rad + (max_rad * 0.1)
+        ax.set_xlim(-max_rad, max_rad)
+        ax.set_ylim(-max_rad, max_rad)
+        ax.set_aspect("equal", adjustable="box")
 
-    max_rad = radius_outer[-1]
-    max_rad = max_rad + (max_rad * 0.1)
-    ax.set_xlim(-max_rad, max_rad)
-    ax.set_ylim(-max_rad, max_rad)
-    ax.set_aspect("equal", adjustable="box")
+        circle_center = (0.0, 0.0)
+        for r in radius_outer:
+            circle = Circle(circle_center, r, color="black", fill=False, lw=0.3)
+            ax.add_artist(circle)
 
-    circle_center = (0.0, 0.0)
-    for r in radius_outer:
-        circle = Circle(circle_center, r, color="black", fill=False, lw=0.3)
-        ax.add_artist(circle)
-
-    ax.set_xlabel("x-position (ft)")
-    ax.set_ylabel("y-position (ft)")
-    ax.annotate(
-        "A",
-        (-0.11, 1.02),
-        xycoords="axes fraction",
-        fontweight="black",
-        fontsize="xx-large",
-    )
-
-    # Print first 5 radial bands
-    nband = 5
-    ax = axs[1]
-
-    radius_subset = radius_outer[:nband]
-    max_rad = radius_subset[-1]
-    max_rad = max_rad + (max_rad * 0.3)
-
-    ax.set_xlim(-max_rad, max_rad)
-    ax.set_ylim(-max_rad, max_rad)
-    ax.set_aspect("equal", adjustable="box")
-
-    circle_center = (0.0, 0.0)
-
-    r = radius_subset[0]
-    circle = Circle(circle_center, r, color="red", label="Well")
-    ax.add_artist(circle)
-    for r in radius_subset:
-        circle = Circle(circle_center, r, color="black", lw=1, fill=False)
-        ax.add_artist(circle)
-
-    ax.set_xlabel("x-position (ft)")
-    ax.set_ylabel("y-position (ft)")
-
-    ax.annotate(
-        "B",
-        (-0.06, 1.02),
-        xycoords="axes fraction",
-        fontweight="black",
-        fontsize="xx-large",
-    )
-
-    fs.graph_legend(ax)
-
-    fig.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", "{}-grid{}".format(sim_name, config.figure_ext)
+        ax.set_xlabel("x-position (ft)")
+        ax.set_ylabel("y-position (ft)")
+        ax.annotate(
+            "A",
+            (-0.11, 1.02),
+            xycoords="axes fraction",
+            fontweight="black",
+            fontsize="xx-large",
         )
-        fig.savefig(fpth)
-    return
+
+        # Print first 5 radial bands
+        nband = 5
+        ax = axs[1]
+
+        radius_subset = radius_outer[:nband]
+        max_rad = radius_subset[-1]
+        max_rad = max_rad + (max_rad * 0.3)
+
+        ax.set_xlim(-max_rad, max_rad)
+        ax.set_ylim(-max_rad, max_rad)
+        ax.set_aspect("equal", adjustable="box")
+
+        circle_center = (0.0, 0.0)
+
+        r = radius_subset[0]
+        circle = Circle(circle_center, r, color="red", label="Well")
+        ax.add_artist(circle)
+        for r in radius_subset:
+            circle = Circle(circle_center, r, color="black", lw=1, fill=False)
+            ax.add_artist(circle)
+
+        ax.set_xlabel("x-position (ft)")
+        ax.set_ylabel("y-position (ft)")
+
+        ax.annotate(
+            "B",
+            (-0.06, 1.02),
+            xycoords="axes fraction",
+            fontweight="black",
+            fontsize="xx-large",
+        )
+
+        styles.graph_legend(ax)
+
+        fig.tight_layout()
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", "{}-grid{}".format(sim_name, ".png"))
+            fig.savefig(fpth)
 
 
 # Function to plot the model results.
 
 
 def plot_results(silent=True):
-    if not config.plotModel:
+    if not plot:
         return
 
     if silent:
@@ -1036,57 +1960,42 @@ def plot_results(silent=True):
     else:
         verbosity_level = 1
 
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
     )
 
     verbose = not silent
+    # If True, solves the Neuman 1974 analytical model (very slow)
+    # else uses stored results from solving the Neuman 1974 analytical model
+    analytical = False
 
-    if config.plotModel:
-        plot_grid(verbose)
-        plot_ts(
-            sim, verbose, solve_analytical_solution=solve_analytical_solution
-        )
-    return
+    plot_grid(verbose)
+    plot_ts(sim, verbose, solve_analytical_solution=analytical)
 
 
-# Function that wraps all of the steps for the Axisymmetric model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
+# +
+def scenario(silent=True):
     # key = list(parameters.keys())[idx]
     # params = parameters[key].copy()
-
-    sim = build_model(sim_name)
-
-    write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-    assert success, "could not run...{}".format(sim_name)
+    sim = build_models(sim_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_and_plot():
-    simulation(silent=False)
-    plot_results(silent=False)
-    return
+# MF6 Axisymmetric Model
+scenario()
 
-
-# nosetest end
-
-
-if __name__ == "__main__":
-    # ### Axisymmetric Example
-
-    # MF6 Axisymmetric Model
-    simulation()
-
+if plot:
     # Solve analytical and plot results with MF6 results
     plot_results()
+# -

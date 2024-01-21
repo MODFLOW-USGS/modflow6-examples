@@ -1,44 +1,37 @@
 # ## Henry Problem
 #
 # Classic saltwater intrusion
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Henry Problem Setup
-
-# Imports
-
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
-import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
+# Base workspace
+workspace = pl.Path("../examples")
 
-sys.path.append(os.path.join("..", "common"))
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
 
-# Import common functionality
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
-import config
-from figspecs import USGSFigure
-
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 4)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Scenario parameters - make sure there is at least one blank line before next item
-
+# +
+# Scenario-specific parameters - make sure there is at least one blank line before next item
 parameters = {
     "ex-gwt-henry-a": {
         "inflow": 5.7024,
@@ -50,18 +43,15 @@ parameters = {
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
-
 parameter_units = {
     "inflow": "$m^3/d$",
 }
 
 # Model units
-
 length_units = "centimeters"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nstp = 500  # Number of time steps
 perlen = 0.5  # Simulation time length ($d$)
@@ -82,23 +72,21 @@ botm = [top - k * delv for k in range(1, nlay + 1)]
 
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-10, 1e-6, 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_folder, inflow):
+# +
+def build_models(sim_folder, inflow):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -202,9 +190,7 @@ def build_model(sim_folder, inflow):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -214,109 +200,84 @@ def build_model(sim_folder, inflow):
     return sim
 
 
-# Function to write model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (6, 4)
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = list(parameters.keys())[idx]
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap():
+        sim_name = list(parameters.keys())[idx]
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    # get MODFLOW 6 concentration
-    conc = gwt.output.concentration().get_data()
+        # get MODFLOW 6 concentration
+        conc = gwt.output.concentration().get_data()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pxs.plot_array(conc, cmap="jet")
-    levels = [35 * f for f in [0.01, 0.1, 0.5, 0.9, 0.99]]
-    cs = pxs.contour_array(
-        conc, levels=levels, colors="w", linewidths=1.0, linestyles="-"
-    )
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("z position (m)")
-    plt.clabel(cs, fmt="%4.2f", fontsize=5)
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+        pxs.plot_array(conc, cmap="jet")
+        levels = [35 * f for f in [0.01, 0.1, 0.5, 0.9, 0.99]]
+        cs = pxs.contour_array(
+            conc, levels=levels, colors="w", linewidths=1.0, linestyles="-"
         )
-        fig.savefig(fpth)
-    return
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("z position (m)")
+        plt.clabel(cs, fmt="%4.2f", fontsize=5)
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
+            fig.savefig(fpth)
 
 
 def plot_results(sim, idx):
-    if config.plotModel:
-        plot_conc(sim, idx)
-    return
+    plot_conc(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    sim = build_model(key, **parameter_dict)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
+    sim = build_models(key, **parameter_dict)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# Scenario 1 - Classic henry problem
+scenario(0)
 
-
-def test_02():
-    scenario(1, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Henry Problem
-
-    # Scenario 1 - Classic henry problem
-
-    scenario(0)
-
-    # Scenario 2 - Modified Henry problem with half the inflow rate
-
-    scenario(1)
+# Scenario 2 - Modified Henry problem with half the inflow rate
+scenario(1)
+# -

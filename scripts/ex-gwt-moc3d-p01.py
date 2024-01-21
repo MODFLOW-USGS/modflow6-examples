@@ -1,46 +1,42 @@
-# ## One-Dimensional Steady Flow with Transport
+# ## One-dimensional steady flow with transport
 #
-# MOC3D Problem 1
+# This problem corresponds to the first problem presented in the MOC3D
+# report Konikow 1996, involving the transport of a dissolved constituent
+# in a steady, one-dimensional flow field. An analytical solution for this
+# problem is given by \cite{wexler1992}.  This example is simulated with the GWT Model in \mf, which receives flow information from a separate simulation with the GWF Model in \mf.  Results from the GWT Model are compared with the results from the \cite{wexler1992} analytical solution.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### One-Dimensional Steady Flow with Transport Problem Setup
-
-# Imports
-
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import analytical
-import config
-from figspecs import USGSFigure
-
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (5, 3)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwt-moc3dp1"
 
-# Scenario parameters - make sure there is at least one blank line before next item
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Scenario-specific parameters - make sure there is at least one blank line before next item
 parameters = {
     "ex-gwt-moc3d-p01a": {
         "longitudinal_dispersivity": 0.1,
@@ -66,7 +62,6 @@ parameters = {
 
 # Scenario parameter units - make sure there is at least one blank line before next item
 # add parameter_units to add units to the scenario parameter table
-
 parameter_units = {
     "longitudinal_dispersivity": "$cm$",
     "retardation_factor": "unitless",
@@ -74,12 +69,10 @@ parameter_units = {
 }
 
 # Model units
-
 length_units = "centimeters"
 time_units = "seconds"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -95,11 +88,161 @@ porosity = 0.1  # Porosity of mobile domain (unitless)
 total_time = 120.0  # Simulation time ($s$)
 source_concentration = 1.0  # Source concentration (unitless)
 initial_concentration = 0.0  # Initial concentration (unitless)
+# -
 
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
+
+
+# +
+class Wexler1d:
+    """
+    Analytical solution for 1D transport with inflow at a concentration of 1.
+    at x=0 and a third-type bound at location l.
+    Wexler Page 17 and Van Genuchten and Alves pages 66-67
+    """
+
+    def betaeqn(self, beta, d, v, l):
+        return beta / np.tan(beta) - beta**2 * d / v / l + v * l / 4.0 / d
+
+    def fprimebetaeqn(self, beta, d, v, l):
+        """
+        f1 = cotx - x/sinx2 - (2.0D0*C*x)
+
+        """
+        c = v * l / 4.0 / d
+        return 1.0 / np.tan(beta) - beta / np.sin(beta) ** 2 - 2.0 * c * beta
+
+    def fprime2betaeqn(self, beta, d, v, l):
+        """
+        f2 = -1.0D0/sinx2 - (sinx2-x*DSIN(x*2.0D0))/(sinx2*sinx2) - 2.0D0*C
+
+        """
+        c = v * l / 4.0 / d
+        sinx2 = np.sin(beta) ** 2
+        return (
+            -1.0 / sinx2
+            - (sinx2 - beta * np.sin(beta * 2.0)) / (sinx2 * sinx2)
+            - 2.0 * c
+        )
+
+    def solvebetaeqn(self, beta, d, v, l, xtol=1.0e-12):
+        from scipy.optimize import fsolve
+
+        t = fsolve(
+            self.betaeqn,
+            beta,
+            args=(d, v, l),
+            fprime=self.fprime2betaeqn,
+            xtol=xtol,
+            full_output=True,
+        )
+        result = t[0][0]
+        infod = t[1]
+        isoln = t[2]
+        msg = t[3]
+        if abs(result - beta) > np.pi:
+            raise Exception("Error in beta solution")
+        err = self.betaeqn(result, d, v, l)
+        fvec = infod["fvec"][0]
+        if isoln != 1:
+            print("Error in beta solve", err, result, d, v, l, msg)
+        return result
+
+    def root3(self, d, v, l, nval=1000):
+        b = 0.5 * np.pi
+        betalist = []
+        for i in range(nval):
+            b = self.solvebetaeqn(b, d, v, l)
+            err = self.betaeqn(b, d, v, l)
+            betalist.append(b)
+            b += np.pi
+        return betalist
+
+    def analytical(self, x, t, v, l, d, tol=1.0e-20, nval=5000):
+        sigma = 0.0
+        betalist = self.root3(d, v, l, nval=nval)
+        for i, bi in enumerate(betalist):
+            denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
+            x1 = (
+                bi
+                * (bi * np.cos(bi * x / l) + v * l / 2.0 / d * np.sin(bi * x / l))
+                / denom
+            )
+
+            denom = bi**2 + (v * l / 2.0 / d) ** 2
+            x2 = np.exp(-1 * bi**2 * d * t / l**2) / denom
+
+            sigma += x1 * x2
+            term1 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d)
+            conc = 1.0 - term1 * sigma
+            if i > 0:
+                diff = abs(conc - concold)
+                if np.all(diff < tol):
+                    break
+            concold = conc
+        return conc
+
+    def analytical2(self, x, t, v, l, d, e=0.0, tol=1.0e-20, nval=5000):
+        """
+        Calculate the analytical solution for one-dimension advection and
+        dispersion using the solution of Lapidus and Amundson (1952) and
+        Ogata and Banks (1961)
+
+        Parameters
+        ----------
+        x : float or ndarray
+            x position
+        t : float or ndarray
+            time
+        v : float or ndarray
+            velocity
+        l : float
+            length domain
+        d : float
+            dispersion coefficient
+        e : float
+            decay rate
+
+        Returns
+        -------
+        result : float or ndarray
+            normalized concentration value
+
+        """
+        u = v**2 + 4.0 * e * d
+        u = np.sqrt(u)
+        sigma = 0.0
+        denom = (u + v) / 2.0 / v - (u - v) ** 2.0 / 2.0 / v / (u + v) * np.exp(
+            -u * l / d
+        )
+        term1 = np.exp((v - u) * x / 2.0 / d) + (u - v) / (u + v) * np.exp(
+            (v + u) * x / 2.0 / d - u * l / d
+        )
+        term1 = term1 / denom
+        term2 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d - e * t)
+        betalist = self.root3(d, v, l, nval=nval)
+        for i, bi in enumerate(betalist):
+            denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
+            x1 = (
+                bi
+                * (bi * np.cos(bi * x / l) + v * l / 2.0 / d * np.sin(bi * x / l))
+                / denom
+            )
+
+            denom = bi**2 + (v * l / 2.0 / d) ** 2 + e * l**2 / d
+            x2 = np.exp(-1 * bi**2 * d * t / l**2) / denom
+
+            sigma += x1 * x2
+
+            conc = term1 - term2 * sigma
+            if i > 0:
+                diff = abs(conc - concold)
+                if np.all(diff < tol):
+                    break
+            concold = conc
+        return conc
 
 
 def get_sorption_dict(retardation_factor):
@@ -138,12 +281,10 @@ def get_decay_dict(decay_rate, sorption=False):
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -192,20 +333,13 @@ def build_mf6gwf(sim_folder):
     return sim
 
 
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-
-
-def build_mf6gwt(
-    sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate
-):
+def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, decay_rate):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 240, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -261,65 +395,48 @@ def build_mf6gwt(
     return sim
 
 
-def build_model(
-    sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
-):
-    sims = None
-    if config.buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(
-            sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
-        )
-        sims = (sim_mf6gwf, sim_mf6gwt)
-    return sims
+def build_models(sim_name, longitudinal_dispersivity, retardation_factor, decay_rate):
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(
+        sim_name, longitudinal_dispersivity, retardation_factor, decay_rate
+    )
+    return sim_mf6gwf, sim_mf6gwt
 
 
-# Function to write model files
+def write_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
 
 
-def write_model(sims, silent=True):
-    if config.writeModel:
-        sim_mf6gwf, sim_mf6gwt = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt = sims
+    success, buff = sim_mf6gwf.run_simulation(silent=silent)
+    assert success, buff
+    success, buff = sim_mf6gwt.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sims, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (5, 3)
 
 
 def plot_results_ct(
     sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
 ):
-    if config.plotModel:
-        print("Plotting C versus t model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        fs = USGSFigure(figure_type="graph", verbose=False)
-
+    _, sim_mf6gwt = sims
+    with styles.USGSPlot():
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = sim_mf6gwt.get_model("trans").obs.output.obs().data
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         alabel = ["ANALYTICAL", "", ""]
         mlabel = ["MODFLOW 6", "", ""]
         iskip = 5
@@ -330,7 +447,7 @@ def plot_results_ct(
             longitudinal_dispersivity * specific_discharge / retardation_factor
         )
         for i, x in enumerate([0.05, 4.05, 11.05]):
-            a1 = analytical.Wexler1d().analytical2(
+            a1 = Wexler1d().analytical2(
                 x,
                 atimes,
                 specific_discharge / retardation_factor,
@@ -348,9 +465,7 @@ def plot_results_ct(
                     idx_filter = atimes > 79
             elif idx > 0:
                 idx_filter = atimes > 0
-            axs.plot(
-                atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i]
-            )
+            axs.plot(atimes[idx_filter], a1[idx_filter], color="k", label=alabel[i])
             axs.plot(
                 simtimes[::iskip],
                 mf6gwt_ra[obsnames[i]][::iskip],
@@ -371,28 +486,24 @@ def plot_results_ct(
             axs.text(100, 0.5, "x=11.05")
         axs.legend()
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-ct{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fname = f"{sim_folder}-ct.png"
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
 def plot_results_cd(
     sims, idx, longitudinal_dispersivity, retardation_factor, decay_rate
 ):
-    if config.plotModel:
-        print("Plotting C versus x model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        fs = USGSFigure(figure_type="graph", verbose=False)
-
+    _, sim_mf6gwt = sims
+    with styles.USGSPlot():
         ucnobj_mf6 = sim_mf6gwt.trans.output.concentration()
 
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         alabel = ["ANALYTICAL", "", ""]
         mlabel = ["MODFLOW 6", "", ""]
         iskip = 5
@@ -403,7 +514,7 @@ def plot_results_cd(
         )
 
         for i, t in enumerate(ctimes):
-            a1 = analytical.Wexler1d().analytical2(
+            a1 = Wexler1d().analytical2(
                 x,
                 t,
                 specific_discharge / retardation_factor,
@@ -440,70 +551,52 @@ def plot_results_cd(
         axs.set_ylabel("Normalized Concentration (unitless)")
         plt.legend()
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-cd{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fname = f"{sim_folder}-cd.png"
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
-    sims = build_model(key, **parameter_dict)
-    write_model(sims, silent=silent)
-    success = run_model(sims, silent=silent)
-    if success:
+    sims = build_models(key, **parameter_dict)
+    if write:
+        write_models(sims, silent=silent)
+    if run:
+        run_models(sims, silent=silent)
+    if plot:
         plot_results_ct(sims, idx, **parameter_dict)
         plot_results_cd(sims, idx, **parameter_dict)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
+# -
 
+# +
+scenario(0)
+# -
 
-def test_02():
-    scenario(1, silent=False)
+# +
+scenario(1)
+# -
 
+# +
+scenario(2)
+# -
 
-def test_03():
-    scenario(2, silent=False)
-
-
-def test_04():
-    scenario(3, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulated Zero-Order Growth in a Uniform Flow Field
-
-    # Scenario 1 - description
-
-    scenario(0)
-
-    # Scenario 2 - description
-
-    scenario(1)
-
-    # Scenario 3 - description
-
-    scenario(2)
-
-    # Scenario 4 - description
-
-    scenario(3)
+# +
+scenario(3)
+# -

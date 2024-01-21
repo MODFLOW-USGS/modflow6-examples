@@ -1,112 +1,152 @@
 # Developing MODFLOW 6 examples
 
-This document describes how to set up an environment to use or develop the MODFLOW 6 example models.
+This document describes development procedures and conventions for the MODFLOW 6 example models.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Overview](#overview)
-- [Setup](#setup)
-  - [Install MODFLOW 6 and related programs](#install-modflow-6-and-related-programs)
-  - [Install Python dependencies](#install-python-dependencies)
-  - [Update FloPy](#update-flopy)
+- [Prerequisites](#prerequisites)
+  - [Create a Python environment](#create-a-python-environment)
+  - [Install MODFLOW programs](#install-modflow-programs)
+  - [Update FloPy classes](#update-flopy-classes)
 - [Running the examples](#running-the-examples)
-  - [Using `jupyter`](#using-jupyter)
-  - [Using `pytest`](#using-pytest)
-  - [Using `jupytext`](#using-jupytext)
+  - [Running with `pytest`](#running-with-pytest)
+  - [Running with `jupytext`](#running-with-jupytext)
+  - [Running with `jupyter`](#running-with-jupyter)
 - [Contributing examples](#contributing-examples)
 - [Releasing the examples](#releasing-the-examples)
-  - [Generate notebooks and tables](#generate-notebooks-and-tables)
-  - [Build examples documentation](#build-examples-documentation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview
 
-The examples are Python scripts managed with [`jupytext`](https://github.com/mwouts/jupytext). The Python files in `scripts/` are the ultimate source of truth. Data and notebooks are generated from the scripts. There are more examples than scripts: some of the scripts produce multiple examples.
+The example models in this repository are composed with FloPy in the Python files under `scripts/`. Notebooks are generated from these with [`jupytext`](https://github.com/mwouts/jupytext) for the [online documentation](https://modflow6-examples.readthedocs.io/en/stable/) and/or for use with `jupyter`. A small volume of supporting data live in files under `data/`.
 
-## Setup
+Scripts may contain one or more example scenarios. Each script creates one or more subdirectories of `examples/` to use as a workspace, one per example scenario. Internally, the scripts are structured similarly, proceeding through the following steps:
 
-This section lists steps to set up a development environment, build the examples from scripts, and finally build the examples documentation.
+1. Define & build models
+2. Write input files
+3. Run models
+4. Plot results
 
-- install MODFLOW 6 and related programs
-- Install Python dependencies
-- make sure FloPy is up to date
+The scripts parse environment variables to control several behaviors, all of which accept case-insensitive `true/false` strings:
 
-### Install MODFLOW 6 and related programs
+- `WRITE`: whether to write model input files to subdirectories of `examples/`
+- `RUN`: whether to run models
+- `PLOT`: whether to create plots of results
+- `PLOT_SHOW`: whether to show static plots (disabled by default when run with `pytest`)
+- `PLOT_SAVE`: whether to save static plots to `figures/`
+- `GIF`: whether to save GIFs to `figures/` (only relevant for a small subset of scripts)
 
-Install modeling programs using the `get-modflow` utility that is available from FloPy. From any directory, issue the following commands:
+If variables are not found when a script is run directly, behaviors are enabled by default. When scripts are run via `pytest`, by default plots are not shown (to avoid the need to manually close plot widgets).
 
-```commandline
+## Prerequisites
+
+To develop the examples one must first:
+
+- create a Python environment
+- install MODFLOW programs
+- update FloPy classes
+
+### Create a Python environment
+
+Several Python packages are required to run the example scripts. These are listed in `etc/requirements.pip.txt` and `etc/requirements.usgs.txt`. Once a Python environment has been created, e.g. with `venv` or Conda, dependencies can be installed with:
+
+```shell
+pip install -r etc/requirements.pip.txt
+pip install -r etc/requirements.usgs.txt
+```
+
+### Install MODFLOW programs
+
+Besides MODFLOW 6, the examples use a number of MODFLOW-related programs, discovered on the system `PATH`.
+
+With FloPy installed in the active Python environment, these can all be installed with:
+
+```shell
 get-modflow :
+```
+
+You will be prompted to select an install location &mdash; your virtual environment's bindir is a good place, as it is already on the system `PATH` and keeps things isolated.
+
+Typically one develops against the cutting edge of MF6 &mdash; this might entail adding a local development version of MF6 to the bindir as well. Alternatively, the MF6 nightly build can be installed with:
+
+```shell
 get-modflow --repo modflow6-nightly-build :
 ```
 
-The command will show a prompt to select the install location. Any location can be selected, as `get-modflow` will put the executables on your path (the notebooks expect binaries to be available on the path).
+See the [FloPy documentation](https://flopy.readthedocs.io/en/stable/md/get_modflow.html) for more info on the `get-modflow` utility.
 
-### Install Python dependencies
+### Update FloPy classes
 
-Several Python packages are required to create the MODFLOW 6 examples. These are listed in `etc/requirements.pip.txt` and `etc/requirements.usgs.txt`.
+FloPy and MODFLOW 6 versions must be kept in sync for FloPy to properly generate and consume MF6 input/output files. To update FloPy from some branch of the [MODFLOW 6 repository](https://github.com/MODFLOW-USGS/modflow6), for instance the `develop` branch:
 
-### Update FloPy
-
-It's important that FloPy is up-to-date with the latest changes to MODFLOW 6. The latest release of FloPy is always up to date with the latest release of MODFLOW 6.
-
-To manually update FloPy from some branch of the [official MODFLOW 6 repository](https://github.com/MODFLOW-USGS/modflow6):
-
-```commandline
-import flopy
-flopy.mf6.utils.generate_classes(owner="MODFLOW-USGS", branch="master", backup=True)
+```shell
+python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 ```
 
-The above is equivalent to calling the function with no arguments. Arguments may be substituted to select an alternative repository (e.g. your fork) or branch.
+The `--repo` argument can be used to select an alternative repository (e.g. your fork). See [the FloPy documentation](https://flopy.readthedocs.io/en/stable/md/generate_classes.html) for more info.
 
 ## Running the examples
 
-The examples can be run with Jupyter or with Pytest.
+The example scripts can be run directly from the `scripts/` directory, e.g. `python ex-gwf-twri.py`. The environment variables described above can be used to control their behavior. The examples can also be run with `pytest`, converted to notebooks and/or executed with `jupytext`, or run as notebooks with `jupyter`.
 
-### Using `jupyter`
+**Note**: notebooks are *not* versioned in this repository &mdash; the `scripts/` are the single source of truth.
 
-To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks/` directory.
+### Running with `pytest`
 
-### Using `pytest`
+The examples can be tested from the `autotest/` directory, either directly as scripts, or as notebooks.
 
-Pytest can be used to run all of the example scripts and models. The `pytest-xdist` plugin is a convenient way to run the scripts in parallel. Note that `pytest` must be invoked from the `etc/` directory, *not* from `scripts/`.
+When run via `pytest`, behaviors can be controlled with `pytest` CLI flags:
 
-To run example scripts in parallel with verbose output, and generate input files *without* running models:
+- `--init`: just build models and write input files, defaults false
+- `--no-write`: don't write models, defaults false
+- `--no-run`: don't run models, defaults false
+- `--plot`: enable plot creation, defaults false
+- `--show`: show plots, defaults false
+- `--no-save`: don't save static plots, defaults false
+- `--no-gif`: don't create/save gifs, defaults false
 
-```shell
-pytest -v -n auto ci_build_files.py
-```
+The last three only apply if `--plot` is enabled. Plotting is disabled by default to avoid having to manually close plot widgets while running tests.
 
-To run models, use `--run True`.
-
-To run in serial instead of parallel, omit `-n auto`.
-
-### Using `jupytext`
-
-The example scripts can be converted to notebooks with `jupytext`. For instance, from the project root, to generate and execute a notebook in `notebooks/`:
+For instance, to create model input files (without running models or plotting results, to save time):
 
 ```shell
-jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ipynb --execute
+pytest -v -n auto test_scripts.py --init
 ```
+
+### Running with `jupytext`
+
+To convert an example script to a notebook manually with `jupytext` (add `--execute` to run the notebook after conversion):
+
+```shell
+jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ipynb
+```
+
+### Running with `jupyter`
+
+To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks/` directory after notebooks have been created with `jupytext`.
 
 ## Contributing examples
 
-Adding a new example requires adding a new example script in the `scripts/` folder and adding a new LaTeX problem description in the `doc/sections/` folder. Then open a pull request from your fork of the repository.
+To add a new example:
+
+1. Add a new example script in the `scripts/` folder
+2. Add a new LaTeX description in the `doc/sections/` folder
+3. Ensure the script runs successfully and creates any expected files
+3. Open a pull request from your fork to the upstream repo's `develop` branch
 
 ## Releasing the examples
 
-A new release is automatically created whenever code is merged into the trunk branch of this repository. Steps to manually prepare for a release are listed below.
+GitHub Actions automatically creates a new release whenever code is merged into the `master` branch of this repository. Steps to prepare for a release include:
 
-1. Generate notebooks and tables
-2. Build examples documentation
-
-### Generate notebooks and tables
-
-The example scripts must be converted into jupyter notebooks using `jupytext`, then latex tables generated from specially formatted code/comments. Run `process-scripts.py` in the `scripts/` directory to do this.
-
-### Build examples documentation
-
-If the figures and tables were generated correctly, then it should be possible to build the examples PDF document. The PDF can be created by processing `doc/mf6examples.tex` with `pdftex` or a similar tool.
+1. Run the examples to generate model input files, disabling model runs and plots &mdash; e.g. from the `autotest/` directory, run `pytest -v -n auto test_scripts.py`. **Note**: if model runs are enabled, the size of the `examples/` directory will balloon from double-digit MB to several GB. We only distribute input files, not output files.
+2. Generate notebooks and tables &mdash; from the `scripts/` directory, run `process-scripts.py` to generate LaTeX tables for the documentation PDF from specially formatted code/comments in the example scripts.
+3. Build the documentation PDF with multiple passes from e.g. `pdflatex` and `bibtex` &mdash; for instance, from the `doc/` directory:
+    1. `pdflatex mf6examples.tex`
+    2. `bibtex mf6examples`
+    3. `pdflatex mf6examples.tex`
+    4. `pdflatex mf6examples.tex`
+4. Zip up the model input files.
+5. Release the documentation PDF and model files archive.

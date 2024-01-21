@@ -8,10 +8,13 @@
 # package model.
 #
 
-# ### Capture Fraction Problem Setup
+# ### Initial setup
 #
-# Imports
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
 import pathlib as pl
 import shutil
@@ -22,49 +25,49 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import modflowapi
 import numpy as np
+import pooch
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties specific to the
-
-figure_size = (6, 6)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-capture"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "seconds"
 
 # Load the bottom, hydraulic conductivity, and idomain arrays
-
-bottom = np.loadtxt(
-    os.path.join("..", "data", sim_name, "bottom.txt"),
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+    known_hash="md5:201758a5b7febb0390b8b52e634be27f",
 )
-k11 = np.loadtxt(
-    os.path.join("..", "data", sim_name, "hydraulic_conductivity.txt"),
+bottom = np.loadtxt(pth)
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/hydraulic_conductivity.txt",
+    known_hash="md5:6c78564ba92e850d7d51d6e957b8a3ff",
 )
-idomain = np.loadtxt(
-    os.path.join("..", "data", sim_name, "idomain.txt"),
-    dtype=np.int32,
+k11 = np.loadtxt(pth)
+pth = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+    known_hash="md5:435d4490adff7a35d1d4928661e45d81",
 )
+idomain = np.loadtxt(pth, dtype=np.int32)
 
-
-# Table Capture Fraction Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 40  # Number of rows
@@ -77,15 +80,10 @@ strt = 45.0  # Starting head ($m$)
 recharge = 1.60000000e-09  # Recharge rate ($m/s$)
 cf_q = -1e-3  # Perturbation flux ($m/s$)
 
-# Static temporal data used by TDIS file
-
+# Temporal discretization
 tdis_ds = ((1.0, 1.0, 1),)
 
-
-# ### Create Capture Fraction Model Boundary Conditions
-
 # Well boundary conditions
-
 wel_spd = {
     0: [
         [0, 8, 15, -0.00820000],
@@ -98,7 +96,6 @@ wel_spd = {
 }
 
 # Constant head boundary conditions
-
 chd_spd = {
     0: [
         [0, 39, 5, 16.90000000],
@@ -115,7 +112,6 @@ chd_spd = {
 }
 
 # River boundary conditions
-
 rbot = np.linspace(20.0, 10.25, num=nrow)
 rstage = np.linspace(20.1, 11.25, num=nrow)
 riv_spd = []
@@ -124,98 +120,85 @@ for idx, (s, b) in enumerate(zip(rstage, rbot)):
 riv_spd = {0: riv_spd}
 
 # Solver parameters
-
 nouter = 100
 ninner = 25
 hclose = 1e-9
 rclose = 1e-3
 
-
 # Create mapping array for the capture zone analysis
 imap = idomain.copy()
 for _k, i, j, _h in chd_spd[0]:
     imap[i, j] = 0
+# -
 
-
-# ### Functions to build, write, run, and plot the MODFLOW 6 Capture Zone model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model():
-    if config.buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name,
-            sim_ws=sim_ws,
-            exe_name="mf6",
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            linear_acceleration="BICGSTAB",
-            outer_maximum=nouter,
-            outer_dvclose=hclose * 10.0,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim,
-            modelname=sim_name,
-            newtonoptions="NEWTON UNDER_RELAXATION",
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=bottom,
-            idomain=idomain,
-        )
+# +
+def build_models():
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=sim_name,
+        sim_ws=sim_ws,
+        exe_name="mf6",
+    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        linear_acceleration="BICGSTAB",
+        outer_maximum=nouter,
+        outer_dvclose=hclose * 10.0,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim,
+        modelname=sim_name,
+        newtonoptions="NEWTON UNDER_RELAXATION",
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=bottom,
+        idomain=idomain,
+    )
 
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfriv(gwf, stress_period_data=riv_spd, pname="RIV-1")
-        flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, pname="WEL-1")
-        flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
-        flopy.mf6.ModflowGwfwel(
-            gwf,
-            maxbound=1,
-            pname="CF-1",
-            filename=f"{sim_name}.cf.wel",
-        )
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            printrecord=[
-                ("BUDGET", "ALL"),
-            ],
-        )
-        return sim
-    else:
-        return None
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfriv(gwf, stress_period_data=riv_spd, pname="RIV-1")
+    flopy.mf6.ModflowGwfwel(gwf, stress_period_data=wel_spd, pname="WEL-1")
+    flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+    flopy.mf6.ModflowGwfwel(
+        gwf,
+        maxbound=1,
+        pname="CF-1",
+        filename=f"{sim_name}.cf.wel",
+    )
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        printrecord=[
+            ("BUDGET", "ALL"),
+        ],
+    )
+    return sim
 
 
-# Function to write MODFLOW 6 Capture Fraction model files
-
-
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
-
-
-# Function to solve the system of equations to convergence
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
 def capture_fraction_iteration(mobj, q, inode=None):
@@ -231,9 +214,6 @@ def capture_fraction_iteration(mobj, q, inode=None):
     qriv = get_streamflow(mobj)
     mobj.finalize()
     return qriv
-
-
-# Function to update the Capture Fraction Package
 
 
 def update_wel_pak(mobj, inode, q):
@@ -254,73 +234,70 @@ def update_wel_pak(mobj, inode, q):
     mobj.set_value(tag, bound)
 
 
-# Function to get the streamflow from memory
-
-
 def get_streamflow(mobj):
     tag = mobj.get_var_address("SIMVALS", sim_name, "RIV-1")
     return mobj.get_value(tag).sum()
 
 
-# Function to run the Capture Fraction model.
-# True is returned if the model runs successfully
+@timed
+def run_models():
+    soext = ".so"
+    if sys.platform.lower() == "win32":
+        soext = ".dll"
+    if sys.platform.lower() == "darwin":
+        soext = ".dylib"
+    libmf6_path = pl.Path(shutil.which("mf6")).parent / f"libmf6{soext}"
+    sim_ws = os.path.join(workspace, sim_name)
+    mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
+    qbase = capture_fraction_iteration(mf6, cf_q)
+
+    # create capture fraction array
+    capture = np.zeros((nrow, ncol), dtype=float)
+
+    # iterate through each active cell
+    ireduced_node = -1
+    for irow in range(nrow):
+        for jcol in range(ncol):
+            # skip inactive cells
+            if imap[irow, jcol] < 1:
+                continue
+
+            # increment reduced node number
+            ireduced_node += 1
+
+            # calculate the perturbed river flow
+            qriv = capture_fraction_iteration(mf6, cf_q, inode=ireduced_node)
+
+            # add the value to the capture array
+            capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
+
+    # save the capture fraction array
+    fpth = os.path.join(sim_ws, "capture.npz")
+    np.savez_compressed(fpth, capture=capture)
+
+
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
 
-
-@config.timeit
-def run_model():
-    success = True
-    if config.runModel:
-        libmf6_path = (
-            pl.Path(shutil.which("mf6")).parent / f"libmf6{config.soext}"
-        )
-        sim_ws = os.path.join(ws, sim_name)
-        mf6 = modflowapi.ModflowApi(libmf6_path, working_directory=sim_ws)
-        qbase = capture_fraction_iteration(mf6, cf_q)
-
-        # create capture fraction array
-        capture = np.zeros((nrow, ncol), dtype=float)
-
-        # iterate through each active cell
-        ireduced_node = -1
-        for irow in range(nrow):
-            for jcol in range(ncol):
-                # skip inactive cells
-                if imap[irow, jcol] < 1:
-                    continue
-
-                # increment reduced node number
-                ireduced_node += 1
-
-                # calculate the perturbed river flow
-                qriv = capture_fraction_iteration(
-                    mf6, cf_q, inode=ireduced_node
-                )
-
-                # add the value to the capture array
-                capture[irow, jcol] = (qriv - qbase) / abs(cf_q)
-
-        # save the capture fraction array
-        fpth = os.path.join(sim_ws, "capture.npz")
-        np.savez_compressed(fpth, capture=capture)
-
-    return success
-
-
-# Function to plot the Capture Fraction model results with heads in each layer.
-#
+# +
+# Figure properties
+figure_size = (6, 6)
 
 
 def plot_results(silent=True):
-    if config.plotModel:
-        verbose = not silent
-        if silent:
-            verbosity_level = 0
-        else:
-            verbosity_level = 1
+    if not plot:
+        return
 
-        fs = USGSFigure(figure_type="map", verbose=verbose)
-        sim_ws = os.path.join(ws, sim_name)
+    if silent:
+        verbosity_level = 0
+    else:
+        verbosity_level = 1
+
+    with styles.USGSMap():
+        sim_ws = os.path.join(workspace, sim_name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -353,7 +330,7 @@ def plot_results(silent=True):
         mm.plot_ibound()
         ax.set_ylabel("y-coordinate, in feet")
         ax.set_xlabel("x-coordinate, in feet")
-        fs.remove_edge_ticks(ax)
+        styles.remove_edge_ticks(ax)
 
         ax = fig.add_subplot(gs[0, 1])
         ax.set_xlim(0, 1)
@@ -404,56 +381,38 @@ def plot_results(silent=True):
             mew=0.5,
             label="Inactive cell",
         )
-        fs.graph_legend(
+        styles.graph_legend(
             ax,
             ncol=1,
             frameon=False,
             loc="upper center",
         )
 
-        # save figure
-        if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}-01{config.figure_ext}"
-            )
-            fig.savefig(fpth)
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(os.path.join("..", "figures", f"{sim_name}-01.png"))
 
 
-# Function that wraps all of the steps for the Streamflow Capture model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model, and
-# 3. run_model
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(silent=True):
-    sim = build_model()
-
-    write_model(sim, silent=silent)
-
-    success = run_model()
-
-    assert success, f"could not run...{sim_name}"
-
-
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(silent=False)
-    plot_results(silent=False)
+# +
+def scenario(silent=True):
+    sim = build_models()
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models()
 
 
-# nosetest end
+scenario()
 
-if __name__ == "__main__":
-    # ### Capture Zone Simulation
-    #
-    #  Capture zone examples using the MODFLOW API with the Freyberg (1988) model
-
-    simulation()
-
-    # Simulated streamflow capture fraction map for the Freyberg (1988) groundwater
-    # flow model.
-
+if plot:
+    # Simulated streamflow capture fraction map for the Freyberg (1988) groundwater flow model.
     plot_results()
+# -

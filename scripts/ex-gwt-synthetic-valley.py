@@ -1,16 +1,15 @@
 # ## Synthetic Valley Problem
 #
 # This problem is described in Hughes and others (2023).
-#
-#
 
-# ### Synthetic Valley Problem
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, read settings from environment variables, and define some general utilities.
 
+# +
 import os
 import pathlib as pl
-import sys
+from pprint import pformat
 
 import flopy
 import flopy.plot.styles as styles
@@ -18,102 +17,126 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
-from flopy.discretization import StructuredGrid, VertexGrid
+import pooch
+import shapely
+from flopy.discretization import VertexGrid
 from flopy.utils.triangle import Triangle
 from flopy.utils.voronoi import VoronoiGrid
 from matplotlib import colors
+from modflow_devtools.misc import get_env, timed
 from shapely.geometry import LineString, Polygon
 
-# Append to system path to include the common subdirectory
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 
-sys.path.append(os.path.join("..", "common"))
+# Groundwater 2023 utilities
 
-# Import common functionality
-
-import config
-from groundwater2023_utils import (
-    circle_function,
-    densify_geometry,
-    geometries,
-    string2geom,
-)
-
-# Set figure properties specific to the example
-
-two_panel_figsize = (17.15 / 2.541, 0.8333 * 17.15 / 2.541)
-one_panel_figsize = (8.25 / 2.541, 13.25 / 2.541)
-six_panel_figsize = (17.15 / 2.541, 1.4 * 0.8333 * 17.15 / 2.541)
-
-# set figure element defaults
-
-levels = np.arange(10, 110, 10)
-contour_color = "black"
-contour_style = "--"
-sv_contour_dict = {
-    "linewidths": 0.5,
-    "colors": contour_color,
-    "linestyles": contour_style,
+geometries = {
+    "sv_boundary": """0.0 0.0
+    0.0 20000.0
+    12500.0 20000.0
+    12500.0 0.0""",
+    "sv_river": """4250.0 8750.0 
+    4250.0 0.0""",
+    "sv_river_box": """3500.0 0.0
+    3500.0 9500.0
+    5000.0 9500.0
+    5000.0 0.0""",
+    "sv_wells": """7250. 17250.
+    7750. 2750.
+    2750 3750.""",
+    "sv_lake": """1500. 18500.
+    3500. 18500.
+    3500. 15500.
+    4000. 15500.
+    4000. 14500.
+    4500. 14500.
+    4500. 12000.
+    2500. 12000.
+    2500. 12500.
+    2000. 12500.
+    2000. 14000.
+    1500. 14000.
+    1500. 15000.
+    1000. 15000.
+    1000. 18000.
+    1500. 18000.""",
 }
-sv_contour_dict = {
-    "linewidths": 0.5,
-    "colors": contour_color,
-    "linestyles": contour_style,
-}
-sv_gwt_contour_dict = {
-    "linewidths": 0.75,
-    "colors": contour_color,
-    "linestyles": contour_style,
-}
-contour_label_dict = {
-    "linewidth": 0.5,
-    "color": contour_color,
-    "linestyle": contour_style,
-}
-contour_gwt_label_dict = {
-    "linewidth": 0.75,
-    "color": contour_color,
-    "linestyle": contour_style,
-}
-clabel_dict = {
-    "inline": True,
-    "fmt": "%1.0f",
-    "fontsize": 6,
-    "inline_spacing": 0.5,
-}
-font_dict = {"fontsize": 5, "color": "black"}
-grid_dict = {"lw": 0.25, "color": "0.5"}
-arrowprops = dict(
-    arrowstyle="-",
-    edgecolor="red",
-    lw=0.5,
-    shrinkA=0.15,
-    shrinkB=0.15,
-)
-river_dict = {"color": "blue", "linestyle": "-", "linewidth": 1}
 
-lake_cmap = colors.ListedColormap(["cyan"])
-clay_cmap = colors.ListedColormap(["brown"])
 
-# Base simulation and model name and workspace
+def string2geom(geostring, conversion=None):
+    if conversion is None:
+        multiplier = 1.0
+    else:
+        multiplier = float(conversion)
+    res = []
+    for line in geostring.split("\n"):
+        line = line.strip()
+        line = line.split(" ")
+        x = float(line[0]) * multiplier
+        y = float(line[1]) * multiplier
+        res.append((x, y))
+    return res
 
-ws = config.base_ws
+
+def densify_geometry(line, step, keep_internal_nodes=True):
+    xy = []  # list of tuple of coordinates
+    lines_strings = []
+    if keep_internal_nodes:
+        for idx in range(1, len(line)):
+            lines_strings.append(shapely.geometry.LineString(line[idx - 1 : idx + 1]))
+    else:
+        lines_strings = [shapely.geometry.LineString(line)]
+
+    for line_string in lines_strings:
+        length_m = line_string.length  # get the length
+        for distance in np.arange(0, length_m + step, step):
+            point = line_string.interpolate(distance)
+            xy_tuple = (point.x, point.y)
+            if xy_tuple not in xy:
+                xy.append(xy_tuple)
+        # make sure the end point is in xy
+        if keep_internal_nodes:
+            xy_tuple = line_string.coords[-1]
+            if xy_tuple not in xy:
+                xy.append(xy_tuple)
+
+    return xy
+
+
+def circle_function(center=(0, 0), radius=1.0, dtheta=10.0):
+    angles = np.arange(0.0, 360.0, dtheta) * np.pi / 180.0
+    xpts = center[0] + np.cos(angles) * radius
+    ypts = center[1] + np.sin(angles) * radius
+    return np.array([(x, y) for x, y in zip(xpts, ypts)])
+
+
+# Example name and base workspace
 example_name = "ex-gwt-synthetic-valley"
+workspace = pl.Path("../examples")
 
 # Conversion factors
-
 ft2m = 1.0 / 3.28081
 ft3tom3 = 1.0 * ft2m * ft2m * ft2m
 ftpd2cmpy = 1000.0 * 365.25 * ft2m
 mpd2cmpy = 100.0 * 365.25
 mpd2inpy = 12.0 * 365.25 * 3.28081
+# -
 
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 pertim = 10957.5  # Simulation length ($d$)
 ntransport_steps = 60  # Number of transport time steps
 nlay = 6  # Number of layers
@@ -135,9 +158,10 @@ alpha_th = 7.5  # Transverse horizontal dispersivity ($m$)
 porosity = 0.2  # Aquifer porosity (unitless)
 confining_porosity = 0.4  # Confining unit porosity (unitless)
 
-# build voronoi grid
+# -
 
 # +
+# voronoi grid properties
 maximum_area = 150.0 * 150.0
 well_dv = 300.0
 boundary_refinement = 100.0
@@ -207,12 +231,31 @@ voronoi_grid = VertexGrid(**gridprops, nlay=1, idomain=idomain_vor)
 
 # +
 # load raster data files
-raster_path = pl.Path(config.data_ws) / example_name
-kaq = flopy.utils.Raster.load(raster_path / "k_aq_SI.tif")
-kclay = flopy.utils.Raster.load(raster_path / "k_clay_SI.tif")
-top_base = flopy.utils.Raster.load(raster_path / "top_SI.tif")
-bot = flopy.utils.Raster.load(raster_path / "bottom_SI.tif")
-lake_location = flopy.utils.Raster.load(raster_path / "lake_location_SI.tif")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_aq_SI.tif",
+    known_hash="md5:d233e5c393ab6c029c63860d73818856",
+)
+kaq = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_clay_SI.tif",
+    known_hash="md5:a08999c37f42b35884468e4ef896d5f9",
+)
+kclay = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/top_SI.tif",
+    known_hash="md5:781155bdcc2b9914e1cad6b10de0e9c7",
+)
+top_base = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bottom_SI.tif",
+    known_hash="md5:00b4a39fbf5180e65c0367cdb6f15c93",
+)
+bot = flopy.utils.Raster.load(fname)
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/lake_location_SI.tif",
+    known_hash="md5:38600d6f0eef7c033ede278252dc6343",
+)
+lake_location = flopy.utils.Raster.load(fname)
 # -
 
 # +
@@ -224,7 +267,6 @@ top_range = (0, 20)
 top_levels = np.arange(0, 25, 5)
 head_range = (-1, 5)
 head_levels = np.arange(1, head_range[1] + 1, 1)
-
 extent = voronoi_grid.extent
 # -
 
@@ -313,9 +355,7 @@ sfr_slope = -0.0002
 cum_dist = np.zeros(sfr_nodes.shape, dtype=float)
 cum_dist[0] = 0.5 * sfr_lengths[0]
 for idx in range(1, sfr_nodes.shape[0]):
-    cum_dist[idx] = cum_dist[idx - 1] + 0.5 * (
-        sfr_lengths[idx - 1] + sfr_lengths[idx]
-    )
+    cum_dist[idx] = cum_dist[idx - 1] + 0.5 * (sfr_lengths[idx - 1] + sfr_lengths[idx])
 sfr_bot = b0 + sfr_slope * cum_dist
 sfr_conn = []
 for idx, node in enumerate(sfr_nodes):
@@ -328,9 +368,7 @@ for idx, node in enumerate(sfr_nodes):
 
 # <rno> <cellid(ncelldim)> <rlen> <rwid> <rgrd> <rtp> <rbth> <rhk> <man> <ncon> <ustrf> <ndv>
 sfrpak_data = []
-for idx, (cellid, rlen, rtp) in enumerate(
-    zip(gwf_nodes, sfr_lengths, sfr_bot)
-):
+for idx, (cellid, rlen, rtp) in enumerate(zip(gwf_nodes, sfr_lengths, sfr_bot)):
     sfr_plt_array[cellid] = 1
     sfrpak_data.append(
         (
@@ -409,27 +447,23 @@ welspd = [
 ]
 # -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
-# recharge is the only variable
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
         exe_name="mf6",
         continue_=True,
     )
-    tdis = flopy.mf6.ModflowTdis(
-        sim, time_units="days", perioddata=((pertim, 1, 1.0),)
-    )
+    tdis = flopy.mf6.ModflowTdis(sim, time_units="days", perioddata=((pertim, 1, 1.0),))
     ims = flopy.mf6.ModflowIms(
         sim,
         print_option="all",
@@ -472,12 +506,8 @@ def build_mf6gwf(sim_folder):
         ],
     )
     rch = flopy.mf6.ModflowGwfrcha(gwf, recharge=rainfall)
-    evt = flopy.mf6.ModflowGwfevta(
-        gwf, surface=top_vg, rate=evaporation, depth=1.0
-    )
-    wel = flopy.mf6.ModflowGwfwel(
-        gwf, stress_period_data=welspd, boundnames=True
-    )
+    evt = flopy.mf6.ModflowGwfevta(gwf, surface=top_vg, rate=evaporation, depth=1.0)
+    wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=welspd, boundnames=True)
     drn = flopy.mf6.ModflowGwfdrn(
         gwf,
         auxiliary=["depth"],
@@ -525,7 +555,7 @@ def build_mf6gwf(sim_folder):
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -600,50 +630,88 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_model(sim_name):
-    sims = None
-    if config.buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name)
-        sim_mf2005 = None  # build_mf2005(sim_name)
-        sim_mt3dms = None  # build_mt3dms(sim_name, sim_mf2005)
-        sims = (sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms)
-    return sims
+def build_models(sim_name):
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(sim_name)
+    sim_mf2005 = None  # build_mf2005(sim_name)
+    sim_mt3dms = None  # build_mt3dms(sim_name, sim_mf2005)
+    return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
-# Function to write model files
+def write_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
 
 
-def write_model(sims, silent=True):
-    if config.writeModel:
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+# +
+# Figure properties
+two_panel_figsize = (17.15 / 2.541, 0.8333 * 17.15 / 2.541)
+one_panel_figsize = (8.25 / 2.541, 13.25 / 2.541)
+six_panel_figsize = (17.15 / 2.541, 1.4 * 0.8333 * 17.15 / 2.541)
+levels = np.arange(10, 110, 10)
+contour_color = "black"
+contour_style = "--"
+sv_contour_dict = {
+    "linewidths": 0.5,
+    "colors": contour_color,
+    "linestyles": contour_style,
+}
+sv_contour_dict = {
+    "linewidths": 0.5,
+    "colors": contour_color,
+    "linestyles": contour_style,
+}
+sv_gwt_contour_dict = {
+    "linewidths": 0.75,
+    "colors": contour_color,
+    "linestyles": contour_style,
+}
+contour_label_dict = {
+    "linewidth": 0.5,
+    "color": contour_color,
+    "linestyle": contour_style,
+}
+contour_gwt_label_dict = {
+    "linewidth": 0.75,
+    "color": contour_color,
+    "linestyle": contour_style,
+}
+clabel_dict = {
+    "inline": True,
+    "fmt": "%1.0f",
+    "fontsize": 6,
+    "inline_spacing": 0.5,
+}
+font_dict = {"fontsize": 5, "color": "black"}
+grid_dict = {"lw": 0.25, "color": "0.5"}
+arrowprops = dict(
+    arrowstyle="-",
+    edgecolor="red",
+    lw=0.5,
+    shrinkA=0.15,
+    shrinkB=0.15,
+)
+river_dict = {"color": "blue", "linestyle": "-", "linewidth": 1}
+lake_cmap = colors.ListedColormap(["cyan"])
+clay_cmap = colors.ListedColormap(["brown"])
 
 
-@config.timeit
-def run_model(sims, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms = sims
-        print("Running mf6gwf model...")
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        print("Running mf6gwt model...")
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Functions to plot the model results
 def plot_wells(ax=None, ms=None):
     if ax is None:
         ax = plt.gca()
@@ -711,7 +779,6 @@ def set_ticklabels(
         ax.set_xlabel("x position (km)")
     if not skip_ylabel:
         ax.set_ylabel("y position (km)")
-    return
 
 
 def plot_well_labels(ax):
@@ -725,7 +792,6 @@ def plot_well_labels(ax):
             textcoords="offset points",
             arrowprops=arrowprops,
         )
-    return
 
 
 def plot_feature_labels(ax):
@@ -751,16 +817,13 @@ def plot_feature_labels(ax):
         rotation=90,
     )
     plot_well_labels(ax)
-    return
 
 
 def plot_results(sims, idx):
-    if config.plotModel:
-        print("Plotting model results...")
-        plot_river_mapping(sims, idx)
-        plot_head_results(sims, idx)
-        plot_conc_results(sims, idx)
-    return
+    print("Plotting model results...")
+    plot_river_mapping(sims, idx)
+    plot_head_results(sims, idx)
+    plot_conc_results(sims)
 
 
 def plot_river_mapping(sims, idx):
@@ -853,11 +916,12 @@ def plot_river_mapping(sims, idx):
             handletextpad=0.3,
         )
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
-            fname = f"{sim_folder}-river-discretization{config.figure_ext}"
-            fig.savefig(os.path.join(ws, "..", "figures", fname))
+            fname = f"{sim_folder}-river-discretization.png"
+            fig.savefig(os.path.join(workspace, "..", "figures", fname))
 
 
 def plot_head_results(sims, idx):
@@ -1032,14 +1096,15 @@ def plot_head_results(sims, idx):
             handletextpad=0.3,
         )
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
-            fname = f"{sim_folder}-head{config.figure_ext}"
-            fig.savefig(os.path.join(ws, "..", "figures", fname))
+            fname = f"{sim_folder}-head.png"
+            fig.savefig(os.path.join(workspace, "..", "figures", fname))
 
 
-def plot_conc_results(sims, idx):
+def plot_conc_results(sims):
     print("Plotting gwt model results...")
     _, sim_mf6gwt, _, _ = sims
     sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
@@ -1130,9 +1195,7 @@ def plot_conc_results(sims, idx):
         )
         ax.axhline(xy0[0], color="cyan", lw=0.5, label="Lake")
         ax.axhline(xy0[0], **river_dict, label="River")
-        ax.axhline(
-            xy0[0], **contour_gwt_label_dict, label="Concentration (mg/L)"
-        )
+        ax.axhline(xy0[0], **contour_gwt_label_dict, label="Concentration (mg/L)")
         ax.plot(
             xy0,
             xy0,
@@ -1154,40 +1217,32 @@ def plot_conc_results(sims, idx):
             frameon=False,
         )
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-conc{config.figure_ext}"
-            fig.savefig(os.path.join(ws, "..", "figures", fname))
+            fname = f"{sim_folder}-conc.png"
+            fig.savefig(os.path.join(workspace, "..", "figures", fname))
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
+    sim = build_models(example_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Simulate Synthetic Valley Problem (Hughes and others 2023)
-
-    # Plot showing MODFLOW 6 results
-
-    scenario(0)
+scenario(0)
+# -

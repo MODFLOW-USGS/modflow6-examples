@@ -1,6 +1,5 @@
 """
-Process MODFLOW 6 examples to build jupyter notebooks,
-summary tables for the LaTeX document, and markdown tables for ReadtheDocs.
+Build LaTeX and Markdown tables for the PDF documentation and ReadtheDocs.
 
 The files that are processed are the example python scripts (expy) and
 the example directories (exdir) that are created from running those scripts.
@@ -51,26 +50,20 @@ Flag1 Flag2    Arg1 Arg2  Description
     >>> process-scripts.py -k *-maw-*  # process all MAW example problems.
 """
 import ast
+import fnmatch
 import os
 import re
 import sys
-import fnmatch
 
 import flopy
-
-sys.path.append(os.path.join("..", "common"))
-import build_table as bt
+from modflow_devtools.latex import get_footer, get_header
 
 # path to the example files
 ex_pth = os.path.join("..", "examples")
 
 # only process python files starting with ex_
 files = sorted(
-    [
-        file
-        for file in os.listdir()
-        if file.endswith(".py") and file.startswith("ex-")
-    ]
+    [file for file in os.listdir() if file.endswith(".py") and file.startswith("ex-")]
 )
 
 only_process_ex = []
@@ -82,60 +75,6 @@ def _replace_quotes(proc_str):
     return proc_str
 
 
-def make_notebooks():
-    nb_pth = os.path.join("..", "notebooks")
-    if not os.path.isdir(nb_pth):
-        os.makedirs(nb_pth)
-
-    tpth = "raw.py"
-    # converts python scripts to jupyter notebooks
-    for file in files:
-        # do a little processing
-        with open(file) as f:
-            lines = f.read().splitlines()
-        f = open(tpth, "w")
-        skip = False
-        modifyIndent = 0
-        for idx, line in enumerate(lines):
-            # exclude if __name__ == "main"
-            if "if __name__" in line:
-                modifyIndent = len(lines[idx + 1]) - len(
-                    lines[idx + 1].lstrip(" ")
-                )
-                continue
-
-            # exclude nosetest functions
-            if "# nosetest" in line.lower():
-                if skip:
-                    skip = False
-                    continue
-                else:
-                    skip = True
-            if skip:
-                continue
-            f.write(f"{line[modifyIndent:]}\n")
-        f.close()
-
-        # convert temporary python file to a notebook
-        basename = os.path.splitext(file)[0] + ".ipynb"
-        opth = os.path.join(nb_pth, basename)
-        cmd = (
-            "jupytext",
-            "--from py",
-            "--to ipynb",
-            "--update",
-            "-o",
-            opth,
-            tpth,
-        )
-        print(" ".join(cmd))
-        os.system(" ".join(cmd))
-
-        # remove temporary file
-        if os.path.isfile(tpth):
-            os.remove(tpth)
-
-
 def table_standard_header(caption, label):
     col_widths = (
         0.5,
@@ -145,9 +84,7 @@ def table_standard_header(caption, label):
         "Parameter",
         "Value",
     )
-    return bt.get_header(
-        caption, label, headings, col_widths=col_widths, center=False
-    )
+    return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_scenario_header(caption, label):
@@ -163,13 +100,11 @@ def table_scenario_header(caption, label):
         "Parameter",
         "Value",
     )
-    return bt.get_header(
-        caption, label, headings, col_widths=col_widths, center=False
-    )
+    return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_footer():
-    return bt.get_footer()
+    return get_footer()
 
 
 def make_tables():
@@ -179,9 +114,7 @@ def make_tables():
 
     for file in files:
         print(f"processing...'{file}'")
-        basename = os.path.splitext(os.path.basename(file))[0].replace(
-            "_", "-"
-        )
+        basename = os.path.splitext(os.path.basename(file))[0].replace("_", "-")
         # do a little processing
         with open(file) as f:
             txt = f.read()
@@ -239,9 +172,7 @@ def make_tables():
                         except:
                             units = " (unknown)"
                     if len(table_line) > 0:
-                        table_line += "\t{}{} & {}".format(
-                            text_to_write, units, value
-                        )
+                        table_line += "\t{}{} & {}".format(text_to_write, units, value)
                     else:
                         table_line = "\t& & {}{} & {}".format(
                             text_to_write, units, value
@@ -264,7 +195,7 @@ def make_tables():
         table_text = []
         table_value = []
         for lineno, line in enumerate(lines, 1):
-            if line.lower().startswith("# table"):
+            if line.lower().startswith("# model parameters"):
                 scanning_table = True
                 continue
             if scanning_table:
@@ -394,14 +325,11 @@ def get_examples_dict(verbose=False):
                 if file_name.lower() == "mfsim.nam":
                     if verbose:
                         msg = (
-                            "  Found MODFLOW 6 simulation "
-                            + f"name file: {file_name}"
+                            "  Found MODFLOW 6 simulation " + f"name file: {file_name}"
                         )
                         print(msg)
                     print(f"Using flopy to load {dirName}")
-                    sim = flopy.mf6.MFSimulation.load(
-                        sim_ws=dirName, verbosity_level=0
-                    )
+                    sim = flopy.mf6.MFSimulation.load(sim_ws=dirName, verbosity_level=0)
                     sim_paks = []
                     for pak in sim.sim_package_list:
                         pak_type = pak.package_abbr
@@ -458,9 +386,7 @@ def build_md_tables(ex_dict):
     for ex_name in ex_paks.keys():
         for ex_root in ex_order:
             if ex_root in ex_name:
-                pak_link[ex_name] = "[{}](_examples/{}.html)".format(
-                    ex_name, ex_root
-                )
+                pak_link[ex_name] = "[{}](_examples/{}.html)".format(ex_name, ex_root)
                 break
         if ex_name not in list(pak_link.keys()):
             pak_link[ex_name] = ex_name
@@ -643,9 +569,7 @@ def build_tex_tables(ex_dict):
     for idx, ex in enumerate(ex_order):
         for key, d in ex_dict.items():
             if ex in key:
-                ex_number = [idx + 1] + [
-                    " " for i in range(len(d["paks"]) - 1)
-                ]
+                ex_number = [idx + 1] + [" " for i in range(len(d["paks"]) - 1)]
                 d["ex_number"] = ex_number
                 ex_tex[key] = d
 
@@ -667,9 +591,7 @@ def build_tex_tables(ex_dict):
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
-    lines = bt.get_header(
-        caption, label, headings, col_widths=col_widths, firsthead=True
-    )
+    lines = get_header(caption, label, headings, col_widths=col_widths, firsthead=True)
 
     on_ex = 0
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):
@@ -724,7 +646,7 @@ def build_tex_tables(ex_dict):
                 pak_line.append(pak.upper())
             lines += " ".join(pak_line) + " \\\\\n"
 
-    lines += bt.get_footer()
+    lines += get_footer()
 
     # create table
     pth = os.path.join("..", "tables", "ex-table.tex")
@@ -818,9 +740,6 @@ if __name__ == "__main__":
 
         if len(only_process_ex) > 0:
             files = [item for item in files if item in only_process_ex]
-
-    # make the notebooks
-    make_notebooks()
 
     # make the tables from the scripts
     make_tables()

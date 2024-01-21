@@ -1,48 +1,46 @@
 # ## Flow diversion example
 #
-#
+# This example is based on problem 2 in Niswonger et al 2011, which
+# used the Newton-Raphson formulation to simulate dry cells under a
+# recharge pond. The problem is also described in McDonald et al 1991
+# and used the \MF rewetting option to rewet dry cells.
 
-# ### Flow diversion Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties
-
-figure_size = (6.3, 6.3)
-masked_values = (1e30, -1e30)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-nwt-p02"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Scenario parameters
-
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-nwt-p02a": {
         "newton": "newton",
@@ -56,8 +54,7 @@ parameters = {
     },
 }
 
-# Table
-
+# Model parameters
 nper = 4  # Number of periods
 nlay = 14  # Number of layers
 nrow = 40  # Number of rows
@@ -73,8 +70,7 @@ H1 = 25.0  # Constant head along left and lower edges and starting head ($ft$)
 rech = 0.05  # Recharge rate ($ft/day$)
 
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = (
     (190.0, 10, 1.0),
     (518.0, 2, 1.0),
@@ -83,20 +79,16 @@ tdis_ds = (
 )
 
 # Calculate extents, and shape3d
-
 extents = (0, delr * ncol, 20, 65)
 shape3d = (nlay, nrow, ncol)
 
 # Create the bottom
-
 botm = np.arange(65.0, -5.0, -5.0)
 
 # Create icelltype (which is the same as iconvert)
-
 icelltype = 9 * [1] + 5 * [0]
 
 # Constant head boundary conditions
-
 chd_spd = []
 for k in range(9, nlay, 1):
     chd_spd += [[k, i, ncol - 1, H1] for i in range(nrow - 1)]
@@ -104,25 +96,25 @@ for k in range(9, nlay, 1):
 
 
 # Recharge boundary conditions
-
 rch_spd = []
 for i in range(0, 2, 1):
     for j in range(0, 2, 1):
         rch_spd.append([0, i, j, rech])
 
 # Solver parameters
-
 nouter = 500
 ninner = 100
 hclose = 1e-6
 rclose = 1000.0
+# -
 
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     newton=False,
     rewet=False,
@@ -131,115 +123,105 @@ def build_model(
     ihdwet=None,
     wetdry=None,
 ):
-    if config.buildModel:
-        sim_ws = os.path.join(ws, name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        if newton:
-            newtonoptions = "newton"
-            no_ptc = "ALL"
-            complexity = "complex"
-        else:
-            newtonoptions = None
-            no_ptc = None
-            complexity = "simple"
+    sim_ws = os.path.join(workspace, name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    if newton:
+        newtonoptions = "newton"
+        no_ptc = "ALL"
+        complexity = "complex"
+    else:
+        newtonoptions = None
+        no_ptc = None
+        complexity = "simple"
 
-        flopy.mf6.ModflowIms(
-            sim,
-            complexity=complexity,
-            print_option="SUMMARY",
-            no_ptcrecord=no_ptc,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=rclose,
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim,
-            modelname=sim_name,
-            newtonoptions=newtonoptions,
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        if rewet:
-            rewet_record = [
-                "wetfct",
-                wetfct,
-                "iwetit",
-                iwetit,
-                "ihdwet",
-                ihdwet,
-            ]
-            wetdry = 9 * [wetdry] + 5 * [0]
-        else:
-            rewet_record = None
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            rewet_record=rewet_record,
-            icelltype=icelltype,
-            k=k11,
-            k33=k33,
-            wetdry=wetdry,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf,
-            iconvert=icelltype,
-            ss=ss,
-            sy=sy,
-            steady_state={3: True},
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=H1)
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
-        flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd)
+    flopy.mf6.ModflowIms(
+        sim,
+        complexity=complexity,
+        print_option="SUMMARY",
+        no_ptcrecord=no_ptc,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=rclose,
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim,
+        modelname=sim_name,
+        newtonoptions=newtonoptions,
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    if rewet:
+        rewet_record = [
+            "wetfct",
+            wetfct,
+            "iwetit",
+            iwetit,
+            "ihdwet",
+            ihdwet,
+        ]
+        wetdry = 9 * [wetdry] + 5 * [0]
+    else:
+        rewet_record = None
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        rewet_record=rewet_record,
+        icelltype=icelltype,
+        k=k11,
+        k33=k33,
+        wetdry=wetdry,
+    )
+    flopy.mf6.ModflowGwfsto(
+        gwf,
+        iconvert=icelltype,
+        ss=ss,
+        sy=sy,
+        steady_state={3: True},
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=H1)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+    flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd)
 
-        head_filerecord = f"{sim_name}.hds"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            saverecord=[("HEAD", "LAST")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        saverecord=[("HEAD", "LAST")],
+    )
+    return sim
 
 
-# Function to write flow diversion model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the model. True is returned if the model runs successfully.
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
 
-
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-
-    return success
-
-
-# Create a water-table array
+# +
+# Figure properties
+figure_size = (6.3, 6.3)
+masked_values = (1e30, -1e30)
 
 
 def get_water_table(h, bot):
@@ -248,22 +230,20 @@ def get_water_table(h, bot):
     return np.amax(h, axis=0)
 
 
-# Function to plot the model results.
-
-
 def plot_results(silent=True):
+    if not plot:
+        return
+
     verbose = not silent
     if verbose:
         verbosity_level = 1
     else:
         verbosity_level = 0
 
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=verbose)
-
+    with styles.USGSMap():
         # load the newton model
         name = list(parameters.keys())[0]
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -279,7 +259,7 @@ def plot_results(silent=True):
 
         # load rewet model
         name = list(parameters.keys())[1]
-        sim_ws = os.path.join(ws, name)
+        sim_ws = os.path.join(workspace, name)
         sim1 = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
         )
@@ -358,7 +338,7 @@ def plot_results(silent=True):
                     mfc="cyan",
                     label="Constant head",
                 )
-                fs.graph_legend(
+                styles.graph_legend(
                     ax,
                     loc="upper right",
                     ncol=2,
@@ -367,9 +347,9 @@ def plot_results(silent=True):
                     edgecolor="none",
                 )
             letter = chr(ord("@") + idx + 1)
-            fs.heading(letter=letter, ax=ax)
-            fs.add_text(ax, text=me_text, x=1, y=1.01, ha="right", bold=False)
-            fs.remove_edge_ticks(ax)
+            styles.heading(letter=letter, ax=ax)
+            styles.add_text(ax, text=me_text, x=1, y=1.01, ha="right", bold=False)
+            styles.remove_edge_ticks(ax)
 
             # set fake y-axis label
             ax.set_ylabel(" ")
@@ -387,59 +367,49 @@ def plot_results(silent=True):
         ax.set_ylim(0, 1)
         ax.set_yticks([0, 1])
         ax.set_ylabel("Water-table elevation above arbitrary datum, in meters")
-        fs.remove_edge_ticks(ax)
+        styles.remove_edge_ticks(ax)
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-01{config.figure_ext}",
+                f"{sim_name}-01.png",
             )
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the TWRI model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-
-    sim = build_model(key, **params)
-
-    write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-    assert success, f"could not run...{key}"
+    sim = build_models(key, **params)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_and_plot():
-    simulation(0, silent=False)
-    simulation(1, silent=False)
-    plot_results(silent=False)
+# -
 
 
-# nosetest end
+# Run with Newton-Raphson.
 
-if __name__ == "__main__":
-    # ### MODFLOW-NWT Problem 2 Simulation
-    #
-    # Newton-Raphson.
+scenario(0)
 
-    simulation(0)
+# Run with rewetting.
 
-    # Rewetting.
+scenario(1)
 
-    simulation(1)
+# Plot results.
 
-    # Plot results
-
+if plot:
     plot_results()

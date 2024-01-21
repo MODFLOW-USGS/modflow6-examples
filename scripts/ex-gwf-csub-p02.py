@@ -1,46 +1,41 @@
-# ## Delay interbed drainage
+# ## Delay interbed drainage example
 #
 # This problem simulates the drainage of a thick interbed caused by a step
 # decrease in hydraulic head in the aquifer and is based on MODFLOW-2000 subsidence
 # package sample problem 1.
-#
 
-# ### Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties specific to the problem
-
-figure_size = (6.8, 3.4)
-arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-csub-p02"
+workspace = pl.Path("../examples")
 
-# Scenario parameters
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-csub-p02a": {
         "head_based": True,
@@ -63,12 +58,10 @@ parameters = {
 }
 
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 ncol = 3  # Number of columns
@@ -90,32 +83,30 @@ theta = 0.45  # Interbed porosity (unitless)
 h0 = 1.0  # Initial interbed head ($m$)
 head_offset = 1.0  # Initial preconsolidation head ($m$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((1000.0, 100, 1.05),)
 
 # Constant head cells
-
 c6 = []
 for j in range(0, ncol, 2):
     c6.append([0, 0, j, strt])
 
 # Solver parameters
-
 nouter = 1000
 ninner = 300
 hclose = 1e-9
 rclose = 1e-6
 linaccel = "bicgstab"
 relax = 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot the model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(
+# +
+def build_models(
     name,
     subdir_name=".",
     head_based=True,
@@ -123,167 +114,148 @@ def build_model(
     kv=2e-6,
     ndelaycells=19,
 ):
-    if config.buildModel:
-        sim_ws = os.path.join(ws, name)
-        if subdir_name is not None:
-            sim_ws = os.path.join(sim_ws, subdir_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            linear_acceleration=linaccel,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            relaxation_factor=relax,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=name, save_flows=True, newtonoptions="newton"
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        # gwf obs
-        flopy.mf6.ModflowUtlobs(
-            gwf,
-            digits=10,
-            print_input=True,
-            continuous={"gwf_obs.csv": [("h1_1_2", "HEAD", (0, 0, 1))]},
-        )
+    sim_ws = os.path.join(workspace, name)
+    if subdir_name is not None:
+        sim_ws = os.path.join(sim_ws, subdir_name)
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        linear_acceleration=linaccel,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        relaxation_factor=relax,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(
+        sim, modelname=name, save_flows=True, newtonoptions="newton"
+    )
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    # gwf obs
+    flopy.mf6.ModflowUtlobs(
+        gwf,
+        digits=10,
+        print_input=True,
+        continuous={"gwf_obs.csv": [("h1_1_2", "HEAD", (0, 0, 1))]},
+    )
 
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            save_specific_discharge=True,
-        )
-        flopy.mf6.ModflowGwfsto(
-            gwf, iconvert=icelltype, ss=0.0, sy=0, transient={0: True}
-        )
-        if head_based:
-            hb_bool = True
-            pc0 = head_offset
-            tsgm = None
-            tsgs = None
-        else:
-            hb_bool = None
-            pc0 = -head_offset
-            tsgm = sgm
-            tsgs = sgs
-        sub6 = [
-            [
-                0,
-                0,
-                0,
-                1,
-                "delay",
-                pc0,
-                bed_thickness,
-                1.0,
-                skv,
-                ske,
-                theta,
-                kv,
-                h0,
-                "ib1",
-            ]
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        save_specific_discharge=True,
+    )
+    flopy.mf6.ModflowGwfsto(gwf, iconvert=icelltype, ss=0.0, sy=0, transient={0: True})
+    if head_based:
+        hb_bool = True
+        pc0 = head_offset
+        tsgm = None
+        tsgs = None
+    else:
+        hb_bool = None
+        pc0 = -head_offset
+        tsgm = sgm
+        tsgs = sgs
+    sub6 = [
+        [
+            0,
+            0,
+            0,
+            1,
+            "delay",
+            pc0,
+            bed_thickness,
+            1.0,
+            skv,
+            ske,
+            theta,
+            kv,
+            h0,
+            "ib1",
         ]
-        csub = flopy.mf6.ModflowGwfcsub(
-            gwf,
-            print_input=True,
-            save_flows=True,
-            head_based=hb_bool,
-            ndelaycells=ndelaycells,
-            boundnames=True,
-            ninterbeds=1,
-            sgm=tsgm,
-            sgs=tsgs,
-            cg_theta=cg_theta,
-            cg_ske_cr=0.0,
-            beta=0.0,
-            packagedata=sub6,
-        )
-        opth = f"{name}.csub.obs"
-        csub_csv = opth + ".csv"
-        obs = [
-            ("tcomp", "interbed-compaction", "ib1"),
-            ("sk", "sk", "ib1"),
-            ("qtop", "delay-flowtop", (0,)),
-            ("qbot", "delay-flowbot", (0,)),
+    ]
+    csub = flopy.mf6.ModflowGwfcsub(
+        gwf,
+        print_input=True,
+        save_flows=True,
+        head_based=hb_bool,
+        ndelaycells=ndelaycells,
+        boundnames=True,
+        ninterbeds=1,
+        sgm=tsgm,
+        sgs=tsgs,
+        cg_theta=cg_theta,
+        cg_ske_cr=0.0,
+        beta=0.0,
+        packagedata=sub6,
+    )
+    opth = f"{name}.csub.obs"
+    csub_csv = opth + ".csv"
+    obs = [
+        ("tcomp", "interbed-compaction", "ib1"),
+        ("sk", "sk", "ib1"),
+        ("qtop", "delay-flowtop", (0,)),
+        ("qbot", "delay-flowbot", (0,)),
+    ]
+    for k in range(ndelaycells):
+        tag = f"H{k + 1:04d}"
+        obs.append((tag, "delay-head", (0,), (k,)))
+    if not head_based:
+        iposm = int(ndelaycells / 2) + 1
+        iposb = ndelaycells - 1
+        obs += [
+            ("est", "delay-estress", (0,), (0,)),
+            ("esm", "delay-estress", (0,), (iposm,)),
+            ("esb", "delay-estress", (0,), (iposb,)),
+            ("gs", "gstress-cell", (0, 0, 1)),
+            ("es", "estress-cell", (0, 0, 1)),
         ]
-        for k in range(ndelaycells):
-            tag = f"H{k + 1:04d}"
-            obs.append((tag, "delay-head", (0,), (k,)))
-        if not head_based:
-            iposm = int(ndelaycells / 2) + 1
-            iposb = ndelaycells - 1
-            obs += [
-                ("est", "delay-estress", (0,), (0,)),
-                ("esm", "delay-estress", (0,), (iposm,)),
-                ("esb", "delay-estress", (0,), (iposb,)),
-                ("gs", "gstress-cell", (0, 0, 1)),
-                ("es", "estress-cell", (0, 0, 1)),
-            ]
-        orecarray = {csub_csv: obs}
-        csub.obs.initialize(
-            filename=opth, digits=10, print_input=True, continuous=orecarray
-        )
+    orecarray = {csub_csv: obs}
+    csub.obs.initialize(
+        filename=opth, digits=10, print_input=True, continuous=orecarray
+    )
 
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
 
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            printrecord=[("BUDGET", "ALL")],
-        )
-        return sim
-    return None
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        printrecord=[("BUDGET", "ALL")],
+    )
+    return sim
 
 
-# Function to write MODFLOW 6 model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the model.
-# True is returned if the model runs successfully
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results, beginning with an analytical solution to superimpose over the simulated solution.
 
 
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-
-    return success
-
-
-# Analytical solution for plotting
-
-
-def analytical_solution(
-    z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent=True
-):
+# +
+def analytical_solution(z, t, dh=1.0, b0=1.0, ssk=100.0, vk=0.025, n=100, silent=True):
     v = 0.0
     e = np.exp(1)
     pi = np.pi
@@ -292,9 +264,7 @@ def analytical_solution(
     for k in range(n):
         fk = float(k)
         tauk = (0.5 * b0) ** 2.0 * ssk / ((2.0 * fk + 1.0) ** 2.0 * vk)
-        ep = ((2.0 * fk + 1.0) ** 2 * pi2 * vk * t) / (
-            4.0 * ssk * (0.5 * b0) ** 2.0
-        )
+        ep = ((2.0 * fk + 1.0) ** 2 * pi2 * vk * t) / (4.0 * ssk * (0.5 * b0) ** 2.0)
         rad = (2.0 * fk + 1.0) * pi * z / b0
         v += ((-1.0) ** fk / (2.0 * fk + 1.0)) * (e**-ep) * np.cos(rad)
         if not silent:
@@ -302,259 +272,253 @@ def analytical_solution(
     return dh - 4.0 * dh * v / pi
 
 
-# Function to plot the model grid
+# Set figure properties specific to the problem
+figure_size = (6.8, 3.4)
+arrow_props = dict(facecolor="black", arrowstyle="-", lw=0.5)
 
 
 def plot_grid(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="map", verbose=verbose)
-    name = sim.name
-    gwf = sim.get_model(name)
+    with styles.USGSMap() as fs:
+        name = sim.name
+        gwf = sim.get_model(name)
 
-    fig, ax = plt.subplots(figsize=(6.8, 2.0))
-    mc = flopy.plot.PlotCrossSection(model=gwf, line={"Row": 0}, ax=ax)
+        fig, ax = plt.subplots(figsize=(6.8, 2.0))
+        mc = flopy.plot.PlotCrossSection(model=gwf, line={"Row": 0}, ax=ax)
 
-    ax.fill_between([0, 1], y1=0, y2=botm, color="cyan", alpha=0.5)
-    fs.add_text(
-        ax=ax,
-        text="Constant head",
-        x=0.5,
-        y=-500.0,
-        bold=False,
-        italic=False,
-        transform=False,
-        va="center",
-        ha="center",
-        fontsize=9,
-    )
-    ax.fill_between([2, 3], y1=0, y2=botm, color="cyan", alpha=0.5)
-    fs.add_text(
-        ax=ax,
-        text="Constant head",
-        x=2.5,
-        y=-500.0,
-        bold=False,
-        italic=False,
-        transform=False,
-        va="center",
-        ha="center",
-        fontsize=9,
-    )
-    ax.fill_between([1, 2], y1=-499.5, y2=-500.5, color="brown", alpha=0.5)
-    fs.add_annotation(
-        ax=ax,
-        text="Delay interbed",
-        xy=(1.5, -510.0),
-        xytext=(1.6, -300),
-        bold=False,
-        italic=False,
-        fontsize=9,
-        ha="center",
-        va="center",
-        zorder=100,
-        arrowprops=arrow_props,
-    )
-    mc.plot_grid(color="0.5", lw=0.5, zorder=100)
-
-    ax.set_xlim(0, 3)
-    ax.set_ylabel("Elevation, in meters")
-    ax.set_xlabel("x-coordinate, in meters")
-    fs.remove_edge_ticks(ax)
-
-    plt.tight_layout()
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
+        ax.fill_between([0, 1], y1=0, y2=botm, color="cyan", alpha=0.5)
+        styles.add_text(
+            ax=ax,
+            text="Constant head",
+            x=0.5,
+            y=-500.0,
+            bold=False,
+            italic=False,
+            transform=False,
+            va="center",
+            ha="center",
+            fontsize=9,
         )
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        ax.fill_between([2, 3], y1=0, y2=botm, color="cyan", alpha=0.5)
+        styles.add_text(
+            ax=ax,
+            text="Constant head",
+            x=2.5,
+            y=-500.0,
+            bold=False,
+            italic=False,
+            transform=False,
+            va="center",
+            ha="center",
+            fontsize=9,
+        )
+        ax.fill_between([1, 2], y1=-499.5, y2=-500.5, color="brown", alpha=0.5)
+        styles.add_annotation(
+            ax=ax,
+            text="Delay interbed",
+            xy=(1.5, -510.0),
+            xytext=(1.6, -300),
+            bold=False,
+            italic=False,
+            fontsize=9,
+            ha="center",
+            va="center",
+            zorder=100,
+            arrowprops=arrow_props,
+        )
+        mc.plot_grid(color="0.5", lw=0.5, zorder=100)
 
+        ax.set_xlim(0, 3)
+        ax.set_ylabel("Elevation, in meters")
+        ax.set_xlabel("x-coordinate, in meters")
+        styles.remove_edge_ticks(ax)
 
-# Function to plot the head based results
+        plt.tight_layout()
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 def plot_head_based(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
+    with styles.USGSPlot() as fs:
+        name = sim.name
 
-    # get csub observations
-    ws = sim.simulation_data.mfpath.get_sim_path()
-    s = flopy.mf6.MFSimulation().load(sim_ws=ws, verbosity_level=0)
-    gwf = s.get_model(name)
-    cobs = gwf.csub.output.obs().data
+        # get csub observations
+        ws = sim.simulation_data.mfpath.get_sim_path()
+        s = flopy.mf6.MFSimulation().load(sim_ws=ws, verbosity_level=0)
+        gwf = s.get_model(name)
+        cobs = gwf.csub.output.obs().data
 
-    # calculate the compaction analytically
-    ac = []
-    nz = 100
-    thick = parameters[name]["bed_thickness"][0]
-    kv = parameters[name]["kv"][0]
-    dhalf = thick * 0.5
-    az = np.linspace(-dhalf, dhalf, num=nz)
-    dz = az[1] - az[0]
-    for tt in cobs["totim"]:
-        c = 0.0
-        for jdx, zz in enumerate(az):
-            f = 1.0
-            if jdx == 0 or jdx == nz - 1:
-                f = 0.5
-            h = analytical_solution(zz, tt, ssk=skv, vk=kv, n=200, dh=1.0)
-            c += h * skv * f * dz
-        ac.append(c)
-    ac = np.array(ac)
+        # calculate the compaction analytically
+        ac = []
+        nz = 100
+        thick = parameters[name]["bed_thickness"][0]
+        kv = parameters[name]["kv"][0]
+        dhalf = thick * 0.5
+        az = np.linspace(-dhalf, dhalf, num=nz)
+        dz = az[1] - az[0]
+        for tt in cobs["totim"]:
+            c = 0.0
+            for jdx, zz in enumerate(az):
+                f = 1.0
+                if jdx == 0 or jdx == nz - 1:
+                    f = 0.5
+                h = analytical_solution(zz, tt, ssk=skv, vk=kv, n=200, dh=1.0)
+                c += h * skv * f * dz
+            ac.append(c)
+        ac = np.array(ac)
 
-    # calculate normalized simulation time
-    tpct = cobs["totim"] * 100 / tau0
+        # calculate normalized simulation time
+        tpct = cobs["totim"] * 100 / tau0
 
-    # plot the results
-    fig = plt.figure(figsize=figure_size)
-    gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
+        # plot the results
+        fig = plt.figure(figsize=figure_size)
+        gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
 
-    idx = 0
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct,
-        100 * ac / skv,
-        marker=".",
-        lw=0,
-        ms=3,
-        color="red",
-        label="Analytical",
-    )
-    ax.plot(
-        tpct,
-        100 * cobs["TCOMP"] / skv,
-        label="Simulated",
-        color="black",
-        lw=1,
-        zorder=100,
-    )
-    leg = fs.graph_legend(ax, loc="lower right")
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_yticks(np.arange(0, 110, 10))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel("Compaction, in percent of ultimate value")
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
-    fs.heading(ax, letter="A")
-    fs.remove_edge_ticks(ax)
+        idx = 0
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(
+            tpct,
+            100 * ac / skv,
+            marker=".",
+            lw=0,
+            ms=3,
+            color="red",
+            label="Analytical",
+        )
+        ax.plot(
+            tpct,
+            100 * cobs["TCOMP"] / skv,
+            label="Simulated",
+            color="black",
+            lw=1,
+            zorder=100,
+        )
+        leg = styles.graph_legend(ax, loc="lower right")
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_yticks(np.arange(0, 110, 10))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel("Compaction, in percent of ultimate value")
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 100)
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black"
-    )
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_yticks(np.arange(0, 2.2, 0.2))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel(
-        "Analytical minus simulated subsidence,\nin percent of ultimate value"
-    )
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 2)
-    fs.heading(ax, letter="B")
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(tpct, 100 * (ac - cobs["TCOMP"]) / skv, lw=1, ls=":", color="black")
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_yticks(np.arange(0, 2.2, 0.2))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel(
+            "Analytical minus simulated subsidence,\nin percent of ultimate value"
+        )
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 2)
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{name}-01.png")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 def plot_effstress(sim, silent=True):
     verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
+    with styles.USGSPlot() as fs:
+        name = sim.name
 
-    # get effective stress csub observations
-    gwf = sim.get_model(name)
-    cobs = gwf.csub.output.obs().data
+        # get effective stress csub observations
+        gwf = sim.get_model(name)
+        cobs = gwf.csub.output.obs().data
 
-    # get head-based csub observations
-    name0 = name.replace("-p02b", "-p02a")
-    ws0 = os.path.join(ws, name0)
-    sim0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
-    gwf0 = sim0.get_model(name0)
-    cobs0 = gwf0.csub.output.obs().data
+        # get head-based csub observations
+        name0 = name.replace("-p02b", "-p02a")
+        ws0 = os.path.join(workspace, name0)
+        sim0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+        gwf0 = sim0.get_model(name0)
+        cobs0 = gwf0.csub.output.obs().data
 
-    # calculate normalized simulation time
-    tpct = cobs["totim"] * 100 / tau0
+        # calculate normalized simulation time
+        tpct = cobs["totim"] * 100 / tau0
 
-    # plot the results
-    fig = plt.figure(figsize=figure_size)
-    gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
+        # plot the results
+        fig = plt.figure(figsize=figure_size)
+        gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
 
-    idx = 0
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct,
-        100 * cobs0["TCOMP"] / skv,
-        lw=0,
-        marker=".",
-        ms=3,
-        color="#238A8DFF",
-        label="Head-based",
-    )
-    ax.plot(
-        tpct,
-        100 * cobs["TCOMP"] / skv,
-        lw=0.75,
-        label="Effective stress-based",
-        color="black",
-        zorder=100,
-    )
-    leg = fs.graph_legend(ax, loc="lower right")
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_yticks(np.arange(0, 110, 10))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel("Compaction, in percent of ultimate value")
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
-    fs.heading(ax, letter="A")
-    fs.remove_edge_ticks(ax)
+        idx = 0
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(
+            tpct,
+            100 * cobs0["TCOMP"] / skv,
+            lw=0,
+            marker=".",
+            ms=3,
+            color="#238A8DFF",
+            label="Head-based",
+        )
+        ax.plot(
+            tpct,
+            100 * cobs["TCOMP"] / skv,
+            lw=0.75,
+            label="Effective stress-based",
+            color="black",
+            zorder=100,
+        )
+        leg = styles.graph_legend(ax, loc="lower right")
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_yticks(np.arange(0, 110, 10))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel("Compaction, in percent of ultimate value")
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 100)
+        styles.heading(ax, letter="A")
+        styles.remove_edge_ticks(ax)
 
-    idx += 1
-    ax = fig.add_subplot(gs[idx])
-    ax.plot(
-        tpct,
-        100 * (cobs0["TCOMP"] - cobs["TCOMP"]) / skv,
-        lw=1,
-        ls=":",
-        color="black",
-    )
-    ax.set_xticks(np.arange(0, 110, 10))
-    ax.set_xlabel("Percent of time constant")
-    ax.set_ylabel(
-        "Head-based minus effective stress-based\nsubsidence, in percent of ultimate value"
-    )
-    ax.set_xlim(0, 100)
-    fs.heading(ax, letter="B")
-    fs.remove_edge_ticks(ax)
+        idx += 1
+        ax = fig.add_subplot(gs[idx])
+        ax.plot(
+            tpct,
+            100 * (cobs0["TCOMP"] - cobs["TCOMP"]) / skv,
+            lw=1,
+            ls=":",
+            color="black",
+        )
+        ax.set_xticks(np.arange(0, 110, 10))
+        ax.set_xlabel("Percent of time constant")
+        ax.set_ylabel(
+            "Head-based minus effective stress-based\nsubsidence, in percent of ultimate value"
+        )
+        ax.set_xlim(0, 100)
+        styles.heading(ax, letter="B")
+        styles.remove_edge_ticks(ax)
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
-
-
-# Function to get subdirectory names
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{name}-01.png")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 def get_subdirs(sim):
+    """Get subdirectory names"""
     name = sim.name
     # get the subdirectory names
-    pth = os.path.join(ws, name)
+    pth = os.path.join(workspace, name)
     hb_dirs = [
         name
         for name in sorted(os.listdir(pth))
@@ -568,10 +532,8 @@ def get_subdirs(sim):
     return hb_dirs, es_dirs
 
 
-# Function to process interbed heads
-
-
 def fill_heads(rec_arr, ndcells):
+    """Process interbed heads"""
     arr = np.zeros((rec_arr.shape[0], ndcells), dtype=float)
     for i in range(100):
         for j in range(ndcells):
@@ -580,279 +542,262 @@ def fill_heads(rec_arr, ndcells):
     return arr
 
 
-# Function to plot the results for multiple interbed thicknesses
-
-
 def plot_comp_q_comparison(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
-    thicknesses = parameters[name]["bed_thickness"]
+    """Plot the results for multiple interbed thicknesses"""
+    with styles.USGSPlot():
+        name = sim.name
+        thicknesses = parameters[name]["bed_thickness"]
 
-    # get the subdirectory names
-    hb_dirs, es_dirs = get_subdirs(sim)
+        # get the subdirectory names
+        hb_dirs, es_dirs = get_subdirs(sim)
 
-    # setup the figure
-    fig = plt.figure(figsize=figure_size)
-    gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
+        # setup the figure
+        fig = plt.figure(figsize=figure_size)
+        gs = mpl.gridspec.GridSpec(1, 2, figure=fig)
 
-    # set color
-    cmap = plt.get_cmap("viridis")
-    cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
-    scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
+        # set color
+        cmap = plt.get_cmap("viridis")
+        cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
+        scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
 
-    axes = []
-    for idx in range(2):
-        ax = fig.add_subplot(gs[idx])
-        if idx == 0:
-            ax.set_yticks(np.arange(-0.40, 0.1, 0.05))
-            ax.set_ylim(-0.40, 0)
-            ax.set_xlim(0, 100)
-            ylabel = (
-                "Head-based minus effective stress-based\nsubsidence, "
-                + "in percent of ultimate value"
-            )
-        else:
-            ax.set_ylim(0, 8)
-            ax.set_xlim(0, 100)
-            ylabel = (
-                "Top minus bottom interbed effective stress-based\ndrainage "
-                + "rate, in percent of head-based drainage rate"
-            )
-        ax.set_xlabel("Percent of time constant")
-        ax.set_ylabel(ylabel)
-        fs.heading(ax, letter=chr(ord("A") + idx))
-        axes.append(ax)
-
-    for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-        sim_ws = os.path.join(ws, name, hb_dir)
-        s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
-        g = s.get_model(name)
-        hb_obs = g.csub.output.obs().data
-
-        ws0 = os.path.join(ws, name, es_dir)
-        s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
-        g0 = s0.get_model(name)
-        es_obs = g0.csub.output.obs().data
-
-        # calculate normalized simulation time
-        tpct = hb_obs["totim"] * 100 / tau0
-
-        thickness = thicknesses[idx]
-        if idx == 0:
-            color = "black"
-        else:
-            color = scalarMap.to_rgba(idx - 1)
-        label = f"Thickness = {int(thickness):>3d} m"
-
-        v = 100.0 * (hb_obs["TCOMP"] - es_obs["TCOMP"]) / (skv * thickness)
-        ax = axes[0]
-        ax.plot(tpct, v, color=color, lw=0.75, label=label)
-
-        denom = hb_obs["QTOP"] + hb_obs["QBOT"]
-        v = 100 * (es_obs["QTOP"] - es_obs["QBOT"]) / denom
-        ax = axes[1]
-        ax.plot(tpct, v, color=color, lw=0.75, label=label)
-
-    # legend
-    ax = axes[-1]
-    leg = fs.graph_legend(ax, loc="upper right")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-01{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
-
-
-# Function to plot the interbed head results for multiple interbed thicknesses
-
-
-def plot_head_comparison(sim, silent=True):
-    verbose = not silent
-    fs = USGSFigure(figure_type="graph", verbose=verbose)
-    name = sim.name
-    ndcells = parameters[name]["ndelaycells"]
-    thicknesses = parameters[name]["bed_thickness"]
-
-    # get the subdirectory names
-    hb_dirs, es_dirs = get_subdirs(sim)
-
-    # setup the figure
-    fig = plt.figure(figsize=figure_size)
-    fig.subplots_adjust(
-        left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1
-    )
-    gs = mpl.gridspec.GridSpec(1, 6, figure=fig)
-    z = np.linspace(0, 1, ndcells)
-    yticks = np.arange(0, 1.1, 0.1)
-
-    # set color
-    cmap = plt.get_cmap("viridis")
-    cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
-    scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
-
-    # percentages to evaluate
-    pct_vals = (
-        1,
-        5,
-        10,
-        50,
-        100,
-    )
-
-    axes = []
-    for idx in range(6):
-        ax = fig.add_subplot(gs[idx])
-        ax.set_ylim(1, 0)
-        ax.set_xlim(-5, 5)
-        if idx < 5:
-            fs.heading(ax, letter=chr(ord("A") + idx))
-            ax.set_yticks(yticks)
-            fs.remove_edge_ticks(ax)
-            text = r"$\frac{t}{\tau_0}$ = " + "{}".format(
-                pct_vals[idx] / 100.0
-            )
-            ax.text(
-                0.25,
-                0.01,
-                text,
-                ha="center",
-                va="bottom",
-                transform=ax.transAxes,
-                fontsize=8,
-            )
-        else:
-            ax.set_xticks([])
-            ax.set_yticks([])
-
-        if idx == 0:
-            ax.set_ylabel("Interbed position, relative to interbed thickness")
-        else:
-            if idx == 2:
-                text = (
-                    "Difference in head-based and effective stress-based"
-                    + "\ninterbed heads, in percent of head-based interbed heads"
+        axes = []
+        for idx in range(2):
+            ax = fig.add_subplot(gs[idx])
+            if idx == 0:
+                ax.set_yticks(np.arange(-0.40, 0.1, 0.05))
+                ax.set_ylim(-0.40, 0)
+                ax.set_xlim(0, 100)
+                ylabel = (
+                    "Head-based minus effective stress-based\nsubsidence, "
+                    + "in % of ultimate value"
                 )
-                ax.set_xlabel(text)
-            ax.set_yticklabels([])
-        axes.append(ax)
+            else:
+                ax.set_ylim(0, 8)
+                ax.set_xlim(0, 100)
+                ylabel = (
+                    "Top minus bottom interbed effective stress-\nbased "
+                    + "rate, in % of head-based drainage rate"
+                )
+            ax.set_xlabel("Percent of time constant")
+            ax.set_ylabel(ylabel)
+            styles.heading(ax, letter=chr(ord("A") + idx))
+            axes.append(ax)
+        plt.subplots_adjust(wspace=0.36)
 
-    for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
-        sim_ws = os.path.join(ws, name, hb_dir)
-        s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
-        g = s.get_model(name)
-        hb_obs = g.csub.output.obs().data
-        hb_arr = fill_heads(hb_obs, ndcells)
+        for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
+            sim_ws = os.path.join(workspace, name, hb_dir)
+            s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+            g = s.get_model(name)
+            hb_obs = g.csub.output.obs().data
 
-        ws0 = os.path.join(ws, name, es_dir)
-        s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
-        g0 = s0.get_model(name)
-        es_obs = g0.csub.output.obs().data
-        es_arr = fill_heads(es_obs, ndcells)
-        #
-        # pth = os.path.join(ws, name, hb_dir, "{}.csub.obs.csv".format(name))
-        # hb_obs = np.genfromtxt(pth, names=True, delimiter=",")
-        # hb_arr = fill_heads(hb_obs, ndcells)
-        #
-        # pth = os.path.join(ws, name, es_dir, "{}.csub.obs.csv".format(name))
-        # es_obs = np.genfromtxt(pth, names=True, delimiter=",")
-        # es_arr = fill_heads(es_obs, ndcells)
+            ws0 = os.path.join(workspace, name, es_dir)
+            s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+            g0 = s0.get_model(name)
+            es_obs = g0.csub.output.obs().data
 
-        # calculate normalized simulation time
-        tpct = hb_obs["totim"] * 100 / tau0
+            # calculate normalized simulation time
+            tpct = hb_obs["totim"] * 100 / tau0
 
-        # calculate location closest to 1, 5, 10, 50, and 100 percent of time constant
-        locs = {}
-        for i in pct_vals:
-            for jdx, t in enumerate(tpct):
-                if t <= i:
-                    locs[i] = jdx
-
-        for jdx, (key, ivalue) in enumerate(locs.items()):
-            # add data to the subplot
-            ax = axes[jdx]
+            thickness = thicknesses[idx]
             if idx == 0:
                 color = "black"
             else:
                 color = scalarMap.to_rgba(idx - 1)
-            hhb = hb_arr[ivalue, :]
-            hes = es_arr[ivalue, :]
-            v = 100.0 * (hhb - hes) / hhb
-            ax.plot(v, z, lw=0.75, color=color)
+            label = f"Thickness = {int(thickness):>3d} m"
 
-    # legend
-    ax = axes[-1]
-    ax.set_ylim(1, 0)
-    ax.set_xlim(-5, 5)
-    ax.spines["top"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["right"].set_color("none")
-    ax.patch.set_alpha(0.0)
-    for ic, b in enumerate(thicknesses):
-        if ic == 0:
-            color = "black"
-        else:
-            color = scalarMap.to_rgba(ic - 1)
-        label = f"Thickness = {int(b):>3d} m"
-        ax.plot([-1, -1], [-1, -1], lw=0.75, color=color, label=label)
+            v = 100.0 * (hb_obs["TCOMP"] - es_obs["TCOMP"]) / (skv * thickness)
+            ax = axes[0]
+            ax.plot(tpct, v, color=color, lw=0.75, label=label)
 
-    leg = fs.graph_legend(ax, loc="center", bbox_to_anchor=(0.64, 0.5))
+            denom = hb_obs["QTOP"] + hb_obs["QBOT"]
+            v = 100 * (es_obs["QTOP"] - es_obs["QBOT"]) / denom
+            ax = axes[1]
+            ax.plot(tpct, v, color=color, lw=0.75, label=label)
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join("..", "figures", f"{name}-02{config.figure_ext}")
-        if not silent:
-            print(f"saving...'{fpth}'")
-        fig.savefig(fpth)
+        # legend
+        ax = axes[-1]
+        leg = styles.graph_legend(ax, loc="upper right")
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{name}-01.png")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
-# Function to plot the model results.
+def plot_head_comparison(sim, silent=True):
+    """Plot the interbed head results for multiple interbed thicknesses"""
+    with styles.USGSPlot():
+        name = sim.name
+        ndcells = parameters[name]["ndelaycells"]
+        thicknesses = parameters[name]["bed_thickness"]
+
+        # get the subdirectory names
+        hb_dirs, es_dirs = get_subdirs(sim)
+
+        # setup the figure
+        fig = plt.figure(figsize=figure_size)
+        fig.subplots_adjust(left=0.06, right=0.95, top=0.95, bottom=0.15, wspace=0.1)
+        gs = mpl.gridspec.GridSpec(1, 6, figure=fig)
+        z = np.linspace(0, 1, ndcells)
+        yticks = np.arange(0, 1.1, 0.1)
+
+        # set color
+        cmap = plt.get_cmap("viridis")
+        cNorm = mpl.colors.Normalize(vmin=0, vmax=6)
+        scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
+
+        # percentages to evaluate
+        pct_vals = (
+            1,
+            5,
+            10,
+            50,
+            100,
+        )
+
+        axes = []
+        for idx in range(6):
+            ax = fig.add_subplot(gs[idx])
+            ax.set_ylim(1, 0)
+            ax.set_xlim(-5, 5)
+            if idx < 5:
+                styles.heading(ax, letter=chr(ord("A") + idx))
+                ax.set_yticks(yticks)
+                styles.remove_edge_ticks(ax)
+                text = r"$\frac{t}{\tau_0}$ = " + "{}".format(pct_vals[idx] / 100.0)
+                ax.text(
+                    0.25,
+                    0.01,
+                    text,
+                    ha="center",
+                    va="bottom",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                )
+            else:
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+            if idx == 0:
+                ax.set_ylabel("Interbed position, relative to interbed thickness")
+            else:
+                if idx == 2:
+                    text = (
+                        "Difference in head-based and effective stress-based"
+                        + "\ninterbed heads, in percent of head-based interbed heads"
+                    )
+                    ax.set_xlabel(text)
+                ax.set_yticklabels([])
+            axes.append(ax)
+
+        for idx, (hb_dir, es_dir) in enumerate(zip(hb_dirs, es_dirs)):
+            sim_ws = os.path.join(workspace, name, hb_dir)
+            s = flopy.mf6.MFSimulation().load(sim_ws=sim_ws, verbosity_level=0)
+            g = s.get_model(name)
+            hb_obs = g.csub.output.obs().data
+            hb_arr = fill_heads(hb_obs, ndcells)
+
+            ws0 = os.path.join(workspace, name, es_dir)
+            s0 = flopy.mf6.MFSimulation().load(sim_ws=ws0, verbosity_level=0)
+            g0 = s0.get_model(name)
+            es_obs = g0.csub.output.obs().data
+            es_arr = fill_heads(es_obs, ndcells)
+            #
+            # pth = os.path.join(ws, name, hb_dir, "{}.csub.obs.csv".format(name))
+            # hb_obs = np.genfromtxt(pth, names=True, delimiter=",")
+            # hb_arr = fill_heads(hb_obs, ndcells)
+            #
+            # pth = os.path.join(ws, name, es_dir, "{}.csub.obs.csv".format(name))
+            # es_obs = np.genfromtxt(pth, names=True, delimiter=",")
+            # es_arr = fill_heads(es_obs, ndcells)
+
+            # calculate normalized simulation time
+            tpct = hb_obs["totim"] * 100 / tau0
+
+            # calculate location closest to 1, 5, 10, 50, and 100 percent of time constant
+            locs = {}
+            for i in pct_vals:
+                for jdx, t in enumerate(tpct):
+                    if t <= i:
+                        locs[i] = jdx
+
+            for jdx, (key, ivalue) in enumerate(locs.items()):
+                # add data to the subplot
+                ax = axes[jdx]
+                if idx == 0:
+                    color = "black"
+                else:
+                    color = scalarMap.to_rgba(idx - 1)
+                hhb = hb_arr[ivalue, :]
+                hes = es_arr[ivalue, :]
+                v = 100.0 * (hhb - hes) / hhb
+                ax.plot(v, z, lw=0.75, color=color)
+
+        # legend
+        ax = axes[-1]
+        ax.set_ylim(1, 0)
+        ax.set_xlim(-5, 5)
+        ax.spines["top"].set_color("none")
+        ax.spines["bottom"].set_color("none")
+        ax.spines["left"].set_color("none")
+        ax.spines["right"].set_color("none")
+        ax.patch.set_alpha(0.0)
+        for ic, b in enumerate(thicknesses):
+            if ic == 0:
+                color = "black"
+            else:
+                color = scalarMap.to_rgba(ic - 1)
+            label = f"Thickness = {int(b):>3d} m"
+            ax.plot([-1, -1], [-1, -1], lw=0.75, color=color, label=label)
+
+        leg = styles.graph_legend(ax, loc="center", bbox_to_anchor=(0.64, 0.5))
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{name}-02.png")
+            if not silent:
+                print(f"saving...'{fpth}'")
+            fig.savefig(fpth)
 
 
 def plot_results(sim, silent=True):
-    if config.plotModel:
-        name = sim.name
-
-        if name.endswith("a"):
-            plot_grid(sim, silent=silent)
-            plot_head_based(sim, silent=silent)
-        elif name.endswith("b"):
-            plot_effstress(sim, silent=silent)
-        elif name.endswith("c"):
-            plot_comp_q_comparison(sim, silent=silent)
-            plot_head_comparison(sim, silent=silent)
+    name = sim.name
+    if name.endswith("a"):
+        plot_grid(sim, silent=silent)
+        plot_head_based(sim, silent=silent)
+    elif name.endswith("b"):
+        plot_effstress(sim, silent=silent)
+    elif name.endswith("c"):
+        plot_comp_q_comparison(sim, silent=silent)
+        plot_head_comparison(sim, silent=silent)
 
 
-# Function that wraps all of the steps for the model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define a function to run the example scenarios, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenarios(idx, silent=True):
     key = list(parameters.keys())[idx]
     interbed_thickness = parameters[key]["bed_thickness"]
     interbed_kv = parameters[key]["kv"]
     params = parameters[key].copy()
-
-    success = False
     if len(interbed_thickness) == 1:
         params["bed_thickness"] = interbed_thickness[0]
         params["kv"] = interbed_kv[0]
 
-        sim = build_model(key, **params)
-
-        write_model(sim, silent=silent)
-
-        if config.runModel:
-            success = run_model(sim, silent=silent)
-
+        sim = build_models(key, **params)
+        if write:
+            write_models(sim, silent=silent)
+        if run:
+            run_models(sim, silent=silent)
     else:
         for b, kv in zip(interbed_thickness, interbed_kv):
             for head_based in (
@@ -868,43 +813,26 @@ def simulation(idx, silent=True):
                 params["bed_thickness"] = b
                 params["kv"] = kv
 
-                sim = build_model(key, subdir_name=subdir_name, **params)
-
-                write_model(sim, silent=silent)
-
-                if config.runModel:
-                    success = run_model(sim, silent=silent)
-
-    if config.plotModel and success:
+                sim = build_models(key, subdir_name=subdir_name, **params)
+                if write:
+                    write_models(sim, silent=silent)
+                if run:
+                    run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# -
 
 
-def test_02():
-    simulation(1, silent=False)
+# Run and plot the head based solution.
 
+scenarios(0)
 
-def test_03():
-    simulation(2, silent=False)
+# Run and plot the effective stress solution.
 
+scenarios(1)
 
-# nosetest end
+# Run and plot the head based for multiple interbed thicknesses.
 
-if __name__ == "__main__":
-    # ### Delay interbed drainage
-    #
-    # #### Head based solution
-
-    simulation(0)
-
-    # #### Effective stress solution
-
-    simulation(1)
-
-    # #### Head based for multiple interbed thicknesses
-
-    simulation(2)
+scenarios(2)
