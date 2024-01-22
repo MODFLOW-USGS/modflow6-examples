@@ -12,12 +12,13 @@
 #
 import os
 import re
+from modflow_devtools.misc import get_env
 
 # -- set boolean indicating if running on readthedocs server -----------------
-on_rtd = os.environ.get("READTHEDOCS") == "True"
+on_rtd = get_env("READTHEDOCS", False)
 
 # -- get git ref from which we are building the docs -------------------------
-ref = os.environ.get("READTHEDOCS_GIT_IDENTIFIER")
+ref = get_env("READTHEDOCS_GIT_IDENTIFIER", "master")
 
 # -- setup regular expression for body.tex -----------------------------------
 ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
@@ -44,16 +45,12 @@ with open("notebook_examples.rst", "w") as f:
     )
     f.write(lines)
 
-    # gwf examples Jupyter Notebooks
-    lines = ".. toctree::\n"
-    lines += "   :numbered:\n"
-    lines += "   :maxdepth: 1\n\n"
+    lines = ".. nbgallery::\n"
+    lines += "    :name: Examples gallery\n\n"
     for base_name in gwf_list:
-        lines += f"   {base_name} "
-        lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
+        lines += f"   _notebooks/{base_name}\n"
     for base_name in gwt_list:
-        lines += f"   {base_name} "
-        lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
+        lines += f"   _notebooks/{base_name}\n"
     lines += "\n\n"
     f.write(lines)
 
@@ -92,7 +89,6 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
     "sphinx.ext.autosectionlabel",
     "nbsphinx",
-    "nbsphinx_link",
     "myst_parser",
     "sphinx_markdown_tables",
 ]
