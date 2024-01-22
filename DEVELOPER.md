@@ -23,6 +23,8 @@ This document describes development procedures and conventions for the MODFLOW 6
 
 The example models in this repository are composed with FloPy in the Python files under `scripts/`. Notebooks are generated from these with [`jupytext`](https://github.com/mwouts/jupytext) for the [online documentation](https://modflow6-examples.readthedocs.io/en/stable/) and/or for use with `jupyter`. A small volume of supporting data live in files under `data/`.
 
+**Note:** example scripts do not access the `data/` folder directly &mdash; rather, on first run, they download and cache files from GitHub with a tool called [Pooch](https://www.fatiando.org/pooch/latest/). This allows running scripts and/or notebooks downloaded from the [documentation site](https://modflow6-examples.readthedocs.io/en/stable/) without first cloning the repository and/or manually downloading data files.
+
 Scripts may contain one or more example scenarios. Each script creates one or more subdirectories of `examples/` to use as a workspace, one per example scenario. Internally, the scripts are structured similarly, proceeding through the following steps:
 
 1. Define & build models
@@ -39,7 +41,7 @@ The scripts parse environment variables to control several behaviors, all of whi
 - `PLOT_SAVE`: whether to save static plots to `figures/`
 - `GIF`: whether to save GIFs to `figures/` (only relevant for a small subset of scripts)
 
-If variables are not found when a script is run directly, behaviors are enabled by default. When scripts are run via `pytest`, by default plots are not shown (to avoid the need to manually close plot widgets).
+If variables are not found when a script is run directly, behaviors are enabled by default. When scripts are run via `pytest`, by default plots are not shown (to avoid the need to manually close plot widgets). Pytest CLI flags can be used to control each switch &mdash; see below for details.
 
 ## Prerequisites
 

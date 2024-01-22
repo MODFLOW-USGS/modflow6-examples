@@ -6,6 +6,10 @@
 MODFLOW 6 Example Problems
 ======================================================
 
+This site demonstrates MODFLOW 6 by constructing, running, post-processing and visualizing example models with `FloPy <https://flopy.readthedocs.io>`_. Documentation is generated with Sphinx from the `MODFLOW 6 examples repository <https://github.com/MODFLOW-USGS/modflow6-examples>`_.
+
+Contents:
+
 .. toctree::
    :maxdepth: 1
 

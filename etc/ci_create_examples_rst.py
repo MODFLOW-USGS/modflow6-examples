@@ -26,14 +26,19 @@ if len(msg) > 0:
 else:
     print(f"\npandoc version: {t}\n")
 
-# get list of examples from body.text
-ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
-ex_list = []
+# parse examples from body.tex (in order)
 pth = os.path.join("..", "doc", "body.tex")
 with open(pth) as f:
     lines = f.read()
+gwf_list = []
+gwt_list = []
+ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
 for v in ex_regex.findall(lines):
-    ex_list.append(v.replace(".tex", ""))
+    if "ex-gwf-" in v:
+        gwf_list.append(v.replace(".tex", ""))
+    elif "ex-gwt-" in v:
+        gwt_list.append(v.replace(".tex", ""))
+ex_list = gwf_list + gwt_list
 
 # get list of example problems
 ex_dirs = []
@@ -44,19 +49,17 @@ for name in sorted(os.listdir(ex_pth)):
         ex_dirs.append(name)
 
 # create examples rst
-pth = os.path.join("..", ".doc", "examples.rst")
 print(f"creating...'{pth}'")
-f = open(pth, "w")
-line = "============================\n"
-line += "MODFLOW 6 – Example problems\n"
-line += "============================\n\n\n"
-line += ".. toctree::\n"
-line += "   :numbered:\n"
-line += "   :maxdepth: 1\n\n"
-for ex in ex_list:
-    line += f"   _examples/{ex}.rst\n"
-f.write(line)
-f.close()
+with open(os.path.join("..", ".doc", "examples.rst"), "w") as f:
+    line = "============================\n"
+    line += "MODFLOW 6 – Example problems\n"
+    line += "============================\n\n\n"
+    line += ".. toctree::\n"
+    line += "   :numbered:\n"
+    line += "   :maxdepth: 1\n\n"
+    for ex in ex_list:
+        line += f"   _examples/{ex}.rst\n"
+    f.write(line)
 
 # create rtd examples directory
 dst = os.path.join("..", ".doc", "_examples")
@@ -77,15 +80,14 @@ doc_pth = os.path.join("..", "doc")
 for ex in ex_list:
     print(f"creating restructured text file for {ex} example")
     src = os.path.join("..", "doc", "ex.tex")
-    f = open(src, "w")
-    for line in orig_latex:
-        if latex_tag in line:
-            new_tag = f"\\input{{sections/{ex}.tex}}"
-            line = line.replace(latex_tag, new_tag)
-        elif frontmatter_tag in line:
-            line = line.replace(frontmatter_tag, "")
-        f.write(line)
-    f.close()
+    with open(src, "w") as f:
+        for line in orig_latex:
+            if latex_tag in line:
+                new_tag = f"\\input{{sections/{ex}.tex}}"
+                line = line.replace(latex_tag, new_tag)
+            elif frontmatter_tag in line:
+                line = line.replace(frontmatter_tag, "")
+            f.write(line)
 
     # create restructured text file for example using using pandoc
     dst = os.path.join("..", ".doc", "_examples", f"{ex}.rst")
@@ -146,168 +148,150 @@ for ex in ex_list:
 
     # editing restructured text file for example
     print(f"editing...'{dst}'")
-    f = open(dst, "w")
+    with open(dst, "w") as f:
+        write_line = True
+        in_reference = False
+        eq_no = 0
+        in_table = False
+        table_name = None
+        for idx, line in enumerate(lines):
+            # skip the title
+            if idx < 6:
+                continue
 
-    write_line = True
-    in_reference = False
-    eq_no = 0
-    in_table = False
-    table_name = None
-    for idx, line in enumerate(lines):
-        # skip the title
-        if idx < 6:
-            continue
+            # replace latex equation labels
+            for key, value in replace_eq_labels.items():
+                if key in line:
+                    line = line.replace(key, value)
 
-        # replace latex equation labels
-        for key, value in replace_eq_labels.items():
-            if key in line:
-                line = line.replace(key, value)
+            # replace figure and table references
+            for key, value in fig_tab_refs.items():
+                if key in line:
+                    line = line.replace(key, value)
 
-        # replace figure and table references
-        for key, value in fig_tab_refs.items():
-            if key in line:
-                line = line.replace(key, value)
-
-        tag = " "
-        if tag in line:
-            line = line.replace(tag, " ")
-
-        tag = "tab:ex-"
-        if tag in line:
-            line = line.replace(tag, "tab-ex-")
-
-        tag = "fig:ex-"
-        if tag in line:
-            line = line.replace(tag, "fig-ex-")
-
-        tag = "\\label{"
-        if tag in line:
-            continue
-
-        tag = ".. math::"
-        if tag in line:
-            line = f"{tag}\n{eq_labels[eq_no]}\n"
-            eq_no += 1
-
-        tag = ".. figure:: ../figures/"
-        if tag in line:
-            line = line.replace(tag, ".. figure:: ../_images/")
-
-        tag = ".. figure:: ../images/"
-        if tag in line:
-            line = line.replace(tag, ".. figure:: ../_images/")
-
-        tag = ":alt:"
-        if tag in line:
-            write_line = False
-
-        tag = ":name:"
-        if not write_line and tag in line:
-            write_line = True
-
-        # table tabs
-        tags = (
-            "Table :numref:",
-            "table :numref:",
-            "Tables :numref:",
-        )
-        for tag in tags:
+            tag = " "
             if tag in line:
-                line = line.replace(tag, ":numref:")
+                line = line.replace(tag, " ")
 
-        # figure tags
-        tags = (
-            "fig. :numref:",
-            "Figure :numref:",
-            "figure :numref:",
-            "figures :numref:",
-        )
-        for tag in tags:
+            tag = "tab:ex-"
             if tag in line:
-                line = line.replace(tag, ":numref:")
+                line = line.replace(tag, "tab-ex-")
 
-        tag = ".. container::"
-        if tag == line.strip():
-            in_table = True
-            continue
+            tag = "fig:ex-"
+            if tag in line:
+                line = line.replace(tag, "fig-ex-")
 
-        if in_table:
-            if len(line.lstrip()) == len(line):
-                line = "\n" + line
-                in_table = False
-
-        tag = ":name: tab-ex-"
-        if tag in line:
-            table_name = line.split()[1]
-            continue
-
-        tag = ".. table::"
-        if tag in line:
-            line = f".. _{table_name}:\n\n" + line.lstrip() + "\n"
-
-        tag = ".. container:: references"
-        if tag in line:
-            in_reference = True
-            line = "References Cited\n----------------\n\n"
-
-        if in_reference:
-            tag = ".. container::"
+            tag = "\\label{"
             if tag in line:
                 continue
+
+            tag = ".. math::"
+            if tag in line:
+                line = f"{tag}\n{eq_labels[eq_no]}\n"
+                eq_no += 1
+
+            tag = ".. figure:: ../figures/"
+            if tag in line:
+                line = line.replace(tag, ".. figure:: ../_images/")
+
+            tag = ".. figure:: ../images/"
+            if tag in line:
+                line = line.replace(tag, ".. figure:: ../_images/")
+
+            tag = ":alt:"
+            if tag in line:
+                write_line = False
 
             tag = ":name:"
-            if tag in line:
+            if not write_line and tag in line:
+                write_line = True
+
+            # table tabs
+            tags = (
+                "Table :numref:",
+                "table :numref:",
+                "Tables :numref:",
+            )
+            for tag in tags:
+                if tag in line:
+                    line = line.replace(tag, ":numref:")
+
+            # figure tags
+            tags = (
+                "fig. :numref:",
+                "Figure :numref:",
+                "figure :numref:",
+                "figures :numref:",
+            )
+            for tag in tags:
+                if tag in line:
+                    line = line.replace(tag, ":numref:")
+
+            tag = ".. container::"
+            if tag == line.strip():
+                in_table = True
                 continue
 
-            if line.startswith("      "):
-                line = line.lstrip()
+            if in_table:
+                if len(line.lstrip()) == len(line):
+                    line = "\n" + line
+                    in_table = False
 
-        if write_line:
-            f.write(line)
+            tag = ":name: tab-ex-"
+            if tag in line:
+                table_name = line.split()[1]
+                continue
 
-    # Jupyter Notebook section
-    ex_root = ex.replace(".tex", "")
+            tag = ".. table::"
+            if tag in line:
+                line = f".. _{table_name}:\n\n" + line.lstrip() + "\n"
 
-    # write Jupyter Notebook section
-    line = "\n\nJupyter Notebook\n"
-    line += "----------------\n\n"
-    line += (
-        "The Jupyter notebook used to create the MODFLOW 6 input files\n"
-        + "for this example and post-process the results is:\n\n"
-    )
-    line += "* `{0} <../_notebooks/{0}.html>`_\n".format(ex_root)
-    line += "\n"
+            tag = ".. container:: references"
+            if tag in line:
+                in_reference = True
+                line = "References Cited\n----------------\n\n"
 
-    # Check to see if there is a gif with the same name as the example name
-    # (e.g. ex-gwt-saltlake.gif) and if so, then assume this is an animated
-    # gif and add an Animation section to the restructured text file
-    fname = f"{ex}.gif"
-    if fname in os.listdir("../figures"):
-        line = "\n\nAnimation\n"
+            if in_reference:
+                tag = ".. container::"
+                if tag in line:
+                    continue
+
+                tag = ":name:"
+                if tag in line:
+                    continue
+
+                if line.startswith("      "):
+                    line = line.lstrip()
+
+            if write_line:
+                f.write(line)
+
+        # Jupyter Notebook section
+        ex_root = ex.replace(".tex", "")
+
+        # write Jupyter Notebook section
+        line = "\n\nJupyter Notebook\n"
         line += "----------------\n\n"
-        line += "Animation of model results:\n\n"
-        line += f".. image:: ../_images/{fname}"
-    line += "\n"
+        line += (
+            "The Jupyter notebook used to create the MODFLOW 6 input files\n"
+            + "for this example and post-process the results is:\n\n"
+        )
+        line += "* `{0} <../_notebooks/{0}.html>`_\n".format(ex_root)
+        line += "\n"
 
-    # Write the restructured text lines and close the file
-    f.write(line)
-    f.close()
+        # Check to see if there is a gif with the same name as the example name
+        # (e.g. ex-gwt-saltlake.gif) and if so, then assume this is an animated
+        # gif and add an Animation section to the restructured text file
+        fname = f"{ex}.gif"
+        if fname in os.listdir("../figures"):
+            line = "\n\nAnimation\n"
+            line += "----------------\n\n"
+            line += "Animation of model results:\n\n"
+            line += f".. image:: ../_images/{fname}"
+        line += "\n"
 
-    # # convert the rst tables
-    # print("running pandoc to create {}".format(dst))
-    # args = (
-    #     "rstlisttable",
-    #     dst,
-    # )
-    # print(" ".join(args))
-    # proc = Popen(args, stdout=PIPE, stderr=PIPE, cwd=doc_pth)
-    # stdout, stderr = proc.communicate()
-    # if stderr:
-    #     print("Errors:\n{}".format(stderr.decode("utf-8")))
-    # else:
-    #     f = open(dst, "w")
-    #     f.write(stdout.decode("utf-8"))
-    #     f.close()
+        # Write the restructured text lines and close the file
+        f.write(line)
 
     # clean up temporary latex file
     if os.path.isfile(src):
