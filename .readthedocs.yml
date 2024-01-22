@@ -27,4 +27,5 @@ formats:
 python:
   install:
     - requirements: etc/requirements.pip.txt
+    - requirements: etc/requirements.usgs.txt
     - requirements: .doc/requirements.rtd.txt
