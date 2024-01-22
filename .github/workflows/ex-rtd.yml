@@ -112,13 +112,12 @@ jobs:
     name: rtd-trigger
     needs: rtd_build
     runs-on: ubuntu-latest
-
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v4
 
-      - name: Trigger RTDs build on push to repo branches
+      - name: Trigger RTDs build
         uses: dfm/rtds-action@v1
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
