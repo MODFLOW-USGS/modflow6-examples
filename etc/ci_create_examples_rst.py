@@ -51,9 +51,9 @@ for name in sorted(os.listdir(ex_pth)):
 # create examples rst
 print(f"creating...'{pth}'")
 with open(os.path.join("..", ".doc", "examples.rst"), "w") as f:
-    line = "============================\n"
-    line += "MODFLOW 6 – Example problems\n"
-    line += "============================\n\n\n"
+    line = "====================\n"
+    line += "Example descriptions\n"
+    line += "====================\n\n\n"
     line += ".. toctree::\n"
     line += "   :numbered:\n"
     line += "   :maxdepth: 1\n\n"

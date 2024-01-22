@@ -1,5 +1,5 @@
-MODFLOW 6 Examples - Jupyter Notebooks
---------------------------------------
+Example notebooks
+-----------------
 
 The Jupyter Notebooks used to create the input files and figures for 
 each of the MODFLOW 6 `examples <examples.html>`_.

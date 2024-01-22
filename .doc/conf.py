@@ -37,7 +37,7 @@ for v in ex_regex.findall(lines):
 
 # -- Build examples.rst for notebooks to .doc --------------------------------
 with open("notebook_examples.rst", "w") as f:
-    lines = "MODFLOW 6 Examples - Jupyter Notebooks\n"
+    lines = "Example notebooks\n"
     lines += (len(lines) - 1) * "-" + "\n\n"
     lines += (
         "The Jupyter Notebooks used to create the input files and figures for \n"
@@ -66,7 +66,7 @@ if not on_rtd:
 
 # -- Project information -----------------------------------------------------
 
-project = "MODFLOW 6 Example Problems"
+project = "MODFLOW 6 Examples"
 copyright = "2020, MODFLOW 6 Development Team"
 author = "MODFLOW 6 Development Team"
 
