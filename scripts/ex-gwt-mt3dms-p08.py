@@ -5,7 +5,7 @@
 # established MT3DMS solutions.
 #
 # Ten example problems appear in the 1999 MT3DMS manual, starting on page 130.
-# This notebook demonstrates example 10 from the list below:
+# This notebook demonstrates example 8 from the list below:
 #
 #   1. One-Dimensional Transport in a Uniform Flow Field
 #   2. One-Dimensional Transport with Nonlinear or Nonequilibrium Sorption
