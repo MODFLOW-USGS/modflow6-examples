@@ -161,7 +161,6 @@ html_css_files = [
 
 html_context = {
     "github_repo": "https://github.com/MODFLOW-USGS/modflow6-examples",  # assuming an exact match
-    "github_version": "master",
     "display_github": False,
     "github_user": "modflow6-examples",
     "github_repo": "modflow6-examples",
@@ -210,7 +209,7 @@ html_show_copyright = False
 # Output file base name for HTML help builder.
 htmlhelp_basename = "mf6exdoc"
 
-# disable automatic notebook execution (nbs are built in CI for now)
+# disable automatic notebook execution (built in CI for now)
 nbsphinx_execute = "never"
 
 nbsphinx_prolog = (
