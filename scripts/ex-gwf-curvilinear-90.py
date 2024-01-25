@@ -26,7 +26,7 @@ import os
 import pathlib as pl
 from itertools import cycle
 from math import sqrt
-from typing import List
+from typing import Dict, List
 
 import flopy
 import matplotlib.pyplot as plt
@@ -1161,7 +1161,7 @@ class DisvGridMerger:
         kwargs to DisvPropertyContainer.plot_grid(...).
     """
 
-    grids: dict[str, DisvPropertyContainer]
+    grids: Dict[str, DisvPropertyContainer]
     merged: DisvPropertyContainer
     snap_vertices: dict
     connect_tolerance: dict
