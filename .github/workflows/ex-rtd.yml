@@ -21,9 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-    env:
-      script-directory: scripts
-      etc-directory: etc
     defaults:
       run:
         shell: bash
@@ -44,6 +41,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
+          echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
+          sudo apt-get install ttf-mscorefonts-installer
+          sudo rm -rf ~/.cache/matplotlib
 
       - name: Install pandoc
         run: |
@@ -57,18 +57,15 @@ jobs:
           python-version: 3.9
 
       - name: Install Python packages
+        working-directory: etc
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
-        working-directory: ${{env.etc-directory}}
 
       - name: Update flopy MODFLOW 6 classes
-        run: |
-          import flopy
-          flopy.mf6.utils.generate_classes(branch="develop", backup=False)
-        shell: python
+        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
@@ -78,21 +75,20 @@ jobs:
         with:
           repo: modflow6-nightly-build
 
-      - name: Run scripts without model runs
-        run: pytest -v -n=auto --durations=0 ci_build_files.py
-        working-directory: ${{env.etc-directory}}
+      - name: Create notebooks and run models
+        working-directory: autotest
+        run: pytest -v -n=auto --durations=0 test_notebooks.py --plot
+
+      - name: Copy notebooks to RTD directory
+        run: cp -R notebooks/*.ipynb .doc/_notebooks/
 
       - name: Run processing script
+        working-directory: scripts
         run: python process-scripts.py
-        working-directory: ${{env.script-directory}}
-
-      - name: Run notebooks with jupytext for ReadtheDocs
-        run: pytest -v -n=auto --durations=0 ci_run_notebooks.py
-        working-directory: ${{env.etc-directory}}
 
       - name: Create package tables and examples.rst for ReadtheDocs
+        working-directory: etc
         run: python ci_create_examples_rst.py
-        working-directory: ${{env.etc-directory}}
 
       - name: List example rst files for ReadtheDocs
         run: ls -R .doc/_examples/
@@ -119,13 +115,12 @@ jobs:
     name: rtd-trigger
     needs: rtd_build
     runs-on: ubuntu-latest
-
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
+    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v4
 
-      - name: Trigger RTDs build on push to repo branches
+      - name: Trigger RTDs build
         uses: dfm/rtds-action@v1
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}

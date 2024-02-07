@@ -5,50 +5,48 @@
 # uses 2778 vertices (NVERT) to delineate 5240 cells per layer (NCPL).
 # General-head boundaries are assigned to model layer 1 for cells outside of
 # a 1025 m radius circle.  Recharge is applied to the top of the model.
-#
 
-# ### USG1DISV Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import flopy.utils.cvfdutil
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
+from flopy.plot.styles import styles
 from flopy.utils.geometry import get_polygon_area
 from flopy.utils.gridintersect import GridIntersect
+from modflow_devtools.misc import get_env, timed
 from shapely.geometry import Polygon
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set default figure properties
-
-figure_size = (5, 5)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
+# Example name and base workspace
 sim_name = "ex-gwf-disvmesh"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table USG1DISV Model Parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 2  # Number of layers
 top = 0.0  # Top of the model ($m$)
@@ -61,19 +59,16 @@ recharge = 4.0e-3  # Recharge rate ($m/d$)
 
 # Static temporal data used by TDIS file
 # Simulation has 1 steady stress period (1 day).
-
 perlen = [1.0]
 nstp = [1]
 tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # Parse strings into lists
-
 botm = [float(value) for value in botm_str.split(",")]
 
+
 # create the disv grid
-
-
 def from_argus_export(fname):
     f = open(fname)
     line = f.readline()
@@ -111,8 +106,10 @@ def from_argus_export(fname):
 
 
 # Load argus mesh and get disv grid properties
-
-fname = os.path.join(config.data_ws, "ex-gwf-disvmesh", "argus.exp")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-disvmesh/argus.exp",
+    known_hash="md5:072a758ca3d35831acb7e1e27e7b8524",
+)
 verts, iverts = from_argus_export(fname)
 gridprops = flopy.utils.cvfdutil.get_disv_gridprops(verts, iverts)
 cell_areas = []
@@ -123,240 +120,211 @@ for i in range(gridprops["ncpl"]):
     cell_areas.append(get_polygon_area(cell_verts))
 
 # Solver parameters
-
 nouter = 50
 ninner = 100
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the MODFLOW 6 DISVMESH model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name):
-    if config.buildModel:
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
-        flopy.mf6.ModflowGwfdisv(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            top=top,
-            botm=botm,
-            **gridprops,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=True,
-            xt3doptions=True,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
+# +
+def build_models(sim_name):
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, save_flows=True)
+    flopy.mf6.ModflowGwfdisv(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        top=top,
+        botm=botm,
+        **gridprops,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=True,
+        xt3doptions=True,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
-        theta = np.arange(0.0, 2 * np.pi, 0.2)
-        radius = 1500.0
-        x = radius * np.cos(theta)
-        y = radius * np.sin(theta)
-        outer = [(x, y) for x, y in zip(x, y)]
-        radius = 1025.0
-        x = radius * np.cos(theta)
-        y = radius * np.sin(theta)
-        hole = [(x, y) for x, y in zip(x, y)]
-        p = Polygon(outer, holes=[hole])
-        ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
-        result = ix.intersect(p)
-        ghb_cellids = np.array(result["cellids"], dtype=int)
+    theta = np.arange(0.0, 2 * np.pi, 0.2)
+    radius = 1500.0
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    outer = [(x, y) for x, y in zip(x, y)]
+    radius = 1025.0
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+    hole = [(x, y) for x, y in zip(x, y)]
+    p = Polygon(outer, holes=[hole])
+    ix = GridIntersect(gwf.modelgrid, method="vertex", rtree=True)
+    result = ix.intersect(p)
+    ghb_cellids = np.array(result["cellids"], dtype=int)
 
-        ghb_spd = []
-        ghb_spd += [
-            [0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids
-        ]
-        ghb_spd = {0: ghb_spd}
-        flopy.mf6.ModflowGwfghb(
-            gwf,
-            stress_period_data=ghb_spd,
-            pname="GHB",
-        )
+    ghb_spd = []
+    ghb_spd += [[0, i, 0.0, k33 * cell_areas[i] / 10.0] for i in ghb_cellids]
+    ghb_spd = {0: ghb_spd}
+    flopy.mf6.ModflowGwfghb(
+        gwf,
+        stress_period_data=ghb_spd,
+        pname="GHB",
+    )
 
-        ncpl = gridprops["ncpl"]
-        rchcells = np.array(list(range(ncpl)), dtype=int)
-        rchcells[ghb_cellids] = -1
-        rch_spd = [
-            (0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0
-        ]
-        rch_spd = {0: rch_spd}
-        flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd, pname="RCH")
+    ncpl = gridprops["ncpl"]
+    rchcells = np.array(list(range(ncpl)), dtype=int)
+    rchcells[ghb_cellids] = -1
+    rch_spd = [(0, rchcells[i], recharge) for i in range(ncpl) if rchcells[i] > 0]
+    rch_spd = {0: rch_spd}
+    flopy.mf6.ModflowGwfrch(gwf, stress_period_data=rch_spd, pname="RCH")
 
-        head_filerecord = f"{sim_name}.hds"
-        budget_filerecord = f"{sim_name}.cbc"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            budget_filerecord=budget_filerecord,
-            saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
-        )
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        budget_filerecord=budget_filerecord,
+        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+    )
 
-        return sim
-    return None
+    return sim
 
 
-# Function to write MODFLOW 6 DISVMESH model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=False):
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, buff
 
 
-# Function to run the FHB model.
-# True is returned if the model runs successfully
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
+
+# +
+# Figure properties
+figure_size = (5, 5)
 
 
-@config.timeit
-def run_model(sim, silent=False):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent, report=True)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the DISVMESH model results.
-#
 def plot_grid(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap():
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
 
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    pmv.plot_grid(linewidth=1)
-    pmv.plot_bc(name="GHB")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        pmv.plot_grid(linewidth=1)
+        pmv.plot_bc(name="GHB")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-grid{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fig.savefig(fpth)
 
 
 def plot_head(idx, sim):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model(sim_name)
+    with styles.USGSMap():
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model(sim_name)
 
-    fig = plt.figure(figsize=(7.5, 5))
-    fig.tight_layout()
+        fig = plt.figure(figsize=(7.5, 5))
+        fig.tight_layout()
 
-    head = gwf.output.head().get_data()[:, 0, :]
+        head = gwf.output.head().get_data()[:, 0, :]
 
-    # create MODFLOW 6 cell-by-cell budget object
-    qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-        gwf,
-    )
-
-    ax = fig.add_subplot(1, 2, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
-    cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="A", heading="Layer 1")
-
-    ax = fig.add_subplot(1, 2, 2, aspect="equal")
-    pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
-    cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-    pmv.plot_vector(
-        qx,
-        qy,
-        normalize=False,
-        color="0.75",
-    )
-    cbar = plt.colorbar(cb, shrink=0.25)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    ax.set_xlabel("x position (m)")
-    ax.set_ylabel("y position (m)")
-    fs.heading(ax, letter="B", heading="Layer 2")
-
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-head{config.figure_ext}"
+        # create MODFLOW 6 cell-by-cell budget object
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+            gwf,
         )
-        fig.savefig(fpth)
-    return
+
+        ax = fig.add_subplot(1, 2, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
+        cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="A", heading="Layer 1")
+
+        ax = fig.add_subplot(1, 2, 2, aspect="equal")
+        pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
+        cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
+        pmv.plot_vector(
+            qx,
+            qy,
+            normalize=False,
+            color="0.75",
+        )
+        cbar = plt.colorbar(cb, shrink=0.25)
+        cbar.ax.set_xlabel(r"Head, ($m$)")
+        ax.set_xlabel("x position (m)")
+        ax.set_ylabel("y position (m)")
+        styles.heading(ax, letter="B", heading="Layer 2")
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
+            fig.savefig(fpth)
 
 
 def plot_results(idx, sim, silent=True):
-    if config.plotModel:
-        if idx == 0:
-            plot_grid(idx, sim)
-        plot_head(idx, sim)
-    return
+    if idx == 0:
+        plot_grid(idx, sim)
+    plot_head(idx, sim)
 
 
-# Function that wraps all of the steps for the FHB model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
-    sim = build_model(sim_name)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
+# +
+def scenario(idx, silent=True):
+    sim = build_models(sim_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(idx, sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### DISVMESH Simulation
-    #
-    # Model grid and simulated heads in the DISVMESH model
-
-    simulation(0)
+scenario(0)
+# -

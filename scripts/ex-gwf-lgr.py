@@ -2,45 +2,44 @@
 #
 # This script reproduces the model in Mehl and Hill (2013).
 
-# ### MODFLOW 6 LGR Problem Setup
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-# Append to system path to include the common subdirectory
-
+# +
 import os
-import sys
+import pathlib as pl
 
-sys.path.append(os.path.join("..", "common"))
-
-# Imports
-
-import config
 import flopy
 import flopy.utils.binaryfile as bf
 import matplotlib.pyplot as plt
 import numpy as np
-from figspecs import USGSFigure
+from flopy.plot.styles import styles
 from flopy.utils.lgrutil import Lgr
+from modflow_devtools.misc import get_env, timed
 
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (7, 5)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
+# Example name and base workspace
+workspace = pl.Path("../examples")
 example_name = "ex-gwf-lgr"
 
-# Model units
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
 
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Model units
 length_units = "meters"
 time_units = "days"
 
-# Table
-
+# Model parameters
 nlayp = 3  # Number of layers in parent model
 nrowp = 15  # Number of rows in parent model
 ncolp = 15  # Number of columns in parent model
@@ -55,7 +54,6 @@ k33 = 1.0  # Vertical hydraulic conductivity ($m/d$)
 
 # Additional model input preparation
 # Time related variables
-
 delrp = 1544.1 / ncolp
 delcp = 1029.4 / nrowp
 numdays = 1
@@ -65,7 +63,6 @@ nstp = [1] * numdays
 tsmult = [1.0] * numdays
 
 # Further parent model grid discretization
-
 x = [round(x, 3) for x in np.linspace(50.0, 45.0, ncolp)]
 topp = np.repeat(x, nrowp).reshape((15, 15)).T
 z = [round(z, 3) for z in np.linspace(50.0, 0.0, nlayp + 1)]
@@ -75,13 +72,11 @@ idomainp[0:2, 6:11, 2:8] = 0  # Zero out where the child grid will reside
 icelltype = [1, 0, 0]  # Water table resides in layer 1
 
 # Solver settings
-
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-7, 1e-6, 0.97
 
 # Prepping input for SFR package for parent model
 # Define the connections
-
 connsp = [
     (0, -1),
     (1, 0, -2),
@@ -104,7 +99,6 @@ connsp = [
 ]
 
 # Package_data information
-
 sfrcells = [
     (0, 0, 1),
     (0, 1, 1),
@@ -204,7 +198,6 @@ sfrspd = {0: [[0, "INFLOW", 40.0]]}
 # stream segment with all linear connections. Cheating a bit by the
 # knowledge that there are 89 stream reaches in the child model.  This
 # is known from the original model
-
 connsc = []
 for i in np.arange(89):
     if i == 0:
@@ -215,7 +208,6 @@ for i in np.arange(89):
         connsc.append((i, i - 1, -1 * (i + 1)))
 
 # Package_data information
-
 sfrcellsc = [
     (0, 0, 3),
     (0, 1, 3),
@@ -518,363 +510,347 @@ for i in np.arange(len(rlenc)):
     )
 
 sfrspdc = {0: [[0, "INFLOW", 0.0]]}
+# -
 
-
-# ### Function to build models
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(sim_name, silent=False):
-    if config.buildModel:
-        # Instantiate the MODFLOW 6 simulation
-        name = "lgr"
-        gwfname = "gwf-" + name
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name,
-            version="mf6",
-            sim_ws=sim_ws,
-            exe_name=mf6exe,
-            continue_=True,
-        )
+# +
+def build_models(sim_name, silent=False):
+    # Instantiate the MODFLOW 6 simulation
+    name = "lgr"
+    gwfname = "gwf-" + name
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(
+        sim_name=sim_name,
+        version="mf6",
+        sim_ws=sim_ws,
+        exe_name="mf6",
+        continue_=True,
+    )
 
-        # Instantiating MODFLOW 6 time discretization
-        tdis_rc = []
-        for i in range(len(perlen)):
-            tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_rc, time_units=time_units
-        )
+    # Instantiating MODFLOW 6 time discretization
+    tdis_rc = []
+    for i in range(len(perlen)):
+        tdis_rc.append((perlen[i], nstp[i], tsmult[i]))
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
-        # Instantiating MODFLOW 6 groundwater flow model
-        gwfname = gwfname + "-parent"
-        gwf = flopy.mf6.ModflowGwf(
-            sim,
-            modelname=gwfname,
-            save_flows=True,
-            newtonoptions="newton",
-            model_nam_file=f"{gwfname}.nam",
-        )
+    # Instantiating MODFLOW 6 groundwater flow model
+    gwfname = gwfname + "-parent"
+    gwf = flopy.mf6.ModflowGwf(
+        sim,
+        modelname=gwfname,
+        save_flows=True,
+        newtonoptions="newton",
+        model_nam_file=f"{gwfname}.nam",
+    )
 
-        # Instantiating MODFLOW 6 solver for flow model
-        imsgwf = flopy.mf6.ModflowIms(
-            sim,
-            print_option="SUMMARY",
-            outer_dvclose=hclose,
-            outer_maximum=nouter,
-            under_relaxation="NONE",
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=rclose,
-            linear_acceleration="BICGSTAB",
-            scaling_method="NONE",
-            reordering_method="NONE",
-            relaxation_factor=relax,
-            filename=f"{gwfname}.ims",
-        )
-        sim.register_ims_package(imsgwf, [gwf.name])
+    # Instantiating MODFLOW 6 solver for flow model
+    imsgwf = flopy.mf6.ModflowIms(
+        sim,
+        print_option="SUMMARY",
+        outer_dvclose=hclose,
+        outer_maximum=nouter,
+        under_relaxation="NONE",
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=rclose,
+        linear_acceleration="BICGSTAB",
+        scaling_method="NONE",
+        reordering_method="NONE",
+        relaxation_factor=relax,
+        filename=f"{gwfname}.ims",
+    )
+    sim.register_ims_package(imsgwf, [gwf.name])
 
-        # Instantiating MODFLOW 6 discretization package
-        dis = flopy.mf6.ModflowGwfdis(
-            gwf,
-            nlay=nlayp,
-            nrow=nrowp,
-            ncol=ncolp,
-            delr=delrp,
-            delc=delcp,
-            top=topp,
-            botm=botmp,
-            idomain=idomainp,
-            filename=f"{gwfname}.dis",
-        )
+    # Instantiating MODFLOW 6 discretization package
+    dis = flopy.mf6.ModflowGwfdis(
+        gwf,
+        nlay=nlayp,
+        nrow=nrowp,
+        ncol=ncolp,
+        delr=delrp,
+        delc=delcp,
+        top=topp,
+        botm=botmp,
+        idomain=idomainp,
+        filename=f"{gwfname}.dis",
+    )
 
-        # Instantiating MODFLOW 6 initial conditions package for flow model
-        strt = [topp - 0.25, topp - 0.25, topp - 0.25]
-        ic = flopy.mf6.ModflowGwfic(gwf, strt=strt, filename=f"{gwfname}.ic")
+    # Instantiating MODFLOW 6 initial conditions package for flow model
+    strt = [topp - 0.25, topp - 0.25, topp - 0.25]
+    ic = flopy.mf6.ModflowGwfic(gwf, strt=strt, filename=f"{gwfname}.ic")
 
-        # Instantiating MODFLOW 6 node-property flow package
-        npf = flopy.mf6.ModflowGwfnpf(
-            gwf,
-            save_flows=False,
-            alternative_cell_averaging="AMT-LMK",
-            icelltype=icelltype,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=False,
-            filename=f"{gwfname}.npf",
-        )
+    # Instantiating MODFLOW 6 node-property flow package
+    npf = flopy.mf6.ModflowGwfnpf(
+        gwf,
+        save_flows=False,
+        alternative_cell_averaging="AMT-LMK",
+        icelltype=icelltype,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=False,
+        filename=f"{gwfname}.npf",
+    )
 
-        # Instantiating MODFLOW 6 output control package for flow model
-        oc = flopy.mf6.ModflowGwfoc(
-            gwf,
-            budget_filerecord=f"{gwfname}.bud",
-            head_filerecord=f"{gwfname}.hds",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
-            saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-            printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        )
+    # Instantiating MODFLOW 6 output control package for flow model
+    oc = flopy.mf6.ModflowGwfoc(
+        gwf,
+        budget_filerecord=f"{gwfname}.bud",
+        head_filerecord=f"{gwfname}.hds",
+        headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+        printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+    )
 
-        # Instantiating MODFLOW 6 constant head package
-        rowList = np.arange(0, nrowp).tolist()
-        layList = np.arange(0, nlayp).tolist()
-        chdspd_left = []
-        chdspd_right = []
+    # Instantiating MODFLOW 6 constant head package
+    rowList = np.arange(0, nrowp).tolist()
+    layList = np.arange(0, nlayp).tolist()
+    chdspd_left = []
+    chdspd_right = []
 
-        # Loop through rows, the left & right sides will appear in separate,
-        # dedicated packages
-        hd_left = 49.75
-        hd_right = 44.75
-        for l in layList:
-            for r in rowList:
-                # first, do left side of model
-                chdspd_left.append([(l, r, 0), hd_left])
-                # finally, do right side of model
-                chdspd_right.append([(l, r, ncolp - 1), hd_right])
+    # Loop through rows, the left & right sides will appear in separate,
+    # dedicated packages
+    hd_left = 49.75
+    hd_right = 44.75
+    for l in layList:
+        for r in rowList:
+            # first, do left side of model
+            chdspd_left.append([(l, r, 0), hd_left])
+            # finally, do right side of model
+            chdspd_right.append([(l, r, ncolp - 1), hd_right])
 
-        chdspd = {0: chdspd_left}
-        chd1 = flopy.mf6.modflow.mfgwfchd.ModflowGwfchd(
-            gwf,
-            maxbound=len(chdspd),
-            stress_period_data=chdspd,
-            save_flows=False,
-            pname="CHD-1",
-            filename=f"{gwfname}.chd1.chd",
-        )
-        chdspd = {0: chdspd_right}
-        chd2 = flopy.mf6.modflow.mfgwfchd.ModflowGwfchd(
-            gwf,
-            maxbound=len(chdspd),
-            stress_period_data=chdspd,
-            save_flows=False,
-            pname="CHD-2",
-            filename=f"{gwfname}.chd2.chd",
-        )
+    chdspd = {0: chdspd_left}
+    chd1 = flopy.mf6.modflow.mfgwfchd.ModflowGwfchd(
+        gwf,
+        maxbound=len(chdspd),
+        stress_period_data=chdspd,
+        save_flows=False,
+        pname="CHD-1",
+        filename=f"{gwfname}.chd1.chd",
+    )
+    chdspd = {0: chdspd_right}
+    chd2 = flopy.mf6.modflow.mfgwfchd.ModflowGwfchd(
+        gwf,
+        maxbound=len(chdspd),
+        stress_period_data=chdspd,
+        save_flows=False,
+        pname="CHD-2",
+        filename=f"{gwfname}.chd2.chd",
+    )
 
-        # Instantiating MODFLOW 6 Parent model's SFR package
-        sfr = flopy.mf6.ModflowGwfsfr(
-            gwf,
-            print_stage=False,
-            print_flows=False,
-            budget_filerecord=gwfname + ".sfr.bud",
-            save_flows=True,
-            mover=True,
-            pname="SFR-parent",
-            time_conversion=86400.0,
-            boundnames=False,
-            nreaches=len(connsp),
-            packagedata=pkdat,
-            connectiondata=connsp,
-            perioddata=sfrspd,
-            filename=f"{gwfname}.sfr",
-        )
+    # Instantiating MODFLOW 6 Parent model's SFR package
+    sfr = flopy.mf6.ModflowGwfsfr(
+        gwf,
+        print_stage=False,
+        print_flows=False,
+        budget_filerecord=gwfname + ".sfr.bud",
+        save_flows=True,
+        mover=True,
+        pname="SFR-parent",
+        time_conversion=86400.0,
+        boundnames=False,
+        nreaches=len(connsp),
+        packagedata=pkdat,
+        connectiondata=connsp,
+        perioddata=sfrspd,
+        filename=f"{gwfname}.sfr",
+    )
 
-        # -------------------------------
-        # Now pivoting to the child grid
-        # -------------------------------
-        # Leverage flopy's "Lgr" class; was imported at start of script
-        ncpp = 3
-        ncppl = [3, 3, 0]
-        lgr = Lgr(
-            nlayp,
-            nrowp,
-            ncolp,
-            delrp,
-            delcp,
-            topp,
-            botmp,
-            idomainp,
-            ncpp=ncpp,
-            ncppl=ncppl,
-            xllp=0.0,
-            yllp=0.0,
-        )
+    # -------------------------------
+    # Now pivoting to the child grid
+    # -------------------------------
+    # Leverage flopy's "Lgr" class; was imported at start of script
+    ncpp = 3
+    ncppl = [3, 3, 0]
+    lgr = Lgr(
+        nlayp,
+        nrowp,
+        ncolp,
+        delrp,
+        delcp,
+        topp,
+        botmp,
+        idomainp,
+        ncpp=ncpp,
+        ncppl=ncppl,
+        xllp=0.0,
+        yllp=0.0,
+    )
 
-        # Get child grid info:
-        delrc, delcc = lgr.get_delr_delc()
-        idomainc = lgr.get_idomain()  # child idomain
-        topc, botmc = lgr.get_top_botm()  # top/bottom of child grid
+    # Get child grid info:
+    delrc, delcc = lgr.get_delr_delc()
+    idomainc = lgr.get_idomain()  # child idomain
+    topc, botmc = lgr.get_top_botm()  # top/bottom of child grid
 
-        # Instantiate MODFLOW 6 child gwf model
-        gwfnamec = "gwf-" + name + "-child"
-        gwfc = flopy.mf6.ModflowGwf(
-            sim,
-            modelname=gwfnamec,
-            save_flows=True,
-            newtonoptions="newton",
-            model_nam_file=f"{gwfnamec}.nam",
-        )
+    # Instantiate MODFLOW 6 child gwf model
+    gwfnamec = "gwf-" + name + "-child"
+    gwfc = flopy.mf6.ModflowGwf(
+        sim,
+        modelname=gwfnamec,
+        save_flows=True,
+        newtonoptions="newton",
+        model_nam_file=f"{gwfnamec}.nam",
+    )
 
-        # Instantiating MODFLOW 6 discretization package for the child model
-        child_dis_shp = lgr.get_shape()
-        nlayc = child_dis_shp[0]
-        nrowc = child_dis_shp[1]
-        ncolc = child_dis_shp[2]
-        disc = flopy.mf6.ModflowGwfdis(
-            gwfc,
-            nlay=nlayc,
-            nrow=nrowc,
-            ncol=ncolc,
-            delr=delrc,
-            delc=delcc,
-            top=topc,
-            botm=botmc,
-            idomain=idomainc,
-            filename=f"{gwfnamec}.dis",
-        )
+    # Instantiating MODFLOW 6 discretization package for the child model
+    child_dis_shp = lgr.get_shape()
+    nlayc = child_dis_shp[0]
+    nrowc = child_dis_shp[1]
+    ncolc = child_dis_shp[2]
+    disc = flopy.mf6.ModflowGwfdis(
+        gwfc,
+        nlay=nlayc,
+        nrow=nrowc,
+        ncol=ncolc,
+        delr=delrc,
+        delc=delcc,
+        top=topc,
+        botm=botmc,
+        idomain=idomainc,
+        filename=f"{gwfnamec}.dis",
+    )
 
-        # Instantiating MODFLOW 6 initial conditions package for child model
-        strtc = [
-            topc - 0.25,
-            topc - 0.25,
-            topc - 0.25,
-            topc - 0.25,
-            topc - 0.25,
-            topc - 0.25,
-        ]
-        icc = flopy.mf6.ModflowGwfic(
-            gwfc, strt=strtc, filename=f"{gwfnamec}.ic"
-        )
+    # Instantiating MODFLOW 6 initial conditions package for child model
+    strtc = [
+        topc - 0.25,
+        topc - 0.25,
+        topc - 0.25,
+        topc - 0.25,
+        topc - 0.25,
+        topc - 0.25,
+    ]
+    icc = flopy.mf6.ModflowGwfic(gwfc, strt=strtc, filename=f"{gwfnamec}.ic")
 
-        # Instantiating MODFLOW 6 node property flow package for child model
-        icelltypec = [1, 1, 1, 0, 0, 0]
-        npfc = flopy.mf6.ModflowGwfnpf(
-            gwfc,
-            save_flows=False,
-            alternative_cell_averaging="AMT-LMK",
-            icelltype=icelltypec,
-            k=k11,
-            k33=k33,
-            save_specific_discharge=False,
-            filename=f"{gwfnamec}.npf",
-        )
+    # Instantiating MODFLOW 6 node property flow package for child model
+    icelltypec = [1, 1, 1, 0, 0, 0]
+    npfc = flopy.mf6.ModflowGwfnpf(
+        gwfc,
+        save_flows=False,
+        alternative_cell_averaging="AMT-LMK",
+        icelltype=icelltypec,
+        k=k11,
+        k33=k33,
+        save_specific_discharge=False,
+        filename=f"{gwfnamec}.npf",
+    )
 
-        # Instantiating MODFLOW 6 output control package for the child model
-        occ = flopy.mf6.ModflowGwfoc(
-            gwfc,
-            budget_filerecord=f"{gwfnamec}.bud",
-            head_filerecord=f"{gwfnamec}.hds",
-            headprintrecord=[
-                ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-            ],
-            saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-            printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        )
+    # Instantiating MODFLOW 6 output control package for the child model
+    occ = flopy.mf6.ModflowGwfoc(
+        gwfc,
+        budget_filerecord=f"{gwfnamec}.bud",
+        head_filerecord=f"{gwfnamec}.hds",
+        headprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+        printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
+    )
 
-        # Instantiating MODFLOW 6 Streamflow routing package for child model
-        sfrc = flopy.mf6.ModflowGwfsfr(
-            gwfc,
-            print_stage=False,
-            print_flows=False,
-            budget_filerecord=gwfnamec + ".sfr.bud",
-            save_flows=True,
-            mover=True,
-            pname="SFR-child",
-            time_conversion=86400.00,
-            boundnames=False,
-            nreaches=len(connsc),
-            packagedata=pkdatc,
-            connectiondata=connsc,
-            perioddata=sfrspdc,
-            filename=f"{gwfnamec}.sfr",
-        )
+    # Instantiating MODFLOW 6 Streamflow routing package for child model
+    sfrc = flopy.mf6.ModflowGwfsfr(
+        gwfc,
+        print_stage=False,
+        print_flows=False,
+        budget_filerecord=gwfnamec + ".sfr.bud",
+        save_flows=True,
+        mover=True,
+        pname="SFR-child",
+        time_conversion=86400.00,
+        boundnames=False,
+        nreaches=len(connsc),
+        packagedata=pkdatc,
+        connectiondata=connsc,
+        perioddata=sfrspdc,
+        filename=f"{gwfnamec}.sfr",
+    )
 
-        # Retrieve exchange data using Lgr class functionality
-        exchange_data = lgr.get_exchange_data()
+    # Retrieve exchange data using Lgr class functionality
+    exchange_data = lgr.get_exchange_data()
 
-        # Establish MODFLOW 6 GWF-GWF exchange
-        gwfgwf = flopy.mf6.ModflowGwfgwf(
-            sim,
-            exgtype="GWF6-GWF6",
-            print_flows=True,
-            print_input=True,
-            exgmnamea=gwfname,
-            exgmnameb=gwfnamec,
-            nexg=len(exchange_data),
-            exchangedata=exchange_data,
-            mvr_filerecord=f"{name}.mvr",
-            pname="EXG-1",
-            filename=f"{name}.exg",
-        )
+    # Establish MODFLOW 6 GWF-GWF exchange
+    gwfgwf = flopy.mf6.ModflowGwfgwf(
+        sim,
+        exgtype="GWF6-GWF6",
+        print_flows=True,
+        print_input=True,
+        exgmnamea=gwfname,
+        exgmnameb=gwfnamec,
+        nexg=len(exchange_data),
+        exchangedata=exchange_data,
+        mvr_filerecord=f"{name}.mvr",
+        pname="EXG-1",
+        filename=f"{name}.exg",
+    )
 
-        # Instantiate MVR package
-        mvrpack = [[gwfname, "SFR-parent"], [gwfnamec, "SFR-child"]]
-        maxpackages = len(mvrpack)
+    # Instantiate MVR package
+    mvrpack = [[gwfname, "SFR-parent"], [gwfnamec, "SFR-child"]]
+    maxpackages = len(mvrpack)
 
-        # Set up static SFR-to-SFR connections that remain fixed for entire simulation
-        static_mvrperioddata = [  # don't forget to use 0-based values
-            [
-                mvrpack[0][0],
-                mvrpack[0][1],
-                7,
-                mvrpack[1][0],
-                mvrpack[1][1],
-                0,
-                "FACTOR",
-                1.0,
-            ],
-            [
-                mvrpack[1][0],
-                mvrpack[1][1],
-                88,
-                mvrpack[0][0],
-                mvrpack[0][1],
-                8,
-                "FACTOR",
-                1,
-            ],
-        ]
+    # Set up static SFR-to-SFR connections that remain fixed for entire simulation
+    static_mvrperioddata = [  # don't forget to use 0-based values
+        [
+            mvrpack[0][0],
+            mvrpack[0][1],
+            7,
+            mvrpack[1][0],
+            mvrpack[1][1],
+            0,
+            "FACTOR",
+            1.0,
+        ],
+        [
+            mvrpack[1][0],
+            mvrpack[1][1],
+            88,
+            mvrpack[0][0],
+            mvrpack[0][1],
+            8,
+            "FACTOR",
+            1,
+        ],
+    ]
 
-        mvrspd = {0: static_mvrperioddata}
-        maxmvr = 2
-        mvr = flopy.mf6.ModflowMvr(
-            gwfgwf,
-            modelnames=True,
-            maxmvr=maxmvr,
-            print_flows=True,
-            maxpackages=maxpackages,
-            packages=mvrpack,
-            perioddata=mvrspd,
-            filename=f"{name}.mvr",
-        )
+    mvrspd = {0: static_mvrperioddata}
+    maxmvr = 2
+    mvr = flopy.mf6.ModflowMvr(
+        gwfgwf,
+        modelnames=True,
+        maxmvr=maxmvr,
+        print_flows=True,
+        maxpackages=maxpackages,
+        packages=mvrpack,
+        perioddata=mvrspd,
+        filename=f"{name}.mvr",
+    )
 
-        return sim
-    return None
+    return sim
 
 
-# Function to write model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, buff
 
 
-# Function to run the model. True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (7, 5)
 
 
 def plot_results(mf6, idx):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_name = mf6.name
-        fs = USGSFigure(figure_type="graph", verbose=False)
-
+    sim_name = mf6.name
+    with styles.USGSPlot():
         # Start by retrieving some output
         mf6_out_pth = mf6.simulation_data.mfpath.get_sim_path()
         sfr_parent_bud_file = list(mf6.model_names)[0] + ".sfr.bud"
@@ -906,22 +882,14 @@ def plot_results(mf6, idx):
             gwswc.append(datc[0])
 
             # No values for some reason?
-            dat_fmp = modobjp.get_data(
-                kstpkper=kstpkper, text="        FROM-MVR"
-            )
-            dat_tmp = modobjp.get_data(
-                kstpkper=kstpkper, text="          TO-MVR"
-            )
+            dat_fmp = modobjp.get_data(kstpkper=kstpkper, text="        FROM-MVR")
+            dat_tmp = modobjp.get_data(kstpkper=kstpkper, text="          TO-MVR")
             toMvrp.append(dat_fmp[0])
             fromMvrp.append(dat_tmp[0])
 
             # No values for some reason?
-            dat_fmc = modobjc.get_data(
-                kstpkper=kstpkper, text="        FROM-MVR"
-            )
-            dat_tmc = modobjc.get_data(
-                kstpkper=kstpkper, text="          TO-MVR"
-            )
+            dat_fmc = modobjc.get_data(kstpkper=kstpkper, text="        FROM-MVR")
+            dat_tmc = modobjc.get_data(kstpkper=kstpkper, text="          TO-MVR")
             toMvrc.append(dat_fmc[0])
             fromMvrc.append(dat_tmc[0])
 
@@ -956,9 +924,7 @@ def plot_results(mf6, idx):
         # Now get center of all the reaches
         rch_lengths = []
         for i in np.arange(len(all_rch_lengths)):
-            rch_lengths.append(
-                np.sum(all_rch_lengths[0:i]) + (all_rch_lengths[i] / 2)
-            )
+            rch_lengths.append(np.sum(all_rch_lengths[0:i]) + (all_rch_lengths[i] / 2))
 
         # Make a continuous vector of the gw-sw exchanges
         gwsw_exg = np.zeros(len(connsp) + len(connsc))
@@ -972,9 +938,7 @@ def plot_results(mf6, idx):
         for j, jtm in enumerate(gwswc[0]):
             gwsw_exg[8 + j] = jtm[2]
 
-        fig, ax1 = plt.subplots(
-            figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, ax1 = plt.subplots(figsize=figure_size, dpi=300, tight_layout=True)
         pts = ax1.plot(rch_lengths, strmQ, "r^", label="Stream Flow", zorder=3)
         ax1.set_zorder(4)
         ax1.set_facecolor("none")
@@ -985,12 +949,8 @@ def plot_results(mf6, idx):
             ha="center",
             fontsize=10,
         )
-        ax1.arrow(
-            1080, 163, -440, 0, head_width=5, head_length=50, fc="k", ec="k"
-        )
-        ax1.arrow(
-            2150, 163, 395, 0, head_width=5, head_length=50, fc="k", ec="k"
-        )
+        ax1.arrow(1080, 163, -440, 0, head_width=5, head_length=50, fc="k", ec="k")
+        ax1.arrow(2150, 163, 395, 0, head_width=5, head_length=50, fc="k", ec="k")
         ax1.arrow(
             525,
             27,
@@ -1103,44 +1063,33 @@ def plot_results(mf6, idx):
 
         title = "River conditions with steady flow"
         letter = chr(ord("@") + idx + 1)
-        fs.heading(letter=letter, heading=title)
+        styles.heading(letter=letter, heading=title)
 
-        # save figure
-        if config.plotSave:
-            fpth = os.path.join(
-                "..", "figures", f"{sim_name}{config.figure_ext}"
-            )
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}.png")
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-
-    if success:
+    sim = build_models(example_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Mehl and Hill (2013) results
-    #
-    # Two-dimensional transport in a uniform flow field
-
-    scenario(0)
+# Two-dimensional transport in a uniform flow field
+scenario(0)
+# -

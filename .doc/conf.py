@@ -12,9 +12,13 @@
 #
 import os
 import re
+from modflow_devtools.misc import get_env
 
 # -- set boolean indicating if running on readthedocs server -----------------
-on_rtd = os.environ.get("READTHEDOCS") == "True"
+on_rtd = get_env("READTHEDOCS", False)
+
+# -- get git ref from which we are building the docs -------------------------
+ref = get_env("READTHEDOCS_GIT_IDENTIFIER", "master")
 
 # -- setup regular expression for body.tex -----------------------------------
 ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
@@ -32,37 +36,23 @@ for v in ex_regex.findall(lines):
         gwt_list.append(v.replace(".tex", ""))
 
 # -- Build examples.rst for notebooks to .doc --------------------------------
-f = open("notebook_examples.rst", "w")
+with open("notebook_examples.rst", "w") as f:
+    lines = "Example notebooks\n"
+    lines += (len(lines) - 1) * "-" + "\n\n"
+    lines += (
+        "The Jupyter Notebooks used to create the input files and figures for \n"
+        + "each of the MODFLOW 6 `examples <examples.html>`_.\n\n"
+    )
+    f.write(lines)
 
-lines = "MODFLOW 6 Examples - Jupyter Notebooks\n"
-lines += (len(lines) - 1) * "-" + "\n\n"
-lines += (
-    "The Jupyter Notebooks used to create the input files and figures for \n"
-    + "each of the MODFLOW 6 `examples <examples.html>`_.\n\n"
-)
-f.write(lines)
-
-# gwf examples Jupyter Notebooks
-lines = ".. toctree::\n"
-lines += "   :numbered:\n"
-lines += "   :maxdepth: 1\n\n"
-for base_name in gwf_list:
-    lines += f"   {base_name} "
-    lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
-for base_name in gwt_list:
-    lines += f"   {base_name} "
-    lines += "<{}>\n".format(os.path.join("_notebooks", base_name + ".ipynb"))
-lines += "\n\n"
-f.write(lines)
-
-# close the restructured text file
-f.close()
-
-# # -- convert the tutorial scripts -------------------------------------------
-# if not on_rtd:
-#     cmd = ("python", "test_build.py")
-#     print(" ".join(cmd))
-#     os.system(" ".join(cmd))
+    lines = ".. nbgallery::\n"
+    lines += "    :name: Examples gallery\n\n"
+    for base_name in gwf_list:
+        lines += f"   _notebooks/{base_name}\n"
+    for base_name in gwt_list:
+        lines += f"   _notebooks/{base_name}\n"
+    lines += "\n\n"
+    f.write(lines)
 
 # -- Build the example restructured text files -------------------------------
 if not on_rtd:
@@ -76,7 +66,7 @@ if not on_rtd:
 
 # -- Project information -----------------------------------------------------
 
-project = "MODFLOW 6 Example Problems"
+project = "MODFLOW 6 Examples"
 copyright = "2020, MODFLOW 6 Development Team"
 author = "MODFLOW 6 Development Team"
 
@@ -99,8 +89,7 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",  # lowercase didn't work
     "sphinx.ext.autosectionlabel",
     "nbsphinx",
-    "nbsphinx_link",
-    "recommonmark",
+    "myst_parser",
     "sphinx_markdown_tables",
 ]
 
@@ -165,18 +154,18 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+html_css_files = [
+    'custom.css',
+    'theme_overrides.css'
+]
+
 html_context = {
     "github_repo": "https://github.com/MODFLOW-USGS/modflow6-examples",  # assuming an exact match
-    "github_version": "master",
     "display_github": False,
     "github_user": "modflow6-examples",
     "github_repo": "modflow6-examples",
     "github_version": "master",
     "doc_path": ".doc",
-    "css_files": [
-        "_static/theme_overrides.css",  # override wide tables in RTD theme
-        "_static/custom.css",
-    ],
 }
 
 numfig = True
@@ -194,17 +183,16 @@ numpydoc_show_class_members = False
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "modflow6-examples"
-# html_favicon = ".._images/flopylogo.png"
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
 html_use_smartypants = True
 
 # If false, no module index is generated.
-html_domain_indices = True
+html_domain_indices = False
 
 # If false, no index is generated.
-html_use_index = True
+html_use_index = False
 
 # If true, the index is split into individual pages for each letter.
 html_split_index = False
@@ -220,3 +208,42 @@ html_show_copyright = False
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "mf6exdoc"
+
+# disable automatic notebook execution (built in CI for now)
+nbsphinx_execute = "never"
+
+nbsphinx_prolog = (
+    r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
+.. raw:: html
+
+    <div class="admonition note">
+      This page was generated from
+      <a class="reference external" href="https://github.com/MODFLOW-USGS/modflow6-examples/blob/"""
+    + ref
+    + r"""/scripts/{{ env.docname.split('/')|last|e + '.py' }}">{{ env.docname.split('/')|last|e + '.py' }}</a>.
+      It's also available as a <a href="{{ env.docname.split('/')|last|e + '.ipynb' }}" class="reference download internal" download>notebook</a>.
+      <script>
+        if (document.location.host) {
+          let nbviewer_link = document.createElement('a');
+          nbviewer_link.setAttribute('href',
+            'https://nbviewer.org/url' +
+            (window.location.protocol == 'https:' ? 's/' : '/') +
+            window.location.host +
+            window.location.pathname.slice(0, -4) +
+            'ipynb');
+          nbviewer_link.innerHTML = 'View in <em>nbviewer</em>';
+          nbviewer_link.innerHTML = 'Or view it on <em>nbviewer</em>';
+          nbviewer_link.classList.add('reference');
+          nbviewer_link.classList.add('external');
+          document.currentScript.replaceWith(nbviewer_link, '.');
+        }
+      </script>
+    </div>
+"""
+)
+
+# Import Matplotlib to avoid this message in notebooks:
+# "Matplotlib is building the font cache; this may take a moment."
+import matplotlib.pyplot

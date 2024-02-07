@@ -1,51 +1,45 @@
-# ## Rotating Interface Problem
+# ## Rotating interface example
 #
-# Density driven groundwater flow
+# This example demonstrates density-driven groundwater flow.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define some variables, and read settings from environment variables.
 
-
-# ### Rotating Interface Problem Setup
-
-# Imports
-
+# +
 import os
-import sys
+import pathlib as pl
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
+# Example name and base workspace
+sim_name = "ex-gwt-rotate"
+workspace = pl.Path("../examples")
 
-sys.path.append(os.path.join("..", "common"))
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+gif_save = get_env("GIF", True)
+# -
 
-# Import common functionality
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
 
-import config
-from analytical import BakkerRotatingInterface
-from figspecs import USGSFigure
-
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 4)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-example_name = "ex-gwt-rotate"
-
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nstp = 1000  # Number of time steps
 perlen = 10000  # Simulation time length ($d$)
@@ -75,18 +69,101 @@ x1 = 170.0  # X-midpoint location for zone 1 and 2 interface
 x2 = 130.0  # X-midpoint location for zone 2 and 3 interface
 porosity = 0.2  # Porosity (unitless)
 
+# Grid bottom elevations
 botm = [top - k * delv for k in range(1, nlay + 1)]
 
+# Solver criteria
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-8, 1e-8, 0.97
+# -
 
-
-# ### Functions to build, write, run, and plot models
+# ### Analytical solution
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
+# Define an analytical solution for rotating interfaces (from [Bakker et al 2004](https://doi.org/10.1016/j.jhydrol.2003.10.007))
+
+
+class BakkerRotatingInterface:
+    """
+    Analytical solution for rotating interfaces.
+
+    """
+
+    @staticmethod
+    def get_s(k, rhoa, rhob, alpha):
+        return k * (rhob - rhoa) / rhoa * np.sin(alpha)
+
+    @staticmethod
+    def get_F(z, zeta1, omega1, s):
+        l = (zeta1.real - omega1.real) ** 2 + (zeta1.imag - omega1.imag) ** 2
+        l = np.sqrt(l)
+        try:
+            v = (
+                s
+                * l
+                * complex(0, 1)
+                / 2
+                / np.pi
+                / (zeta1 - omega1)
+                * np.log((z - zeta1) / (z - omega1))
+            )
+        except:
+            v = 0.0
+        return v
+
+    @staticmethod
+    def get_Fgrid(xg, yg, zeta1, omega1, s):
+        qxg = []
+        qyg = []
+        for x, y in zip(xg.flatten(), yg.flatten()):
+            z = complex(x, y)
+            W = BakkerRotatingInterface.get_F(z, zeta1, omega1, s)
+            qx = W.real
+            qy = -W.imag
+            qxg.append(qx)
+            qyg.append(qy)
+        qxg = np.array(qxg)
+        qyg = np.array(qyg)
+        qxg = qxg.reshape(xg.shape)
+        qyg = qyg.reshape(yg.shape)
+        return qxg, qyg
+
+    @staticmethod
+    def get_zetan(n, x0, a, b):
+        return complex(x0 + (-1) ** n * a, (2 * n - 1) * b)
+
+    @staticmethod
+    def get_omegan(n, x0, a, b):
+        return complex(x0 + (-1) ** (1 + n) * a, -(2 * n - 1) * b)
+
+    @staticmethod
+    def get_w(xg, yg, k, rhoa, rhob, a, b, x0):
+        zeta1 = BakkerRotatingInterface.get_zetan(1, x0, a, b)
+        omega1 = BakkerRotatingInterface.get_omegan(1, x0, a, b)
+        alpha = np.arctan2(b, a)
+        s = BakkerRotatingInterface.get_s(k, rhoa, rhob, alpha)
+        qxg, qyg = BakkerRotatingInterface.get_Fgrid(xg, yg, zeta1, omega1, s)
+        for n in range(1, 5):
+            zetan = BakkerRotatingInterface.get_zetan(n, x0, a, b)
+            zetanp1 = BakkerRotatingInterface.get_zetan(n + 1, x0, a, b)
+            qx1, qy1 = BakkerRotatingInterface.get_Fgrid(
+                xg, yg, zetan, zetanp1, (-1) ** n * s
+            )
+            omegan = BakkerRotatingInterface.get_omegan(n, x0, a, b)
+            omeganp1 = BakkerRotatingInterface.get_omegan(n + 1, x0, a, b)
+            qx2, qy2 = BakkerRotatingInterface.get_Fgrid(
+                xg, yg, omegan, omeganp1, (-1) ** n * s
+            )
+            qxg += qx1 + qx2
+            qyg += qy1 + qy2
+        return qxg, qyg
+
+
+# ### Model setup
 #
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def get_cstrt(nlay, ncol, length, x1, x2, a1, a2, b, c1, c2, c3):
     cstrt = c1 * np.ones((nlay, ncol), dtype=float)
     from flopy.utils.gridintersect import GridIntersect
@@ -105,10 +182,10 @@ def get_cstrt(nlay, ncol, length, x1, x2, a1, a2, b, c1, c2, c3):
     return cstrt
 
 
-def build_model(sim_folder):
+def build_models(sim_folder):
     print(f"Building model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder)
+    sim_ws = os.path.join(workspace, sim_folder)
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -116,9 +193,7 @@ def build_model(sim_folder):
         continue_=True,
     )
     tdis_ds = ((perlen, nstp, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -201,9 +276,7 @@ def build_model(sim_folder):
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
         concentration_filerecord=f"{gwt.name}.ucn",
-        concentrationprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        concentrationprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("CONCENTRATION", "ALL")],
         printrecord=[("CONCENTRATION", "LAST"), ("BUDGET", "LAST")],
     )
@@ -213,251 +286,222 @@ def build_model(sim_folder):
     return sim
 
 
-# Function to write model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (6, 4)
 
 
 def plot_velocity_profile(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
-    print("Creating velocity profile plot...")
+    with styles.USGSMap() as fs:
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
+        print("Creating velocity profile plot...")
 
-    # find line of cells on left side of first interface
-    cstrt = gwt.ic.strt.array
-    cstrt = cstrt.reshape((nlay, ncol))
-    interface_coords = []
-    for k in range(nlay):
-        crow = cstrt[k]
-        j = (np.abs(crow - c2)).argmin() - 1
-        interface_coords.append((k, j))
+        # find line of cells on left side of first interface
+        cstrt = gwt.ic.strt.array
+        cstrt = cstrt.reshape((nlay, ncol))
+        interface_coords = []
+        for k in range(nlay):
+            crow = cstrt[k]
+            j = (np.abs(crow - c2)).argmin() - 1
+            interface_coords.append((k, j))
 
-    # plot velocity
-    xc, yc, zc = gwt.modelgrid.xyzcellcenters
-    xg = []
-    zg = []
-    for k, j in interface_coords:
-        x = xc[0, j]
-        z = zc[k, 0, j]
-        xg.append(x)
-        zg.append(z)
-    xg = np.array(xg)
-    zg = np.array(zg)
+        # plot velocity
+        xc, yc, zc = gwt.modelgrid.xyzcellcenters
+        xg = []
+        zg = []
+        for k, j in interface_coords:
+            x = xc[0, j]
+            z = zc[k, 0, j]
+            xg.append(x)
+            zg.append(z)
+        xg = np.array(xg)
+        zg = np.array(zg)
 
-    # set up plot
-    fig = plt.figure(figsize=(4, 6))
-    ax = fig.add_subplot(1, 1, 1)
+        # set up plot
+        fig = plt.figure(figsize=(4, 6))
+        ax = fig.add_subplot(1, 1, 1)
 
-    # plot analytical solution
-    qx1, qz1 = BakkerRotatingInterface.get_w(
-        xg, zg, hydraulic_conductivity, rho1, rho2, a1, b, x1
-    )
-    qx2, qz2 = BakkerRotatingInterface.get_w(
-        xg, zg, hydraulic_conductivity, rho2, rho3, a2, b, x2
-    )
-    qx = qx1 + qx2
-    qz = qz1 + qz2
-    vh = qx + qz * a1 / b
-    vh = vh / porosity
-    ax.plot(vh, zg, "k-")
-
-    # plot numerical results
-    file_name = gwf.oc.budget_filerecord.get_data()[0][0]
-    fpth = os.path.join(sim_ws, file_name)
-    bobj = flopy.utils.CellBudgetFile(fpth, precision="double")
-    kstpkper = bobj.get_kstpkper()
-    spdis = bobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0]
-    qxsim = spdis["qx"].reshape((nlay, ncol))
-    qzsim = spdis["qz"].reshape((nlay, ncol))
-    qx = []
-    qz = []
-    for k, j in interface_coords:
-        qx.append(qxsim[k, j])
-        qz.append(qzsim[k, j])
-    qx = np.array(qx)
-    qz = np.array(qz)
-    vh = qx + qz * a1 / b
-    vh = vh / porosity
-    ax.plot(vh, zg, "bo", mfc="none")
-
-    # configure plot and save
-    ax.plot([0, 0], [-b, b], "k--", linewidth=0.5)
-    ax.set_xlim(-0.1, 0.1)
-    ax.set_ylim(-b, b)
-    ax.set_ylabel("z location of left interface (m)")
-    ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-vh{config.figure_ext}"
+        # plot analytical solution
+        qx1, qz1 = BakkerRotatingInterface.get_w(
+            xg, zg, hydraulic_conductivity, rho1, rho2, a1, b, x1
         )
-        fig.savefig(fpth)
+        qx2, qz2 = BakkerRotatingInterface.get_w(
+            xg, zg, hydraulic_conductivity, rho2, rho3, a2, b, x2
+        )
+        qx = qx1 + qx2
+        qz = qz1 + qz2
+        vh = qx + qz * a1 / b
+        vh = vh / porosity
+        ax.plot(vh, zg, "k-")
+
+        # plot numerical results
+        file_name = gwf.oc.budget_filerecord.get_data()[0][0]
+        fpth = os.path.join(sim_ws, file_name)
+        bobj = flopy.utils.CellBudgetFile(fpth, precision="double")
+        kstpkper = bobj.get_kstpkper()
+        spdis = bobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0]
+        qxsim = spdis["qx"].reshape((nlay, ncol))
+        qzsim = spdis["qz"].reshape((nlay, ncol))
+        qx = []
+        qz = []
+        for k, j in interface_coords:
+            qx.append(qxsim[k, j])
+            qz.append(qzsim[k, j])
+        qx = np.array(qx)
+        qz = np.array(qz)
+        vh = qx + qz * a1 / b
+        vh = vh / porosity
+        ax.plot(vh, zg, "bo", mfc="none")
+
+        # configure plot and save
+        ax.plot([0, 0], [-b, b], "k--", linewidth=0.5)
+        ax.set_xlim(-0.1, 0.1)
+        ax.set_ylim(-b, b)
+        ax.set_ylabel("z location of left interface (m)")
+        ax.set_xlabel("$v_h$ (m/d) of left interface at t=0")
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-vh.png")
+            fig.savefig(fpth)
 
 
 def plot_conc(sim, idx):
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    # make initial conditions figure
-    print("Creating initial conditions figure...")
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pxs.plot_array(gwt.ic.strt.array, cmap="jet", vmin=c1, vmax=c3)
-    pxs.plot_grid(linewidth=0.1)
-    ax.set_ylabel("z position (m)")
-    ax.set_xlabel("x position (m)")
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-bc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    plt.close("all")
-
-    # make results plot
-    print("Making results plot...")
-    fig = plt.figure(figsize=figure_size)
-    fig.tight_layout()
-
-    # create MODFLOW 6 head object
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-
-    # plot times in the original publication
-    plot_times = [
-        2000.0,
-        10000.0,
-    ]
-
-    nplots = len(plot_times)
-    for iplot in range(nplots):
-        time_in_pub = plot_times[iplot]
-        idx_conc = (np.abs(times - time_in_pub)).argmin()
-        time_this_plot = times[idx_conc]
-        conc = cobj.get_data(totim=time_this_plot)
-
-        ax = fig.add_subplot(2, 1, iplot + 1)
+        # make initial conditions figure
+        print("Creating initial conditions figure...")
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-        pxs.plot_array(conc, cmap="jet", vmin=c1, vmax=c3)
-        ax.set_xlim(0, length)
-        ax.set_ylim(-height / 2.0, height / 2.0)
+        pxs.plot_array(gwt.ic.strt.array, cmap="jet", vmin=c1, vmax=c3)
+        pxs.plot_grid(linewidth=0.1)
         ax.set_ylabel("z position (m)")
         ax.set_xlabel("x position (m)")
-        ax.set_title(f"Time = {time_this_plot} days")
-    plt.tight_layout()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-bc.png")
+            fig.savefig(fpth)
+        plt.close("all")
 
-    # save figure
-    if config.plotSave:
-        fpth = os.path.join(
-            "..", "figures", f"{sim_name}-conc{config.figure_ext}"
-        )
-        fig.savefig(fpth)
-    return
+        # make results plot
+        print("Making results plot...")
+        fig = plt.figure(figsize=figure_size)
+        fig.tight_layout()
+
+        # create MODFLOW 6 head object
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+
+        # plot times in the original publication
+        plot_times = [
+            2000.0,
+            10000.0,
+        ]
+
+        nplots = len(plot_times)
+        for iplot in range(nplots):
+            time_in_pub = plot_times[iplot]
+            idx_conc = (np.abs(times - time_in_pub)).argmin()
+            time_this_plot = times[idx_conc]
+            conc = cobj.get_data(totim=time_this_plot)
+
+            ax = fig.add_subplot(2, 1, iplot + 1)
+            pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+            pxs.plot_array(conc, cmap="jet", vmin=c1, vmax=c3)
+            ax.set_xlim(0, length)
+            ax.set_ylim(-height / 2.0, height / 2.0)
+            ax.set_ylabel("z position (m)")
+            ax.set_xlabel("x position (m)")
+            ax.set_title(f"Time = {time_this_plot} days")
+        plt.tight_layout()
+
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
+            fig.savefig(fpth)
 
 
 def make_animated_gif(sim, idx):
     from matplotlib.animation import FuncAnimation, PillowWriter
 
     print("Creating animation...")
-    fs = USGSFigure(figure_type="map", verbose=False)
-    sim_name = example_name
-    sim_ws = os.path.join(ws, sim_name)
-    gwf = sim.get_model("flow")
-    gwt = sim.get_model("trans")
+    with styles.USGSMap() as fs:
+        sim_ws = os.path.join(workspace, sim_name)
+        gwf = sim.get_model("flow")
+        gwt = sim.get_model("trans")
 
-    cobj = gwt.output.concentration()
-    times = cobj.get_times()
-    times = np.array(times)
-    conc = cobj.get_alldata()
+        cobj = gwt.output.concentration()
+        times = cobj.get_times()
+        times = np.array(times)
+        conc = cobj.get_alldata()
 
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
-    pc = pxs.plot_array(conc[0], cmap="jet", vmin=c1, vmax=c3)
+        fig = plt.figure(figsize=(6, 4))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pxs = flopy.plot.PlotCrossSection(model=gwf, ax=ax, line={"row": 0})
+        pc = pxs.plot_array(conc[0], cmap="jet", vmin=c1, vmax=c3)
 
-    def init():
-        ax.set_xlim(0, length)
-        ax.set_ylim(-height / 2, height / 2)
-        ax.set_title(f"Time = {times[0]} seconds")
+        def init():
+            ax.set_xlim(0, length)
+            ax.set_ylim(-height / 2, height / 2)
+            ax.set_title(f"Time = {times[0]} seconds")
 
-    def update(i):
-        pc.set_array(conc[i].flatten())
-        ax.set_title(f"Time = {times[i]} days")
+        def update(i):
+            pc.set_array(conc[i].flatten())
+            ax.set_title(f"Time = {times[i]} days")
 
-    ani = FuncAnimation(
-        fig, update, range(1, times.shape[0], 5), init_func=init
-    )
-    writer = PillowWriter(fps=50)
-    fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
-    ani.save(fpth, writer=writer)
-    return
+        ani = FuncAnimation(fig, update, range(1, times.shape[0], 5), init_func=init)
+        writer = PillowWriter(fps=50)
+        fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+        ani.save(fpth, writer=writer)
 
 
 def plot_results(sim, idx):
-    if config.plotModel:
-        plot_conc(sim, idx)
-        plot_velocity_profile(sim, idx)
-        if config.plotSave and config.createGif:
-            make_animated_gif(sim, idx)
-    return
+    plot_conc(sim, idx)
+    plot_velocity_profile(sim, idx)
+    if plot_save and gif_save:
+        make_animated_gif(sim, idx)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the entire scenario, then plot results.
 
 
+# +
 def scenario(idx, silent=True):
-    sim = build_model(example_name)
-    write_model(sim, silent=silent)
-    success = run_model(sim, silent=silent)
-    if success:
+    sim = build_models(sim_name)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(sim, idx)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Rotating Interface Problem
-
-    # Plot showing MODFLOW 6 results
-
-    scenario(0)
+scenario(0)
+# -

@@ -1,47 +1,44 @@
 # ## Zaidel (2013) example
 #
-# This problem is described in Zaidel (2013) and represents a discontinuous
+# Described in Zaidel (2013), representing a discontinuous
 # water table configuration over a stairway impervious base.
-#
 
-# ### Zaidel (2013) Problem Setup
+# ### Initial setup
 #
-# Imports
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# import common functionality
-
-import config
-from figspecs import USGSFigure
-
-# Set figure properties specific to the
-
-figure_size = (6.3, 2.5)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
-
-# Simulation name
-
+# Example name and base workspace
 sim_name = "ex-gwf-zaidel"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
-# Scenario parameters
 
+# Scenario-specific parameters
 parameters = {
     "ex-gwf-zaidel-p01a": {
         "H2": 1.0,
@@ -51,8 +48,7 @@ parameters = {
     },
 }
 
-# Table
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 1  # Number of layers
 nrow = 1  # Number of rows
@@ -65,12 +61,10 @@ icelltype = 1  # Cell conversion type
 k11 = 0.0001  # Horizontal hydraulic conductivity ($m/day$)
 H1 = 23.0  # Constant head in column 1 ($m$)
 
-# Static temporal data used by TDIS file
-
+# Time discretization
 tdis_ds = ((1.0, 1, 1.0),)
 
 # Build stairway bottom
-
 botm = np.zeros((nlay, nrow, ncol), dtype=float)
 base = 20.0
 for j in range(ncol):
@@ -79,106 +73,89 @@ for j in range(ncol):
         base -= 5
 
 # Solver parameters
-
 nouter = 500
 ninner = 50
 hclose = 1e-9
 rclose = 1e-6
+# -
 
-# ### Functions to build, write, run, and plot the Zaidel model
+# ### Model setup
 #
-# MODFLOW 6 flopy simulation object (sim) is returned if building the model
+# Define functions to build models, write input files, and run the simulation.
 
 
-def build_model(H2=1.0):
-    if config.buildModel:
-        # Constant head cells are specified on the left and right edge of the model
-        chd_spd = [
-            [0, 0, 0, H1],
-            [0, 0, ncol - 1, H2],
-        ]
+# +
+def build_models(H2=1.0):
+    # Constant head cells are specified on the left and right edge of the model
+    chd_spd = [
+        [0, 0, 0, H1],
+        [0, 0, ncol - 1, H2],
+    ]
 
-        sim_ws = os.path.join(ws, sim_name)
-        sim = flopy.mf6.MFSimulation(
-            sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-        )
-        flopy.mf6.ModflowTdis(
-            sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-        )
-        flopy.mf6.ModflowIms(
-            sim,
-            linear_acceleration="bicgstab",
-            outer_maximum=nouter,
-            outer_dvclose=hclose,
-            inner_maximum=ninner,
-            inner_dvclose=hclose,
-            rcloserecord=f"{rclose} strict",
-        )
-        gwf = flopy.mf6.ModflowGwf(
-            sim, modelname=sim_name, newtonoptions="newton"
-        )
-        flopy.mf6.ModflowGwfdis(
-            gwf,
-            length_units=length_units,
-            nlay=nlay,
-            nrow=nrow,
-            ncol=ncol,
-            delr=delr,
-            delc=delc,
-            top=top,
-            botm=botm,
-        )
-        flopy.mf6.ModflowGwfnpf(
-            gwf,
-            icelltype=icelltype,
-            k=k11,
-        )
-        flopy.mf6.ModflowGwfic(gwf, strt=strt)
-        flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
+    sim_ws = os.path.join(workspace, sim_name)
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowIms(
+        sim,
+        linear_acceleration="bicgstab",
+        outer_maximum=nouter,
+        outer_dvclose=hclose,
+        inner_maximum=ninner,
+        inner_dvclose=hclose,
+        rcloserecord=f"{rclose} strict",
+    )
+    gwf = flopy.mf6.ModflowGwf(sim, modelname=sim_name, newtonoptions="newton")
+    flopy.mf6.ModflowGwfdis(
+        gwf,
+        length_units=length_units,
+        nlay=nlay,
+        nrow=nrow,
+        ncol=ncol,
+        delr=delr,
+        delc=delc,
+        top=top,
+        botm=botm,
+    )
+    flopy.mf6.ModflowGwfnpf(
+        gwf,
+        icelltype=icelltype,
+        k=k11,
+    )
+    flopy.mf6.ModflowGwfic(gwf, strt=strt)
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
 
-        head_filerecord = f"{sim_name}.hds"
-        flopy.mf6.ModflowGwfoc(
-            gwf,
-            head_filerecord=head_filerecord,
-            saverecord=[("HEAD", "ALL")],
-        )
-        return sim
-    return None
+    head_filerecord = f"{sim_name}.hds"
+    flopy.mf6.ModflowGwfoc(
+        gwf,
+        head_filerecord=head_filerecord,
+        saverecord=[("HEAD", "ALL")],
+    )
+    return sim
 
 
-# Function to write Zaidel model files
+def write_models(sim, silent=True):
+    sim.write_simulation(silent=silent)
 
 
-def write_model(sim, silent=True):
-    if config.writeModel:
-        sim.write_simulation(silent=silent)
+@timed
+def run_models(sim, silent=True):
+    success, buff = sim.run_simulation(silent=silent)
+    assert success, buff
 
 
-# Function to run the Zaidel model.
-# True is returned if the model runs successfully
+# -
+
+# ### Plotting results
 #
+# Define functions to plot model results.
 
-
-@config.timeit
-def run_model(sim, silent=True):
-    success = True
-    if config.runModel:
-        success, buff = sim.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-
-    return success
-
-
-# Function to plot the Zaidel model results.
-#
+# +
+# Figure properties
+figure_size = (6.3, 2.5)
 
 
 def plot_results(idx, sim, silent=True):
-    verbose = not silent
-    if config.plotModel:
-        fs = USGSFigure(figure_type="map", verbose=verbose)
-        sim_ws = os.path.join(ws, sim_name)
+    with styles.USGSMap():
         gwf = sim.get_model(sim_name)
         xedge = gwf.modelgrid.xvertices[0]
         zedge = np.array([botm[0, 0, 0]] + botm.flatten().tolist())
@@ -234,67 +211,52 @@ def plot_results(idx, sim, silent=True):
             mec="0.75",
             label="Model Base",
         )
-        fs.graph_legend(ax, ncol=2, loc="upper right")
+        styles.graph_legend(ax, ncol=2, loc="upper right")
 
         # plot colorbar
         cax = plt.axes([0.62, 0.76, 0.325, 0.025])
-        cbar = plt.colorbar(
-            plot_obj, shrink=0.8, orientation="horizontal", cax=cax
-        )
+        cbar = plt.colorbar(plot_obj, shrink=0.8, orientation="horizontal", cax=cax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $m$", fontsize=9)
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             fpth = os.path.join(
                 "..",
                 "figures",
-                f"{sim_name}-{idx + 1:02d}{config.figure_ext}",
+                f"{sim_name}-{idx + 1:02d}.png",
             )
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for the TWRI model
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def simulation(idx, silent=True):
+# +
+def scenario(idx, silent=True):
     key = list(parameters.keys())[idx]
     params = parameters[key].copy()
-
-    sim = build_model(**params)
-
-    write_model(sim, silent=silent)
-
-    success = run_model(sim, silent=silent)
-
-    if success:
+    sim = build_models(**params)
+    if write:
+        write_models(sim, silent=silent)
+    if run:
+        run_models(sim, silent=silent)
+    if plot:
         plot_results(idx, sim, silent=silent)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    simulation(0, silent=False)
+# -
 
 
-def test_02():
-    simulation(1, silent=False)
+# Run the Zaidel model with H2 = 1, then plot simulated heads.
 
+scenario(0)
 
-# nosetest end
+# Run the Zaidel model with H2 = 10, then plot simulated heads.
 
-if __name__ == "__main__":
-    # ### Zaidel Simulation
-    #
-    # Simulated heads in the Zaidel model with H2 = 1.
-
-    simulation(0)
-
-    # Simulated heads in the Zaidel model with H2 = 10.
-
-    simulation(1)
+scenario(1)

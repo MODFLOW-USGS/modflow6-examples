@@ -1,51 +1,52 @@
-# ## Stream-Lake Interaction with Solute Transport
+# ## Stream-lake interaction with solute transport
 #
-# SFR1 Package Documentation Test Problem 2
+# This problem is based on the stream-aquifer interaction problem
+# described as Test 2 by Prudic et al 2004, which modifies another
+# problem originally described by Merritt et al 2000. The purpose
+# for including this problem is to demonstrate the use of MODFLOW 6
+# to simulate solute transport through a coupled system consisting
+# of an aquifer, streams, and lakes. The example requires accurate
+# simulation of transport within the streams and lakes and also
+# between the surface water features and the underlying aquifer.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Stream-Lake Interaction with Solute Transport Problem Setup
-
-# Imports
-
+# +
 import os
-import sys
+import pathlib as pl
+from pprint import pformat
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+import pooch
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import config
-from figspecs import USGSFigure
-
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 6)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
+# Example name and base workspace
 example_name = "ex-gwt-prudic2004t2"
-data_ws = os.path.join(config.data_ws, example_name)
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "feet"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 hk = 250.0  # Horizontal hydraulic conductivity ($ft d^{-1}$)
 vk = 125.0  # Vertical hydraulic conductivity ($ft d^{-1}$)
 ss = 0.0  # Storage coefficient (unitless)
@@ -73,28 +74,36 @@ top = 100.0  # Top of the model ($ft$)
 total_time = 9131.0  # Total simulation time ($d$)
 
 # Load Data Arrays
-
-fname = os.path.join(data_ws, "bot1.dat")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bot1.dat",
+    known_hash="md5:c510defe0eb1ba1fbfab5663ff63cd83",
+)
 bot0 = np.loadtxt(fname)
 botm = [bot0] + [bot0 - (15.0 * k) for k in range(1, nlay)]
-fname = os.path.join(data_ws, "idomain1.dat")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/idomain1.dat",
+    known_hash="md5:45d1ca08015e4a34125ccd95a83da0ee",
+)
 idomain0 = np.loadtxt(fname, dtype=int)
 idomain = nlay * [idomain0]
-fname = os.path.join(data_ws, "lakibd.dat")
+fname = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/lakibd.dat",
+    known_hash="md5:18c90af94c34825a206935b7ddace2f9",
+)
 lakibd = np.loadtxt(fname, dtype=int)
+# -
 
-
-# Other model information
-
-
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
 
 
+# +
 def get_stream_data():
-    fname = os.path.join(data_ws, "stream.csv")
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/stream.csv",
+        known_hash="md5:1291c8dec5a415866c711ee14bf0b1f8",
+    )
     dt = 5 * [int] + [float]
     streamdata = np.genfromtxt(fname, names=True, delimiter=",", dtype=dt)
     connectiondata = [[ireach] for ireach in range(streamdata.shape[0])]
@@ -136,11 +145,7 @@ def get_stream_data():
         iseg = row["seg"] - 1
         rgrd = segment_gradients[iseg]
         emax, emin = emaxmin[iseg]
-        rtp = (
-            distance_along_segment[ireach]
-            / segment_lengths[iseg]
-            * (emax - emin)
-        )
+        rtp = distance_along_segment[ireach] / segment_lengths[iseg] * (emax - emin)
         rtp = emax - rtp
         boundname = f"SEG{iseg + 1}"
         rec = (
@@ -167,7 +172,7 @@ def build_mf6gwf(sim_folder):
     global idomain
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_data = [(total_time, 1, 1.0)]
     flopy.mf6.ModflowTdis(
@@ -215,7 +220,10 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwfrcha(gwf, recharge={0: recharge}, pname="RCH-1")
 
     chdlist = []
-    fname = os.path.join(data_ws, "chd.dat")
+    fname = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/chd.dat",
+        known_hash="md5:7889521ec9ec9521377d604d9f6d1f74",
+    )
     for line in open(fname).readlines():
         ll = line.strip().split()
         if len(ll) == 4:
@@ -252,9 +260,7 @@ def build_mf6gwf(sim_folder):
         [1, 35.2, lakepakdata_dict[1], "lake2"],
     ]
     # <outletno> <lakein> <lakeout> <couttype> <invert> <width> <rough> <slope>
-    outlets = [
-        [0, 0, -1, "MANNING", 44.5, 3.36493214532915, 0.03, 0.2187500e-02]
-    ]
+    outlets = [[0, 0, -1, "MANNING", 44.5, 3.36493214532915, 0.03, 0.2187500e-02]]
     flopy.mf6.ModflowGwflak(
         gwf,
         time_conversion=86400.000,
@@ -322,13 +328,10 @@ def build_mf6gwf(sim_folder):
     return sim
 
 
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-
-
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_data = ((total_time, 300, 1.0),)
     flopy.mf6.ModflowTdis(
@@ -482,46 +485,37 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_model(sim_name):
+def build_models(sim_name):
     sims = None
-    if config.buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name)
-        sims = (sim_mf6gwf, sim_mf6gwt)
-    return sims
+    sim_mf6gwf = build_mf6gwf(sim_name)
+    sim_mf6gwt = build_mf6gwt(sim_name)
+    return sim_mf6gwf, sim_mf6gwt
 
 
-# Function to write model files
+def write_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt = sims
+    sim_mf6gwf.write_simulation(silent=silent)
+    sim_mf6gwt.write_simulation(silent=silent)
 
 
-def write_model(sims, silent=True):
-    if config.writeModel:
-        sim_mf6gwf, sim_mf6gwt = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sims, silent=True):
+    sim_mf6gwf, sim_mf6gwt = sims
+    success, buff = sim_mf6gwf.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+    success, buff = sim_mf6gwt.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sims, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (6, 6)
 
 
 def plot_bcmap(ax, gwf, layer=0):
@@ -541,16 +535,13 @@ def plot_bcmap(ax, gwf, layer=0):
 def plot_results(sims):
     plot_gwf_results(sims)
     plot_gwt_results(sims)
-    return
 
 
 def plot_gwf_results(sims):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        gwf = sim_mf6gwf.flow
-        fs = USGSFigure(figure_type="map", verbose=False)
-
+    print("Plotting model results...")
+    sim_mf6gwf, _ = sims
+    gwf = sim_mf6gwf.flow
+    with styles.USGSMap():
         sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
 
         head = gwf.output.head().get_data()
@@ -562,9 +553,7 @@ def plot_gwf_results(sims):
             lake_stage = stage[ilak]
             head[0, i, j] = lake_stage
 
-        fig, axs = plt.subplots(
-            1, 2, figsize=figure_size, dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(1, 2, figsize=figure_size, dpi=300, tight_layout=True)
 
         for ilay in [0, 1]:
             ax = axs[ilay]
@@ -580,25 +569,25 @@ def plot_gwf_results(sims):
             ax.clabel(cs, cs.levels[::5], fmt="%1.0f", colors="b")
             title = f"Model Layer {ilay + 1}"
             letter = chr(ord("@") + ilay + 1)
-            fs.heading(letter=letter, heading=title, ax=ax)
+            styles.heading(letter=letter, heading=title, ax=ax)
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-head{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fname = f"{sim_folder}-head.png"
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
 def plot_gwt_results(sims):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        gwf = sim_mf6gwf.flow
-        gwt = sim_mf6gwt.trans
-        fs = USGSFigure(figure_type="map", verbose=False)
+    print("Plotting model results...")
+    sim_mf6gwf, sim_mf6gwt = sims
+    gwf = sim_mf6gwf.flow
+    gwt = sim_mf6gwt.trans
 
+    with styles.USGSMap() as fs:
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
 
         conc = gwt.output.concentration().get_data()
@@ -610,9 +599,7 @@ def plot_gwt_results(sims):
             lake_conc = lakconc[ilak]
             conc[0, i, j] = lake_conc
 
-        fig, axs = plt.subplots(
-            2, 2, figsize=(5, 7), dpi=300, tight_layout=True
-        )
+        fig, axs = plt.subplots(2, 2, figsize=(5, 7), dpi=300, tight_layout=True)
 
         for iplot, ilay in enumerate([0, 2, 4, 7]):
             ax = axs.flatten()[iplot]
@@ -643,14 +630,15 @@ def plot_gwt_results(sims):
             ax.clabel(cs, cs.levels[::1], fmt="%1.0f", colors="b")
             title = f"Model Layer {ilay + 1}"
             letter = chr(ord("@") + iplot + 1)
-            fs.heading(letter=letter, heading=title, ax=ax)
+            styles.heading(letter=letter, heading=title, ax=ax)
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-conc{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fname = f"{sim_folder}-conc.png"
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
         # create concentration timeseries plot
@@ -659,74 +647,68 @@ def plot_gwt_results(sims):
         sfaconc = bobj.get_alldata()[:, 0, 0, :]
         times = bobj.times
 
-        fs = USGSFigure(figure_type="graph", verbose=False)
-        fig, axs = plt.subplots(
-            1, 1, figsize=(5, 3), dpi=300, tight_layout=True
-        )
-        ax = axs
-        times = np.array(times) / 365.0
-        ax.plot(
-            times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2"
-        )
-        ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
-        ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
+        with styles.USGSPlot():
+            fig, axs = plt.subplots(1, 1, figsize=(5, 3), dpi=300, tight_layout=True)
+            ax = axs
+            times = np.array(times) / 365.0
+            ax.plot(times, lkaconc[:, 0], "b-", label="Lake 1 and Stream Segment 2")
+            ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
+            ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
 
-        fname = os.path.join(data_ws, "teststrm.sg2")
-        sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
+            fname = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg2",
+                known_hash="md5:4bb5e256ed8b67f1743d547b43a610d0",
+            )
+            sg = np.genfromtxt(fname, comments='"')
+            ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
 
-        fname = os.path.join(data_ws, "teststrm.sg3")
-        sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
+            fname = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg3",
+                known_hash="md5:a30d8e27d0bbe09dcb9f39d115592ff5",
+            )
+            sg = np.genfromtxt(fname, comments='"')
+            ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
 
-        fname = os.path.join(data_ws, "teststrm.sg4")
-        sg = np.genfromtxt(fname, comments='"')
-        ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")
+            fname = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg4",
+                known_hash="md5:ec589d7333fe160842945b5895f5160a",
+            )
+            sg = np.genfromtxt(fname, comments='"')
+            ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")
 
-        fs.graph_legend()
-        ax.set_ylim(0, 50)
-        ax.set_xlim(0, 25)
-        ax.set_xlabel("TIME, IN YEARS")
-        ax.set_ylabel(
-            "SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER"
-        )
+            styles.graph_legend()
+            ax.set_ylim(0, 50)
+            ax.set_xlim(0, 25)
+            ax.set_xlabel("TIME, IN YEARS")
+            ax.set_ylabel("SIMULATED BORON CONCENTRATION,\nIN MICROGRAMS PER LITER")
 
-        # save figure
-        if config.plotSave:
-            sim_folder = os.path.split(sim_ws)[0]
-            sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-cvt{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
-            fig.savefig(fpth)
+            if plot_show:
+                plt.show()
+            if plot_save:
+                sim_folder = os.path.split(sim_ws)[0]
+                sim_folder = os.path.basename(sim_folder)
+                fname = f"{sim_folder}-cvt.png"
+                fpth = os.path.join(workspace, "..", "figures", fname)
+                fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def scenario(idx, silent=True):
-    sims = build_model(example_name)
-    write_model(sims, silent=silent)
-    success = run_model(sims, silent=silent)
-    if success:
+# +
+def scenario(silent=True):
+    sims = build_models(example_name)
+    if write:
+        write_models(sims, silent=silent)
+    if run:
+        run_models(sims, silent=silent)
+    if plot:
         plot_results(sims)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Model
-
-    # Model run
-
-    scenario(0)
+scenario()
+# -

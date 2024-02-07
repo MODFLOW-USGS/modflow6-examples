@@ -1,51 +1,49 @@
-# ## Three-Dimensional Steady Flow with Transport
+# ## Three-dimensional steady flow with transport
 #
-# MOC3D Problem 2
+# This problem corresponds to the second problem presented in the MOC3D report
+# Konikow 1996, which involves the transport of a dissolved constituent in a
+# steady, three-dimensional flow field. An analytical solution for this problem
+# is given by Wexler 1992. This example is simulated with a GWT model, which
+# receives flow information from a separate GWF model. Results from the GWT
+# model are compared with results from the Wexler 1992 analytical solution.
+
+# ### Initial setup
 #
-#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-
-# ### Three-Dimensional Steady Flow with Transport Problem Setup
-
-# Imports
-
+# +
 import os
-import sys
+import pathlib as pl
 
 import flopy
 import matplotlib.pyplot as plt
 import numpy as np
+from flopy.plot.styles import styles
+from modflow_devtools.misc import get_env, timed
+from scipy.special import erfc
 
-# Append to system path to include the common subdirectory
-
-sys.path.append(os.path.join("..", "common"))
-
-# Import common functionality
-
-import analytical
-import config
-from figspecs import USGSFigure
-
-mf6exe = "mf6"
-exe_name_mf = "mf2005"
-exe_name_mt = "mt3dms"
-
-# Set figure properties specific to this problem
-
-figure_size = (6, 4)
-
-# Base simulation and model name and workspace
-
-ws = config.base_ws
+# Example name and base workspace
 example_name = "ex-gwt-moc3d-p02"
+workspace = pl.Path("../examples")
 
+# Settings from environment variables
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+# -
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
 # Model units
-
 length_units = "meters"
 time_units = "days"
 
-# Table of model parameters
-
+# Model parameters
 nper = 1  # Number of periods
 nlay = 40  # Number of layers
 nrow = 12  # Number of rows
@@ -68,22 +66,69 @@ source_location = (1, 12, 8)  # Source location (layer, row, column)
 botm = [-(k + 1) * delv for k in range(nlay)]
 specific_discharge = velocity_x * porosity
 source_location0 = tuple([idx - 1 for idx in source_location])
+# -
 
-# ### Functions to build, write, run, and plot models
+# ### Model setup
 #
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-#
+# Define functions to build models, write input files, and run the simulation.
+
+
+# +
+class Wexler3d:
+    """
+    Analytical solution for 3D transport with inflow at a well with a
+    specified concentration.
+    Wexler Page 47
+    """
+
+    def calcgamma(self, x, y, z, xc, yc, zc, dx, dy, dz):
+        gam = np.sqrt((x - xc) ** 2 + dx / dy * (y - yc) ** 2 + dx / dz * (z - zc) ** 2)
+        return gam
+
+    def calcbeta(self, v, dx, gam, lam):
+        beta = np.sqrt(v**2 + 4.0 * dx * gam * lam)
+        return beta
+
+    def analytical(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam=0.0, c0=1.0):
+        gam = self.calcgamma(x, y, z, xc, yc, zc, dx, dy, dz)
+        beta = self.calcbeta(v, dx, gam, lam)
+        term1 = (
+            c0
+            * q
+            * np.exp(v * (x - xc) / 2.0 / dx)
+            / 8.0
+            / n
+            / np.pi
+            / gam
+            / np.sqrt(dy * dz)
+        )
+        term2 = np.exp(gam * beta / 2.0 / dx) * erfc(
+            (gam + beta * t) / 2.0 / np.sqrt(dx * t)
+        )
+        term3 = np.exp(-gam * beta / 2.0 / dx) * erfc(
+            (gam - beta * t) / 2.0 / np.sqrt(dx * t)
+        )
+        return term1 * (term2 + term3)
+
+    def multiwell(self, x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, ql, lam=0.0, c0=1.0):
+        shape = self.analytical(
+            x, y, z, t, v, xc[0], yc[0], zc[0], dx, dy, dz, n, ql[0], lam
+        ).shape
+        result = np.zeros(shape)
+        for xx, yy, zz, q in zip(xc, yc, zc, ql):
+            result += self.analytical(
+                x, y, z, t, v, xx, yy, zz, dx, dy, dz, n, q, lam, c0
+            )
+        return result
 
 
 def build_mf6gwf(sim_folder):
     print(f"Building mf6gwf model...{sim_folder}")
     name = "flow"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, print_option="summary", inner_maximum=300)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
@@ -126,18 +171,13 @@ def build_mf6gwf(sim_folder):
     return sim
 
 
-# MODFLOW 6 flopy GWF simulation object (sim) is returned
-
-
 def build_mf6gwt(sim_folder):
     print(f"Building mf6gwt model...{sim_folder}")
     name = "trans"
-    sim_ws = os.path.join(ws, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 400, 1.0),)
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(sim, linear_acceleration="bicgstab")
     gwt = flopy.mf6.ModflowGwt(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwtdis(
@@ -188,46 +228,31 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_model(sim_name):
-    sims = None
-    if config.buildModel:
-        sim_mf6gwf = build_mf6gwf(sim_name)
-        sim_mf6gwt = build_mf6gwt(sim_name)
-        sims = (sim_mf6gwf, sim_mf6gwt)
-    return sims
+def build_models(sim_name):
+    return build_mf6gwf(sim_name), build_mf6gwt(sim_name)
 
 
-# Function to write model files
+def write_models(sims, silent=True):
+    for sim in sims:
+        sim.write_simulation(silent=silent)
 
 
-def write_model(sims, silent=True):
-    if config.writeModel:
-        sim_mf6gwf, sim_mf6gwt = sims
-        sim_mf6gwf.write_simulation(silent=silent)
-        sim_mf6gwt.write_simulation(silent=silent)
-    return
+@timed
+def run_models(sims, silent=True):
+    for sim in sims:
+        success, buff = sim.run_simulation(silent=silent)
+        assert success, buff
 
 
-# Function to run the model
-# True is returned if the model runs successfully
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
-@config.timeit
-def run_model(sims, silent=True):
-    success = True
-    if config.runModel:
-        success = False
-        sim_mf6gwf, sim_mf6gwt = sims
-        success, buff = sim_mf6gwf.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-        success, buff = sim_mf6gwt.run_simulation(silent=silent)
-        if not success:
-            print(buff)
-    return success
-
-
-# Function to plot the model results
+# +
+# Figure properties
+figure_size = (6, 4)
 
 
 def plot_analytical(ax, levels):
@@ -250,32 +275,21 @@ def plot_analytical(ax, levels):
     x, y = np.meshgrid(x, y)
     z = 0
     t = 400.0
-    c400 = analytical.Wexler3d().multiwell(
-        x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam, c0
-    )
+    c400 = Wexler3d().multiwell(x, y, z, t, v, xc, yc, zc, dx, dy, dz, n, q, lam, c0)
     cs = ax.contour(x, y, c400, levels=levels, colors="k")
     return cs
 
 
 def plot_results(sims):
-    if config.plotModel:
-        print("Plotting model results...")
-        sim_mf6gwf, sim_mf6gwt = sims
-        fs = USGSFigure(figure_type="map", verbose=False)
-
+    _, sim_mf6gwt = sims
+    with styles.USGSMap():
         conc = sim_mf6gwt.trans.output.concentration().get_data()
-
-        fig, axs = plt.subplots(
-            1, 1, figsize=figure_size, dpi=300, tight_layout=True
-        )
-
+        fig, axs = plt.subplots(1, 1, figsize=figure_size, dpi=300, tight_layout=True)
         gwt = sim_mf6gwt.trans
         pmv = flopy.plot.PlotMapView(model=gwt, ax=axs)
         levels = [1, 3, 10, 30, 100, 300]
         cs1 = plot_analytical(axs, levels)
-        cs2 = pmv.contour_array(
-            conc, colors="blue", linestyles="--", levels=levels
-        )
+        cs2 = pmv.contour_array(conc, colors="blue", linestyles="--", levels=levels)
         axs.set_xlabel("x position (m)")
         axs.set_ylabel("y position (m)")
         axs.set_aspect(4.0)
@@ -284,43 +298,34 @@ def plot_results(sims):
         lines = [cs1.collections[0], cs2.collections[0]]
         axs.legend(lines, labels, loc="upper left")
 
-        # save figure
-        if config.plotSave:
+        if plot_show:
+            plt.show()
+        if plot_save:
             sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
-            fname = f"{sim_folder}-map{config.figure_ext}"
-            fpth = os.path.join(ws, "..", "figures", fname)
+            fname = f"{sim_folder}-map.png"
+            fpth = os.path.join(workspace, "..", "figures", fname)
             fig.savefig(fpth)
 
 
-# Function that wraps all of the steps for each scenario
+# -
+
+# ### Running the example
 #
-# 1. build_model,
-# 2. write_model,
-# 3. run_model, and
-# 4. plot_results.
-#
+# Define and invoke a function to run the example scenario, then plot results.
 
 
-def scenario(idx, silent=True):
-    sims = build_model(example_name)
-    write_model(sims, silent=silent)
-    success = run_model(sims, silent=silent)
-    if success:
+# +
+def scenario(silent=True):
+    sims = build_models(example_name)
+    if write:
+        write_models(sims, silent=silent)
+    if run:
+        run_models(sims, silent=silent)
+    if plot:
         plot_results(sims)
 
 
-# nosetest - exclude block from this nosetest to the next nosetest
-def test_01():
-    scenario(0, silent=False)
-
-
-# nosetest end
-
-if __name__ == "__main__":
-    # ### Model
-
-    # Model run
-
-    scenario(0)
+scenario()
+# -
