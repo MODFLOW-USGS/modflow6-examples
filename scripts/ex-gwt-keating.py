@@ -499,7 +499,7 @@ def plot_cvt_results(sims, idx):
             known_hash="md5:174c5548c3bbb9ea4ebc8b5a33ea2851",
         )
         obs1ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
-        fpth = pooch.retrieve(
+        fname = pooch.retrieve(
             url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-keating/keating_obs2.csv",
             known_hash="md5:8de2ef529a2537ecd6c62bc207b67fb5",
         )
