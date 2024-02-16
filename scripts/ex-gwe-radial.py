@@ -15,6 +15,7 @@ instantiation.
 import os
 import pathlib as pl
 import sys
+
 sys.path.append(os.path.join("..", "common"))
 
 # Imports
@@ -62,7 +63,7 @@ time_units = "days"
 nper = 1  # Number of periods in flow model ($-$)
 nlay = 1  # Number of layers ($-$)
 simrad = 20  # Simulation radius ($m$)
-k11 = 1.0    # Horizontal hydraulic conductivity ($m/d$)
+k11 = 1.0  # Horizontal hydraulic conductivity ($m/d$)
 top = 1.0  # Top of the model ($m$)
 botm = 0.0  # Bottom of the model ($m$)
 prsity = 0.2  # Porosity ($-$)
@@ -92,7 +93,9 @@ unitadj = 86400
 laytyp = 1
 nstp = 48
 icelltype = 0  # Cell conversion type (0: Cell thickness will be held constant)
-lhv = 2500.0  # Latent heat of vaporization (will eventually need to be removed)
+lhv = (
+    2500.0  # Latent heat of vaporization (will eventually need to be removed)
+)
 
 
 # Set up some global lists that will be set in the GWF setup but
@@ -125,11 +128,12 @@ tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # ### Functions for building the DISV mesh
 
+
 def generate_starting_vert_lst(basedata):
     verts = []
-    for index, row in basedata.iterrows():                   
+    for index, row in basedata.iterrows():
         verts.append([int(row["vertid"]), row["X"], row["Y"]])
-    
+
     return verts
 
 
@@ -147,9 +151,9 @@ def handle_small_differences_in_radi(radi_lst):
             if tally > 1:
                 tally = 0
                 i += 1
-    
+
     flat_list = [item for sublist in lvl for item in sublist]
-    
+
     return flat_list
 
 
@@ -158,7 +162,7 @@ def create_outer_ring_of_ctrl_vols(outer_v, verts, iverts, xc, yc, ivt, idx):
     left_chd_spd_fast = []
     right_chd_spd_slow = []
     right_chd_spd_fast = []
-    
+
     # For each outer point, create a new ivert
     # Starts at 9 o'clock and proceeds counter-clockwise
     # As such, 'pt3' will be used by the subsequent iverts
@@ -169,15 +173,15 @@ def create_outer_ring_of_ctrl_vols(outer_v, verts, iverts, xc, yc, ivt, idx):
         pt2 = outer_v.iloc[ii + 1]
 
         if ii == 0:
-            pt4_rad, pt4_ang = round(pt1['radius'] + 0.025, 2), pt1['ang']
-            
-            # If the first time through the loop, save the newly created point because 
+            pt4_rad, pt4_ang = round(pt1["radius"] + 0.025, 2), pt1["ang"]
+
+            # If the first time through the loop, save the newly created point because
             # it is needed at end of the loop
             pt4_id = idx + 2
             finish_id = pt4_id
             finish_rad = pt4_rad
             finish_ang = pt4_ang
-        
+
         else:
             pt4_id = pt3_id
             pt4_rad = pt3_rad
@@ -190,43 +194,47 @@ def create_outer_ring_of_ctrl_vols(outer_v, verts, iverts, xc, yc, ivt, idx):
             pt3_rad = finish_rad
             pt3_ang = finish_ang
         else:
-            pt3_id, pt3_rad, pt3_ang = idx + 1, round(pt2['radius'] + 0.025, 2), pt2['ang']
-        
+            pt3_id, pt3_rad, pt3_ang = (
+                idx + 1,
+                round(pt2["radius"] + 0.025, 2),
+                pt2["ang"],
+            )
+
         # Create a subset of vertices for the new outer chd ivert
-        subverts = [int(pt1['vertid']), int(pt2['vertid']), pt3_id, pt4_id]
+        subverts = [int(pt1["vertid"]), int(pt2["vertid"]), pt3_id, pt4_id]
 
         pt3_x = pt3_rad * math.cos(pt3_ang)
         pt3_y = pt3_rad * math.sin(pt3_ang)
         pt4_x = pt4_rad * math.cos(pt4_ang)
         pt4_y = pt4_rad * math.sin(pt4_ang)
-        
+
         subvertx = [pt1["X"], pt2["X"], pt3_x, pt4_x]
         subverty = [pt1["Y"], pt2["Y"], pt3_y, pt4_y]
-        
+
         # Store the new vertices in the main collection of "verts"
         # If not the last lap in FOR loop
         if ii != (len(outer_v) - 2):
             idx += 1
             verts.append([idx, pt3_x, pt3_y])
-        
+
         # If the first time through, store new point
         if ii == 0:
             idx += 1
             verts.append([idx, pt4_x, pt4_y])
-        
+
         ivt += 1
         if flopy.utils.geometry.is_clockwise(subvertx, subverty):
             iverts.append([ivt] + subverts)
         else:
             iverts.append([ivt] + subverts[::-1])
-        
+
         # Calculate the means, since it is at this location where the chd
         # boundary will be applied
         mean_x = np.array(subvertx).mean()
         mean_y = np.array(subverty).mean()
         xc.append(mean_x)
         yc.append(mean_y)
-        
+
         # Determine where on the constant head continuum the current point lies
         q1 = v1 * 86400 * prsity
         chd_val_slow = strt + q1 * Lx - ((mean_x + abs(left_x)) / Lx) * q1 * Lx
@@ -244,7 +252,7 @@ def scooch_cell_center(xcoll, ycoll):
     xtemp = np.array(xcoll).mean()
     ytemp = np.array(ycoll).mean()
     ang = math.atan2(ytemp, xtemp)
-    radius = math.sqrt(xtemp ** 2 + ytemp ** 2)
+    radius = math.sqrt(xtemp**2 + ytemp**2)
     radius += 0.0001
     xnew = math.cos(ang) * radius
     ynew = math.sin(ang) * radius
@@ -257,9 +265,11 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
     ivt = -1
     iverts = []
     xc, yc = [], []
-    
+
     # Loop for each radius level
-    for i, (r1, r2) in enumerate(zip(np.unique(flat_list)[0:-1], np.unique(flat_list)[1:])):
+    for i, (r1, r2) in enumerate(
+        zip(np.unique(flat_list)[0:-1], np.unique(flat_list)[1:])
+    ):
         curr_rad = basedata[basedata["grp"] == r1]
         next_rad = basedata[basedata["grp"] == r2]
 
@@ -274,11 +284,12 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
             {
                 curr_rad.columns[0]: int(curr_rad.iloc[0][0]),
                 curr_rad.columns[1]: float(curr_rad.iloc[0][1]),
-        	    curr_rad.columns[2]: float(curr_rad.iloc[0][2]),
-        	    curr_rad.columns[3]: float(curr_rad.iloc[0][3]),
-        	    curr_rad.columns[4]: float(curr_rad.iloc[0][4]),
-                curr_rad.columns[7]: int(curr_rad.iloc[0][7])
-            }, index=[0]
+                curr_rad.columns[2]: float(curr_rad.iloc[0][2]),
+                curr_rad.columns[3]: float(curr_rad.iloc[0][3]),
+                curr_rad.columns[4]: float(curr_rad.iloc[0][4]),
+                curr_rad.columns[7]: int(curr_rad.iloc[0][7]),
+            },
+            index=[0],
         )
         curr_rad = pd.concat([curr_rad, new_row], ignore_index=True)
 
@@ -289,8 +300,9 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
                 next_rad.columns[2]: float(next_rad.iloc[0][2]),
                 next_rad.columns[3]: float(next_rad.iloc[0][3]),
                 next_rad.columns[4]: float(next_rad.iloc[0][4]),
-                next_rad.columns[7]: int(next_rad.iloc[0][7])
-            }, index=[0]
+                next_rad.columns[7]: int(next_rad.iloc[0][7]),
+            },
+            index=[0],
         )
         next_rad = pd.concat([next_rad, another_new_row], ignore_index=True)
 
@@ -313,28 +325,28 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
                 iverts.append([ivt] + subverts)
             else:
                 iverts.append([ivt] + subverts[::-1])
-        
+
         # Using the 'looped' data above, do 1 lap around the data to generate iverts
         for rw in np.arange(len(curr_rad) - 1):
             n1_id = int(curr_rad.iloc[rw + 1]["vertid"])
             n2_id = int(next_rad.iloc[rw + 1]["vertid"])
             n3_id = int(next_rad.iloc[rw]["vertid"])
             n4_id = int(curr_rad.iloc[rw]["vertid"])
-            
+
             n1_x = float(curr_rad.iloc[rw + 1]["X"])
             n2_x = float(next_rad.iloc[rw + 1]["X"])
             n3_x = float(next_rad.iloc[rw]["X"])
             n4_x = float(curr_rad.iloc[rw]["X"])
-            
-            n1_y = float(curr_rad.iloc[rw + 1]["Y"])            
-            n2_y = float(next_rad.iloc[rw + 1]["Y"])    
+
+            n1_y = float(curr_rad.iloc[rw + 1]["Y"])
+            n2_y = float(next_rad.iloc[rw + 1]["Y"])
             n3_y = float(next_rad.iloc[rw]["Y"])
             n4_y = float(curr_rad.iloc[rw]["Y"])
-            
+
             subverts = [n1_id, n2_id, n3_id, n4_id]
             subvertx = [n1_x, n2_x, n3_x, n4_x]
             subverty = [n1_y, n2_y, n3_y, n4_y]
-            
+
             if i == 0:
                 # For the case i==0, need to have the centroid of the control
                 # volume almost touching the well bore. Find out which 2 of
@@ -348,7 +360,9 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
                         if xchk == id:
                             xcoll.append(subvertx[num])
                             ycoll.append(subverty[num])
-                assert len(xcoll) == 2, "Should only be two points touching the well bore"
+                assert (
+                    len(xcoll) == 2
+                ), "Should only be two points touching the well bore"
 
                 # was getting divide by zero error in MF6 when putting the
                 # centroid right on the line connecting the two points that
@@ -361,26 +375,42 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
             else:
                 xc.append(np.array(subvertx).mean())
                 yc.append(np.array(subverty).mean())
-            
+
             ivt += 1
             if flopy.utils.geometry.is_clockwise(subvertx, subverty):
                 iverts.append([ivt] + subverts)
             else:
                 iverts.append([ivt] + subverts[::-1])
-            
-        print('Working on radius level ' + str(i))
+
+        print("Working on radius level " + str(i))
 
     # After the function call above, an outer ring of control volumes with constant
     # heads needs to be added. For the constant head boundary, we want a
     # gradient that results in v=1e-5 m/sec (or 1e-4)
-    left_x = np.min(next_rad['X']) - (0.025 / 2)
-    right_x = np.max(next_rad['X']) + (0.025 / 2)
+    left_x = np.min(next_rad["X"]) - (0.025 / 2)
+    right_x = np.max(next_rad["X"]) + (0.025 / 2)
     Lx = abs(right_x - left_x)
 
     # Work up the outer-most control volumes (iverts)
-    left_chd_spd_slow, right_chd_spd_slow, ivt, idx = create_outer_ring_of_ctrl_vols(next_rad, verts, iverts, xc, yc, ivt, idx)
-    
-    return ivt, iverts, xc, yc, left_chd_spd_slow, right_chd_spd_slow, left_chd_spd_fast, right_chd_spd_fast
+    (
+        left_chd_spd_slow,
+        right_chd_spd_slow,
+        ivt,
+        idx,
+    ) = create_outer_ring_of_ctrl_vols(
+        next_rad, verts, iverts, xc, yc, ivt, idx
+    )
+
+    return (
+        ivt,
+        iverts,
+        xc,
+        yc,
+        left_chd_spd_slow,
+        right_chd_spd_slow,
+        left_chd_spd_fast,
+        right_chd_spd_fast,
+    )
 
 
 def build_cell2d_obj(iverts, xc, yc):
@@ -388,16 +418,26 @@ def build_cell2d_obj(iverts, xc, yc):
     cell2d = []
     for i, itm in enumerate(iverts):
         itm_no = itm[0]
-        cell2d.append([itm_no, xc[i], yc[i], len(iverts[i][1:])] + iverts[i][1:])
-    
+        cell2d.append(
+            [itm_no, xc[i], yc[i], len(iverts[i][1:])] + iverts[i][1:]
+        )
+
     return cell2d
 
 
 def remove_euclidian_duplicates(pd_with_dupes):
     # Set a threshold to filter out
     thresh = 0.001
-    distances = np.sqrt(np.sum([(pd_with_dupes[[c]].to_numpy() - pd_with_dupes[c].to_numpy())**2
-                                for c in ('X', 'Y')], axis=0))
+    distances = np.sqrt(
+        np.sum(
+            [
+                (pd_with_dupes[[c]].to_numpy() - pd_with_dupes[c].to_numpy())
+                ** 2
+                for c in ("X", "Y")
+            ],
+            axis=0,
+        )
+    )
     msk = np.tril(distances < thresh, k=-1).any(axis=1)
     out = pd_with_dupes[~msk]
 
@@ -405,18 +445,17 @@ def remove_euclidian_duplicates(pd_with_dupes):
 
 
 def create_divs_objs(fl):
-
     # Read the FE mesh data:
-    radat = pd.read_csv(fl, header=None, names=['X', 'Y', 'Temp'])
+    radat = pd.read_csv(fl, header=None, names=["X", "Y", "Temp"])
 
     # Some spatial processing from radial info to X, Y info
-    radat["radius"] = (radat["X"].values**2 + radat["Y"].values**2)**0.5
+    radat["radius"] = (radat["X"].values ** 2 + radat["Y"].values ** 2) ** 0.5
     radat["radius_rounded"] = round(radat["radius"], 4)
     radat["ang"] = np.arctan2(radat["Y"].values, radat["X"].values)
 
     # Initial screening: There were some duplicates in the original data that
     # Mehdi shared
-    radat.drop_duplicates(subset=['X', 'Y'], inplace=True)
+    radat.drop_duplicates(subset=["X", "Y"], inplace=True)
 
     # But even the above doesn't seem to get all of the duplicates
     radat = remove_euclidian_duplicates(radat)
@@ -426,13 +465,13 @@ def create_divs_objs(fl):
 
     # Reindex after dropping duplicated rows
     radat.reset_index(inplace=True)
-    
+
     # Add the index as a regular column (this will serve as the vertex ID)
     radat["vertid"] = radat.index.tolist()
 
     # Create initial list of verts from shared base data
     verts = generate_starting_vert_lst(radat)
-    
+
     # Since 'verts' will be added to, setup a counter
     idx = len(verts)
     idx -= 1  # convert to 0-based
@@ -440,27 +479,44 @@ def create_divs_objs(fl):
     # Get list of unique radi.  It is on the basis of each vertex's radius from
     # the center that the iverts (control volumes) will be setup.
     radi = np.unique(radat["radius_rounded"], return_counts=True)
-    
-    # Owing to a slight shift in some of the middle radi, for example 0.1312 
-    # and 0.1313, need to do some special handling.  
+
+    # Owing to a slight shift in some of the middle radi, for example 0.1312
+    # and 0.1313, need to do some special handling.
     flat_list = handle_small_differences_in_radi(radi)
     radat["grp"] = flat_list
 
     # Setup the iverts based on the vertices
     # Returns the index, initial list of control volumes (iverts)
     # and lists of the mean locations of the iverts
-    ivt, iverts, xc, yc, left_chd_spd_slow, right_chd_spd_slow, left_chd_spd_fast, right_chd_spd_fast = generate_control_volumes(radat, verts, flat_list, idx)
-    
+    (
+        ivt,
+        iverts,
+        xc,
+        yc,
+        left_chd_spd_slow,
+        right_chd_spd_slow,
+        left_chd_spd_fast,
+        right_chd_spd_fast,
+    ) = generate_control_volumes(radat, verts, flat_list, idx)
+
     # Create the cell2d object
     cell2d = build_cell2d_obj(iverts, xc, yc)
-    
+
     # Return objects for DISV
-    return verts, cell2d, left_chd_spd_slow, right_chd_spd_slow, left_chd_spd_fast, right_chd_spd_fast
+    return (
+        verts,
+        cell2d,
+        left_chd_spd_slow,
+        right_chd_spd_slow,
+        left_chd_spd_fast,
+        right_chd_spd_fast,
+    )
 
-    
-def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent=True):
 
-    gwfname = 'gwf-' + sim_name.split("-")[2]
+def build_mf6_flow_model(
+    sim_name, left_chd_spd=None, right_chd_spd=None, silent=True
+):
+    gwfname = "gwf-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name, "mf6gwf")
 
     # Instantiate a new MF6 simulation
@@ -508,7 +564,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
         rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(sim_name)
+        filename="{}.ims".format(sim_name),
     )
     sim.register_ims_package(imsgwf, [gwf.name])
 
@@ -525,8 +581,8 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         idomain=1,
         vertices=verts,
         cell2d=cell2d,
-        pname='DISV',
-        filename="{}.disv".format(gwfname)
+        pname="DISV",
+        filename="{}.disv".format(gwfname),
     )
 
     # Instantiating MODFLOW 6 node property flow package
@@ -537,8 +593,8 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         k=k11,
         save_specific_discharge=True,
         save_saturation=True,
-        pname='NPF',
-        filename="{}.npf".format(gwfname)
+        pname="NPF",
+        filename="{}.npf".format(gwfname),
     )
 
     # Instatiating MODFLOW 6 initial conditions package
@@ -553,7 +609,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         sy=0,
         steady_state={0: True},
         pname="STO",
-        filename="{}.sto".format(gwfname)
+        filename="{}.sto".format(gwfname),
     )
 
     # Instantiating 1st instance of MODFLOW 6 constant head package (left side)
@@ -564,7 +620,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         auxiliary="TEMPERATURE",
         stress_period_data=left_chd_spd,
         pname="CHD-LEFT",
-        filename="{}.left.chd".format(sim_name)
+        filename="{}.left.chd".format(sim_name),
     )
 
     right_chd_spd = {0: right_chd_spd}
@@ -573,7 +629,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         auxiliary="TEMPERATURE",
         stress_period_data=right_chd_spd,
         pname="CHD-RIGHT",
-        filename="{}.right.chd".format(sim_name)
+        filename="{}.right.chd".format(sim_name),
     )
 
     # Instantiating MODFLOW 6 output control package (flow model)
@@ -588,10 +644,17 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
 
     return sim
 
-def build_mf6_heat_model(sim_name, scen_ext, dirichlet=0.0, neumann=0.0, gwvelocity=0.0, silent=False):
 
+def build_mf6_heat_model(
+    sim_name,
+    scen_ext,
+    dirichlet=0.0,
+    neumann=0.0,
+    gwvelocity=0.0,
+    silent=False,
+):
     print("Building mf6gwt model...{}".format(sim_name))
-    gwename = 'gwe-' + sim_name.split("-")[2]
+    gwename = "gwe-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name[:-2], "mf6gwe" + scen_ext)
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
@@ -602,7 +665,7 @@ def build_mf6_heat_model(sim_name, scen_ext, dirichlet=0.0, neumann=0.0, gwveloc
         sim,
         model_type="gwe6",
         modelname=gwename,
-        model_nam_file="{}.nam".format(gwename)
+        model_nam_file="{}.nam".format(gwename),
     )
 
     # Create iterative model solution and register the gwe model with it
@@ -632,14 +695,16 @@ def build_mf6_heat_model(sim_name, scen_ext, dirichlet=0.0, neumann=0.0, gwveloc
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
         rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(gwename)
+        filename="{}.ims".format(gwename),
     )
     sim.register_ims_package(imsgwe, [gwe.name])
 
     # MF6 time discretization differs from corresponding flow simulation
     tdis_rc = []
     for tm in np.arange(perlen[0] * 24 * 2):  # Run hourly stress period
-        tdis_rc.append((1/48, 10, 1.0))   # Should result in 6 minute time steps
+        tdis_rc.append(
+            (1 / 48, 10, 1.0)
+        )  # Should result in 6 minute time steps
 
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_rc), perioddata=tdis_rc, time_units=time_units
@@ -700,12 +765,12 @@ def build_mf6_heat_model(sim_name, scen_ext, dirichlet=0.0, neumann=0.0, gwveloc
         ctpspd = {0: [0, 0, dirichlet]}
 
         flopy.mf6.ModflowGwectp(
-           gwe,
-           maxbound=len(ctpspd),
-           stress_period_data=ctpspd,
-           save_flows=False,
-           pname="CTP-1",
-           filename="{}.ctp".format(gwename),
+            gwe,
+            maxbound=len(ctpspd),
+            stress_period_data=ctpspd,
+            save_flows=False,
+            pname="CTP-1",
+            filename="{}.ctp".format(gwename),
         )
 
     if neumann > 0 and dirichlet == 0:
@@ -719,13 +784,15 @@ def build_mf6_heat_model(sim_name, scen_ext, dirichlet=0.0, neumann=0.0, gwveloc
             stress_period_data=esl_spd,
             save_flows=False,
             pname="ESL-1",
-            filename="{}.esl".format(gwename)
+            filename="{}.esl".format(gwename),
         )
 
     # Instantiating MODFLOW 6 source/sink mixing package for dealing with
     # auxiliary temperature specified in constant head boundary package.
-    sourcerecarray = [("CHD-LEFT", "AUX", "TEMPERATURE"),
-                      ("CHD-RIGHT", "AUX", "TEMPERATURE")]
+    sourcerecarray = [
+        ("CHD-LEFT", "AUX", "TEMPERATURE"),
+        ("CHD-RIGHT", "AUX", "TEMPERATURE"),
+    ]
     flopy.mf6.ModflowGwessm(
         gwe, sources=sourcerecarray, filename="{}.ssm".format(gwename)
     )
@@ -751,6 +818,7 @@ def build_mf6_heat_model(sim_name, scen_ext, dirichlet=0.0, neumann=0.0, gwveloc
 
     return sim
 
+
 def write_mf6_models(sim_mf6gwe, sim_mf6gwf=None, silent=True):
     if sim_mf6gwf is not None:
         sim_mf6gwf.write_simulation(silent=silent)
@@ -769,7 +837,7 @@ def run_model(sim, silent=True):
 def plot_grid(sim):
     with styles.USGSPlot() as fs:
         simname = sim.name
-        gwf = sim.get_model('gwf-' + simname.split("-")[2])
+        gwf = sim.get_model("gwf-" + simname.split("-")[2])
 
         figure_size = (5, 5)
         fig = plt.figure(figsize=figure_size)
@@ -796,10 +864,11 @@ def plot_grid(sim):
             )
             fig.savefig(fpth, dpi=300)
 
+
 def plot_grid_inset(sim):
     with styles.USGSPlot() as fs:
         simname = sim.name
-        gwf = sim.get_model('gwf-' + simname.split("-")[2])
+        gwf = sim.get_model("gwf-" + simname.split("-")[2])
 
         figure_size = (3, 3)
         fig = plt.figure(figsize=figure_size)
@@ -829,15 +898,15 @@ def plot_grid_inset(sim):
             )
             fig.savefig(fpth, dpi=300)
 
+
 def plot_head(sim):
     figure_size = (5, 5)
 
     simname = sim.name
-    gwf = sim.get_model('gwf-' + simname.split("-")[2])
+    gwf = sim.get_model("gwf-" + simname.split("-")[2])
     head = gwf.output.head().get_data()[:, 0, :]
 
     with styles.USGSPlot() as fs:
-
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
@@ -865,16 +934,25 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
 
     # Get analytical solution
     simname = sim.name[:13]
-    analytical_pth = os.path.join('..', 'data', simname)
-    adat = pd.read_csv(os.path.join(analytical_pth, scen_txt + '_V' + vel_txt + '.csv'), delimiter=',', header=None, names=['x', 'y', 'temp'])
-    gwe = sim.get_model('gwe-' + simname.split("-")[2])
+    analytical_pth = os.path.join("..", "data", simname)
+    adat = pd.read_csv(
+        os.path.join(analytical_pth, scen_txt + "_V" + vel_txt + ".csv"),
+        delimiter=",",
+        header=None,
+        names=["x", "y", "temp"],
+    )
+    gwe = sim.get_model("gwe-" + simname.split("-")[2])
 
     with styles.USGSPlot() as fs:
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
-        temp = gwe.output.temperature().get_alldata()  # eventually restore to: .temperature().
-        temp48h = temp[-1]  # Plot the temperature at 48 hours, same as analytical solution provided
+        temp = (
+            gwe.output.temperature().get_alldata()
+        )  # eventually restore to: .temperature().
+        temp48h = temp[
+            -1
+        ]  # Plot the temperature at 48 hours, same as analytical solution provided
         ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pmv = flopy.plot.PlotMapView(model=gwe, ax=ax, layer=0)
 
@@ -884,9 +962,26 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
         # extract discrete colors from the .plasma map
         cmaplist = [cmap(i) for i in np.linspace(0, 1, len(levels))]
 
-        cs1 = pmv.contour_array(temp48h, levels=levels, colors=cmaplist, linewidths=0.5)
-        labels = ax.clabel(cs1, cs1.levels, inline=False, inline_spacing=0.0, fontsize=8, fmt='%1d')
-        cs2 = ax.tricontour(adat["x"], adat["y"], adat["temp"], linewidths=0.5, colors=cmaplist, levels=levels, linestyles="dashed")
+        cs1 = pmv.contour_array(
+            temp48h, levels=levels, colors=cmaplist, linewidths=0.5
+        )
+        labels = ax.clabel(
+            cs1,
+            cs1.levels,
+            inline=False,
+            inline_spacing=0.0,
+            fontsize=8,
+            fmt="%1d",
+        )
+        cs2 = ax.tricontour(
+            adat["x"],
+            adat["y"],
+            adat["temp"],
+            linewidths=0.5,
+            colors=cmaplist,
+            levels=levels,
+            linestyles="dashed",
+        )
 
         for label in labels:
             label.set_bbox(dict(facecolor="white", pad=1, ec="none"))
@@ -908,6 +1003,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
             )
             fig.savefig(fpth, dpi=300)
 
+
 # +
 # Generates 3 figures
 def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
@@ -915,17 +1011,18 @@ def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
     plot_grid_inset(sim_mf6gwf)
     plot_head(sim_mf6gwf)
 
-    scen = 'Qin100'
-    vel_txt = '1e-5'
+    scen = "Qin100"
+    vel_txt = "1e-5"
 
     # Temperature is plotted at 48 hours
     plot_temperature(sim_mf6gwe, idx, scen_txt=scen, vel_txt=vel_txt)
 
+
 # -
+
 
 # +
 def scenario(idx, silent=False):
-
     # Two different sets of values used among the 4 scenarios, but fastest to calculate them all at the same time
     global verts, cell2d
     global top, botm
@@ -936,8 +1033,15 @@ def scenario(idx, silent=False):
     parameter_dict = parameters[key]
 
     # The following takes about 30 seconds, but only needs to be run once
-    fl = os.path.join('..', 'data', 'ex-gwe-radial', 'Qin100_V1e-5.csv')
-    verts, cell2d, left_chd_spd_slow, right_chd_spd_slow, left_chd_spd_fast, right_chd_spd_fast = create_divs_objs(fl)
+    fl = os.path.join("..", "data", "ex-gwe-radial", "Qin100_V1e-5.csv")
+    (
+        verts,
+        cell2d,
+        left_chd_spd_slow,
+        right_chd_spd_slow,
+        left_chd_spd_fast,
+        right_chd_spd_fast,
+    ) = create_divs_objs(fl)
 
     top = np.ones((len(cell2d),))
     botm = np.zeros((1, len(cell2d)))
@@ -949,11 +1053,18 @@ def scenario(idx, silent=False):
     scen_ext = key[-2:]
 
     # Build the flow model as a steady-state simulation
-    sim_mf6gwf = build_mf6_flow_model(key[:-2], left_chd_spd=left_chd_spd, right_chd_spd=right_chd_spd, silent=silent)
+    sim_mf6gwf = build_mf6_flow_model(
+        key[:-2],
+        left_chd_spd=left_chd_spd,
+        right_chd_spd=right_chd_spd,
+        silent=silent,
+    )
 
     # Run the transport model as a transient simulation, requires reading the
     # steady-state flow output saved in binary files.
-    sim_mf6gwe = build_mf6_heat_model(key, scen_ext, **parameter_dict, silent=silent)
+    sim_mf6gwe = build_mf6_heat_model(
+        key, scen_ext, **parameter_dict, silent=silent
+    )
 
     write_mf6_models(sim_mf6gwe, sim_mf6gwf=sim_mf6gwf, silent=silent)
 
@@ -962,11 +1073,12 @@ def scenario(idx, silent=False):
     else:
         success = True
 
-    if success:   # Ensure that flow model ran OK
+    if success:  # Ensure that flow model ran OK
         success = run_model(sim_mf6gwe, silent)
 
     if success:
         plot_results(idx, sim_mf6gwf, sim_mf6gwe)
+
 
 # -
 
