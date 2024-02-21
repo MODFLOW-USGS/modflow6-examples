@@ -25,6 +25,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-csub-p01"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -77,11 +79,15 @@ for idx in range(1, ncol):
 locw201 = 11
 
 # Load the aquifer load time series
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/train_load_193704231304.csv",
+fname = "train_load_193704231304.csv"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:32dc8e7b7e39876374af43605e264725",
+    progressbar=True,
 )
-csv_load = np.genfromtxt(pth, names=True, delimiter=",")
+csv_load = np.genfromtxt(fpath, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file
 csub_ts = []
@@ -306,12 +312,16 @@ def plot_results(sim, silent=True):
         sim_date = [dstart + datetime.timedelta(seconds=x) for x in sim_obs["totim"]]
 
         # get the observed head
-        pth = pooch.retrieve(
-            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/s201_gw_2sec.csv",
+        fname = "s201_gw_2sec.csv"
+        fpath = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+            fname=fname,
+            path=data_path,
             known_hash="md5:1098bcd3f4fc1bd3b38d3d55152a8fbb",
+            progressbar=True,
         )
         dtype = [("date", object), ("dz_m", float)]
-        obs_head = np.genfromtxt(pth, names=True, delimiter=",", dtype=dtype)
+        obs_head = np.genfromtxt(fpath, names=True, delimiter=",", dtype=dtype)
         obs_date = []
         for s in obs_head["date"]:
             obs_date.append(

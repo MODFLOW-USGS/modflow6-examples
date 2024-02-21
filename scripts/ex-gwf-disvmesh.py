@@ -28,6 +28,8 @@ from shapely.geometry import Polygon
 # Example name and base workspace
 sim_name = "ex-gwf-disvmesh"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -106,11 +108,15 @@ def from_argus_export(fname):
 
 
 # Load argus mesh and get disv grid properties
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-disvmesh/argus.exp",
+fname = "argus.exp"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:072a758ca3d35831acb7e1e27e7b8524",
+    progressbar=True,
 )
-verts, iverts = from_argus_export(fname)
+verts, iverts = from_argus_export(fpath)
 gridprops = flopy.utils.cvfdutil.get_disv_gridprops(verts, iverts)
 cell_areas = []
 for i in range(gridprops["ncpl"]):

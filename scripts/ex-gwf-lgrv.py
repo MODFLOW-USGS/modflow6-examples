@@ -20,7 +20,10 @@ from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
 # Base workspace
+sim_name = "ex-gwf-lgrv"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -41,9 +44,9 @@ time_units = "seconds"
 
 # Scenario-specific parameters
 parameters = {
-    "ex-gwf-lgrv-gr": {"configuration": "Refined"},
-    "ex-gwf-lgrv-gc": {"configuration": "Coarse"},
-    "ex-gwf-lgrv-lgr": {"configuration": "LGR"},
+    f"{sim_name}-gr": {"configuration": "Refined"},
+    f"{sim_name}-gc": {"configuration": "Coarse"},
+    f"{sim_name}-lgr": {"configuration": "LGR"},
 }
 
 # Model parameters
@@ -74,11 +77,15 @@ tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # load data files and process into arrays
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/top.dat",
+fname = "top.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:7e95923e78d0a2e2133929376d913ecf",
+    progressbar=True,
 )
-top = np.loadtxt(fname)
+top = np.loadtxt(fpath)
 ikzone = np.empty((nlay, nrow, ncol), dtype=float)
 hashes = [
     "548876af515cb8db0c17e7cba0cda364",
@@ -108,14 +115,22 @@ hashes = [
     "432b9a02f3ff4906a214b271c965ebad",
 ]
 for k in range(nlay):
-    fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/ikzone{k + 1}.dat",
+    fname = f"ikzone{k + 1}.dat"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash=f"md5:{hashes[k]}",
+        progressbar=True,
     )
-    ikzone[k, :, :] = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/riv.dat",
+    ikzone[k, :, :] = np.loadtxt(fpath)
+fname = "riv.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:5ccbe4f29940376309db445dbb2d75d0",
+    progressbar=True,
 )
 dt = [
     ("k", int),
@@ -125,7 +140,7 @@ dt = [
     ("conductance", float),
     ("rbot", float),
 ]
-rivdat = np.loadtxt(fname, dtype=dt)
+rivdat = np.loadtxt(fpath, dtype=dt)
 rivdat["k"] -= 1
 rivdat["i"] -= 1
 rivdat["j"] -= 1

@@ -23,8 +23,10 @@ from flopy.utils.util_array import read1d
 from modflow_devtools.misc import get_env
 
 # Base simulation and model name and workspace
+sim_name = "ex-gwt-gwtgwt-p10"
 workspace = pl.Path("../examples")
-example_name = "ex-gwt-gwtgwt-mt3dms-p10"
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -88,14 +90,20 @@ hk = [k1, k1, k2, k2]
 laytyp = icelltype = 0
 
 # Starting heads from file:
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10shead.dat",
+gwt_mt3dms_sim_name = "ex-gwt-mt3dms-p10"
+gwt_mt3dms_data_path = pl.Path(f"../data/{gwt_mt3dms_sim_name}")
+gwt_mt3dms_data_path = gwt_mt3dms_data_path if gwt_mt3dms_data_path.is_dir() else None
+fname = "p10shead.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{gwt_mt3dms_sim_name}/{fname}",
+    fname=fname,
+    path=gwt_mt3dms_data_path,
     known_hash="md5:c6591c3c3cfd023ab930b7b1121bfccf",
+    progressbar=True,
 )
-f = open(fpth)
-s0 = np.empty((nrow * ncol), dtype=float)
-s0 = read1d(f, s0).reshape((nrow, ncol))
-f.close()
+with open(fpath) as f:
+    s0 = np.empty((nrow * ncol), dtype=float)
+    s0 = read1d(f, s0).reshape((nrow, ncol))
 strt = np.zeros((nlay, nrow, ncol), dtype=float)
 for k in range(nlay):
     strt[k] = s0
@@ -126,14 +134,17 @@ wel_mf6_spd = {0: welspd_mf6}
 
 # Transport related
 # Starting concentrations from file:
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10cinit.dat",
+fname = "p10cinit.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{gwt_mt3dms_sim_name}/{fname}",
+    fname=fname,
+    path=gwt_mt3dms_data_path,
     known_hash="md5:8e2d3ba7af1ec65bb07f6039d1dfb2c8",
+    progressbar=True,
 )
-f = open(fpth)
-c0 = np.empty((nrow * ncol), dtype=float)
-c0 = read1d(f, c0).reshape((nrow, ncol))
-f.close()
+with open(fpath) as f:
+    c0 = np.empty((nrow * ncol), dtype=float)
+    c0 = read1d(f, c0).reshape((nrow, ncol))
 sconc = np.zeros((nlay, nrow, ncol), dtype=float)
 sconc[1] = 0.2 * c0
 sconc[2] = c0
@@ -214,7 +225,7 @@ scheme = "Undefined"
 
 
 # +
-def build_models(sim_name):
+def build_models():
     sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
@@ -807,29 +818,44 @@ figure_size = (6, 8)
 
 # Load MODFLOW 6 reference for the concentrations (GWT MT3DMS p10)
 def get_reference_data_conc():
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_conc_lay3_1days.txt",
+    fname = "gwt-p10-mf6_conc_lay3_1days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:bbb596110559d00b7f01032998cf35f4",
+        progressbar=True,
     )
-    fpath = open(fpth)
     conc1 = np.loadtxt(fpath)
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_conc_lay3_500days.txt",
+
+    fname = "gwt-p10-mf6_conc_lay3_500days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:3b3b9321ae6c801fec7d3562aa44a009",
+        progressbar=True,
     )
-    fpath = open(fpth)
     conc500 = np.loadtxt(fpath)
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_conc_lay3_750days.txt",
+
+    fname = "gwt-p10-mf6_conc_lay3_750days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:0d1c2e7682a946e11b56f87c28c0ebd7",
+        progressbar=True,
     )
-    fpath = open(fpth)
     conc750 = np.loadtxt(fpath)
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_conc_lay3_1000days.txt",
+
+    fname = "gwt-p10-mf6_conc_lay3_1000days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:c5fe612424e5f83fb2ac46cd4fdc8fb6",
+        progressbar=True,
     )
-    fpath = open(fpth)
     conc1000 = np.loadtxt(fpath)
 
     return [conc1, conc500, conc750, conc1000]
@@ -837,29 +863,41 @@ def get_reference_data_conc():
 
 # Load MODFLOW 6 reference for heads (GWT MT3DMS p10)
 def get_reference_data_heads():
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_head_lay3_1days.txt",
+    fname = "gwt-p10-mf6_head_lay3_1days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:0c5ce894877692b0a018587a2df068d6",
+        progressbar=True,
     )
-    fpath = open(fpth)
     head1 = np.loadtxt(fpath)
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_head_lay3_500days.txt",
+    fname = "gwt-p10-mf6_head_lay3_500days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:b4b56f9ecad0abafc6c62072cc5f15e9",
+        progressbar=True,
     )
-    fpath = open(fpth)
     head500 = np.loadtxt(fpath)
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_head_lay3_750days.txt",
+    fname = "gwt-p10-mf6_head_lay3_750days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:1c35fee2f7764c1c28eb84ed98b1300c",
+        progressbar=True,
     )
-    fpath = open(fpth)
     head750 = np.loadtxt(fpath)
-    fpth = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-gwtgwt-p10/gwt-p10-mf6_head_lay3_1000days.txt",
+    fname = "gwt-p10-mf6_head_lay3_1000days.txt"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:b8e67997ca429f6f20e15852fb2fba9f",
+        progressbar=True,
     )
-    fpath = open(fpth)
     head1000 = np.loadtxt(fpath)
 
     return [head1, head500, head750, head1000]
@@ -902,7 +940,7 @@ def plot_difference_conc(sim):
     conc_mf6_outer = ucnobj_mf6_outer.get_alldata()
 
     # Create figure for scenario
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
         fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
 
@@ -1009,7 +1047,7 @@ def plot_difference_heads(sim):
     head_mf6_outer = hobj_mf6_outer.get_alldata()
 
     # Create figure for scenario
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
         fig = plt.figure(figsize=figure_size, dpi=300, tight_layout=True)
 
@@ -1113,7 +1151,7 @@ def plot_concentration(sim):
     conc_mf6_outer = ucnobj_mf6_outer.get_alldata()
 
     # Create figure for scenario
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
         xc, yc = gwt.modelgrid.xycenters
@@ -1207,7 +1245,7 @@ def plot_results(sim):
 
 # +
 def scenario():
-    sim = build_models(example_name)
+    sim = build_models()
     if write:
         sim.write_simulation()
     if run:

@@ -26,8 +26,10 @@ from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
-example_name = "ex-gwt-prudic2004t2"
+sim_name = "ex-gwt-prudic2004t2"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -74,23 +76,37 @@ top = 100.0  # Top of the model ($ft$)
 total_time = 9131.0  # Total simulation time ($d$)
 
 # Load Data Arrays
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bot1.dat",
+fname = "bot1.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:c510defe0eb1ba1fbfab5663ff63cd83",
+    progressbar=True,
 )
-bot0 = np.loadtxt(fname)
+bot0 = np.loadtxt(fpath)
 botm = [bot0] + [bot0 - (15.0 * k) for k in range(1, nlay)]
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/idomain1.dat",
+
+fname = "idomain1.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:45d1ca08015e4a34125ccd95a83da0ee",
+    progressbar=True,
 )
-idomain0 = np.loadtxt(fname, dtype=int)
+idomain0 = np.loadtxt(fpath, dtype=int)
 idomain = nlay * [idomain0]
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/lakibd.dat",
+
+fname = "lakibd.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:18c90af94c34825a206935b7ddace2f9",
+    progressbar=True,
 )
-lakibd = np.loadtxt(fname, dtype=int)
+lakibd = np.loadtxt(fpath, dtype=int)
 # -
 
 # ### Model setup
@@ -100,12 +116,16 @@ lakibd = np.loadtxt(fname, dtype=int)
 
 # +
 def get_stream_data():
-    fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/stream.csv",
+    fname = "stream.csv"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:1291c8dec5a415866c711ee14bf0b1f8",
+        progressbar=True,
     )
     dt = 5 * [int] + [float]
-    streamdata = np.genfromtxt(fname, names=True, delimiter=",", dtype=dt)
+    streamdata = np.genfromtxt(fpath, names=True, delimiter=",", dtype=dt)
     connectiondata = [[ireach] for ireach in range(streamdata.shape[0])]
     isegold = -1
     distance_along_segment = []
@@ -220,11 +240,15 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwfrcha(gwf, recharge={0: recharge}, pname="RCH-1")
 
     chdlist = []
-    fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/chd.dat",
+    fname = "chd.dat"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:7889521ec9ec9521377d604d9f6d1f74",
+        progressbar=True,
     )
-    for line in open(fname).readlines():
+    for line in open(fpath).readlines():
         ll = line.strip().split()
         if len(ll) == 4:
             k, i, j, hd = ll
@@ -655,25 +679,37 @@ def plot_gwt_results(sims):
             ax.plot(times, sfaconc[:, 30], "r-", label="Stream Segment 3")
             ax.plot(times, sfaconc[:, 37], "g-", label="Stream Segment 4")
 
-            fname = pooch.retrieve(
-                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg2",
+            fname = "teststrm.sg2"
+            fpath = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+                fname=fname,
+                path=data_path,
                 known_hash="md5:4bb5e256ed8b67f1743d547b43a610d0",
+                progressbar=True,
             )
-            sg = np.genfromtxt(fname, comments='"')
+            sg = np.genfromtxt(fpath, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
 
-            fname = pooch.retrieve(
-                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg3",
+            fname = "teststrm.sg3"
+            fpath = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+                fname=fname,
+                path=data_path,
                 known_hash="md5:a30d8e27d0bbe09dcb9f39d115592ff5",
+                progressbar=True,
             )
-            sg = np.genfromtxt(fname, comments='"')
+            sg = np.genfromtxt(fpath, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
 
-            fname = pooch.retrieve(
-                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/teststrm.sg4",
+            fname = "teststrm.sg4"
+            fpath = pooch.retrieve(
+                url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+                fname=fname,
+                path=data_path,
                 known_hash="md5:ec589d7333fe160842945b5895f5160a",
+                progressbar=True,
             )
-            sg = np.genfromtxt(fname, comments='"')
+            sg = np.genfromtxt(fpath, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")
 
             styles.graph_legend()
@@ -701,7 +737,7 @@ def plot_gwt_results(sims):
 
 # +
 def scenario(silent=True):
-    sims = build_models(example_name)
+    sims = build_models(sim_name)
     if write:
         write_models(sims, silent=silent)
     if run:

@@ -25,6 +25,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-sfr-p01b"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -94,53 +96,81 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, lake locations, top, bottom, and evapotranspiration surface arrays
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/strt1.txt",
+fname = "strt1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:273db6e876e7cfb4985b0b09c232f7cc",
+    progressbar=True,
 )
-strt1 = np.loadtxt(fpth, dtype=float)
+strt1 = np.loadtxt(fpath, dtype=float)
 strt2 = strt1
 strt = [strt1, strt2]
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:3fb0b80939ff6ccc9dc47d010e002a3c",
+    progressbar=True,
 )
-idomain1 = np.loadtxt(fpth, dtype=int)
+idomain1 = np.loadtxt(fpath, dtype=int)
 idomain = [idomain1, idomain1]
 lake_map = np.ones(shape3d, dtype=int) * -1
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes.txt",
+fname = "lakes.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:c344195438bda85738cab2ce34a16733",
+    progressbar=True,
 )
-lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
+lake_map[0, :, :] = np.loadtxt(fpath, dtype=int) - 1
 lake_map = np.ma.masked_where(lake_map < 0, lake_map)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top1.txt",
+fname = "top1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:ba3f1422f45388b19dc1ef6b3076fa96",
+    progressbar=True,
 )
-top = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bot1.txt",
+top = np.loadtxt(fpath, dtype=float)
+fname = "bot1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:4343c79bbf3ad039638d2379d335d06e",
+    progressbar=True,
 )
-bot1 = np.loadtxt(fpth, dtype=float)
+bot1 = np.loadtxt(fpath, dtype=float)
 bot2 = np.ones_like(bot1) * 300.0
 botm = [bot1, bot2]
 
 # Create hydraulic conductivity and specific yield
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/k11_lay1.txt",
+fname = "k11_lay1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:287160064d1a9bc0bae94b018bf187d7",
+    progressbar=True,
 )
-k11_lay1 = np.loadtxt(fpth, dtype=float) * 2.5
+k11_lay1 = np.loadtxt(fpath, dtype=float) * 2.5
 k11_lay2 = np.ones_like(k11_lay1) * 0.35e-2
 k11 = [k11_lay1, k11_lay2]
 k33 = 0.5e-5
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/sy1.txt",
+fname = "sy1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:80be4a9ba817465cf5c05934f94dd675",
+    progressbar=True,
 )
-sy1 = np.loadtxt(fpth, dtype=float)
+sy1 = np.loadtxt(fpath, dtype=float)
 sy2 = np.ones_like(sy1) * 0.20
 sy = [sy1, sy2]
 

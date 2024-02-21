@@ -28,6 +28,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-bcf2ss"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -47,11 +49,15 @@ length_units = "feet"
 time_units = "days"
 
 # Load the wetdry array for layer 1
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/wetdry01.txt",
+fname = "wetdry01.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:3a4b357b7d2cd5175a205f3347ab973d",
+    progressbar=True,
 )
-wetdry_layer0 = np.loadtxt(pth)
+wetdry_layer0 = np.loadtxt(fpath)
 
 # Scenario-specific parameters
 parameters = {

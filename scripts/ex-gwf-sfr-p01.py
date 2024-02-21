@@ -23,6 +23,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-sfr-p01"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -70,31 +72,51 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and evapotranspiration surface arrays
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
+    progressbar=True,
 )
-idomain = np.loadtxt(fpth, dtype=int)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top.txt",
+idomain = np.loadtxt(fpath, dtype=int)
+fname = "top.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:ab5097c1dc22e60fb313bf7f10dd8efe",
+    progressbar=True,
 )
-top = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+top = np.loadtxt(fpath, dtype=float)
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:fa5fe276f4f58a01eabfe88516cc90af",
+    progressbar=True,
 )
-botm = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge.txt",
+botm = np.loadtxt(fpath, dtype=float)
+fname = "recharge.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:82ed1ed29a457f1f38e51cd2657676e1",
+    progressbar=True,
 )
-recharge = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/surf.txt",
+recharge = np.loadtxt(fpath, dtype=float)
+fname = "surf.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:743ce03e5e46867cf5af94f1ac283514",
+    progressbar=True,
 )
-surf = np.loadtxt(fpth, dtype=float)
+surf = np.loadtxt(fpath, dtype=float)
 
 # Create hydraulic conductivity and specific yield
 k11 = np.zeros(shape2d, dtype=float)

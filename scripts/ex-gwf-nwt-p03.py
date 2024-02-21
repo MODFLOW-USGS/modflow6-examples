@@ -25,6 +25,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-nwt-p03"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -85,21 +87,29 @@ shape3d = (nlay, nrow, ncol)
 ticklabels = np.arange(0, 10000, 2000)
 
 # Load the bottom
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:0fd4b16db652808c7e36a5a2a25da0a2",
+    progressbar=True,
 )
-botm = np.loadtxt(fpth).reshape(shape3d)
+botm = np.loadtxt(fpath).reshape(shape3d)
 
 # Set the starting heads
 strt = botm + 20.0
 
 # Load the high recharge rate
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge_high.txt",
+fname = "recharge_high.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:8d8f8bb3cec22e7a0cbe6aba95da8f35",
+    progressbar=True,
 )
-rch_high = np.loadtxt(fpth)
+rch_high = np.loadtxt(fpath)
 
 # Generate the low recharge rate from the high recharge rate
 rch_low = rch_high.copy() * 1e-3

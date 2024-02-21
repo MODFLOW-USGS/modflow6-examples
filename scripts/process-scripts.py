@@ -49,6 +49,7 @@ Flag1 Flag2    Arg1 Arg2  Description
     >>> process-scripts.py -f *-maw-*  # print to prompt MAW example problems.
     >>> process-scripts.py -k *-maw-*  # process all MAW example problems.
 """
+
 import ast
 import fnmatch
 import os

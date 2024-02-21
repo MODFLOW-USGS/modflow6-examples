@@ -23,6 +23,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-bump"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -81,11 +83,15 @@ extents = (0, xlen, 0, ylen)
 shape3d = (nlay, nrow, ncol)
 
 # Load the bottom
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:9287f9e214147d95e6ed159732079a0b",
+    progressbar=True,
 )
-botm = np.loadtxt(fpth).reshape(shape3d)
+botm = np.loadtxt(fpath).reshape(shape3d)
 
 # Create a cylinder
 cylinder = botm.copy()

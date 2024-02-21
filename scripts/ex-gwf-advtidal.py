@@ -27,6 +27,8 @@ from shapely.geometry import Polygon
 # Example name and base workspace
 sim_name = "ex-gwf-advtidal"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -184,9 +186,13 @@ def build_models():
     ghb_spd += [[1, i, 9, "tides", 15.0, "ESTUARY-L2"] for i in range(nrow)]
     ghb_spd += [[2, i, 9, "tides", 1500.0, "ESTUARY-L3"] for i in range(nrow)]
     ghb_spd = {0: ghb_spd}
+    fname = "tides.csv"
     fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/tides.csv",
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:425337a0bf24fa72c9e40f4e3d9f698a",
+        progressbar=True,
     )
     tsdict = get_timeseries(fname, "tides", "linear")
     ghbobs_dict = {}
@@ -223,12 +229,16 @@ def build_models():
         [0, 2, 4, -20, ""],
         [0, 13, 5, -40, ""],
     ]
-    fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/wellrates.csv",
+    fname = "wellrates.csv"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:6ca7366be279d679b14e8338a195422f",
+        progressbar=True,
     )
     tsdict = get_timeseries(
-        fname,
+        fpath,
         ["well_1_rate", "well_2_rate", "well_6_rate"],
         3 * ["stepwise"],
     )
@@ -256,12 +266,16 @@ def build_models():
         + 3 * [""]
     )
     riv_spd = list(zip(rivlay, rivrow, rivcol, rivstg, rivcnd, rivrbt, rivbnd))
-    fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/riverstage.csv",
+    fname = "riverstage.csv"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash="md5:83f8b526ec6e6978b1d9dbd6fde231ef",
+        progressbar=True,
     )
     tsdict = get_timeseries(
-        fname,
+        fpath,
         ["river_stage_1", "river_stage_2"],
         ["linear", "stepwise"],
     )
@@ -291,12 +305,16 @@ def build_models():
                     result["areas"][i] / delr / delc,
                 ]
             )
-        fname = pooch.retrieve(
-            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge{ipak + 1}.csv",
+        fname = f"recharge{ipak + 1}.csv"
+        fpath = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+            fname=fname,
+            path=data_path,
             known_hash=f"md5:{hashes[ipak]}",
+            progressbar=True,
         )
         tsdict = get_timeseries(
-            fname,
+            fpath,
             [f"rch_{ipak + 1}"],
             ["stepwise"],
             filename=f"{sim_name}.rch{ipak + 1}.ts",
