@@ -74,7 +74,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:a93be6cf74bf376f696fc2fbcc316aea",
-    progressbar=True,
 )
 top = np.loadtxt(fpath)
 fname = "bot1.txt"
@@ -83,7 +82,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:6503e01167875bd257479a2941d1d586",
-    progressbar=True,
 )
 bot1 = np.loadtxt(fpath)
 # from mf-nwt .bas file
@@ -93,7 +91,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:7b33e2fba54eae694171c94c75e13d2e",
-    progressbar=True,
 )
 idomain1 = np.loadtxt(fpath)
 fname = "strt1.txt"
@@ -102,7 +99,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:d49e24ec920472380787fd27c528123f",
-    progressbar=True,
 )
 strt = np.loadtxt(fpath)
 # peel out locations of negative values for setting constant head data
@@ -125,7 +121,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:50c0a5bfd79b1c9d0e0900540c19d6cc",
-    progressbar=True,
 )
 k11 = np.loadtxt(fpath)
 fname = "sy1.txt"
@@ -134,7 +129,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:6bc38fd082875633686732f34ba3e18b",
-    progressbar=True,
 )
 sy = np.loadtxt(fpath)
 fname = "kv1.txt"
@@ -143,7 +137,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:7b6685bf35f1150bef553f81c2dfb2cb",
-    progressbar=True,
 )
 k33 = np.loadtxt(fpath)
 icelltype = 1  # Water table resides in layer 1
@@ -1790,7 +1783,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:280faee0782e0de5f2046b38ac20c271",
-    progressbar=True,
 )
 iuzbnd = np.loadtxt(fpath)
 fname = "thts.txt"
@@ -1799,7 +1791,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:6ebb033605c7e4700ddcf3f2e51ac371",
-    progressbar=True,
 )
 thts = np.loadtxt(fpath)
 fname = "vks.txt"
@@ -1808,7 +1799,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:61892e6cff6dae1879112c9eb03a1614",
-    progressbar=True,
 )
 uzk33 = np.loadtxt(fpath)
 fname = "finf_gradient.txt"
@@ -1817,7 +1807,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:e5ac0a0b27a66dd9f2eff63a63c6e6fe",
-    progressbar=True,
 )
 finf_grad = np.loadtxt(fpath)
 # next, load time series of multipliers
@@ -1827,7 +1816,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:969ed0391d64804ec8395a578eb08ed1",
-    progressbar=True,
 )
 uz_ts = pd.read_csv(fpath, delim_whitespace=True, header=0)
 

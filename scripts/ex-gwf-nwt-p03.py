@@ -93,7 +93,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:0fd4b16db652808c7e36a5a2a25da0a2",
-    progressbar=True,
 )
 botm = np.loadtxt(fpath).reshape(shape3d)
 
@@ -107,7 +106,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:8d8f8bb3cec22e7a0cbe6aba95da8f35",
-    progressbar=True,
 )
 rch_high = np.loadtxt(fpath)
 

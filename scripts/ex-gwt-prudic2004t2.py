@@ -82,7 +82,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:c510defe0eb1ba1fbfab5663ff63cd83",
-    progressbar=True,
 )
 bot0 = np.loadtxt(fpath)
 botm = [bot0] + [bot0 - (15.0 * k) for k in range(1, nlay)]
@@ -93,7 +92,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:45d1ca08015e4a34125ccd95a83da0ee",
-    progressbar=True,
 )
 idomain0 = np.loadtxt(fpath, dtype=int)
 idomain = nlay * [idomain0]
@@ -104,7 +102,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:18c90af94c34825a206935b7ddace2f9",
-    progressbar=True,
 )
 lakibd = np.loadtxt(fpath, dtype=int)
 # -
@@ -122,7 +119,6 @@ def get_stream_data():
         fname=fname,
         path=data_path,
         known_hash="md5:1291c8dec5a415866c711ee14bf0b1f8",
-        progressbar=True,
     )
     dt = 5 * [int] + [float]
     streamdata = np.genfromtxt(fpath, names=True, delimiter=",", dtype=dt)
@@ -246,7 +242,6 @@ def build_mf6gwf(sim_folder):
         fname=fname,
         path=data_path,
         known_hash="md5:7889521ec9ec9521377d604d9f6d1f74",
-        progressbar=True,
     )
     for line in open(fpath).readlines():
         ll = line.strip().split()
@@ -685,7 +680,6 @@ def plot_gwt_results(sims):
                 fname=fname,
                 path=data_path,
                 known_hash="md5:4bb5e256ed8b67f1743d547b43a610d0",
-                progressbar=True,
             )
             sg = np.genfromtxt(fpath, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 6], "b--")
@@ -696,7 +690,6 @@ def plot_gwt_results(sims):
                 fname=fname,
                 path=data_path,
                 known_hash="md5:a30d8e27d0bbe09dcb9f39d115592ff5",
-                progressbar=True,
             )
             sg = np.genfromtxt(fpath, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 6], "r--")
@@ -707,7 +700,6 @@ def plot_gwt_results(sims):
                 fname=fname,
                 path=data_path,
                 known_hash="md5:ec589d7333fe160842945b5895f5160a",
-                progressbar=True,
             )
             sg = np.genfromtxt(fpath, comments='"')
             ax.plot(sg[:, 0] / 365.0, sg[:, 3], "g--")

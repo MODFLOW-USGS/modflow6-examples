@@ -83,7 +83,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:7e95923e78d0a2e2133929376d913ecf",
-    progressbar=True,
 )
 top = np.loadtxt(fpath)
 ikzone = np.empty((nlay, nrow, ncol), dtype=float)
@@ -121,7 +120,6 @@ for k in range(nlay):
         fname=fname,
         path=data_path,
         known_hash=f"md5:{hashes[k]}",
-        progressbar=True,
     )
     ikzone[k, :, :] = np.loadtxt(fpath)
 fname = "riv.dat"
@@ -130,7 +128,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:5ccbe4f29940376309db445dbb2d75d0",
-    progressbar=True,
 )
 dt = [
     ("k", int),

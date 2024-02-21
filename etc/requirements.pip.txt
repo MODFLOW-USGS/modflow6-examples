@@ -20,4 +20,3 @@ rasterstats
 jupyter
 jupytext
 pooch
-tqdm # for download progress bars

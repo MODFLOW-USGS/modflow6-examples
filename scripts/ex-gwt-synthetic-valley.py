@@ -239,7 +239,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:d233e5c393ab6c029c63860d73818856",
-    progressbar=True,
 )
 kaq = flopy.utils.Raster.load(fpath)
 
@@ -249,7 +248,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:a08999c37f42b35884468e4ef896d5f9",
-    progressbar=True,
 )
 kclay = flopy.utils.Raster.load(fpath)
 
@@ -259,7 +257,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:781155bdcc2b9914e1cad6b10de0e9c7",
-    progressbar=True,
 )
 top_base = flopy.utils.Raster.load(fpath)
 
@@ -269,7 +266,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:00b4a39fbf5180e65c0367cdb6f15c93",
-    progressbar=True,
 )
 bot = flopy.utils.Raster.load(fpath)
 
@@ -279,7 +275,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:38600d6f0eef7c033ede278252dc6343",
-    progressbar=True,
 )
 lake_location = flopy.utils.Raster.load(fpath)
 # -

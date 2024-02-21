@@ -50,7 +50,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
-    progressbar=True,
 )
 csv_head = np.genfromtxt(fpath, names=True, delimiter=",")
 
@@ -780,7 +779,6 @@ def get_obs_dataframe(file_name, hash):
         fname=file_name,
         path=data_path,
         known_hash=f"md5:{hash}",
-        progressbar=True,
     )
     df = pd.read_csv(fpath, index_col=0)
     df.index = pd.to_datetime(df.index.values)
@@ -1248,7 +1246,6 @@ def plot_calibration(silent=True):
             fname=fname,
             path=data_path,
             known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
-            progressbar=True,
         )
         df_obs_heads, col_list = process_sim_csv(fpath)
 

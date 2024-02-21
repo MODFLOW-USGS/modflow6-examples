@@ -192,7 +192,6 @@ def build_models():
         fname=fname,
         path=data_path,
         known_hash="md5:425337a0bf24fa72c9e40f4e3d9f698a",
-        progressbar=True,
     )
     tsdict = get_timeseries(fname, "tides", "linear")
     ghbobs_dict = {}
@@ -235,7 +234,6 @@ def build_models():
         fname=fname,
         path=data_path,
         known_hash="md5:6ca7366be279d679b14e8338a195422f",
-        progressbar=True,
     )
     tsdict = get_timeseries(
         fpath,
@@ -272,7 +270,6 @@ def build_models():
         fname=fname,
         path=data_path,
         known_hash="md5:83f8b526ec6e6978b1d9dbd6fde231ef",
-        progressbar=True,
     )
     tsdict = get_timeseries(
         fpath,
@@ -311,7 +308,6 @@ def build_models():
             fname=fname,
             path=data_path,
             known_hash=f"md5:{hashes[ipak]}",
-            progressbar=True,
         )
         tsdict = get_timeseries(
             fpath,

@@ -114,7 +114,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:072a758ca3d35831acb7e1e27e7b8524",
-    progressbar=True,
 )
 verts, iverts = from_argus_export(fpath)
 gridprops = flopy.utils.cvfdutil.get_disv_gridprops(verts, iverts)

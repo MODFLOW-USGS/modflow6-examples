@@ -96,7 +96,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:c6591c3c3cfd023ab930b7b1121bfccf",
-    progressbar=True,
 )
 f = open(fpath)
 s0 = np.empty((nrow * ncol), dtype=float)
@@ -159,7 +158,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:8e2d3ba7af1ec65bb07f6039d1dfb2c8",
-    progressbar=True,
 )
 f = open(fpath)
 c0 = np.empty((nrow * ncol), dtype=float)

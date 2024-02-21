@@ -100,7 +100,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=sfr_data_path,
     known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
-    progressbar=True,
 )
 idomain = np.loadtxt(fpath, dtype=int)
 
@@ -110,7 +109,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=sfr_data_path,
     known_hash="md5:fa5fe276f4f58a01eabfe88516cc90af",
-    progressbar=True,
 )
 botm = np.loadtxt(fpath, dtype=float)
 
@@ -120,7 +118,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:88cc15f87824ebfd35ed5b4be7f68387",
-    progressbar=True,
 )
 top = np.loadtxt(fpath, dtype=float)
 
@@ -130,7 +127,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:8bf0a48d604263cb35151587a9d8ca29",
-    progressbar=True,
 )
 infilt_mult = np.loadtxt(fpath, dtype=float)
 
@@ -140,7 +136,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:6e289692a2b55b7bafb8bd9d71b0a2cb",
-    progressbar=True,
 )
 extwc_mult = np.loadtxt(fpath, dtype=float)
 
@@ -150,7 +145,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:1bf9a6bb3513a184aa5093485e622f5b",
-    progressbar=True,
 )
 routing_map = np.loadtxt(fpath, dtype=int)
 

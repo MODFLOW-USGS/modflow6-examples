@@ -96,7 +96,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:2f05a27b6f71e564c0d3616e3fd00ac8",
-    progressbar=True,
 )
 ib = np.loadtxt(fpath, dtype=int)
 idomain = np.tile(ib, (nlay, 1))

@@ -102,7 +102,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:273db6e876e7cfb4985b0b09c232f7cc",
-    progressbar=True,
 )
 strt1 = np.loadtxt(fpath, dtype=float)
 strt2 = strt1
@@ -113,7 +112,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:3fb0b80939ff6ccc9dc47d010e002a3c",
-    progressbar=True,
 )
 idomain1 = np.loadtxt(fpath, dtype=int)
 idomain = [idomain1, idomain1]
@@ -124,7 +122,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:c344195438bda85738cab2ce34a16733",
-    progressbar=True,
 )
 lake_map[0, :, :] = np.loadtxt(fpath, dtype=int) - 1
 lake_map = np.ma.masked_where(lake_map < 0, lake_map)
@@ -134,7 +131,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:ba3f1422f45388b19dc1ef6b3076fa96",
-    progressbar=True,
 )
 top = np.loadtxt(fpath, dtype=float)
 fname = "bot1.txt"
@@ -143,7 +139,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:4343c79bbf3ad039638d2379d335d06e",
-    progressbar=True,
 )
 bot1 = np.loadtxt(fpath, dtype=float)
 bot2 = np.ones_like(bot1) * 300.0
@@ -156,7 +151,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:287160064d1a9bc0bae94b018bf187d7",
-    progressbar=True,
 )
 k11_lay1 = np.loadtxt(fpath, dtype=float) * 2.5
 k11_lay2 = np.ones_like(k11_lay1) * 0.35e-2
@@ -168,7 +162,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:80be4a9ba817465cf5c05934f94dd675",
-    progressbar=True,
 )
 sy1 = np.loadtxt(fpath, dtype=float)
 sy2 = np.ones_like(sy1) * 0.20

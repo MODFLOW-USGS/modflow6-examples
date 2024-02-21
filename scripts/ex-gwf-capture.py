@@ -59,7 +59,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:201758a5b7febb0390b8b52e634be27f",
-    progressbar=True,
 )
 bottom = np.loadtxt(fpath)
 fname = "hydraulic_conductivity.txt"
@@ -68,7 +67,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:6c78564ba92e850d7d51d6e957b8a3ff",
-    progressbar=True,
 )
 k11 = np.loadtxt(fpath)
 fname = "idomain.txt"
@@ -77,7 +75,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:435d4490adff7a35d1d4928661e45d81",
-    progressbar=True,
 )
 idomain = np.loadtxt(fpath, dtype=np.int32)
 

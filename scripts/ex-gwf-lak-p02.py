@@ -139,7 +139,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:a74ded5357aa667b9df793847e5f8f41",
-    progressbar=True,
 )
 lake_map = np.ones(shape3d, dtype=int) * -1
 lake_map[0, :, :] = np.loadtxt(fpath, dtype=int) - 1
@@ -149,7 +148,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:7830e5223c958c35be349a3be24a60a3",
-    progressbar=True,
 )
 lake_map[1, :, :] = np.loadtxt(fpath, dtype=int) - 1
 

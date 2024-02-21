@@ -55,7 +55,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:3a4b357b7d2cd5175a205f3347ab973d",
-    progressbar=True,
 )
 wetdry_layer0 = np.loadtxt(fpath)
 

@@ -107,10 +107,10 @@ rchspd[1] = [[(0, 0, j), rrate, 0.0] for j in rcol]
 
 
 # +
-def build_mf6gwf(sim_folder):
-    print(f"Building mf6gwf model...{sim_folder}")
+def build_mf6gwf():
+    print(f"Building mf6gwf model...{sim_name}")
     name = "flow"
-    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_name, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((period1, 1, 1.0), (period2, 1, 1.0))
     flopy.mf6.ModflowTdis(
@@ -191,10 +191,10 @@ def build_mf6gwf(sim_folder):
     return sim
 
 
-def build_mf6gwt(sim_folder):
-    print(f"Building mf6gwt model...{sim_folder}")
+def build_mf6gwt():
+    print(f"Building mf6gwt model...{sim_name}")
     name = "trans"
-    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_name, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -502,7 +502,6 @@ def plot_cvt_results(sims):
             fname=fname,
             path=data_path,
             known_hash="md5:174c5548c3bbb9ea4ebc8b5a33ea2851",
-            progressbar=True,
         )
         obs1ra = np.genfromtxt(fpath, delimiter=",", deletechars="", dtype=dt)
 
@@ -512,7 +511,6 @@ def plot_cvt_results(sims):
             fname=fname,
             path=data_path,
             known_hash="md5:8de2ef529a2537ecd6c62bc207b67fb5",
-            progressbar=True,
         )
         obs2ra = np.genfromtxt(fpath, delimiter=",", deletechars="", dtype=dt)
         fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
@@ -581,7 +579,7 @@ def plot_cvt_results(sims):
 
 # +
 def scenario(silent=True):
-    sim = build_models(sim_name)
+    sim = build_models()
     if write:
         write_models(sim, silent=silent)
     if run:

@@ -78,7 +78,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
-    progressbar=True,
 )
 idomain = np.loadtxt(fpath, dtype=int)
 fname = "top.txt"
@@ -87,7 +86,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:ab5097c1dc22e60fb313bf7f10dd8efe",
-    progressbar=True,
 )
 top = np.loadtxt(fpath, dtype=float)
 fname = "bottom.txt"
@@ -96,7 +94,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:fa5fe276f4f58a01eabfe88516cc90af",
-    progressbar=True,
 )
 botm = np.loadtxt(fpath, dtype=float)
 fname = "recharge.txt"
@@ -105,7 +102,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:82ed1ed29a457f1f38e51cd2657676e1",
-    progressbar=True,
 )
 recharge = np.loadtxt(fpath, dtype=float)
 fname = "surf.txt"
@@ -114,7 +110,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:743ce03e5e46867cf5af94f1ac283514",
-    progressbar=True,
 )
 surf = np.loadtxt(fpath, dtype=float)
 

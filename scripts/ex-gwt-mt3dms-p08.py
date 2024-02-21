@@ -89,7 +89,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:673d570ab9d496355470ac598c4b8b55",
-    progressbar=True,
 )
 f = open(fpath)
 strt = np.empty((nlay * ncol), dtype=float)

@@ -85,7 +85,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=data_path,
     known_hash="md5:32dc8e7b7e39876374af43605e264725",
-    progressbar=True,
 )
 csv_load = np.genfromtxt(fpath, names=True, delimiter=",")
 
@@ -318,7 +317,6 @@ def plot_results(sim, silent=True):
             fname=fname,
             path=data_path,
             known_hash="md5:1098bcd3f4fc1bd3b38d3d55152a8fbb",
-            progressbar=True,
         )
         dtype = [("date", object), ("dz_m", float)]
         obs_head = np.genfromtxt(fpath, names=True, delimiter=",", dtype=dtype)

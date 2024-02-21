@@ -99,7 +99,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=gwt_mt3dms_data_path,
     known_hash="md5:c6591c3c3cfd023ab930b7b1121bfccf",
-    progressbar=True,
 )
 with open(fpath) as f:
     s0 = np.empty((nrow * ncol), dtype=float)
@@ -140,7 +139,6 @@ fpath = pooch.retrieve(
     fname=fname,
     path=gwt_mt3dms_data_path,
     known_hash="md5:8e2d3ba7af1ec65bb07f6039d1dfb2c8",
-    progressbar=True,
 )
 with open(fpath) as f:
     c0 = np.empty((nrow * ncol), dtype=float)
@@ -824,7 +822,6 @@ def get_reference_data_conc():
         fname=fname,
         path=data_path,
         known_hash="md5:bbb596110559d00b7f01032998cf35f4",
-        progressbar=True,
     )
     conc1 = np.loadtxt(fpath)
 
@@ -834,7 +831,6 @@ def get_reference_data_conc():
         fname=fname,
         path=data_path,
         known_hash="md5:3b3b9321ae6c801fec7d3562aa44a009",
-        progressbar=True,
     )
     conc500 = np.loadtxt(fpath)
 
@@ -844,7 +840,6 @@ def get_reference_data_conc():
         fname=fname,
         path=data_path,
         known_hash="md5:0d1c2e7682a946e11b56f87c28c0ebd7",
-        progressbar=True,
     )
     conc750 = np.loadtxt(fpath)
 
@@ -854,7 +849,6 @@ def get_reference_data_conc():
         fname=fname,
         path=data_path,
         known_hash="md5:c5fe612424e5f83fb2ac46cd4fdc8fb6",
-        progressbar=True,
     )
     conc1000 = np.loadtxt(fpath)
 
@@ -869,7 +863,6 @@ def get_reference_data_heads():
         fname=fname,
         path=data_path,
         known_hash="md5:0c5ce894877692b0a018587a2df068d6",
-        progressbar=True,
     )
     head1 = np.loadtxt(fpath)
     fname = "gwt-p10-mf6_head_lay3_500days.txt"
@@ -878,7 +871,6 @@ def get_reference_data_heads():
         fname=fname,
         path=data_path,
         known_hash="md5:b4b56f9ecad0abafc6c62072cc5f15e9",
-        progressbar=True,
     )
     head500 = np.loadtxt(fpath)
     fname = "gwt-p10-mf6_head_lay3_750days.txt"
@@ -887,7 +879,6 @@ def get_reference_data_heads():
         fname=fname,
         path=data_path,
         known_hash="md5:1c35fee2f7764c1c28eb84ed98b1300c",
-        progressbar=True,
     )
     head750 = np.loadtxt(fpath)
     fname = "gwt-p10-mf6_head_lay3_1000days.txt"
@@ -896,7 +887,6 @@ def get_reference_data_heads():
         fname=fname,
         path=data_path,
         known_hash="md5:b8e67997ca429f6f20e15852fb2fba9f",
-        progressbar=True,
     )
     head1000 = np.loadtxt(fpath)
 
