@@ -27,6 +27,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-csub-p03"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -42,11 +44,14 @@ plot_save = get_env("PLOT_SAVE", True)
 
 # +
 # Load the constant time series
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
+fname = "boundary_heads.csv"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/",
+    fname=fname,
+    path=data_path,
     known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
 )
-csv_head = np.genfromtxt(pth, names=True, delimiter=",")
+csv_head = np.genfromtxt(fpath, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file
 chd_ts = []
@@ -769,11 +774,13 @@ def export_tables(silent=True):
 
 
 def get_obs_dataframe(file_name, hash):
-    fpth = pooch.retrieve(
+    fpath = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{file_name}",
+        fname=file_name,
+        path=data_path,
         known_hash=f"md5:{hash}",
     )
-    df = pd.read_csv(fpth, index_col=0)
+    df = pd.read_csv(fpath, index_col=0)
     df.index = pd.to_datetime(df.index.values)
     df.rename({"mean": "observed"}, inplace=True, axis=1)
     return df
@@ -1227,17 +1234,20 @@ def plot_head_es_comparison(silent=True):
 
 
 def plot_calibration(silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         name = list(parameters.keys())[1]
-        pth = os.path.join(workspace, name, f"{name}.csub.obs.csv")
-        df_sim = get_sim_dataframe(pth)
+        fpath = os.path.join(workspace, name, f"{name}.csub.obs.csv")
+        df_sim = get_sim_dataframe(fpath)
         df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
-        pth = pooch.retrieve(
-            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
+        fname = "boundary_heads.csv"
+        fpath = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+            fname=fname,
+            path=data_path,
             known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
         )
-        df_obs_heads, col_list = process_sim_csv(pth)
+        df_obs_heads, col_list = process_sim_csv(fpath)
 
         ccolors = (
             "black",

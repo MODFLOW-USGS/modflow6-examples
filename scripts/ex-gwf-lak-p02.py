@@ -26,6 +26,8 @@ masked_values = (0, 1e30, -1e30)
 # Example name and base workspace
 sim_name = "ex-gwf-lak-p02"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -131,17 +133,23 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain arrays
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes-01.txt",
+fname = "lakes-01.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:a74ded5357aa667b9df793847e5f8f41",
 )
 lake_map = np.ones(shape3d, dtype=int) * -1
-lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes-02.txt",
+lake_map[0, :, :] = np.loadtxt(fpath, dtype=int) - 1
+fname = "lakes-02.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:7830e5223c958c35be349a3be24a60a3",
 )
-lake_map[1, :, :] = np.loadtxt(fpth, dtype=int) - 1
+lake_map[1, :, :] = np.loadtxt(fpath, dtype=int) - 1
 
 # create linearly varying evapotranspiration surface
 xlen = delr.sum() - 0.5 * (delr[0] + delr[-1])

@@ -43,8 +43,10 @@ plot_show = get_env("PLOT_SHOW", True)
 plot_save = get_env("PLOT_SAVE", True)
 
 # Example name and base workspace
+sim_name = "ex-gwt-mt3dms-p08"
 workspace = pl.Path("../examples")
-example_name = "ex-gwt-mt3dms-p08"
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 # -
 
 # ### Define parameters
@@ -81,11 +83,14 @@ k11[11:19, :, 0:24] = k2
 k11[11:19, :, 36:] = k2
 laytyp = 6 * [1] + 21 * [0]
 # Setting starting head information
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p08/p08shead.dat",
+fname = "p08shead.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:673d570ab9d496355470ac598c4b8b55",
 )
-f = open(fpth)
+f = open(fpath)
 strt = np.empty((nlay * ncol), dtype=float)
 strt = read1d(f, strt).reshape((nlay, nrow, ncol))
 f.close()
@@ -170,7 +175,7 @@ tdis_rc.append((perlen, nstp, 1.0))
 
 
 # +
-def build_models(sim_name, mixelm=0, silent=False):
+def build_models(mixelm=0, silent=False):
     print(f"Building mf2005 model...{sim_name}")
     mt3d_ws = os.path.join(workspace, sim_name, "mt3d")
     modelname_mf = "p08-mf"
@@ -565,8 +570,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
     conc_mf6 = ucnobj_mf6.get_alldata()
 
     # Create figure for scenario
-    with styles.USGSPlot() as fs:
-        sim_name = mf6.name
+    with styles.USGSPlot():
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
         hk = mf2k5.lpf.hk.array
@@ -619,7 +623,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "..",
                 "figures",
                 "{}{}".format(
-                    sim_name + "-" + str(yr_idx[i] + 1) + "yrs",
+                    mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
                     ".png",
                 ),
             )
@@ -668,7 +672,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "..",
                 "figures",
                 "{}{}".format(
-                    sim_name + "-" + str(yr_idx[i] + 1) + "yrs",
+                    mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
                     ".png",
                 ),
             )
@@ -717,7 +721,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "..",
                 "figures",
                 "{}{}".format(
-                    sim_name + "-" + str(yr_idx[i] + 1) + "yrs",
+                    mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
                     ".png",
                 ),
             )
@@ -733,7 +737,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
 
 # +
 def scenario(idx, silent=True):
-    mf2k5, mt3d, sim = build_models(example_name, mixelm=mixelm)
+    mf2k5, mt3d, sim = build_models(mixelm=mixelm)
     if write:
         write_models(mf2k5, mt3d, sim, silent=silent)
     if run:

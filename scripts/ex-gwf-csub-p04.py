@@ -24,6 +24,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-csub-p04"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -88,11 +90,14 @@ cg_ske = [float(value) for value in cg_ske_str.split(",")]
 ib_thick = [float(value) for value in ib_thick_str.split(",")]
 
 # Load active domain and create idomain array
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:2f05a27b6f71e564c0d3616e3fd00ac8",
 )
-ib = np.loadtxt(pth, dtype=int)
+ib = np.loadtxt(fpath, dtype=int)
 idomain = np.tile(ib, (nlay, 1))
 
 # Constant head boundary cells

@@ -116,8 +116,10 @@ def circle_function(center=(0, 0), radius=1.0, dtheta=10.0):
 
 
 # Example name and base workspace
-example_name = "ex-gwt-synthetic-valley"
+sim_name = "ex-gwt-synthetic-valley"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Conversion factors
 ft2m = 1.0 / 3.28081
@@ -231,31 +233,50 @@ voronoi_grid = VertexGrid(**gridprops, nlay=1, idomain=idomain_vor)
 
 # +
 # load raster data files
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_aq_SI.tif",
+fname = "k_aq_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:d233e5c393ab6c029c63860d73818856",
 )
-kaq = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_clay_SI.tif",
+kaq = flopy.utils.Raster.load(fpath)
+
+fname = "k_clay_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:a08999c37f42b35884468e4ef896d5f9",
 )
-kclay = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/top_SI.tif",
+kclay = flopy.utils.Raster.load(fpath)
+
+fname = "top_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:781155bdcc2b9914e1cad6b10de0e9c7",
 )
-top_base = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bottom_SI.tif",
+top_base = flopy.utils.Raster.load(fpath)
+
+fname = "bottom_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:00b4a39fbf5180e65c0367cdb6f15c93",
 )
-bot = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/lake_location_SI.tif",
+bot = flopy.utils.Raster.load(fpath)
+
+fname = "lake_location_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:38600d6f0eef7c033ede278252dc6343",
 )
-lake_location = flopy.utils.Raster.load(fname)
+lake_location = flopy.utils.Raster.load(fpath)
 # -
 
 # +
@@ -1235,7 +1256,7 @@ def plot_conc_results(sims):
 
 # +
 def scenario(idx, silent=True):
-    sim = build_models(example_name)
+    sim = build_models(sim_name)
     if write:
         write_models(sim, silent=silent)
     if run:

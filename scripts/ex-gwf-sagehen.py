@@ -20,8 +20,10 @@ from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
-example_name = "ex-gwf-sagehen"
+sim_name = "ex-gwf-sagehen"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -66,27 +68,39 @@ nstp = [1] * num_ts
 tsmult = [1.0] * num_ts
 
 # from mf-nwt .dis file
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/top1.txt",
+fname = "top1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:a93be6cf74bf376f696fc2fbcc316aea",
 )
-top = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bot1.txt",
+top = np.loadtxt(fpath)
+fname = "bot1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:6503e01167875bd257479a2941d1d586",
 )
-bot1 = np.loadtxt(fname)
+bot1 = np.loadtxt(fpath)
 # from mf-nwt .bas file
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/ibnd1.txt",
+fname = "ibnd1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:7b33e2fba54eae694171c94c75e13d2e",
 )
-idomain1 = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/strt1.txt",
+idomain1 = np.loadtxt(fpath)
+fname = "strt1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:d49e24ec920472380787fd27c528123f",
 )
-strt = np.loadtxt(fname)
+strt = np.loadtxt(fpath)
 # peel out locations of negative values for setting constant head data
 tmp1 = np.where(idomain1 < 0)
 listOfChdCoords = list(zip(np.zeros_like(tmp1[0]), tmp1[0], tmp1[1]))
@@ -101,21 +115,30 @@ for i in np.arange(len(listOfChdCoords)):
 idomain = np.abs(idomain1)
 
 # from mf-nwt .upw file
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/kh1.txt",
+fname = "kh1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:50c0a5bfd79b1c9d0e0900540c19d6cc",
 )
-k11 = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/sy1.txt",
+k11 = np.loadtxt(fpath)
+fname = "sy1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:6bc38fd082875633686732f34ba3e18b",
 )
-sy = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/kv1.txt",
+sy = np.loadtxt(fpath)
+fname = "kv1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:7b6685bf35f1150bef553f81c2dfb2cb",
 )
-k33 = np.loadtxt(fname)
+k33 = np.loadtxt(fpath)
 icelltype = 1  # Water table resides in layer 1
 iconvert = np.ones_like(strt)
 
@@ -1754,32 +1777,47 @@ for i in np.arange(0, top.shape[0]):
 
 
 # Prepping input for UZF package
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/iuzbnd.txt",
+fname = "iuzbnd.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:280faee0782e0de5f2046b38ac20c271",
 )
-iuzbnd = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/thts.txt",
+iuzbnd = np.loadtxt(fpath)
+fname = "thts.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:6ebb033605c7e4700ddcf3f2e51ac371",
 )
-thts = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/vks.txt",
+thts = np.loadtxt(fpath)
+fname = "vks.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:61892e6cff6dae1879112c9eb03a1614",
 )
-uzk33 = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/finf_gradient.txt",
+uzk33 = np.loadtxt(fpath)
+fname = "finf_gradient.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:e5ac0a0b27a66dd9f2eff63a63c6e6fe",
 )
-finf_grad = np.loadtxt(fname)
+finf_grad = np.loadtxt(fpath)
 # next, load time series of multipliers
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/uzf_ts.dat",
+fname = "uzf_ts.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:969ed0391d64804ec8395a578eb08ed1",
 )
-uz_ts = pd.read_csv(fname, delim_whitespace=True, header=0)
+uz_ts = pd.read_csv(fpath, delim_whitespace=True, header=0)
 
 # Need to set iuzbnd inactive where there are constant head cells, or where the
 # model grid is inactive
@@ -1901,11 +1939,11 @@ maxmvr = 10000  # Something arbitrarily high
 
 
 # +
-def build_models(sim_name, silent=False):
+def build_models(silent=False):
     # Instantiate the MODFLOW 6 simulation
-    sim_ws = os.path.join(workspace, example_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(
-        sim_name=example_name,
+        sim_name=sim_name,
         version="mf6",
         sim_ws=sim_ws,
         exe_name="mf6",
@@ -1918,7 +1956,7 @@ def build_models(sim_name, silent=False):
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_rc, time_units=time_units)
 
     # Instantiating MODFLOW 6 groundwater flow model
-    gwfname = example_name
+    gwfname = sim_name
     gwf = flopy.mf6.ModflowGwf(
         sim,
         modelname=gwfname,
@@ -2103,7 +2141,6 @@ figure_size_ts = (6, 3)
 
 
 def plot_results(mf6):
-    sim_name = mf6.name
     with styles.USGSPlot():
         # Generate a plot of FINF distribution
         finf_plt = finf_grad.copy()
@@ -2125,7 +2162,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-finfFact", ".png"),
+                "{}{}".format(mf6.name + "-finfFact", ".png"),
             )
             fig.savefig(fpth)
 
@@ -2167,7 +2204,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-gwDepth", ".png"),
+                "{}{}".format(mf6.name + "-gwDepth", ".png"),
             )
             fig.savefig(fpth)
 
@@ -2299,7 +2336,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-uzFlow", ".png"),
+                "{}{}".format(mf6.name + "-uzFlow", ".png"),
             )
             fig.savefig(fpth)
 
@@ -2354,7 +2391,7 @@ def plot_results(mf6):
             fpth = os.path.join(
                 "..",
                 "figures",
-                "{}{}".format(sim_name + "-swFlow", ".png"),
+                "{}{}".format(mf6.name + "-swFlow", ".png"),
             )
             fig.savefig(fpth)
 
@@ -2368,7 +2405,7 @@ def plot_results(mf6):
 
 # +
 def scenario(silent=True):
-    sim = build_models(example_name)
+    sim = build_models(sim_name)
     if write:
         write_models(sim, silent=silent)
     if run:

@@ -53,7 +53,6 @@ plot_save = get_env("PLOT_SAVE", True)
 
 # +
 class DisvPropertyContainer:
-
     """
     Dataclass that stores MODFLOW 6 DISV grid information.
 

@@ -43,8 +43,10 @@ plot_show = get_env("PLOT_SHOW", True)
 plot_save = get_env("PLOT_SAVE", True)
 
 # Example name and base workspace
+sim_name = "ex-gwt-mt3dms-p10"
 workspace = pl.Path("../examples")
-example_name = "ex-gwt-mt3dms-p10"
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 # -
 
 # ### Define parameters
@@ -88,11 +90,14 @@ delc = (
 hk = [60.0, 60.0, 520.0, 520.0]
 laytyp = icelltype = 0
 # Starting Heads:
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10shead.dat",
+fname = "p10shead.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:c6591c3c3cfd023ab930b7b1121bfccf",
 )
-f = open(fpth)
+f = open(fpath)
 s0 = np.empty((nrow * ncol), dtype=float)
 s0 = read1d(f, s0).reshape((nrow, ncol))
 f.close()
@@ -147,11 +152,14 @@ wel_mf6_spd = {0: welspd_mf6}
 
 # Transport related
 # Starting concentrations:
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-mt3dms-p10/p10cinit.dat",
+fname = "p10cinit.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:8e2d3ba7af1ec65bb07f6039d1dfb2c8",
 )
-f = open(fpth)
+f = open(fpath)
 c0 = np.empty((nrow * ncol), dtype=float)
 c0 = read1d(f, c0).reshape((nrow, ncol))
 f.close()
@@ -220,7 +228,7 @@ nadvfd = 1
 
 
 # +
-def build_models(sim_name, mixelm=0, silent=False):
+def build_models(mixelm=0, silent=False):
     print(f"Building mf2005 model...{sim_name}")
     mt3d_ws = os.path.join(workspace, sim_name, "mt3d")
     modelname_mf = "p10-mf"
@@ -624,7 +632,6 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
 
     # Create figure for scenario
     with styles.USGSPlot():
-        sim_name = mf6.name
         plt.rcParams["lines.dashed_pattern"] = [5.0, 5.0]
 
         xc, yc = mf2k5.modelgrid.xycenters
@@ -738,7 +745,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
                 "..",
                 "figures",
                 "{}{}".format(
-                    sim_name,
+                    mf6.name,
                     ".png",
                 ),
             )
@@ -754,7 +761,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
 
 # +
 def scenario(idx, silent=True):
-    mf2k5, mt3d, sim = build_models(example_name, mixelm=mixelm)
+    mf2k5, mt3d, sim = build_models(mixelm=mixelm)
     if write:
         write_models(mf2k5, mt3d, sim, silent=silent)
     if run:

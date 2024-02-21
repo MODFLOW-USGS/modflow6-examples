@@ -32,6 +32,8 @@ from modflow_devtools.misc import get_env, timed
 # Example name and base workspace
 sim_name = "ex-gwf-capture"
 workspace = pl.Path("../examples")
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else None
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -51,21 +53,30 @@ length_units = "meters"
 time_units = "seconds"
 
 # Load the bottom, hydraulic conductivity, and idomain arrays
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:201758a5b7febb0390b8b52e634be27f",
 )
-bottom = np.loadtxt(pth)
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/hydraulic_conductivity.txt",
+bottom = np.loadtxt(fpath)
+fname = "hydraulic_conductivity.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:6c78564ba92e850d7d51d6e957b8a3ff",
 )
-k11 = np.loadtxt(pth)
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+k11 = np.loadtxt(fpath)
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:435d4490adff7a35d1d4928661e45d81",
 )
-idomain = np.loadtxt(pth, dtype=np.int32)
+idomain = np.loadtxt(fpath, dtype=np.int32)
 
 # Model parameters
 nper = 1  # Number of periods
