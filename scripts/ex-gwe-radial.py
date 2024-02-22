@@ -4,7 +4,7 @@ This example was originally published in
   Al-Khoury, R., BniLam, N., Arzanfudi, M.M., Saeid, S., 2020. A spectral
     model for a moving cylindrical heat source in a conductive-convective
     domain. Int. J. Heat Mass Transf. 163, 120517.
-    https://doi.org/10.1016/j.geothermics.2021.102063
+    https://doi.org/10.1016/j.ijheatmasstransfer.2020.120517
 
 The original data by Al-Khoury et al. (2020) was for a radially symmetric
 finite-element mesh.  Where their mesh calculates values at mesh points,
@@ -26,13 +26,14 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 import math
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
 # Example name and base workspace
-sim_name = "ex-gwf-radial"
+sim_name = "ex-gwe-radial"
 workspace = pl.Path("../examples")
-
+data_path = pl.Path(f"../data/{sim_name}")
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -93,10 +94,16 @@ unitadj = 86400
 laytyp = 1
 nstp = 48
 icelltype = 0  # Cell conversion type (0: Cell thickness will be held constant)
-lhv = (
-    2500.0  # Latent heat of vaporization (will eventually need to be removed)
-)
+lhv = 2500.0  # Latent heat of vaporization (will eventually need to be removed)
 
+# Load a file stored in the data directory for building out the DISV grid
+fname = "Qin100_V1e-5.csv"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
+    known_hash="md5:5b96c1f32c026706367fe75545b0a095",
+)
 
 # Set up some global lists that will be set in the GWF setup but
 # also needed in the GWE simulation
@@ -934,9 +941,8 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
 
     # Get analytical solution
     simname = sim.name[:13]
-    analytical_pth = os.path.join("..", "data", simname)
     adat = pd.read_csv(
-        os.path.join(analytical_pth, scen_txt + "_V" + vel_txt + ".csv"),
+        fpath,
         delimiter=",",
         header=None,
         names=["x", "y", "temp"],
@@ -1033,7 +1039,7 @@ def scenario(idx, silent=False):
     parameter_dict = parameters[key]
 
     # The following takes about 30 seconds, but only needs to be run once
-    fl = os.path.join("..", "data", "ex-gwe-radial", "Qin100_V1e-5.csv")
+    #fl = os.path.join("..", "data", "ex-gwe-radial", "Qin100_V1e-5.csv")
     (
         verts,
         cell2d,
@@ -1041,7 +1047,7 @@ def scenario(idx, silent=False):
         right_chd_spd_slow,
         left_chd_spd_fast,
         right_chd_spd_fast,
-    ) = create_divs_objs(fl)
+    ) = create_divs_objs(fpath)
 
     top = np.ones((len(cell2d),))
     botm = np.zeros((1, len(cell2d)))
