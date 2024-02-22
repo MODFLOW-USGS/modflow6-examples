@@ -736,7 +736,7 @@ class RadialUnconfinedDrawdown:
         return s
 
     @staticmethod
-    def neuman1974_integral1(y, σ, β, sqrt_β, ld, dd, ts, zd, uN_tol=1.0e-6):
+    def neuman1974_integral1(y, alpha, beta, sqrt_beta, ld, dd, ts, zd, uN_tol=1.0e-6):
         """
         Solves equation 17 from
         Neuman, S. P. (1974). Effect of partial penetration on flow in
@@ -746,7 +746,7 @@ class RadialUnconfinedDrawdown:
         if y == 0.0 or ts == 0.0:
             return 0.0
 
-        u0 = RadialUnconfinedDrawdown.u_0(σ, β, zd, ld, dd, ts, y)
+        u0 = RadialUnconfinedDrawdown.u_0(alpha, beta, zd, ld, dd, ts, y)
 
         if np.isnan(u0):
             u0 = 0.0
@@ -755,7 +755,7 @@ class RadialUnconfinedDrawdown:
         mxdelt = 0.0
         uN = 0.0
         for n in range(1, 25001):
-            delt = uN_func(σ, β, zd, ld, dd, ts, y, n)
+            delt = uN_func(alpha, beta, zd, ld, dd, ts, y, n)
             if np.isnan(delt):
                 break
             uN += delt
@@ -765,7 +765,7 @@ class RadialUnconfinedDrawdown:
             elif adelt < mxdelt * uN_tol:
                 break
 
-        return 4.0 * y * j0(y * sqrt_β) * (u0 + uN)
+        return 4.0 * y * j0(y * sqrt_beta) * (u0 + uN)
 
     @staticmethod
     def gamma0(g, y, s):
@@ -797,16 +797,16 @@ class RadialUnconfinedDrawdown:
         return s * g * sin(g) + (y * y + g * g) * cos(g)
 
     @staticmethod
-    def u_0(σ, β, z, l, d, ts, y):
+    def u_0(alpha, beta, z, l, d, ts, y):
         gamma0 = RadialUnconfinedDrawdown.gamma0
 
         a, b = 0.9 * y, y
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, alpha))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, alpha), 1000)
 
-        g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gamma0, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         # Check for cosh/sinh overflow
         if g > _hyperbolic_max_value:
@@ -814,39 +814,39 @@ class RadialUnconfinedDrawdown:
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 - g2))
+        num1 = 1 - exp(-ts * beta * (y2 - g2))
         num2 = cosh(g * z)
         num3 = sinh(g * (1 - d)) - sinh(g * (1 - l))
-        den1 = y2 + (1 + σ) * g2 - ((y2 - g2) ** 2) / σ
+        den1 = y2 + (1 + alpha) * g2 - ((y2 - g2) ** 2) / alpha
         den2 = cosh(g)
         den3 = (l - d) * sinh(g)
         # num1*num2*num3 / (den1*den2*den3)
         return (num1 / den1) * (num2 / den2) * (num3 / den3)
 
     @staticmethod
-    def u_n(σ, β, z, l, d, ts, y, n):
+    def u_n(alpha, beta, z, l, d, ts, y, n):
         gammaN = RadialUnconfinedDrawdown.gammaN
 
         a, b = (2 * n - 1) * (pi / 2.0), n * pi
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, alpha))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, alpha), 1000)
 
-        g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gammaN, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 + g2))
+        num1 = 1 - exp(-ts * beta * (y2 + g2))
         num2 = cos(g * z)
         num3 = sin(g * (1 - d)) - sin(g * (1 - l))
-        den1 = y2 - (1 + σ) * g2 - ((y2 + g2) ** 2) / σ
+        den1 = y2 - (1 + alpha) * g2 - ((y2 + g2) ** 2) / alpha
         den2 = cos(g)
         den3 = (l - d) * sin(g)
         return num1 * num2 * num3 / (den1 * den2 * den3)
 
     @staticmethod
-    def neuman1974_integral2(y, σ, β, sqrt_β, ld, dd, ts, z1, z2, uN_tol=1.0e-10):
+    def neuman1974_integral2(y, alpha, beta, sqrt_beta, ld, dd, ts, z1, z2, uN_tol=1.0e-10):
         """
         Solves equation 20 from
         Neuman, S. P. (1974). Effect of partial penetration on flow in
@@ -856,13 +856,13 @@ class RadialUnconfinedDrawdown:
         if y == 0.0 or ts == 0.0:
             return 0.0
 
-        u0 = RadialUnconfinedDrawdown.u_0_z1z2(σ, β, z1, z2, ld, dd, ts, y)
+        u0 = RadialUnconfinedDrawdown.u_0_z1z2(alpha, beta, z1, z2, ld, dd, ts, y)
 
         uN_func = RadialUnconfinedDrawdown.u_n_z1z2
         mxdelt = 0.0
         uN = 0.0
         for n in range(1, 10001):
-            delt = uN_func(σ, β, z1, z2, ld, dd, ts, y, n)
+            delt = uN_func(alpha, beta, z1, z2, ld, dd, ts, y, n)
             uN += delt
             adelt = abs(delt)
             if adelt > mxdelt:
@@ -870,19 +870,19 @@ class RadialUnconfinedDrawdown:
             elif adelt < mxdelt * uN_tol:
                 break
 
-        return 4.0 * y * j0(y * sqrt_β) * (u0 + uN)
+        return 4.0 * y * j0(y * sqrt_beta) * (u0 + uN)
 
     @staticmethod
-    def u_0_z1z2(σ, β, z1, z2, l, d, ts, y):
+    def u_0_z1z2(alpha, beta, z1, z2, l, d, ts, y):
         gamma0 = RadialUnconfinedDrawdown.gamma0
 
         a, b = 0.9 * y, y
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, alpha))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, alpha), 1000)
 
-        g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gamma0, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         # Check for cosh/sinh overflow
         if g > _hyperbolic_max_value:
@@ -890,33 +890,33 @@ class RadialUnconfinedDrawdown:
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 - g2))
+        num1 = 1 - exp(-ts * beta * (y2 - g2))
         num2 = sinh(g * z2) - sinh(g * z1)
         num3 = sinh(g * (1 - d)) - sinh(g * (1 - l))
-        den1 = (y2 + (1 + σ) * g2 - ((y2 - g2) ** 2) / σ) * (z2 - z1) * g
+        den1 = (y2 + (1 + alpha) * g2 - ((y2 - g2) ** 2) / alpha) * (z2 - z1) * g
         den2 = cosh(g)
         den3 = (l - d) * sinh(g)
         # num1*num2*num3 / (den1*den2*den3)
         return (num1 / den1) * (num2 / den2) * (num3 / den3)
 
     @staticmethod
-    def u_n_z1z2(σ, β, z1, z2, l, d, ts, y, n):
+    def u_n_z1z2(alpha, beta, z1, z2, l, d, ts, y, n):
         gammaN = RadialUnconfinedDrawdown.gammaN
 
         a, b = (2 * n - 1) * (pi / 2.0), n * pi
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, alpha))
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, alpha), 1000)
 
-        g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gammaN, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 + g2))
+        num1 = 1 - exp(-ts * beta * (y2 + g2))
         num2 = sin(g * z2) - sin(g * z1)
         num3 = sin(g * (1 - d)) - sin(g * (1 - l))
-        den1 = y2 - (1 + σ) * g2 - ((y2 + g2) ** 2) / σ
+        den1 = y2 - (1 + alpha) * g2 - ((y2 + g2) ** 2) / alpha
         den2 = cos(g) * (z2 - z1) * g
         den3 = (l - d) * sin(g)
         return num1 * num2 * num3 / (den1 * den2 * den3)
