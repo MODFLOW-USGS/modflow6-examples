@@ -135,7 +135,9 @@ def get_disu_radial_kwargs(
             ja.append(n)
             iac[n] += 1
             if rad > 0:
-                area[n] = pi * (radius_outer[rad] ** 2 - radius_outer[rad - 1] ** 2)
+                area[n] = pi * (
+                    radius_outer[rad] ** 2 - radius_outer[rad - 1] ** 2
+                )
             else:
                 area[n] = pi * radius_outer[rad] ** 2
             ihc.append(n + 1)
@@ -163,7 +165,9 @@ def get_disu_radial_kwargs(
                 ihc.append(1)
                 hwva.append(2.0 * pi * radius_outer[rad])
                 if rad > 0:
-                    cl12.append(0.5 * (radius_outer[rad] - radius_outer[rad - 1]))
+                    cl12.append(
+                        0.5 * (radius_outer[rad] - radius_outer[rad - 1])
+                    )
                 else:
                     cl12.append(radius_outer[rad])
             # bottom
@@ -361,7 +365,10 @@ class RadialUnconfinedDrawdown:
         self.well_top = self._float_or_none(well_screen_elevation_top)
         self.well_bot = self._float_or_none(well_screen_elevation_bottom)
 
-        if water_table_elevation is not None and saturated_thickness is not None:
+        if (
+            water_table_elevation is not None
+            and saturated_thickness is not None
+        ):
             raise RuntimeError(
                 "RadialUnconfinedDrawdown() must specify only "
                 + "water_table_elevation or saturated_thickness, but not "
@@ -369,7 +376,9 @@ class RadialUnconfinedDrawdown:
             )
 
         if water_table_elevation is not None:
-            self.saturated_thickness = float(water_table_elevation) - self.bottom
+            self.saturated_thickness = (
+                float(water_table_elevation) - self.bottom
+            )
         elif saturated_thickness is not None:
             self.saturated_thickness = float(saturated_thickness)
         else:
@@ -627,7 +636,8 @@ class RadialUnconfinedDrawdown:
         for stp, ts in enumerate(ts_list):
             if show_progress:
                 print(
-                    f"Solving {stp+1:4d} of {nstp}; " + f"time = {self.ts2time(ts, r)}",
+                    f"Solving {stp+1:4d} of {nstp}; "
+                    + f"time = {self.ts2time(ts, r)}",
                     end="",
                 )
 
@@ -712,7 +722,9 @@ class RadialUnconfinedDrawdown:
             import warnings
 
             root = j0_roots[-1]
-            bad_times = "\n".join([str(times[it]) for it in bessel_root_limit_reached])
+            bad_times = "\n".join(
+                [str(times[it]) for it in bessel_root_limit_reached]
+            )
             warnings.warn(
                 f"\n\nRadialUnconfinedDrawdown.drawdown_times failed to "
                 + f"meet convergence sumrtol = {sumrtol}"
@@ -736,7 +748,9 @@ class RadialUnconfinedDrawdown:
         return s
 
     @staticmethod
-    def neuman1974_integral1(y, σ, β, sqrt_β, ld, dd, ts, zd, uN_tol=1.0e-6):
+    def neuman1974_integral1(
+        y, alpha, beta, sqrt_beta, ld, dd, ts, zd, uN_tol=1.0e-6
+    ):
         """
         Solves equation 17 from
         Neuman, S. P. (1974). Effect of partial penetration on flow in
@@ -746,7 +760,7 @@ class RadialUnconfinedDrawdown:
         if y == 0.0 or ts == 0.0:
             return 0.0
 
-        u0 = RadialUnconfinedDrawdown.u_0(σ, β, zd, ld, dd, ts, y)
+        u0 = RadialUnconfinedDrawdown.u_0(alpha, beta, zd, ld, dd, ts, y)
 
         if np.isnan(u0):
             u0 = 0.0
@@ -755,7 +769,7 @@ class RadialUnconfinedDrawdown:
         mxdelt = 0.0
         uN = 0.0
         for n in range(1, 25001):
-            delt = uN_func(σ, β, zd, ld, dd, ts, y, n)
+            delt = uN_func(alpha, beta, zd, ld, dd, ts, y, n)
             if np.isnan(delt):
                 break
             uN += delt
@@ -765,7 +779,7 @@ class RadialUnconfinedDrawdown:
             elif adelt < mxdelt * uN_tol:
                 break
 
-        return 4.0 * y * j0(y * sqrt_β) * (u0 + uN)
+        return 4.0 * y * j0(y * sqrt_beta) * (u0 + uN)
 
     @staticmethod
     def gamma0(g, y, s):
@@ -797,16 +811,20 @@ class RadialUnconfinedDrawdown:
         return s * g * sin(g) + (y * y + g * g) * cos(g)
 
     @staticmethod
-    def u_0(σ, β, z, l, d, ts, y):
+    def u_0(alpha, beta, z, l, d, ts, y):
         gamma0 = RadialUnconfinedDrawdown.gamma0
 
         a, b = 0.9 * y, y
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gamma0, a, b, (y, alpha)
+            )
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gamma0, 0.0, b, (y, alpha), 1000
+            )
 
-        g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gamma0, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         # Check for cosh/sinh overflow
         if g > _hyperbolic_max_value:
@@ -814,39 +832,45 @@ class RadialUnconfinedDrawdown:
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 - g2))
+        num1 = 1 - exp(-ts * beta * (y2 - g2))
         num2 = cosh(g * z)
         num3 = sinh(g * (1 - d)) - sinh(g * (1 - l))
-        den1 = y2 + (1 + σ) * g2 - ((y2 - g2) ** 2) / σ
+        den1 = y2 + (1 + alpha) * g2 - ((y2 - g2) ** 2) / alpha
         den2 = cosh(g)
         den3 = (l - d) * sinh(g)
         # num1*num2*num3 / (den1*den2*den3)
         return (num1 / den1) * (num2 / den2) * (num3 / den3)
 
     @staticmethod
-    def u_n(σ, β, z, l, d, ts, y, n):
+    def u_n(alpha, beta, z, l, d, ts, y, n):
         gammaN = RadialUnconfinedDrawdown.gammaN
 
         a, b = (2 * n - 1) * (pi / 2.0), n * pi
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gammaN, a, b, (y, alpha)
+            )
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gammaN, a, b, (y, alpha), 1000
+            )
 
-        g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gammaN, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 + g2))
+        num1 = 1 - exp(-ts * beta * (y2 + g2))
         num2 = cos(g * z)
         num3 = sin(g * (1 - d)) - sin(g * (1 - l))
-        den1 = y2 - (1 + σ) * g2 - ((y2 + g2) ** 2) / σ
+        den1 = y2 - (1 + alpha) * g2 - ((y2 + g2) ** 2) / alpha
         den2 = cos(g)
         den3 = (l - d) * sin(g)
         return num1 * num2 * num3 / (den1 * den2 * den3)
 
     @staticmethod
-    def neuman1974_integral2(y, σ, β, sqrt_β, ld, dd, ts, z1, z2, uN_tol=1.0e-10):
+    def neuman1974_integral2(
+        y, alpha, beta, sqrt_beta, ld, dd, ts, z1, z2, uN_tol=1.0e-10
+    ):
         """
         Solves equation 20 from
         Neuman, S. P. (1974). Effect of partial penetration on flow in
@@ -856,13 +880,15 @@ class RadialUnconfinedDrawdown:
         if y == 0.0 or ts == 0.0:
             return 0.0
 
-        u0 = RadialUnconfinedDrawdown.u_0_z1z2(σ, β, z1, z2, ld, dd, ts, y)
+        u0 = RadialUnconfinedDrawdown.u_0_z1z2(
+            alpha, beta, z1, z2, ld, dd, ts, y
+        )
 
         uN_func = RadialUnconfinedDrawdown.u_n_z1z2
         mxdelt = 0.0
         uN = 0.0
         for n in range(1, 10001):
-            delt = uN_func(σ, β, z1, z2, ld, dd, ts, y, n)
+            delt = uN_func(alpha, beta, z1, z2, ld, dd, ts, y, n)
             uN += delt
             adelt = abs(delt)
             if adelt > mxdelt:
@@ -870,19 +896,23 @@ class RadialUnconfinedDrawdown:
             elif adelt < mxdelt * uN_tol:
                 break
 
-        return 4.0 * y * j0(y * sqrt_β) * (u0 + uN)
+        return 4.0 * y * j0(y * sqrt_beta) * (u0 + uN)
 
     @staticmethod
-    def u_0_z1z2(σ, β, z1, z2, l, d, ts, y):
+    def u_0_z1z2(alpha, beta, z1, z2, l, d, ts, y):
         gamma0 = RadialUnconfinedDrawdown.gamma0
 
         a, b = 0.9 * y, y
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gamma0, a, b, (y, alpha)
+            )
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gamma0, 0.0, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gamma0, 0.0, b, (y, alpha), 1000
+            )
 
-        g = brentq(gamma0, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gamma0, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         # Check for cosh/sinh overflow
         if g > _hyperbolic_max_value:
@@ -890,33 +920,39 @@ class RadialUnconfinedDrawdown:
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 - g2))
+        num1 = 1 - exp(-ts * beta * (y2 - g2))
         num2 = sinh(g * z2) - sinh(g * z1)
         num3 = sinh(g * (1 - d)) - sinh(g * (1 - l))
-        den1 = (y2 + (1 + σ) * g2 - ((y2 - g2) ** 2) / σ) * (z2 - z1) * g
+        den1 = (
+            (y2 + (1 + alpha) * g2 - ((y2 - g2) ** 2) / alpha) * (z2 - z1) * g
+        )
         den2 = cosh(g)
         den3 = (l - d) * sinh(g)
         # num1*num2*num3 / (den1*den2*den3)
         return (num1 / den1) * (num2 / den2) * (num3 / den3)
 
     @staticmethod
-    def u_n_z1z2(σ, β, z1, z2, l, d, ts, y, n):
+    def u_n_z1z2(alpha, beta, z1, z2, l, d, ts, y, n):
         gammaN = RadialUnconfinedDrawdown.gammaN
 
         a, b = (2 * n - 1) * (pi / 2.0), n * pi
         try:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ))
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gammaN, a, b, (y, alpha)
+            )
         except RuntimeError:
-            a, b = RadialUnconfinedDrawdown._get_bracket(gammaN, a, b, (y, σ), 1000)
+            a, b = RadialUnconfinedDrawdown._get_bracket(
+                gammaN, a, b, (y, alpha), 1000
+            )
 
-        g = brentq(gammaN, a, b, args=(y, σ), maxiter=500, xtol=1.0e-16)
+        g = brentq(gammaN, a, b, args=(y, alpha), maxiter=500, xtol=1.0e-16)
 
         y2 = y * y
         g2 = g * g
-        num1 = 1 - exp(-ts * β * (y2 + g2))
+        num1 = 1 - exp(-ts * beta * (y2 + g2))
         num2 = sin(g * z2) - sin(g * z1)
         num3 = sin(g * (1 - d)) - sin(g * (1 - l))
-        den1 = y2 - (1 + σ) * g2 - ((y2 + g2) ** 2) / σ
+        den1 = y2 - (1 + alpha) * g2 - ((y2 + g2) ** 2) / alpha
         den2 = cos(g) * (z2 - z1) * g
         den3 = (l - d) * sin(g)
         return num1 * num2 * num3 / (den1 * den2 * den3)
@@ -926,10 +962,18 @@ class RadialUnconfinedDrawdown:
         if hasattr(time, "__iter__"):
             # can iterate to get multiple times
             return [
-                self.Kr * self.saturated_thickness * t / (self.Sy * radius * radius)
+                self.Kr
+                * self.saturated_thickness
+                * t
+                / (self.Sy * radius * radius)
                 for t in time
             ]
-        return self.Kr * self.saturated_thickness * time / (self.Sy * radius * radius)
+        return (
+            self.Kr
+            * self.saturated_thickness
+            * time
+            / (self.Sy * radius * radius)
+        )
 
     def time2ts(self, time, radius):
         # dimensionless time with respect to Ss
@@ -943,10 +987,20 @@ class RadialUnconfinedDrawdown:
         if hasattr(ty, "__iter__"):
             # can iterate to get multiple times
             return [
-                t * self.Sy * radius * radius / (self.Kr * self.saturated_thickness)
+                t
+                * self.Sy
+                * radius
+                * radius
+                / (self.Kr * self.saturated_thickness)
                 for t in ty
             ]
-        return ty * self.Sy * radius * radius / (self.Kr * self.saturated_thickness)
+        return (
+            ty
+            * self.Sy
+            * radius
+            * radius
+            / (self.Kr * self.saturated_thickness)
+        )
 
     def ts2time(self, ts, radius):  # dimensionless time with respect to Ss
         if hasattr(ts, "__iter__"):  # can iterate to get multiple times
@@ -956,7 +1010,9 @@ class RadialUnconfinedDrawdown:
     def ty2ts(self, ty):
         if hasattr(ty, "__iter__"):
             # can iterate to get multiple times
-            return [t * self.Sy / (self.Ss * self.saturated_thickness) for t in ty]
+            return [
+                t * self.Sy / (self.Ss * self.saturated_thickness) for t in ty
+            ]
         return ty * self.Sy / (self.Ss * self.saturated_thickness)
 
     def drawdown2unitless(self, s, pump):
@@ -1121,7 +1177,9 @@ radius_outer = [
 # This example has the well screen interval from
 # layer 20 to 24 (zero-based index)
 wel_spd = {
-    sp: [[(get_radial_node(0, lay, nradial),), -800.0] for lay in range(20, 25)]
+    sp: [
+        [(get_radial_node(0, lay, nradial),), -800.0] for lay in range(20, 25)
+    ]
     for sp in range(nper)
 }
 
@@ -1157,7 +1215,9 @@ rclose = 1e-4
 def build_models(name):
     sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
     flopy.mf6.ModflowIms(
         sim,
         print_option="summary",
@@ -1179,7 +1239,9 @@ def build_models(name):
         get_vertex=True,
     )
 
-    disu = flopy.mf6.ModflowGwfdisu(gwf, length_units=length_units, **disukwargs)
+    disu = flopy.mf6.ModflowGwfdisu(
+        gwf, length_units=length_units, **disukwargs
+    )
 
     npf = flopy.mf6.ModflowGwfnpf(
         gwf,
@@ -1205,7 +1267,9 @@ def build_models(name):
         gwf,
         budget_filerecord=f"{name}.cbc",
         head_filerecord=f"{name}.hds",
-        headprintrecord=[("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
+        headprintrecord=[
+            ("COLUMNS", nradial, "WIDTH", 15, "DIGITS", 6, "GENERAL")
+        ],
         saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
         printrecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
         filename=f"{name}.oc",
@@ -1311,7 +1375,8 @@ def solve_analytical(obs2ana, times=None, no_solve=False):
                 ]
             else:
                 times_sy = [
-                    ty * k11 * sat_thick / (sy * obs_rad * obs_rad) for ty in times
+                    ty * k11 * sat_thick / (sy * obs_rad * obs_rad)
+                    for ty in times
                 ]
 
             times_ss = [ty * k11 / (ss * obs_rad * obs_rad) for ty in times]
@@ -1842,7 +1907,10 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
             b = ana_prop[obs2ana[name]][5]
             ax.loglog(
                 [k11 * b * ts / (sy * r * r) for ts in tsdata["totim"]],
-                [4 * pi * k11 * b * (initial_head - h) / q for h in tsdata[name]],
+                [
+                    4 * pi * k11 * b * (initial_head - h) / q
+                    for h in tsdata[name]
+                ],
                 fmt[name],
                 label=obsnames[name],
                 markerfacecolor="none",
@@ -1892,7 +1960,9 @@ def plot_grid(verbose=False):
 
         circle_center = (0.0, 0.0)
         for r in radius_outer:
-            circle = Circle(circle_center, r, color="black", fill=False, lw=0.3)
+            circle = Circle(
+                circle_center, r, color="black", fill=False, lw=0.3
+            )
             ax.add_artist(circle)
 
         ax.set_xlabel("x-position (ft)")
@@ -1944,7 +2014,9 @@ def plot_grid(verbose=False):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", "{}-grid{}".format(sim_name, ".png"))
+            fpth = os.path.join(
+                "..", "figures", "{}-grid{}".format(sim_name, ".png")
+            )
             fig.savefig(fpth)
 
 
