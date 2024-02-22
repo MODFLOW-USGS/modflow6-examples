@@ -1,0 +1,42 @@
+\section{Interacting Borehole Heat Exchangers in a Geothermal Setting}
+
+% Describe source of problem
+Shallow groundwater geothermal investigations often include more than one borehole heat exchanger (BHE) \cite{hechtMendez2010}. In such applications, understanding the thermal interaction among multiple BHEs as well as on the flowing groundwater is made easier with a numerical groundwater flow and heat transport model.  In this example, the accuracy of the groundwater energy transport (GWE) model is demonstrated for a convective-conductive porous domain with multiple thermally-interacting BHEs using an analytical solution first published in \citep{alKhoury2021}.  
+
+\subsection{Example description}
+
+For this example nine BHEs are arranged in a 3 by 3 configuration with a spacing of 5 $m$ from each other. The grid extent is 90 $m \times$ 60 $m$.  Each BHE represents a cyclindrical source of heat with energy being added at a rate of 100 $\tfrac{W}{m}$ using the energy source loading (ESL) package. In order to better simulate the outward propagation of heat from each BHE, the discretization by vertices (DISV) grid type for both the groundwater flow (GWF) and GWE models was employed (fig~\ref{fig:ex-gwe-geotherm-grid}). Grid refinement was added around each BHE (fig~\ref{fig:ex-gwe-geotherm-gridinset}). Grid discretization is coarsened toward the perimeter of the model grid. 
+
+ % a figure
+\begin{StandardFigure}{
+                                     Configuration of the DISV model grid used to demonstrate the use of GWE in a geothermal transport problem.  The original numerical model grid was published in \citep{alKhoury2021}.  Readers are refered to figure~\ref{figex-gwe-geotherm-gridinset} for a zoomed-in view of the model grid in the vicinity of the BHE.
+                                     }{fig:ex-gwe-geotherm-grid}{../images/ex-gwe-geotherm-grid.png}
+\end{StandardFigure}            
+
+ % inset figure showing a zoomed in portion of the model grid
+\begin{StandardFigure}{
+                                     A zoomed-in view showing the refined discretization in the vicinity of the BHEs.  Cell dimensions are on the scale of centimeters in close proximity to the BHEs.  The diameter of each BHE is 10.0 $cm$.
+                                     }{fig:ex-gwe-geotherm-gridinset}{../images/ex-gwe-geotherm-gridinset.png}
+\end{StandardFigure}            
+
+In order to test the \mf solution against the published analytical solution, the heat transport model simulates a porous media domain with a porosity of 0.20. Within the GWF model, two constant head (CHD) packages were setup on the left and right sides of the model, respectively, to drive groundwater flow from left to right with a velocity of $1 \times 10^{-5 \tfrac{m}{s}$ (fig~\ref{fig:ex-gwe-geotherm-head}).  The initial temperature throughout the model domain is 0.0 $^{\circ}C$. Energy is added to the grid cell in the middle of the model domain at a rate of 100 $\tfrac{W}{m}$.  Parameters used for the \mf simulation of the geothermal heat transport problem are shown in table~\ref{tab:ex-gwe-geothermal-01}.
+
+% add static parameter table(s)
+\input{../tables/ex-gwe-geothermal-01}
+
+ % figure showing groundwater head
+\begin{StandardFigure}{
+                                     The established head gradient drives groundwater flow from left to right with a velocity of $1 \times 10^{-5 \tfrac{m}{s}$ .
+}{fig:ex-gwe-geotherm-head}{../images/ex-gwe-geotherm-head.png}
+\end{StandardFigure}            
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Results from the geothermal model run are compared to a published analytical solution 50 days after the start of the simulation \cite{alKhoury2021}.  Isotemperature contours at 1, 2, 3, 4, 6, and 8 $^{\circ}C$ provide a visual summary of the match between GWE and the analytical solution (fig.~\ref{fig:ex-gwe-radial-temp48}).  Isotemperature contours match particularly well at the lower temperatures ($\leq 2 ^{\circ}C$).  At temperatures  $geq 2 ^{\circ}C$, the simulated temperatures have not advanced as far in the downgradient direction as the analytical solution would suggest. 
+
+% a figure
+\begin{StandardFigure}{
+                                     Simulated and analytical isotemperature contours for the geothermal example problem.  The solid lines correspond to the GWE solution while the dashed line represents the analytical solution published by \citep{alKhoury2021}.
+                                     }{fig:ex-gwe-geotherm}{../figures/ex-gwe-geotherm.png}
+\end{StandardFigure}                                 
