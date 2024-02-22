@@ -13,3 +13,6 @@
 *.png binary
 *.jpg binary
 *.pdf binary
+
+data/** text eol=lf
+data/**/*.tif binary
