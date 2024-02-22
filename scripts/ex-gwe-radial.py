@@ -102,7 +102,7 @@ fpath = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
     fname=fname,
     path=data_path,
-    known_hash="md5:5b96c1f32c026706367fe75545b0a095",
+    known_hash="md5:2f45f4f50998964e49c6e0337973c6ac",
 )
 
 # Set up some global lists that will be set in the GWF setup but
