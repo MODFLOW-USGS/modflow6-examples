@@ -14,5 +14,6 @@
 *.jpg binary
 *.pdf binary
 
+# Later lines modify earlier lines
 data/** text eol=lf
 data/**/*.tif binary
