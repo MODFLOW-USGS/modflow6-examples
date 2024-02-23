@@ -549,7 +549,7 @@ def build_mf6_flow_model(
     imsgwf = flopy.mf6.ModflowIms(
         sim,
         print_option="SUMMARY",
-        complexity="COMPLEX",
+        complexity="Simple",
         no_ptcrecord="all",
         linear_acceleration="bicgstab",
         scaling_method="NONE",
@@ -680,7 +680,7 @@ def build_mf6_heat_model(
     imsgwe = flopy.mf6.ModflowIms(
         sim,
         print_option="SUMMARY",
-        complexity="COMPLEX",
+        complexity="SIMPLE",
         no_ptcrecord="all",
         linear_acceleration="bicgstab",
         scaling_method="NONE",
@@ -709,10 +709,24 @@ def build_mf6_heat_model(
 
     # MF6 time discretization differs from corresponding flow simulation
     tdis_rc = []
-    for tm in np.arange(perlen[0] * 24 * 2):  # Run hourly stress period
+    # Run combination of 1/2-hourly and hourly stress periods
+    for tm in np.arange(48):  # 48 1/2 hr time steps (1st day)
+        if tm < 8:
+            tdis_rc.append(
+                (1 / 48, 10, 1.0)
+            )  # Should result in 5 minute time steps
+        elif tm < 48:
+            tdis_rc.append(
+                (1 / 48, 1, 1.0)
+            )  # Should result in 30 minute time steps
+        else:
+            break
+    
+    # Add time discretization for the 2nd day
+    for tm in np.arange(4):  # 24 hourly time steps (2nd day)
         tdis_rc.append(
-            (1 / 48, 10, 1.0)
-        )  # Should result in 6 minute time steps
+            (1 / 4, 1, 1.0)
+        )
 
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_rc), perioddata=tdis_rc, time_units=time_units
@@ -1018,7 +1032,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
 
 
 # +
-# Generates 3 figures
+# Generates 4 figures
 def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
     plot_grid(sim_mf6gwf)
     plot_grid_inset(sim_mf6gwf)
