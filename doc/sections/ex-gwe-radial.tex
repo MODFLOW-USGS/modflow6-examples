@@ -1,41 +1,38 @@
 \section{Radial Heat Transport}
 
 % Describe source of problem
-A dedicated heat transport model referred to as the groundwater energy transport (GWE) model was released with version 6.5.0 of \mf. Previously, to simulate groundwater heat transport in \mf, a user could use the groundwater solute transport model, commonly referred to as simply groundwater transport (without specifying ``solute'' transport), to mimick heat transport by using its input parameters as surrogates for heat transport parameters \cite{ modflow6gwt, ma2010, langevin2008seawat}. Now, with GWE, users may specify native heat transport parameter values in the appropriate GWE package.
+A dedicated heat transport model referred to as the groundwater energy transport (GWE) model was released with version 6.5.0 of \mf. Previously, to simulate groundwater heat transport in \mf, a user could use the groundwater solute transport model, commonly referred to as simply groundwater transport (without specifying ``solute'' transport), to mimick heat transport by using its input parameters as surrogates for heat transport parameters \citep{modflow6gwt, ma2010, langevin2008seawat}. Now, with GWE, users may specify native heat transport parameter values in the appropriate GWE package.
 
 \subsection{Example description}
 
-This example demonstrates use of the GWE model.  This demonstration compares simulated results from a GWE model to an analytical solution that was published in \citep{alKhoury2020}.  Both the groundwater flow (GWF) and GWE models employ a DISV grid type \cite{modflow6software} with the numerical grid setup in a radial manner (fig.~\ref{fig:ex-gwe-radial-grid}). The grid geometry facilitates outward propagation of heat from a borehole heat exchanger (BHE) \cite{hechtMendez2010} located in the center of the radially-symetric model grid (fig.~\ref{fig:ex-gwe-radial-grid}). Groundwater flow moves from left to right. In this way, the model simulates heat flow in a convective and conductive heat transport environment moving past a cylindrical heat source.
- 
- % a figure
-\begin{StandardFigure}{
-                                     Configuration of the DISV model grid used in the radial transport problem.  Model grid originally published in \citep{alKhoury2020}.  Please refer to figure~\ref{figex-gwe-radial-gridinset} for a zoomed-in view of the model grid in the vicinity of the BHE.
-                                     }{fig:ex-gwe-radial-grid}{../images/ex-gwe-radial-slow-grid.png}
-\end{StandardFigure}            
+This example demonstrates use of the GWE model.  This demonstration compares simulated results from a GWE model to an analytical solution that was published in \cite{alKhoury2020}.  Both the groundwater flow (GWF) and GWE models employ a DISV grid type \citep{modflow6software} with the numerical grid setup in a radial manner (fig.~\ref{fig:ex-gwe-radial-grid}). The grid geometry facilitates outward propagation of heat from a borehole heat exchanger (BHE) \citep{hechtMendez2010} located in the center of the radially-symetric model grid (fig.~\ref{fig:ex-gwe-radial-grid}). Groundwater flow moves from left to right. In this way, the model simulates heat flow in a convective and conductive heat transport environment moving past a cylindrical heat source.
 
- % inset figure showing a zoomed in portion of the model grid
+% a figure
 \begin{StandardFigure}{
-                                     A zoomed-in view showing the refined discretization in close proximity to the BHE.  Cell dimensions are sub-centimeter scale around the perimeter of the BHE.  The total diameter of the BHE is 7.5 $cm$.
-                                     }{fig:ex-gwe-radial-gridinset}{../images/ex-gwe-radial-slow-gridinset.png}
-\end{StandardFigure}            
+    Configuration of the DISV model grid used in the radial transport problem.  Model grid originally published in \cite{alKhoury2020}.  Please refer to figure~\ref{figex-gwe-radial-gridinset} for a zoomed-in view of the model grid in the vicinity of the BHE.}{fig:ex-gwe-radial-grid}{../figures/ex-gwe-radial-slow-grid.png}
+\end{StandardFigure}
+
+% inset figure showing a zoomed in portion of the model grid
+\begin{StandardFigure}{
+    A zoomed-in view showing the refined discretization in close proximity to the BHE.  Cell dimensions are sub-centimeter scale around the perimeter of the BHE.  The radius of the BHE is 7.5 $cm$.}{fig:ex-gwe-radial-gridinset}{../figures/ex-gwe-radial-slow-gridinset.png}
+\end{StandardFigure}
 
 Constant heads on the left and right sides of the model domain are specified such that the resulting left-to-right groundwater velocity is $1 \times 10^{-5} \tfrac{m}{s}$ (fig.~\ref{fig:ex-gwe-radial-slow-head}).  The heat source located in the center of the numerical model is represented using the energy source loading (ESL) package with a known rate of energy input [refered to as a Dirichlet boundary condition in \cite{alKhoury2020}].  The initial temperature throughout the model domain is 0.0 $^{\circ}C$. Energy is added to the grid cell in the middle of the model domain at a rate of 100 $\tfrac{W}{m}$.  Parameters used for the \mf simulation of the heat transport problem that uses a radially-symmetric grid are shown in table~\ref{tab:ex-gwe-radial-01}.
 
 % add static parameter table(s)
 \input{../tables/ex-gwe-radial-01}
 
- % figure showing groundwater head
+% figure showing groundwater head
 \begin{StandardFigure}{
-                                     A head gradient is established in the outer-most ring of grid cells to drive groundwater flow from left to right. Note that the outer-most ring of grid cells is not visible in figure~\ref{fig:ex-gwe-radial-grid}.  The combination of the groundwater head gradient with the hydraulic conductivity (table~\ref{tab:ex-gwe-radial-01}) results in a groundwater velocity of $1 \times 10^{-5} \tfrac{m}{s}$.}{fig:ex-gwe-radial-slow-head}{../images/ex-gwe-radial-slow-head.png}
-\end{StandardFigure}            
+    A head gradient is established in the outer-most ring of grid cells to drive groundwater flow from left to right. Note that the outer-most ring of grid cells is not visible in figure~\ref{fig:ex-gwe-radial-grid}.  The combination of the groundwater head gradient with the hydraulic conductivity (table~\ref{tab:ex-gwe-radial-01}) results in a groundwater velocity of $1 \times 10^{-5} \tfrac{m}{s}$.}{fig:ex-gwe-radial-slow-head}{../figures/ex-gwe-radial-slow-head.png}
+\end{StandardFigure}
 
 % for examples without scenarios
 \subsection{Example Results}
 
-Results from the GWE model run are compared to a published analytical solution 48 hours after the start of the simulation \cite{alKhoury2020}.  Isotemperature contours at 1, 2, 3, 4, 6, and 8 $^{\circ}C$ demonstrate that GWE results compare well with the analytical solution (fig.~\ref{fig:ex-gwe-radial-temp48}).
+Results from the GWE model run are compared to a published analytical solution 48 hours after the start of the simulation \citep{alKhoury2020}.  Isotemperature contours at 1, 2, 3, 4, 6, and 8 $^{\circ}C$ demonstrate that GWE results compare well with the analytical solution (fig.~\ref{fig:ex-gwe-radial-temp48}).
 
-% a figure
+% a results figure
 \begin{StandardFigure}{
-                                     Model grid and initial conditions used for the rotating interface problem.  Colors represent three different water types.
-                                     }{fig:ex-gwe-radial-temp48}{../figures/ex-gwe-radia-C-temp48.png}
-\end{StandardFigure}                                 
+    Model grid and initial conditions used for the rotating interface problem.  Colors represent three different water types.}{fig:ex-gwe-radial-temp48}{../figures/ex-gwe-radial-temp48.png}
+\end{StandardFigure}

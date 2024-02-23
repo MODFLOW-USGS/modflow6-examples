@@ -25,6 +25,7 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
+import matplotlib.patches as mpatches
 import math
 import pooch
 from flopy.plot.styles import styles
@@ -69,14 +70,14 @@ top = 1.0  # Top of the model ($m$)
 botm = 0.0  # Bottom of the model ($m$)
 prsity = 0.2  # Porosity ($-$)
 perlen = 2  # Length of simulation ($days$)
-strt_temp = 0.0  # Initial Temperature ($\circ C$)
+strt_temp = 0.0  # Initial Temperature ($^{\circ} C$)
 scheme = "TVD"  # Advection solution scheme ($-$)
-ktw = 0.56  # Thermal conductivity of water ($W/(m \cdot \circ C)$)
-kts = 2.50  # Thermal conductivity of aquifer material ($W/(m \cdot \circ C)$)
-rhow = 1000.0  # Density of water ($kg/m^3$) # 3282.296651
-cpw = 4180.0  # Heat capacity of water ($J/(kg \cdot \circ C)$)
+ktw = 0.56  # Thermal conductivity of water ($\frac{W}{m \cdot ^{\circ} C}$)
+kts = 2.50  # Thermal conductivity of aquifer material ($\frac{W}{m \cdot ^{\circ} C}$)
+rhow = 1000.0  # Density of water ($kg/m^3$)
+cpw = 4180.0  # Heat capacity of water ($\frac{J}{kg \cdot ^{\circ} C}$)
 rhos = 2650.0  # Density of dry solid aquifer material ($kg/m^3$)
-cps = 900.0  # Heat capacity of dry solid aquifer material ($J/(kg \cdot \circ C)$)
+cps = 900.0  # Heat capacity of dry solid aquifer material ($\frac{J}{kg \cdot ^{\circ} C}$)
 al = 0.0  # Mechanical dispersion ($m^2/day$)
 ath1 = 0.0  # Transverse dispersivity ($m^2/day$)
 strt = 1.0  # Starting head ($m$)
@@ -992,6 +993,13 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
         for label in labels:
             label.set_bbox(dict(facecolor="white", pad=1, ec="none"))
 
+        bhe = plt.Circle((0.0, 0.0), 0.075, fc=(1,0,0,0.4), ec=(0,0,0,1), lw=2)
+        ax.add_patch(bhe)
+        ax.text(0.0, 0.0, "BHE", ha='center', va='center')
+        ax.text(0.2, -0.80, "Groundwater flow direction", ha='center', va='center', fontsize=8)
+        arr = mpatches.FancyArrowPatch((0.6, -0.80), (0.8, -0.80),
+                               arrowstyle='->,head_width=.15', mutation_scale=20)
+        ax.add_patch(arr)
         ax.set_xlabel("x position (m)")
         ax.set_ylabel("y position (m)")
         ax.set_xlim([-0.65, 1.5])
@@ -1002,10 +1010,9 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
         if plot_show:
             plt.show()
         if plot_save:
-            letter = chr(ord("@") + idx + 3)
-            fname = simname[:-1] + "-" + letter
+            fname = sim.name
             fpth = os.path.join(
-                "..", "figures", "{}-temp48{}".format(fname, ".png")
+                "..", "figures", "{}-temp48{}".format(sim_name, ".png")
             )
             fig.savefig(fpth, dpi=300)
 
