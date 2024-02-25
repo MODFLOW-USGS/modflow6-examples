@@ -79,9 +79,6 @@ jobs:
         working-directory: autotest
         run: pytest -v -n=auto --durations=0 test_notebooks.py --plot
 
-      - name: Copy notebooks to RTD directory
-        run: cp -R notebooks/*.ipynb .doc/_notebooks/
-
       - name: Run processing script
         working-directory: scripts
         run: python process-scripts.py
