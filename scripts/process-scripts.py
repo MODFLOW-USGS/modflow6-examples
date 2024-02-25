@@ -55,12 +55,14 @@ import fnmatch
 import os
 import re
 import sys
+from pathlib import Path
 
 import flopy
 from modflow_devtools.latex import get_footer, get_header
 
 # path to the example files
-ex_pth = os.path.join("..", "examples")
+proj_root = Path(__file__).parents[1]
+ex_pth = proj_root / "examples"
 
 # only process python files starting with ex_
 files = sorted(
@@ -109,7 +111,7 @@ def table_footer():
 
 
 def make_tables():
-    tab_pth = os.path.join("..", "tables")
+    tab_pth = proj_root / "tables"
     if not os.path.isdir(tab_pth):
         os.makedirs(tab_pth)
 
@@ -264,7 +266,7 @@ def get_ordered_examples(verbose=True):
     # get order of examples from body.text
     ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
     ex_order = []
-    pth = os.path.join("..", "doc", "body.tex")
+    pth = proj_root / "doc" / "body.tex"
     with open(pth) as f:
         lines = f.read()
     for v in ex_regex.findall(lines):
@@ -409,7 +411,7 @@ def build_md_tables(ex_dict):
 
     rtd_link = "https://modflow6.readthedocs.io/en/latest/_mf6io/"
 
-    pth = os.path.join("..", ".doc", "introduction.md")
+    pth = proj_root / ".doc" / "introduction.md"
     f = open(pth, "w")
 
     line = "### Introduction\n\n"
@@ -650,7 +652,7 @@ def build_tex_tables(ex_dict):
     lines += get_footer()
 
     # create table
-    pth = os.path.join("..", "tables", "ex-table.tex")
+    pth = proj_root / "tables" / "ex-table.tex"
     f = open(pth, "w")
     f.write(lines)
     f.close()

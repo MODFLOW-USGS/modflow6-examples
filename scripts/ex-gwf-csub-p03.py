@@ -15,6 +15,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,11 +25,18 @@ from flopy.plot.styles import styles
 from modflow_devtools.latex import build_table, exp_format, float_format, int_format
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-csub-p03"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
-data_path = data_path if data_path.is_dir() else None
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+tbls_path = root / "tables" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -46,7 +54,7 @@ plot_save = get_env("PLOT_SAVE", True)
 # Load the constant time series
 fname = "boundary_heads.csv"
 fpath = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/",
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
     fname=fname,
     path=data_path,
     known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
@@ -679,7 +687,7 @@ def export_tables(silent=True):
             "Hydraulic conductivity",
             "Initial head",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-01.tex")
+        fpth = tbls_path / f"{sim_name}-01.tex"
         dtype = [
             ("k", "U30"),
             ("thickness", "U30"),
@@ -704,7 +712,7 @@ def export_tables(silent=True):
             "Thickness",
             "Initial stress",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-02.tex")
+        fpth = tbls_path / f"{sim_name}-02.tex"
         dtype = [
             ("ib", "U30"),
             ("k", "U30"),
@@ -730,7 +738,7 @@ def export_tables(silent=True):
             "Layer",
             "Specific Storage",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-03.tex")
+        fpth = tbls_path / f"{sim_name}-03.tex"
         dtype = [("k", "U30"), ("ss", "U30")]
         arr = np.zeros(4, dtype=dtype)
         for idx, k in enumerate((4, 6, 11, 13)):
@@ -748,7 +756,7 @@ def export_tables(silent=True):
             "Inelastic \\newline Specific \\newline Storage",
             "Elastic \\newline Specific \\newline Storage",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-04.tex")
+        fpth = tbls_path / f"{sim_name}-04.tex"
         dtype = [
             ("ib", "U30"),
             ("k", "U30"),
@@ -1089,7 +1097,7 @@ def plot_grid(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = tbls_path / f"{sim_name}-grid.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1142,7 +1150,7 @@ def plot_boundary_heads(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
+            fpth = figs_path / f"{sim_name}-01.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1227,7 +1235,7 @@ def plot_head_es_comparison(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-02.png")
+            fpth = figs_path / f"{sim_name}-02.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1510,7 +1518,7 @@ def plot_calibration(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-03.png")
+            fpth = figs_path / f"{sim_name}-03.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1647,7 +1655,7 @@ def plot_vertical_head(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-04.png")
+            fpth = figs_path / f"{sim_name}-04.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)

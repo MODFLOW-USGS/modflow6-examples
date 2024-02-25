@@ -11,12 +11,20 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -247,7 +255,7 @@ def plot_conc(sim, idx):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-conc.png")
+            fpth = figs_path / f"{sim_name}-conc.png"
             fig.savefig(fpth)
 
 

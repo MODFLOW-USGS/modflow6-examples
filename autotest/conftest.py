@@ -8,8 +8,7 @@ TABLES_PATH = PROJ_ROOT / "tables"
 IMAGES_PATH = PROJ_ROOT / "images"
 FIGURES_PATH = PROJ_ROOT / "figures"
 EXAMPLES_PATH = PROJ_ROOT / "examples"
-NOTEBOOKS_PATH = PROJ_ROOT / "notebooks"
-RTD_PATH = PROJ_ROOT / ".doc" / "_notebooks"
+NOTEBOOKS_PATH = PROJ_ROOT / ".doc" / "_notebooks"
 EXCLUDE = []
 
 
@@ -82,8 +81,7 @@ def pytest_generate_tests(metafunc):
     IMAGES_PATH.mkdir(exist_ok=True)
     FIGURES_PATH.mkdir(exist_ok=True)
     EXAMPLES_PATH.mkdir(exist_ok=True)
-    NOTEBOOKS_PATH.mkdir(exist_ok=True)
-    RTD_PATH.mkdir(exist_ok=True, parents=True)
+    NOTEBOOKS_PATH.mkdir(exist_ok=True, parents=True)
 
     # generate example scenarios
     if "example_script" in metafunc.fixturenames:

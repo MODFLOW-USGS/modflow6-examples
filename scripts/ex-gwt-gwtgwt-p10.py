@@ -15,6 +15,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 import pooch
@@ -22,11 +23,17 @@ from flopy.plot.styles import styles
 from flopy.utils.util_array import read1d
 from modflow_devtools.misc import get_env
 
-# Base simulation and model name and workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwt-gwtgwt-p10"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
-data_path = data_path if data_path.is_dir() else None
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -91,8 +98,7 @@ laytyp = icelltype = 0
 
 # Starting heads from file:
 gwt_mt3dms_sim_name = "ex-gwt-mt3dms-p10"
-gwt_mt3dms_data_path = pl.Path(f"../data/{gwt_mt3dms_sim_name}")
-gwt_mt3dms_data_path = gwt_mt3dms_data_path if gwt_mt3dms_data_path.is_dir() else None
+gwt_mt3dms_data_path = data_path.parent / gwt_mt3dms_sim_name if root else pl.Path.cwd()
 fname = "p10shead.dat"
 fpath = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{gwt_mt3dms_sim_name}/{fname}",
@@ -910,7 +916,7 @@ def plot_grids(sim):
         [ymin, ymin, ymax, ymax, ymin],
         "r--",
     )
-    fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-modelgrid.png")
+    fpath = figs_path / "ex-gwtgwt-p10-modelgrid.png"
     fig.savefig(fpath)
 
 
@@ -1018,7 +1024,7 @@ def plot_difference_conc(sim):
         title = "Difference Layer 3 Time = 1000 days"
         styles.heading(letter="D", heading=title)
 
-        fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffconc.png")
+        fpath = figs_path / "ex-gwtgwt-p10-diffconc.png"
         fig.savefig(fpath)
 
 
@@ -1125,7 +1131,7 @@ def plot_difference_heads(sim):
         title = "Difference Layer 3 Time = 1000 days"
         styles.heading(letter="D", heading=title)
 
-        fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-diffhead.png")
+        fpath = figs_path / "ex-gwtgwt-p10-diffhead.png"
         fig.savefig(fpath)
 
 
@@ -1213,7 +1219,7 @@ def plot_concentration(sim):
         title = "Layer 3 Time = 1000 days"
         styles.heading(letter="D", heading=title)
 
-        fpath = os.path.join("..", "figures", "ex-gwtgwt-p10-concentration.png")
+        fpath = figs_path / "ex-gwtgwt-p10-concentration.png"
         fig.savefig(fpath)
 
 

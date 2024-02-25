@@ -12,6 +12,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 import pooch
@@ -23,11 +24,17 @@ from modflow_devtools.misc import get_env, timed
 figure_size = (6.3, 5.6)
 masked_values = (0, 1e30, -1e30)
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-lak-p02"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
-data_path = data_path if data_path.is_dir() else None
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -998,11 +1005,7 @@ def plot_grid(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -1105,11 +1108,7 @@ def plot_lak_results(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 

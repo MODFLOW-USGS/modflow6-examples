@@ -16,13 +16,21 @@ import pathlib as pl
 
 import flopy
 import flopy.utils.cvfdutil
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -199,7 +207,7 @@ figure_size = (6, 6)
 
 
 def plot_grid(idx, sim):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_name = list(parameters.keys())[idx]
         sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
@@ -242,12 +250,12 @@ def plot_grid(idx, sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
 def plot_head(idx, sim):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_name = list(parameters.keys())[idx]
         sim_ws = os.path.join(workspace, sim_name)
         gwf = sim.get_model(sim_name)
@@ -295,7 +303,7 @@ def plot_head(idx, sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
+            fpth = figs_path / f"{sim_name}-head.png"
             fig.savefig(fpth)
 
 

@@ -6,25 +6,34 @@
 #
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
 
+import math
+
 # +
 import os
 import pathlib as pl
 from pprint import pformat
 
 import flopy
+import git
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import math
 import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwe-radial"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -860,7 +869,7 @@ def plot_grid(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", "{}-grid{}".format(simname, ".png"))
+            fpth = figs_path / "{}-grid{}".format(simname, ".png")
             fig.savefig(fpth, dpi=300)
 
 
@@ -892,9 +901,7 @@ def plot_grid_inset(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..", "figures", "{}-gridinset{}".format(simname, ".png")
-            )
+            fpth = figs_path / "{}-gridinset{}".format(simname, ".png")
             fig.savefig(fpth, dpi=300)
 
 
@@ -922,7 +929,7 @@ def plot_head(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", "{}-head{}".format(simname, ".png"))
+            fpth = figs_path / "{}-head{}".format(simname, ".png")
             fig.savefig(fpth, dpi=300)
 
 
@@ -1009,7 +1016,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
             plt.show()
         if plot_save:
             fname = sim.name
-            fpth = os.path.join("..", "figures", "{}-temp48{}".format(sim_name, ".png"))
+            fpth = figs_path / "{}-temp48{}".format(sim_name, ".png")
             fig.savefig(fpth, dpi=300)
 
 

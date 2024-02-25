@@ -13,6 +13,7 @@ from pprint import pformat
 
 import flopy
 import flopy.plot.styles as styles
+import git
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -115,11 +116,18 @@ def circle_function(center=(0, 0), radius=1.0, dtheta=10.0):
     return np.array([(x, y) for x, y in zip(xpts, ypts)])
 
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwt-synthetic-valley"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 data_path = pl.Path(f"../data/{sim_name}")
-data_path = data_path if data_path.is_dir() else None
+data_path = data_path if data_path.is_dir() else pl.Path.cwd()
 
 # Conversion factors
 ft2m = 1.0 / 3.28081
@@ -942,7 +950,7 @@ def plot_river_mapping(sims, idx):
         if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-river-discretization.png"
-            fig.savefig(os.path.join(workspace, "..", "figures", fname))
+            fig.savefig(figs_path / fname)
 
 
 def plot_head_results(sims, idx):
@@ -1122,7 +1130,7 @@ def plot_head_results(sims, idx):
         if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-head.png"
-            fig.savefig(os.path.join(workspace, "..", "figures", fname))
+            fig.savefig(figs_path / fname)
 
 
 def plot_conc_results(sims):
@@ -1244,7 +1252,7 @@ def plot_conc_results(sims):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
-            fig.savefig(os.path.join(workspace, "..", "figures", fname))
+            fig.savefig(figs_path / fname)
 
 
 # -
