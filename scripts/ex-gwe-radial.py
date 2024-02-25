@@ -10,6 +10,7 @@
 import os
 import pathlib as pl
 import sys
+from pprint import pformat
 
 import flopy
 import numpy as np
@@ -824,9 +825,7 @@ def write_mf6_models(sim_mf6gwe, sim_mf6gwf=None, silent=True):
 def run_model(sim, silent=True):
     success = True
     success, buff = sim.run_simulation(silent=silent, report=True)
-    if not success:
-        print(buff)
-    return success
+    assert success, pformat(buff)
 # -
 
 # ### Plotting results
@@ -1073,19 +1072,11 @@ def scenario(idx, silent=False):
     # Run the transport model as a transient simulation, requires reading the
     # steady-state flow output saved in binary files.
     sim_mf6gwe = build_mf6_heat_model(key, scen_ext, **parameter_dict, silent=silent)
-
     write_mf6_models(sim_mf6gwe, sim_mf6gwf=sim_mf6gwf, silent=silent)
-
     if sim_mf6gwf is not None:
-        success = run_model(sim_mf6gwf, silent)
-    else:
-        success = True
-
-    if success:  # Ensure that flow model ran OK
-        success = run_model(sim_mf6gwe, silent)
-
-    if success:
-        plot_results(idx, sim_mf6gwf, sim_mf6gwe)
+        run_model(sim_mf6gwf, silent)
+    run_model(sim_mf6gwe, silent)
+    plot_results(idx, sim_mf6gwf, sim_mf6gwe)
 
 
 # -
