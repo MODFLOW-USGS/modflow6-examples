@@ -1097,7 +1097,7 @@ def plot_grid(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = tbls_path / f"{sim_name}-grid.png"
+            fpth = figs_path / f"{sim_name}-grid.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
