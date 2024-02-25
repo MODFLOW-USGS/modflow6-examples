@@ -4,8 +4,6 @@
 
 # ### Initial setup
 #
-# ### Initial setup
-#
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
 
 # +

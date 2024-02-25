@@ -1,24 +1,16 @@
-"""
-This example was originally published in
+# ## Radial heat transport example
+#
+# This example was originally published in Al-Khoury et al 2020. The original data by Al-Khoury et al. (2020) was for a radially symmetric finite-element mesh.  Where their mesh calculates values at mesh points, this setup uses those points as vertices in a DISV grid.
 
-  Al-Khoury, R., BniLam, N., Arzanfudi, M.M., Saeid, S., 2020. A spectral
-    model for a moving cylindrical heat source in a conductive-convective
-    domain. Int. J. Heat Mass Transf. 163, 120517.
-    https://doi.org/10.1016/j.ijheatmasstransfer.2020.120517
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-The original data by Al-Khoury et al. (2020) was for a radially symmetric
-finite-element mesh.  Where their mesh calculates values at mesh points,
-this setup uses those points as vertices in a DISV grid. The following
-functions setup the objects that are passed to the call for DISV
-instantiation.
-"""
+# +
 import os
 import pathlib as pl
 import sys
 
-sys.path.append(os.path.join("..", "common"))
-
-# Imports
 import flopy
 import numpy as np
 import pandas as pd
@@ -44,6 +36,13 @@ plot_show = get_env("PLOT_SHOW", True)
 plot_save = get_env("PLOT_SAVE", True)
 # -
 
+
+# ### Define parameters
+#
+# Define model units, parameters and other settings.
+
+# +
+# Scenario-specific parameters
 parameters = {
     "ex-gwe-radial-slow-b": {
         "gwvelocity": 1e-5,
@@ -52,11 +51,6 @@ parameters = {
     },
 }
 
-# ### Define parameters
-#
-# Define model units, parameters and other settings.
-
-# +
 # Model units
 length_units = "meters"
 time_units = "days"
@@ -100,7 +94,7 @@ lhv = 2500.0  # Latent heat of vaporization (will eventually need to be removed)
 # Load a file stored in the data directory for building out the DISV grid
 fname = "Qin100_V1e-5.csv"
 fpath = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/develop/data/{sim_name}/{fname}",
     fname=fname,
     path=data_path,
     known_hash="md5:2f45f4f50998964e49c6e0337973c6ac",
@@ -126,16 +120,20 @@ ninner = 100
 hclose = 1e-9
 rclose = 1e-6
 relax = 1.0
+# -
 
-# ### Static temporal data used by TDIS file Simulation has 1 steady stress period (1 day).
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
 
+# +
+# Static temporal data used by TDIS file Simulation has 1 steady stress period (1 day).
 perlen = [perlen]
 nstp = [1]
 tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
-# ### Functions for building the DISV mesh
-
+# Functions for building the DISV mesh
 
 def generate_starting_vert_lst(basedata):
     verts = []
@@ -283,19 +281,19 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
 
         # It is imperative that within each radius grouping, values are sorted
         # in ascending order by angle
-        curr_rad.sort_values(["ang"], ascending=True, inplace=True)
-        next_rad.sort_values(["ang"], ascending=True, inplace=True)
+        curr_rad = curr_rad.sort_values(["ang"], ascending=True)
+        next_rad = next_rad.sort_values(["ang"], ascending=True)
 
         # Repeat the first set of values at the end of the list for closing
         # the loop
         new_row = pd.DataFrame(
             {
-                curr_rad.columns[0]: int(curr_rad.iloc[0][0]),
-                curr_rad.columns[1]: float(curr_rad.iloc[0][1]),
-                curr_rad.columns[2]: float(curr_rad.iloc[0][2]),
-                curr_rad.columns[3]: float(curr_rad.iloc[0][3]),
-                curr_rad.columns[4]: float(curr_rad.iloc[0][4]),
-                curr_rad.columns[7]: int(curr_rad.iloc[0][7]),
+                curr_rad.columns[0]: int(curr_rad.iloc[0].iloc[0]),
+                curr_rad.columns[1]: float(curr_rad.iloc[0].iloc[1]),
+                curr_rad.columns[2]: float(curr_rad.iloc[0].iloc[2]),
+                curr_rad.columns[3]: float(curr_rad.iloc[0].iloc[3]),
+                curr_rad.columns[4]: float(curr_rad.iloc[0].iloc[4]),
+                curr_rad.columns[7]: int(curr_rad.iloc[0].iloc[7]),
             },
             index=[0],
         )
@@ -303,12 +301,12 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
 
         another_new_row = pd.DataFrame(
             {
-                next_rad.columns[0]: int(next_rad.iloc[0][0]),
-                next_rad.columns[1]: float(next_rad.iloc[0][1]),
-                next_rad.columns[2]: float(next_rad.iloc[0][2]),
-                next_rad.columns[3]: float(next_rad.iloc[0][3]),
-                next_rad.columns[4]: float(next_rad.iloc[0][4]),
-                next_rad.columns[7]: int(next_rad.iloc[0][7]),
+                next_rad.columns[0]: int(next_rad.iloc[0].iloc[0]),
+                next_rad.columns[1]: float(next_rad.iloc[0].iloc[1]),
+                next_rad.columns[2]: float(next_rad.iloc[0].iloc[2]),
+                next_rad.columns[3]: float(next_rad.iloc[0].iloc[3]),
+                next_rad.columns[4]: float(next_rad.iloc[0].iloc[4]),
+                next_rad.columns[7]: int(next_rad.iloc[0].iloc[7]),
             },
             index=[0],
         )
@@ -405,9 +403,7 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
         right_chd_spd_slow,
         ivt,
         idx,
-    ) = create_outer_ring_of_ctrl_vols(
-        next_rad, verts, iverts, xc, yc, ivt, idx
-    )
+    ) = create_outer_ring_of_ctrl_vols(next_rad, verts, iverts, xc, yc, ivt, idx)
 
     return (
         ivt,
@@ -426,9 +422,7 @@ def build_cell2d_obj(iverts, xc, yc):
     cell2d = []
     for i, itm in enumerate(iverts):
         itm_no = itm[0]
-        cell2d.append(
-            [itm_no, xc[i], yc[i], len(iverts[i][1:])] + iverts[i][1:]
-        )
+        cell2d.append([itm_no, xc[i], yc[i], len(iverts[i][1:])] + iverts[i][1:])
 
     return cell2d
 
@@ -439,8 +433,7 @@ def remove_euclidian_duplicates(pd_with_dupes):
     distances = np.sqrt(
         np.sum(
             [
-                (pd_with_dupes[[c]].to_numpy() - pd_with_dupes[c].to_numpy())
-                ** 2
+                (pd_with_dupes[[c]].to_numpy() - pd_with_dupes[c].to_numpy()) ** 2
                 for c in ("X", "Y")
             ],
             axis=0,
@@ -521,21 +514,15 @@ def create_divs_objs(fl):
     )
 
 
-def build_mf6_flow_model(
-    sim_name, left_chd_spd=None, right_chd_spd=None, silent=True
-):
+def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent=True):
     gwfname = "gwf-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name, "mf6gwf")
 
     # Instantiate a new MF6 simulation
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 time discretization
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
 
     # Instantiating MODFLOW 6 groundwater flow model
     gwf = flopy.mf6.ModflowGwf(
@@ -664,9 +651,7 @@ def build_mf6_heat_model(
     print("Building mf6gwt model...{}".format(sim_name))
     gwename = "gwe-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name[:-2], "mf6gwe" + scen_ext)
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 groundwater transport model
     gwe = flopy.mf6.MFModel(
@@ -712,21 +697,15 @@ def build_mf6_heat_model(
     # Run combination of 1/2-hourly and hourly stress periods
     for tm in np.arange(48):  # 48 1/2 hr time steps (1st day)
         if tm < 8:
-            tdis_rc.append(
-                (1 / 48, 10, 1.0)
-            )  # Should result in 5 minute time steps
+            tdis_rc.append((1 / 48, 10, 1.0))  # Should result in 5 minute time steps
         elif tm < 48:
-            tdis_rc.append(
-                (1 / 48, 1, 1.0)
-            )  # Should result in 30 minute time steps
+            tdis_rc.append((1 / 48, 1, 1.0))  # Should result in 30 minute time steps
         else:
             break
-    
+
     # Add time discretization for the 2nd day
     for tm in np.arange(4):  # 24 hourly time steps (2nd day)
-        tdis_rc.append(
-            (1 / 4, 1, 1.0)
-        )
+        tdis_rc.append((1 / 4, 1, 1.0))
 
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_rc), perioddata=tdis_rc, time_units=time_units
@@ -748,14 +727,10 @@ def build_mf6_heat_model(
     )
 
     # Instantiating MODFLOW 6 heat transport initial temperature
-    flopy.mf6.ModflowGweic(
-        gwe, strt=strt_temp, filename="{}.ic".format(gwename)
-    )
+    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, filename="{}.ic".format(gwename))
 
     # Instantiating MODFLOW 6 heat transport advection package
-    flopy.mf6.ModflowGweadv(
-        gwe, scheme=scheme, filename="{}.adv".format(gwename)
-    )
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, filename="{}.adv".format(gwename))
 
     # Instantiating MODFLOW 6 heat transport dispersion package
     if ktw != 0:
@@ -824,9 +799,7 @@ def build_mf6_heat_model(
         gwe,
         budget_filerecord="{}.cbc".format(gwename),
         temperature_filerecord="{}.ucn".format(gwename),
-        temperatureprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord={47: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")]},
         printrecord=[("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
     )
@@ -854,10 +827,15 @@ def run_model(sim, silent=True):
     if not success:
         print(buff)
     return success
+# -
 
+# ### Plotting results
+#
+# Define functions to plot model results.
 
+# +
 def plot_grid(sim):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         simname = sim.name
         gwf = sim.get_model("gwf-" + simname.split("-")[2])
 
@@ -881,9 +859,7 @@ def plot_grid(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..", "figures", "{}-grid{}".format(simname, ".png")
-            )
+            fpth = os.path.join("..", "figures", "{}-grid{}".format(simname, ".png"))
             fig.savefig(fpth, dpi=300)
 
 
@@ -945,9 +921,7 @@ def plot_head(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..", "figures", "{}-head{}".format(simname, ".png")
-            )
+            fpth = os.path.join("..", "figures", "{}-head{}".format(simname, ".png"))
             fig.savefig(fpth, dpi=300)
 
 
@@ -983,9 +957,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
         # extract discrete colors from the .plasma map
         cmaplist = [cmap(i) for i in np.linspace(0, 1, len(levels))]
 
-        cs1 = pmv.contour_array(
-            temp48h, levels=levels, colors=cmaplist, linewidths=0.5
-        )
+        cs1 = pmv.contour_array(temp48h, levels=levels, colors=cmaplist, linewidths=0.5)
         labels = ax.clabel(
             cs1,
             cs1.levels,
@@ -1007,12 +979,23 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
         for label in labels:
             label.set_bbox(dict(facecolor="white", pad=1, ec="none"))
 
-        bhe = plt.Circle((0.0, 0.0), 0.075, fc=(1,0,0,0.4), ec=(0,0,0,1), lw=2)
+        bhe = plt.Circle((0.0, 0.0), 0.075, fc=(1, 0, 0, 0.4), ec=(0, 0, 0, 1), lw=2)
         ax.add_patch(bhe)
-        ax.text(0.0, 0.0, "BHE", ha='center', va='center')
-        ax.text(0.2, -0.80, "Groundwater flow direction", ha='center', va='center', fontsize=8)
-        arr = mpatches.FancyArrowPatch((0.6, -0.80), (0.8, -0.80),
-                               arrowstyle='->,head_width=.15', mutation_scale=20)
+        ax.text(0.0, 0.0, "BHE", ha="center", va="center")
+        ax.text(
+            0.2,
+            -0.80,
+            "Groundwater flow direction",
+            ha="center",
+            va="center",
+            fontsize=8,
+        )
+        arr = mpatches.FancyArrowPatch(
+            (0.6, -0.80),
+            (0.8, -0.80),
+            arrowstyle="->,head_width=.15",
+            mutation_scale=20,
+        )
         ax.add_patch(arr)
         ax.set_xlabel("x position (m)")
         ax.set_ylabel("y position (m)")
@@ -1025,13 +1008,10 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
             plt.show()
         if plot_save:
             fname = sim.name
-            fpth = os.path.join(
-                "..", "figures", "{}-temp48{}".format(sim_name, ".png")
-            )
+            fpth = os.path.join("..", "figures", "{}-temp48{}".format(sim_name, ".png"))
             fig.savefig(fpth, dpi=300)
 
 
-# +
 # Generates 4 figures
 def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
     plot_grid(sim_mf6gwf)
@@ -1047,6 +1027,9 @@ def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
 
 # -
 
+# ### Running the example
+#
+# Define a function to run the example scenarios and plot results.
 
 # +
 def scenario(idx, silent=False):
@@ -1060,7 +1043,7 @@ def scenario(idx, silent=False):
     parameter_dict = parameters[key]
 
     # The following takes about 30 seconds, but only needs to be run once
-    #fl = os.path.join("..", "data", "ex-gwe-radial", "Qin100_V1e-5.csv")
+    # fl = os.path.join("..", "data", "ex-gwe-radial", "Qin100_V1e-5.csv")
     (
         verts,
         cell2d,
@@ -1089,9 +1072,7 @@ def scenario(idx, silent=False):
 
     # Run the transport model as a transient simulation, requires reading the
     # steady-state flow output saved in binary files.
-    sim_mf6gwe = build_mf6_heat_model(
-        key, scen_ext, **parameter_dict, silent=silent
-    )
+    sim_mf6gwe = build_mf6_heat_model(key, scen_ext, **parameter_dict, silent=silent)
 
     write_mf6_models(sim_mf6gwe, sim_mf6gwf=sim_mf6gwf, silent=silent)
 
@@ -1109,6 +1090,6 @@ def scenario(idx, silent=False):
 
 # -
 
-# +
+# Run the scenario.
+
 scenario(0)
-# -

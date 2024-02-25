@@ -37,9 +37,6 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-gwf-drn-p01
    _notebooks/ex-gwf-sagehen
    _notebooks/ex-gwf-capture
-   _notebooks/ex-gwf-radial
-   _notebooks/ex-gwf-curvilinear-90
-   _notebooks/ex-gwf-curvilinear
    _notebooks/ex-gwt-keating
    _notebooks/ex-gwt-moc3d-p01
    _notebooks/ex-gwt-moc3d-p02
@@ -66,5 +63,9 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-gwt-hecht-mendez
    _notebooks/ex-gwt-stallman
    _notebooks/ex-gwt-synthetic-valley
+   _notebooks/ex-gwf-radial
+   _notebooks/ex-gwf-curvilinear-90
+   _notebooks/ex-gwf-curvilinear
+   _notebooks/ex-gwe-radial
 
 
