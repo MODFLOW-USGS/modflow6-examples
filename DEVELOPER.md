@@ -130,14 +130,44 @@ jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ip
 
 To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks/` directory after notebooks have been created with `jupytext`.
 
+## Testing docs locally
+
+Notebooks must be created and run (including model runs and plots) before building the ReadTheDocs documentation:
+
+```shell
+pytest -v -n auto test_notebooks.py
+```
+
+This will create and/or update notebooks in `.doc/_notebooks`. Next, build LaTeX and Markdown files:
+
+```shell
+python scripts/process-scripts.py
+```
+
+Next, ensure documentation dependencies are installed:
+
+```shell
+pip install -r .doc/requirements.rtd.txt
+```
+
+Now docs can be built from the `.doc/` directory:
+
+```shell
+make clean
+make html
+```
+
+To host a local development server, switch to the `.doc/_build/html/` directory and run `python3 -m http.server`, then navigate to `localhost:8000` to view the site.
+
 ## Contributing examples
 
 To add a new example:
 
-1. Add a new example script in the `scripts/` folder
+1. Add a new example script in the `scripts/` folder, use existing example scripts as a template. Use the environment variable settings described above to condition whether the script writes model input files, runs models, and plots results.
 2. Add a new LaTeX description in the `doc/sections/` folder
 3. Ensure the script runs successfully and creates any expected files
-3. Open a pull request from your fork to the upstream repo's `develop` branch
+4. Build the documentation locally and verify that everything looks good
+5. Open a pull request from your fork to the upstream repo's `develop` branch
 
 ## Releasing the examples
 

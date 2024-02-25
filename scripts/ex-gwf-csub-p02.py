@@ -13,15 +13,24 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-csub-p02"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+tbls_path = root / "tables" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -337,7 +346,7 @@ def plot_grid(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -427,7 +436,7 @@ def plot_head_based(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-01.png")
+            fpth = figs_path / f"{name}-01.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -508,7 +517,7 @@ def plot_effstress(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-01.png")
+            fpth = figs_path / f"{name}-01.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -621,7 +630,7 @@ def plot_comp_q_comparison(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-01.png")
+            fpth = figs_path / f"{name}-01.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -758,7 +767,7 @@ def plot_head_comparison(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-02.png")
+            fpth = figs_path / f"{name}-02.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)

@@ -16,15 +16,23 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 from scipy.special import erfc
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 example_name = "ex-gwt-moc3d-p02"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -305,7 +313,7 @@ def plot_results(sims):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-map.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 

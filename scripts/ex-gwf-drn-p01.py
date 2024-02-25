@@ -16,6 +16,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 import pooch
@@ -23,11 +24,18 @@ from flopy.plot.styles import styles
 from modflow_devtools.latex import build_table, exp_format, float_format, int_format
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-drn-p01"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
-data_path = data_path if data_path.is_dir() else None
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+tbls_path = root / "tables" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -91,8 +99,7 @@ shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and uzf/mvr arrays
 sfr_sim_name = "ex-gwf-sfr-p01"  # some data files come from another example
-sfr_data_path = pl.Path(f"../data/{sfr_sim_name}")
-sfr_data_path = sfr_data_path if sfr_data_path.is_dir() else None
+sfr_data_path = data_path.parent / sfr_sim_name if root else pl.Path.cwd()
 
 fname = "idomain.txt"
 fpath = pooch.retrieve(
@@ -1254,11 +1261,7 @@ def plot_gwseep_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 
@@ -1270,7 +1273,7 @@ def export_tables(silent=True):
             "Infiltration rate",
             "Pumping rate",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-02.tex")
+        fpth = tbls_path / f"{sim_name}-02.tex"
         dtype = [
             ("nper", "U30"),
             ("infilt", "U30"),

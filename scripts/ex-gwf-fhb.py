@@ -15,13 +15,21 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-fhb"
-ws = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -82,7 +90,7 @@ rclose = 1e-6
 
 # +
 def build_models():
-    sim_ws = os.path.join(ws, sim_name)
+    sim_ws = os.path.join(workspace, sim_name)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
     flopy.mf6.ModflowIms(
@@ -219,7 +227,7 @@ def plot_grid(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -243,11 +251,7 @@ def plot_ts(sim):
             ax.set_ylabel(ylabel[iplot])
             styles.graph_legend(ax)
             if plot_save:
-                fpth = os.path.join(
-                    "..",
-                    "figures",
-                    "{}-{}{}".format(sim_name, obs_fig[iplot], ".png"),
-                )
+                fpth = figs_path / "{}-{}{}".format(sim_name, obs_fig[iplot], ".png")
                 fig.savefig(fpth)
 
 

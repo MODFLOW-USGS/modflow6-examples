@@ -18,12 +18,20 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -419,7 +427,7 @@ def plot_results():
             plt.show()
         if plot_save:
             fname = "{}{}".format("ex-gwt-mt3dsupp632", ".png")
-            fpth = os.path.join("..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
@@ -459,7 +467,7 @@ def plot_scenario_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 

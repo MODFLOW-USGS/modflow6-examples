@@ -18,6 +18,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,11 +26,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-bcf2ss"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
-data_path = data_path if data_path.is_dir() else None
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -361,13 +368,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(
-                os.path.join(
-                    "..",
-                    "figures",
-                    f"{sim_name}-{num:02d}.png",
-                )
-            )
+            fig.savefig(figs_path / f"{sim_name}-{num:02d}.png")
 
 
 def plot_results(silent=True):
@@ -474,11 +475,7 @@ def plot_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
         # figure with wetdry array
@@ -497,7 +494,7 @@ def plot_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(os.path.join("..", "figures", f"{sim_name}-01.png"))
+            fig.savefig(figs_path / f"{sim_name}-01.png")
 
         # plot simulated rewetting results
         plot_simulated_results(2, gwf, hobj, cobj)

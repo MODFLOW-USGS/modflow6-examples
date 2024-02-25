@@ -13,13 +13,21 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -931,13 +939,9 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}{}".format(
-                    sim_name,
-                    ".png",
-                ),
+            fpth = figs_path / "{}{}".format(
+                sim_name,
+                ".png",
             )
             fig.savefig(fpth)
 

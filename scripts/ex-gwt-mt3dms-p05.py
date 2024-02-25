@@ -28,10 +28,22 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
+
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+example_name = "ex-gwt-mt3dms-p05"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -39,10 +51,6 @@ run = get_env("RUN", True)
 plot = get_env("PLOT", True)
 plot_show = get_env("PLOT_SHOW", True)
 plot_save = get_env("PLOT_SAVE", True)
-
-# Example name and base workspace
-workspace = pl.Path("../examples")
-example_name = "ex-gwt-mt3dms-p05"
 # -
 
 # ### Define parameters
@@ -519,11 +527,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}{}".format(sim_name + "-xsec", ".png"),
-            )
+            fpth = figs_path / "{}{}".format(sim_name + "-xsec", ".png")
             fig.savefig(fpth)
 
         # second plot
@@ -561,11 +565,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}{}".format(sim_name + "-planView", ".png"),
-            )
+            fpth = figs_path / "{}{}".format(sim_name + "-planView", ".png")
             fig.savefig(fpth)
 
 

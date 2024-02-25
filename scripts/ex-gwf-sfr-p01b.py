@@ -14,6 +14,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,11 +23,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-sfr-p01b"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
-data_path = data_path if data_path.is_dir() else None
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -4034,7 +4041,7 @@ masked_values = (0, 1e30, -1e30)
 
 
 def plot_grid(gwf, silent=True):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig = plt.figure(figsize=figure_size, constrained_layout=False)
         gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
         plt.axis("off")
@@ -4195,11 +4202,7 @@ def plot_grid(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -4212,7 +4215,7 @@ def plot_head_results(gwf, silent=True):
 
     kstpkper = hobj.get_kstpkper()
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig = plt.figure(figsize=figure_size, constrained_layout=False)
         gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
         plt.axis("off")
@@ -4327,16 +4330,12 @@ def plot_head_results(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 
 def plot_mvr_results(idx, gwf, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # load the observations
         mvr = gwf.get_package("MVR-1")
         mvr_Q = mvr.output.budget()
@@ -4455,16 +4454,12 @@ def plot_mvr_results(idx, gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-mvr.png",
-            )
+            fpth = figs_path / f"{sim_name}-mvr.png"
             fig.savefig(fpth)
 
 
 def plot_uzfcolumn_results(idx, gwf, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         sim_ws = os.path.join(workspace, sim_name)
         fname = os.path.join(sim_ws, "obs_uzf_column.csv")
         uzf_dat = pd.read_csv(fname, header=0)
@@ -4505,11 +4500,7 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-uz.png",
-            )
+            fpth = figs_path / f"{sim_name}-uz.png"
             fig.savefig(fpth)
 
 
