@@ -27,15 +27,12 @@ ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
 pth = os.path.join("..", "doc", "body.tex")
 with open(pth) as f:
     lines = f.read()
-gwf_list = []
-gwt_list = []
+examples = []
 for v in ex_regex.findall(lines):
-    if "ex-gwf-" in v:
-        gwf_list.append(v.replace(".tex", ""))
-    elif "ex-gwt-" in v:
-        gwt_list.append(v.replace(".tex", ""))
+    if "ex-" in v:
+        examples.append(v.replace(".tex", ""))
 
-# -- Build examples.rst for notebooks to .doc --------------------------------
+# -- Build notebook_examples.rst ---------------------------------------------
 with open("notebook_examples.rst", "w") as f:
     lines = "Example notebooks\n"
     lines += (len(lines) - 1) * "-" + "\n\n"
@@ -47,9 +44,7 @@ with open("notebook_examples.rst", "w") as f:
 
     lines = ".. nbgallery::\n"
     lines += "    :name: Examples gallery\n\n"
-    for base_name in gwf_list:
-        lines += f"   _notebooks/{base_name}\n"
-    for base_name in gwt_list:
+    for base_name in examples:
         lines += f"   _notebooks/{base_name}\n"
     lines += "\n\n"
     f.write(lines)
