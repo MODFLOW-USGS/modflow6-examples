@@ -9,15 +9,12 @@
 # +
 import os
 import pathlib as pl
-import sys
 from pprint import pformat
 
 import flopy
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.pylab as pylab
 import matplotlib.patches as mpatches
 import math
 import pooch
@@ -135,6 +132,7 @@ tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # Functions for building the DISV mesh
+
 
 def generate_starting_vert_lst(basedata):
     verts = []
@@ -822,15 +820,19 @@ def write_mf6_models(sim_mf6gwe, sim_mf6gwf=None, silent=True):
     sim_mf6gwe.write_simulation(silent=silent)
 
 
+@timed
 def run_model(sim, silent=True):
     success = True
     success, buff = sim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)
+
+
 # -
 
 # ### Plotting results
 #
 # Define functions to plot model results.
+
 
 # +
 def plot_grid(sim):
@@ -863,7 +865,7 @@ def plot_grid(sim):
 
 
 def plot_grid_inset(sim):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         simname = sim.name
         gwf = sim.get_model("gwf-" + simname.split("-")[2])
 
@@ -903,7 +905,7 @@ def plot_head(sim):
     gwf = sim.get_model("gwf-" + simname.split("-")[2])
     head = gwf.output.head().get_data()[:, 0, :]
 
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
@@ -937,7 +939,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
     )
     gwe = sim.get_model("gwe-" + simname.split("-")[2])
 
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
@@ -1030,6 +1032,7 @@ def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
 #
 # Define a function to run the example scenarios and plot results.
 
+
 # +
 def scenario(idx, silent=False):
     # Two different sets of values used among the 4 scenarios, but fastest to calculate them all at the same time
@@ -1072,11 +1075,14 @@ def scenario(idx, silent=False):
     # Run the transport model as a transient simulation, requires reading the
     # steady-state flow output saved in binary files.
     sim_mf6gwe = build_mf6_heat_model(key, scen_ext, **parameter_dict, silent=silent)
-    write_mf6_models(sim_mf6gwe, sim_mf6gwf=sim_mf6gwf, silent=silent)
-    if sim_mf6gwf is not None:
-        run_model(sim_mf6gwf, silent)
-    run_model(sim_mf6gwe, silent)
-    plot_results(idx, sim_mf6gwf, sim_mf6gwe)
+    if write:
+        write_mf6_models(sim_mf6gwe, sim_mf6gwf=sim_mf6gwf, silent=silent)
+    if run:
+        if sim_mf6gwf is not None:
+            run_model(sim_mf6gwf, silent)
+        run_model(sim_mf6gwe, silent)
+    if plot:
+        plot_results(idx, sim_mf6gwf, sim_mf6gwe)
 
 
 # -
