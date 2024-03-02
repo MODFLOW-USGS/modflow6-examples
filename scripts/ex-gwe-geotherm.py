@@ -481,7 +481,7 @@ def build_mf6_flow_model(sim_name, silent=True):
     sim.register_ims_package(imsgwf, [gwf.name])
 
     # Instantiating MODFLOW 6 discretization package
-    fname = "mesh.dat"
+    fname = "Mesh.dat"
     fpath = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
         fname=fname,
