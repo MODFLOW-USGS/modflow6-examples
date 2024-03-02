@@ -10,6 +10,7 @@
 import os
 import pathlib as pl
 import sys
+from pprint import pformat
 
 sys.path.append(os.path.join("..", "common"))
 
@@ -765,10 +766,8 @@ def write_mf6_models(sim_mf6gwf, sim_mf6gwe, silent=True):
 @timed
 def run_model(sim, silent=True):
     success = True
-    success, buff = sim.run_simulation(silent=silent)
-    if not success:
-        print(buff)
-    return success
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
 
 
 # -
