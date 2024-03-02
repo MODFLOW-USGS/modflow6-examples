@@ -49,7 +49,7 @@ plot_save = get_env("PLOT_SAVE", True)
 # Define model units, parameters and other settings.
 
 # +
-# Scenario-specific parameters
+# Scenario-specific parameters.  Other scenarios are described in Al-Khoury et al 2020
 parameters = {
     "ex-gwe-radial-slow-b": {
         "gwvelocity": 1e-5,
@@ -120,6 +120,7 @@ right_chd_spd_slow = None
 left_chd_spd_fast = None
 right_chd_spd_fast = None
 
+# +
 # ### Solver Parameters
 
 nouter = 1000
@@ -878,7 +879,7 @@ def plot_grid_inset(sim):
         simname = sim.name
         gwf = sim.get_model("gwf-" + simname.split("-")[2])
 
-        figure_size = (3, 3)
+        figure_size = (5, 5)
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 

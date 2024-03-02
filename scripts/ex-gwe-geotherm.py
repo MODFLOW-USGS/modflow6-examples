@@ -1,42 +1,41 @@
-"""
-This example was originally published in:
+#
+# This example was originally published in Al-Khoury et al 2021. The original data was calculated using a finite element (FE) mesh and is used to test the MODFLOW 6 solution of a multi-source configuration of borehole heat exchangers.  Whereas the mesh used in Al-Khoury et al. (2021) calculates temperatures at FE mesh points, this setup uses those mesh points as vertices in a DISV grid.
 
-  Al-Khoury, R., BniLam, N., Arzanfudi, M.M., Saeid, S., 2021. Analytical model
-   for arbitrarily configured neighboring shallow geothermal installations in
-   the presence of groundwater flow. Geothermics 93, 102063.
-    https://doi.org/10.1016/j.geothermics.2021.102063
+# ### Initial setup
+#
+# Import dependencies, define the example name and workspace, and read settings from environment variables.
 
-An analytical solution is provided in Al-Khoury et al. (2021). The solution
-provided uses spectral analysis for analyzing thermal interaction among
-variously configured heat sources.  Herein, the analytical solution is used
-to test the MODFLOW 6 solution of a multi-source (or sink) field of borehole
-heat exchangers.  The mesh used in Al-Khoury et al. (2021) calculates
-temperatures at mesh points that were subsequently confirmed using a finite
-element grid.  However, this setup uses those mesh points as vertices in a
-DISV grid. This notebook includes functions that setup the objects that are
-passed to the call for the DISV instantiation.
-"""
-
+# +
+# Imports
 import os
 import pathlib as pl
 import sys
+
 sys.path.append(os.path.join("..", "common"))
 
-# Imports
 import flopy
 import numpy as np
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.pylab as pylab
+import matplotlib.patches as patches
 import math
 import pooch
+import git
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Simulation name
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwe-geotherm"
-workspace = pl.Path("../examples")
-data_path = pl.Path(f"../data/{sim_name}")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
+
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -46,19 +45,15 @@ plot_show = get_env("PLOT_SHOW", True)
 plot_save = get_env("PLOT_SAVE", True)
 # -
 
-parameters = {
-    "ex-gwe-geotherm": {
-        "dirichlet": 0.0,
-        "neumann": 100.0
-    }
-}
-
 # ### Define parameters
 #
 # Define model units, parameters and other settings.
 
 # +
-# ### Model Units
+# Scenario-specific parameters.  Other scenarios are described in Al-Khoury et al 2021
+parameters = {"ex-gwe-geotherm": {"dirichlet": 0.0, "neumann": 100.0}}
+
+# Model Units
 length_units = "meters"
 time_units = "days"
 
@@ -67,29 +62,31 @@ nper = 1  # Number of periods in flow model ($-$)
 nlay = 1  # Number of layers ($-$)
 simwid = 60  # Simulation width ($m$)
 simlen = 90  # Simulation length ($m$)
-k11 = 1.0    # Horizontal hydraulic conductivity ($m/d$)
+k11 = 1.0  # Horizontal hydraulic conductivity ($m/d$)
 top = 1.0  # Top of the model ($m$)
 botm = 0.0  # Bottom of the model ($m$)
 prsity = 0.2  # Porosity ($-$)
-perlen = 100  # Length of simulation ($days$)
-strt_temp = 0.0  # Initial Temperature ($\circ C$)
+perlen = 50  # Length of simulation ($days$)
+strt_temp = 0.0  # Initial Temperature ($^{\circ}C$)
 scheme = "TVD"  # Advection solution scheme ($-$)
-ktw = 0.56  # Thermal conductivity of water ($W/(m \cdot \circ C)$)
-kts = 2.50  # Thermal conductivity of aquifer material ($W/(m \cdot \circ C)$)
+ktw = 0.56  # Thermal conductivity of water ($\frac{W}{m \cdot ^{\circ}C}$)
+kts = 2.50  # Thermal conductivity of aquifer material ($\frac{W}{m \cdot ^{\circ}C}$)
 rhow = 1000  # Density of water ($kg/m^3$)
-cpw = 4180.0  # Heat capacity of water ($J/(kg \cdot \circ C)$)
+cpw = 4180.0  # Heat capacity of water ($\frac{J}{kg \cdot ^{\circ}C}$)
 rhos = 2650.0  # Density of dry solid aquifer material ($kg/m^3$)
-cps = 900.0  # Heat capacity of dry solid aquifer material ($J/(kg \cdot \circ C)$)
-lhv = 2500.0  # Latent heat of vaporization (Can be removed, eventually)
+cps = 900.0  # Heat capacity of dry solid aquifer material ($\frac{J}{kg \cdot ^{\circ}C}$)
+lhv = 2500.0  # Latent heat of vaporization ($\frac{J}{kg \cdot ^{\circ}C}$)
 al = 0.0  # No mechanical dispersion ($m^2/day$)
-ath1 = 0.0  # No transverse dispersivity ($m^2/
+ath1 = 0.0  # No transverse dispersivity ($m^2/day$)
 strt = 1.00  # Starting head ($m$)
+# -
 
-# Set some static flow model parameters
+# +
+# ### Further refine parameters
 laytyp = 1
 nstp = 100
 Lx = 90.0
-v = 1e-5   # Groundwater seepage velocity ($m/s$)
+v = 1e-5  # Groundwater seepage velocity ($m/s$)
 q = v * 86400 * prsity
 h1 = 1.001 + q * Lx  # Add one since that is the top elevation
 
@@ -101,7 +98,6 @@ kts = kts * 86400
 
 # Convert Watts (=J/sec) to J/days
 unitadj = 86400
-
 
 # Set up some global lists that will be set in the GWF setup but
 # also needed in the GWE simulation
@@ -118,30 +114,36 @@ ninner = 100
 hclose = 1e-9
 rclose = 1e-6
 relax = 1.0
+# -
 
-# ### Static temporal data used by TDIS file Simulation has 1 steady stress period (1 day).
+# ### Model setup
+#
+# Define functions to build models, write input files, and run the simulation.
 
+# +
+# Static temporal data used by TDIS file Simulation has 1 steady stress period (1 day).
 perlen = [perlen]
 nstp = [1]
 tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
-
-# ### Lists to store the CV's that will be created for the left and right boundaries
+# Lists to store the CV's that will be created for the left and right boundaries
 
 left_iverts = []
 right_iverts = []
 
-# ### Functions for building the DISV mesh
+# Functions for building the DISV mesh
 
-# The original data by Al-Khoury et al. (2021) was for only half the mesh.
-# The following function mirrors the mesh vertices about the x-axis
+
+# The original data by Al-Khoury et al. (2021) was for only half the mesh. The following function mirrors the mesh vertices about the x-axis
 def mirror_mesh_pts(verts, idx_max):
     verts_mir = []
     vert_on_mir = []
     pairings = {}
-    new_idx = idx_max - 1  # at this point, idx_max will be 1-based, new_idx is 0-based
-    
+    new_idx = (
+        idx_max - 1
+    )  # at this point, idx_max will be 1-based, new_idx is 0-based
+
     for itm in verts:
         if itm[2] == 0.0:
             # In this case, don't mirror a node that is on the axis about which
@@ -150,22 +152,23 @@ def mirror_mesh_pts(verts, idx_max):
             vert_on_mir.append(int(itm[0]))
 
         else:
-            new_idx += 1      # 0-based index
-            verts_mir.append([new_idx, float(itm[1]), -1*float(itm[2])])
+            new_idx += 1  # 0-based index
+            verts_mir.append([new_idx, float(itm[1]), -1 * float(itm[2])])
             # Keep a dictionary of what goes with what for creating the new mirrored grid objects
             pairings.update({int(itm[0]): new_idx})
 
     return verts_mir, vert_on_mir, pairings
 
-# The original data by Al-Khoury et al. (2021) was for only half the mesh.
-# The following function mirrors the mesh CVs about the x-axis using the
-# vertices
+
 def mirror_mesh_ctrl_vols(iverts, full_verts, vert_on_mir, pairings):
     max_element_no = 0
     # start by determining the maximum element number
     for vert in iverts:
         element_id = vert[0]
-        if element_id > max_element_no: max_element_no = element_id  # will be 0-based since they came in that way
+        if element_id > max_element_no:
+            max_element_no = (
+                element_id  # will be 0-based since they came in that way
+            )
 
     # create a "mirrored" control volume for every existing cv
     all_mirrored_ivert_collections = []
@@ -195,8 +198,8 @@ def mirror_mesh_ctrl_vols(iverts, full_verts, vert_on_mir, pairings):
 
     return new_iverts
 
-# In order to sort the vertices associated with the well-bore locations,
-# need to calculate the angle from the center pt to sort them clockwise
+
+# In order to sort the vertices associated with the well-bore locations, need to calculate the angle from the center pt to sort them clockwise
 def append_ang(bore_pts, x_base, y_base):
     # append the angle to each point in the list
     for pt in bore_pts:
@@ -206,8 +209,8 @@ def append_ang(bore_pts, x_base, y_base):
 
     return bore_pts
 
-# The original mesh had holes where the bore locations are located
-# The following function fills these holes in.
+
+# The original mesh had holes where the bore locations are located. This function generates a control volume at the 9 borehole locations.
 def add_9_ctrl_vols(verts_full, num_iverts_1based):
     num_iverts_0based = num_iverts_1based - 1
     thresh = 0.125
@@ -257,23 +260,8 @@ def add_9_ctrl_vols(verts_full, num_iverts_1based):
         for itm in boreX[i]:
             itm.pop(-1)
 
-#    bore1 = append_ang(bore1, 30, 5)
-#    bore1.sort(key=lambda x: x[3])
-#    # After sorting each bore, collect just the vertex IDs in their sorted order
-#    num_iverts_0based += 1
-#    bore1_verts = [num_iverts_0based] + [itm[0] for itm in bore1]
-#    # now drop the angle off of the iverts in bore1
-#    for itm in bore1:
-#        itm.pop(-1)
-
-#    bore2 = append_ang(bore2, 35, 5)
-#    bore2.sort(key=lambda x: x[3])
-#    num_iverts_0based += 1
-#    bore2_verts = [num_iverts_0based] + [itm[0] for itm in bore2]
-#    for itm in bore2:
-#        itm.pop(-1)
-
     return boreX_verts
+
 
 # Assess which vertices are located along the left and right boundaries
 def determine_boundary_verts(verts_full):
@@ -291,8 +279,8 @@ def determine_boundary_verts(verts_full):
 
     return left_bnd_verts, right_bnd_verts
 
-# Add new vertices horizontally left or right of the boundary vertices for
-# adding new constant head CV's to.
+
+# Add new vertices horizontally left or right of the boundary vertices for adding new constant head CV's to.
 def create_bnd_iverts(bnd_verts, vert_idx, ivert_idx, side):
     new_bnd_verts = []
     new_bnd_iverts = []
@@ -317,9 +305,9 @@ def create_bnd_iverts(bnd_verts, vert_idx, ivert_idx, side):
         if i == 0:
             vert_idx += 1
             new_vert_no = vert_idx
-            if side == 'left':
+            if side == "left":
                 v_x_coord1_newpt = v_x_coord1 - 0.1
-            elif side == 'right':
+            elif side == "right":
                 v_x_coord1_newpt = v_x_coord1 + 0.1
 
             v_y_coord1_newpt = v_y_coord1
@@ -329,9 +317,9 @@ def create_bnd_iverts(bnd_verts, vert_idx, ivert_idx, side):
             new_pt1 = new_pt2
 
         vert_idx += 1
-        if side == 'left':
+        if side == "left":
             v_x_coord2_newpt = v_x_coord2 - 0.1
-        elif side == 'right':
+        elif side == "right":
             v_x_coord2_newpt = v_x_coord2 + 0.1
 
         v_y_coord2_newpt = v_y_coord2
@@ -345,8 +333,8 @@ def create_bnd_iverts(bnd_verts, vert_idx, ivert_idx, side):
 
     return new_bnd_verts, new_bnd_iverts
 
-# The first FOR loop reads the original data shared by Al-Khoury et al. (2021)
-# and then the function further operates on that data using the function above
+
+# The first FOR loop reads the original data shared by Al-Khoury et al. (2021) and then the function further operates on that data using the function above
 def read_finite_element_mesh(f):
     read_nodes = False
     verts = []
@@ -365,17 +353,20 @@ def read_finite_element_mesh(f):
                 verts.append([int(t[0]) - 1, float(t[1]), float(t[2])])
 
                 # If the max node number yet encountered, store it
-                if int(t[0]) > max_idx: max_idx = int(t[0])
+                if int(t[0]) > max_idx:
+                    max_idx = int(t[0])
 
             else:
                 t = line.strip().split()
                 rec = [int(t[0]) - 1] + [int(i) - 1 for i in t[2:]]
-                
+
                 iverts.append(rec)
-    
+
     # Mirror about the y=0 line (the bottom of the grid)
     mirrored_verts, vert_on_mir, pairings = mirror_mesh_pts(verts, max_idx)
-    iverts_full = mirror_mesh_ctrl_vols(iverts, mirrored_verts, vert_on_mir, pairings)
+    iverts_full = mirror_mesh_ctrl_vols(
+        iverts, mirrored_verts, vert_on_mir, pairings
+    )
 
     # Make the full verts list
     verts_full = verts + mirrored_verts
@@ -392,8 +383,10 @@ def read_finite_element_mesh(f):
 
     # Create new CVs along the left and right boundaries that have a constant width
     # (for specifying boundary heads)
-    for (side, which_bnd_verts) in zip(["left", "right"], [lverts, rverts]):
-        new_bnd_verts, new_bnd_iverts = create_bnd_iverts(which_bnd_verts, len(verts_full), len(iverts_full), side)
+    for side, which_bnd_verts in zip(["left", "right"], [lverts, rverts]):
+        new_bnd_verts, new_bnd_iverts = create_bnd_iverts(
+            which_bnd_verts, len(verts_full), len(iverts_full), side
+        )
         verts_full = verts_full + new_bnd_verts
         iverts_full = iverts_full + new_bnd_iverts
         if side == "left":
@@ -401,7 +394,7 @@ def read_finite_element_mesh(f):
         elif side == "right":
             right_iverts = new_bnd_iverts.copy()
 
-    # now calculate cell center locations for each element
+    # Calculate cell center locations for each element
     # and store xyverts for later use.
     xc, yc = [], []
     xyverts = []
@@ -411,12 +404,12 @@ def read_finite_element_mesh(f):
             tiv, txv, tyv = verts_full[v]
             xv.append(txv)
             yv.append(tyv)
-    
+
         xc.append(np.mean(xv))
         yc.append(np.mean(yv))
         xyverts.append(list(zip(xv, yv)))
-    
-    # finally create a cell2d record
+
+    # Create a cell2d record
     cell2d = []
     for ix, iv in enumerate(iverts_full):
         xv, yv = np.array(xyverts[ix]).T
@@ -425,9 +418,9 @@ def read_finite_element_mesh(f):
         else:
             iiv = iv[1:][::-1]
             rec = [iv[0], xc[ix], yc[ix], len(iiv)] + iiv
-        
+
         cell2d.append(rec)
-    
+
     return verts_full, cell2d, left_iverts, right_iverts, the_new_9
 
 
@@ -435,7 +428,7 @@ def build_mf6_flow_model(sim_name, silent=True):
     global verts, cell2d, left_iverts, right_iverts, bore_iverts
     global top, botm
 
-    gwfname = 'gwf-' + sim_name.split("-")[2]
+    gwfname = "gwf-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name, "mf6gwf")
 
     # Instantiate a new MF6 simulation
@@ -483,20 +476,21 @@ def build_mf6_flow_model(sim_name, silent=True):
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
         rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(sim_name)
+        filename="{}.ims".format(sim_name),
     )
     sim.register_ims_package(imsgwf, [gwf.name])
 
     # Instantiating MODFLOW 6 discretization package
-    #fl = os.path.join('..', 'data', 'ex-gwe-geotherm', 'mesh.dat')
-    fname = 'mesh.dat'
+    fname = "mesh.dat"
     fpath = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
         fname=fname,
         path=data_path,
-        known_hash="md5:31555620b3f39a81f699adedfd96d2aa",
+        known_hash="md5:f3d321b7690f9f1f7dcd730c2bfe8e23",
     )
-    verts, cell2d, left_iverts, right_iverts, bore_iverts = read_finite_element_mesh(fpath)
+    verts, cell2d, left_iverts, right_iverts, bore_iverts = (
+        read_finite_element_mesh(fpath)
+    )
     top = np.ones((len(cell2d),))
     botm = np.zeros((1, len(cell2d)))
 
@@ -512,8 +506,8 @@ def build_mf6_flow_model(sim_name, silent=True):
         idomain=1,
         vertices=verts,
         cell2d=cell2d,
-        pname='DISV',
-        filename="{}.disv".format(gwfname)
+        pname="DISV",
+        filename="{}.disv".format(gwfname),
     )
 
     # Instantiating MODFLOW 6 node property flow package
@@ -524,22 +518,16 @@ def build_mf6_flow_model(sim_name, silent=True):
         k=k11,
         save_specific_discharge=True,
         save_saturation=True,
-        pname='NPF',
-        filename="{}.npf".format(gwfname)
+        pname="NPF",
+        filename="{}.npf".format(gwfname),
     )
 
     # Instatiating MODFLOW 6 initial conditions package
     flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
     # Instantiating MODFLOW 6 storage package
-    # (steady flow conditions, so no actual storage,
-    # using to print values in .lst file)
     flopy.mf6.ModflowGwfsto(
-        gwf,
-        ss=0,
-        sy=0,
-        pname="STO",
-        filename="{}.sto".format(gwfname)
+        gwf, ss=0, sy=0, pname="STO", filename="{}.sto".format(gwfname)
     )
 
     # Instantiating 1st instance of MODFLOW 6  constant head package (left side)
@@ -556,7 +544,6 @@ def build_mf6_flow_model(sim_name, silent=True):
     )
 
     # Instantiating 2nd instance of MODFLOW 6 constant head package (right side)
-    # (setting auxiliary temperature to 0.0)
     chd_spd = []
     chd_spd += [[0, i[0], 1.001, 0.0] for i in right_iverts]
     chd_spd = {0: chd_spd}
@@ -576,7 +563,7 @@ def build_mf6_flow_model(sim_name, silent=True):
         head_filerecord=head_filerecord,
         budget_filerecord=budget_filerecord,
         saverecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        pname="OC"
+        pname="OC",
     )
 
     return sim
@@ -585,7 +572,7 @@ def build_mf6_flow_model(sim_name, silent=True):
 def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
 
     print("Building mf6gwt model...{}".format(sim_name))
-    gwename = 'gwe-' + sim_name.split("-")[2]
+    gwename = "gwe-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name, "mf6gwe")
 
     sim = flopy.mf6.MFSimulation(
@@ -597,14 +584,14 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         sim,
         model_type="gwe6",
         modelname=gwename,
-        model_nam_file="{}.nam".format(gwename)
+        model_nam_file="{}.nam".format(gwename),
     )
 
     # Create iterative model solution and register the gwe model with it
     imsgwe = flopy.mf6.ModflowIms(
         sim,
         print_option="SUMMARY",
-        complexity="COMPLEX",
+        complexity="SIMPLE",
         no_ptcrecord="all",
         linear_acceleration="bicgstab",
         scaling_method="NONE",
@@ -627,17 +614,19 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
         rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(gwename)
+        filename="{}.ims".format(gwename),
     )
     sim.register_ims_package(imsgwe, [gwe.name])
 
     # MF6 time discretization differs from corresponding flow simulation
     tdis_rc = []
     for tm in np.arange(perlen[0]):
-        if tm <= 10:
-            tdis_rc.append((1, 24, 1.3))
+        if tm < 1:
+            tdis_rc.append((1, 12, 1.3))
+        elif tm <= 10:
+            tdis_rc.append((1, 1, 1.0))
         else:
-            tdis_rc.append((1, 4, 1.3))
+            tdis_rc.append((1, 1, 1.0))
 
     flopy.mf6.ModflowTdis(
         sim, nper=len(tdis_rc), perioddata=tdis_rc, time_units=time_units
@@ -708,7 +697,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
             stress_period_data=ctpspd,
             save_flows=False,
             pname="CTP-1",
-            filename="{}.ctp".format(gwename)
+            filename="{}.ctp".format(gwename),
         )
 
     if neumann > 0:
@@ -717,7 +706,9 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
             eslspd_bore = []
             for bore_loc in bore_iverts:
                 #               layer,       CV ID,     Watts added)
-                eslspd_bore.append([0, bore_loc[0], float((tm+1) * 10.0 * unitadj)])
+                eslspd_bore.append(
+                    [0, bore_loc[0], float((tm + 1) * 10.0 * unitadj)]
+                )
 
             eslspd.update({tm: eslspd_bore})
 
@@ -727,13 +718,15 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
             stress_period_data=eslspd,
             save_flows=False,
             pname="ESR-1",
-            filename="{}.src".format(gwename)
+            filename="{}.src".format(gwename),
         )
 
     # Instantiating MODFLOW 6 source/sink mixing package for dealing with
     # auxiliary temperature specified in constant head boundary package.
-    sourcerecarray = [("CHD-LEFT", "AUX", "TEMPERATURE"),
-                      ("CHD-RIGHT", "AUX", "TEMPERATURE")]
+    sourcerecarray = [
+        ("CHD-LEFT", "AUX", "TEMPERATURE"),
+        ("CHD-RIGHT", "AUX", "TEMPERATURE"),
+    ]
     flopy.mf6.ModflowGwessm(
         gwe, sources=sourcerecarray, filename="{}.ssm".format(gwename)
     )
@@ -746,9 +739,11 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         temperatureprintrecord=[
             ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
-        saverecord={49: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
-                    50: [],  # Turn off output in stress periods 51-99
-                    99: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")]},
+        saverecord={
+            49: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
+            50: [],  # Turn off output in stress periods 51-99
+            99: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
+        },
         printrecord=[("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
     )
 
@@ -767,6 +762,7 @@ def write_mf6_models(sim_mf6gwf, sim_mf6gwe, silent=True):
     sim_mf6gwe.write_simulation(silent=silent)
 
 
+@timed
 def run_model(sim, silent=True):
     success = True
     success, buff = sim.run_simulation(silent=silent)
@@ -775,16 +771,38 @@ def run_model(sim, silent=True):
     return success
 
 
+# -
+
+# ### Plotting results
+#
+# Define functions to plot model results.
+
+
+# +
 def plot_grid(sim):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         simname = sim.name
-        gwf = sim.get_model('gwf-' + simname.split("-")[2])
+        gwf = sim.get_model("gwf-" + simname.split("-")[2])
 
         figure_size = (6.5, 5)
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
         ax = fig.add_subplot(1, 1, 1, aspect="equal")
+
+        # Create a Rectangle patch
+        rect = patches.Rectangle(
+            (28, -0.5),
+            9,
+            6,
+            linewidth=1,
+            edgecolor="r",
+            facecolor="none",
+            zorder=3,
+        )
+
+        # Add the location of the inset plot to current plot
+        ax.add_patch(rect)
 
         # plot up the cellid numbers with regard to
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
@@ -801,14 +819,15 @@ def plot_grid(sim):
             plt.show()
         if plot_save:
             fpth = os.path.join(
-                "..", "figures", "{}-grid{}".format(simname, ".png")
+                figs_path / "{}-grid{}".format(simname, ".png")
             )
             fig.savefig(fpth, dpi=300)
 
+
 def plot_grid_inset(sim):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         simname = sim.name
-        gwf = sim.get_model('gwf-' + simname.split("-")[2])
+        gwf = sim.get_model("gwf-" + simname.split("-")[2])
 
         figure_size = (6, 4)
         fig = plt.figure(figsize=figure_size)
@@ -833,18 +852,19 @@ def plot_grid_inset(sim):
             plt.show()
         if plot_save:
             fpth = os.path.join(
-                "..", "figures", "{}-grid-inset{}".format(simname, ".png")
+                figs_path / "{}-grid-inset{}".format(simname, ".png")
             )
             fig.savefig(fpth, dpi=300)
 
+
 def plot_head(sim):
-    figure_size = (6.5, 4.5)
+    with styles.USGSPlot():
+        figure_size = (6.5, 5)
 
-    simname = sim.name
-    gwf = sim.get_model('gwf-' + simname.split("-")[2])
-    head = gwf.output.head().get_data()[:, 0, :]
+        simname = sim.name
+        gwf = sim.get_model("gwf-" + simname.split("-")[2])
+        head = gwf.output.head().get_data()[:, 0, :]
 
-    with styles.USGSPlot() as fs:
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
@@ -863,7 +883,7 @@ def plot_head(sim):
             plt.show()
         if plot_save:
             fpth = os.path.join(
-                "..", "figures", "{}-head{}".format(simname, ".png")
+                figs_path / "{}-head{}".format(simname, ".png")
             )
             fig.savefig(fpth, dpi=300)
 
@@ -872,45 +892,47 @@ def plot_temperature(sim, scen, time_):
     figure_size = (6.5, 5)
 
     # Get analytical solution
-    #analytical_pth = os.path.join('..', 'data', 'ex-gwe-geotherm')
+    # aX_pth = os.path.join('..', 'data', 'ex-gwe-geotherm')
     fname = "spectral_Qin=100_t=50d-X.csv"
     aX_pth = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
         fname=fname,
         path=data_path,
-        known_hash="c6f08403c9863da315393ad9bf3f0f33",
+        known_hash="md5:c6f08403c9863da315393ad9bf3f0f33",
     )
-    aX = np.loadtxt(aX_pth, delimiter=',')
+    aX = np.loadtxt(aX_pth, delimiter=",")
 
     fname = "spectral_Qin=100_t=50d-Y.csv"
     aY_pth = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
         fname=fname,
         path=data_path,
-        known_hash="8901f084096a8868b4d25393162fc780",
+        known_hash="md5:8901f084096a8868b4d25393162fc780",
     )
-    aY = np.loadtxt(aY_pth, delimiter=',')
+    aY = np.loadtxt(aY_pth, delimiter=",")
 
     fname = "spectral_Qin=100_t=50d-Z.csv"
     aZ_pth = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
         fname=fname,
         path=data_path,
-        known_hash="c011c72c7e8af10e6bd2fcc5fb069884",
+        known_hash="md5:c011c72c7e8af10e6bd2fcc5fb069884",
     )
-    aZ = np.loadtxt(aZ_pth, delimiter=',')
+    aZ = np.loadtxt(aZ_pth, delimiter=",")
 
     # X values need a shift relative to what Al-Khoury et al. (2021) shared
     Xnew = aX + 35.0
 
     simname = sim.name
-    gwe = sim.get_model('gwe-' + simname.split("-")[2])
+    gwe = sim.get_model("gwe-" + simname.split("-")[2])
 
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
-        temp = gwe.output.temperature().get_alldata()  # eventually restore to: .temperature().
+        temp = (
+            gwe.output.temperature().get_alldata()
+        )  # eventually restore to: .temperature().
         if time_ == 50:  # first of two output times saved was at 50 days
             ct = 0
         elif time_ == 100:  # second of two output times saved was at 100 days
@@ -922,15 +944,32 @@ def plot_temperature(sim, scen, time_):
         pmv = flopy.plot.PlotMapView(model=gwe, ax=ax, layer=0)
 
         levels = [1, 2, 3, 4, 6, 8]
-        cmap = plt.cm.jet      #.plasma
+        cmap = plt.cm.jet  # .plasma
 
         # extract discrete colors from the .plasma map
         cmaplist = [cmap(i) for i in np.linspace(0, 1, len(levels))]
 
-        cs1 = pmv.contour_array(tempXXd, levels=levels, colors=cmaplist, linewidths=0.5)
+        cs1 = pmv.contour_array(
+            tempXXd, levels=levels, colors=cmaplist, linewidths=0.5
+        )
 
-        labels = ax.clabel(cs1, cs1.levels, inline=False, inline_spacing=0.0, fmt='%1d', fontsize=8)
-        cs2 = ax.contour(Xnew, aY, aZ, levels=levels, colors=cmaplist, linewidths=0.9, linestyles="dashed")
+        labels = ax.clabel(
+            cs1,
+            cs1.levels,
+            inline=False,
+            inline_spacing=0.0,
+            fmt="%1d",
+            fontsize=8,
+        )
+        cs2 = ax.contour(
+            Xnew,
+            aY,
+            aZ,
+            levels=levels,
+            colors=cmaplist,
+            linewidths=0.9,
+            linestyles="dashed",
+        )
 
         for label in labels:
             label.set_bbox(dict(facecolor="white", pad=1, ec="none"))
@@ -939,14 +978,18 @@ def plot_temperature(sim, scen, time_):
         ax.set_ylabel("y position (m)")
         ax.set_xlim([29, 50])
         ax.set_ylim([-8, 8])
-        styles.heading(ax, heading=" Simulated Temperature at " + str(time_) + " days", idx=3)
+        styles.heading(
+            ax,
+            heading=" Simulated Temperature at " + str(time_) + " days",
+            idx=3,
+        )
 
         # save figure
         if plot_show:
             plt.show()
         if plot_save:
             fpth = os.path.join(
-                "..", "figures", "{}".format(simname) + ".png"
+                figs_path / "{}-temp50days{}".format(simname, ".png")
             )
             fig.savefig(fpth, dpi=300)
 
@@ -958,12 +1001,20 @@ def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
     plot_grid_inset(sim_mf6gwf)
     plot_head(sim_mf6gwf)
 
-    scen = 'Qin=100'
+    scen = "Qin=100"
 
-    # plot the temperature at 50 days
+    # Plot the temperature at 50 days
     plot_temperature(sim_mf6gwe, scen=scen, time_=50)
 
 
+# -
+
+# ### Running the example
+#
+# Define a function to run the example scenarios and plot results.
+
+
+# +
 def scenario(idx, silent=False):
 
     key = list(parameters.keys())[idx]
@@ -986,6 +1037,7 @@ def scenario(idx, silent=False):
         plot_results(idx, sim_mf6gwf, sim_mf6gwe)
 
 
-# +
-scenario(0, silent=False)
 # -
+
+# Run the scenario
+scenario(0)
