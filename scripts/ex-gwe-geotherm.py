@@ -1026,13 +1026,14 @@ def scenario(idx, silent=False):
     # steady-state flow output saved in binary files.
     sim_mf6gwe = build_mf6_heat_model(key, **parameter_dict)
 
-    write_mf6_models(sim_mf6gwf, sim_mf6gwe, silent=silent)
+    if write:
+        write_mf6_models(sim_mf6gwf, sim_mf6gwe, silent=silent)
 
-    success = run_model(sim_mf6gwf, silent)
-    if success:
-        success = run_model(sim_mf6gwe, silent)
+    if run:
+        run_model(sim_mf6gwf, silent)
+        run_model(sim_mf6gwe, silent)
 
-    if success:
+    if plot:
         plot_results(idx, sim_mf6gwf, sim_mf6gwe)
 
 
