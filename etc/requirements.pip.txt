@@ -1,4 +1,4 @@
-pytest
+pytest!=8.1.0
 pytest-xdist
 appdirs
 requests
