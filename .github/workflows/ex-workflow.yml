@@ -251,7 +251,7 @@ jobs:
 
       - name: Delete all Artifacts
         if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
-        uses: GeekyEggo/delete-artifact@v2
+        uses: GeekyEggo/delete-artifact@v5
         with:
           name: |
             zip_files
