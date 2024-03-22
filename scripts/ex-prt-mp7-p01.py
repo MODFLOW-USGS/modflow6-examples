@@ -141,14 +141,9 @@ zones_lay2 = def_zone
 zones_lay3 = np.full((nrow, ncol), def_zone, dtype=np.int32)
 zones_lay3[wel_loc[1:]] = wel_zone
 
-# Starting location template size for example 1B;
-# in the original example, there is initially a
-# 3x3 array of particles in each cell in layer 1;
-# in this example, there is initially one
-# particle in each cell in layer 1; the original
-# 3x3 particle arrays can be restored simply by
-# setting sloc_tmpl_size below to 3 instead of 1.
-sloc_tmpl_size = 1
+# Starting location template size for example 1:
+# 3x3 array of particles in each cell in layer 1
+sloc_tmpl_size = 3
 # -
 
 # Define MODPATH 7 model parameters.
