@@ -605,7 +605,7 @@ def plot_pathlines(ax, gwf, pathlines, subprob, plottitle=None, legend=False, **
             # Use a default color for all pathlines
             color = "blue"
         mm.plot_pathline(
-            pathlines[(subprob, dest)], layer="all", colors=[color], label=label
+            pathlines[(subprob, dest)], layer="all", colors=[color], label=label, linewidth=0.2
         )
         if legend and label != None:
             ax.legend(loc="lower right", bbox_to_anchor=(0.3, -0.3))
@@ -616,7 +616,7 @@ def plot_endpoints(fig, ax, gwf, pointdata, subprob, plottitle, starting, legend
     ax.set_aspect("equal")
     mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
     mm.plot_grid(lw=0.5)
-    startingpoint_markersize = 5
+    startingpoint_markersize = 2
     if "colordest" in kwargs:
         for dest in ["well", "river"]:
             color = kwargs["colordest"][dest]
