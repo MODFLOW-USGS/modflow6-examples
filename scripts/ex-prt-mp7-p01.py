@@ -20,7 +20,7 @@
 #
 # In part A, 21 particles are released at the water table in layer 1, all along the grid's third column, and tracked until discharge locations are reached. Some of the particles discharge to the well, while some discharge to the river.
 #
-# In part B, 9 particles are released from points evenly distributed over the top faces of all cells in layer 1, then the capture zones of the river and the central well are computed.
+# In part B, 9 particles are released from points evenly distributed over the top face of each cell in layer 1.
 #
 
 # ### Initial setup
@@ -657,7 +657,7 @@ def plot_grid(gwf, head=False, title=None, idx=0):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(figs_path / f"{sim_name}-grid.png")
+            fig.savefig(figs_path / f"{sim_name}-grid{'-head' if head else ''}.png")
 
 
 def plot_pathlines(gwf, mf6pl, mp7pl, idx):
