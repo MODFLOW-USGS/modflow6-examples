@@ -395,12 +395,15 @@ def build_model(example_name):
     budget_record = [budgetfile_prt]
     track_record = [trackfile_prt]
     trackcsv_record = [trackcsvfile_prt]
+    tracktimes = list(range(0, 72000, 1000))
     flopy.mf6.ModflowPrtoc(
         prt,
         pname="oc",
         budget_filerecord=budget_record,
         track_filerecord=track_record,
         trackcsv_filerecord=trackcsv_record,
+        track_all=True,
+        track_timesrecord=tracktimes,
         saverecord=[("BUDGET", "ALL")],
     )
 
@@ -523,7 +526,6 @@ def get_pathlines(mf6_path, mp7_path):
     )
 
     # determine which particles ended up in which capture area
-    # (for now, use x coordinate of endpoint, todo: use izone)
     mf6pl["destzone"] = mf6pl[mf6pl.istatus > 1].izone
     mf6pl["dest"] = mf6pl.apply(
         lambda row: (
