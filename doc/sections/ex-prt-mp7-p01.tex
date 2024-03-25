@@ -2,39 +2,57 @@
 
 \subsection{Example description}
 
-This example demonstrates particle-tracking with a steady-state flow system consisting of two aquifers separated by a thin low-conductivity confining layer. The example is reproduced from the MODPATH 7 example problems. A schematic is shown in figure~(fig~\ref{fig:ex-prt-mp7-p01-config}). MODFLOW 6 PRT and MODPATH 7 simulations are run, then solutions are compared side-by-side.
+This example is reproduced from the MODPATH 7 example problems document \citep{modpath7examples} to demonstrate particle-tracking. MODFLOW 6 PRT and MODPATH 7 simulations are run and compared side-by-side.
+
+The example first runs a groundwater flow (GWF) model simulating steady-state flow on a structured grid. The flow system includes an upper and lower aquifer separated by a confining layer with lower conductivity. The grid has 3 layers, 21 rows, and 20 columns, with square cells 500 feet to a side. The system includes two boundary conditions: a well in layer 3, row 11, column 10, and a river in layer 1, column 20, extending along the rightmost column (21)~(fig~\ref{fig:ex-prt-mp7-p01-config}). 
 
 \begin{StandardFigure}{
     Conceptual model, reproduced from the MODPATH 7 examples document.
     }{fig:ex-prt-mp7-p01-config}{../images/ex-prt-mp7-p01-config.png}
 \end{StandardFigure}
 
-The system is simulated with a traditional structured model grid consisting of 3 model layers, 21 rows, and 20 columns. Areal grid cells are uniform square cells, 500 feet per side. The well is located in row 11, column 10, and layer 3. The river is located in layer 1, column 20, rows 1 - 21.
-
 \subsection{Example Results}
 
-The head simulated by the MODFLOW 6 groundwater flow model is shown in figure~(fig~\ref{fig:ex-prt-mp7-p01-grid-head}).
+In this example a MODFLOW 6 particle tracking (PRT) model runs in the same simulation as a groundwater flow (GWF) model(fig~\ref{fig:ex-prt-mp7-p01-grid-head}), which provides it with intercell flows via a GWF-PRT model exchange.
 
 \begin{StandardFigure}{
-    Simulated head.
+    Heads simulated by the MODFLOW 6 groundwater flow (GWF) model.
     }{fig:ex-prt-mp7-p01-grid-head}{../figures/mp7-p01-grid-head.png}
 \end{StandardFigure}
 
-Particle tracking is often used to compute recharge capture areas for wells and other hydrologic features. In simulation 1A, a line of 21 particles is placed at the water table in layer 1 for column 3, rows 1 through 21. In simulation 1B, a denser release configuration is used which places a 3 x 3 array of particles on the top face of every cell in layer 1. In both simulations, particles are tracked forward to their discharge points. Pathlines are colored by discharge area (well or river) in figure~(fig~\ref{fig:ex-prt-mp7-p01-paths}).
+In subproblem 1A, a line of 21 particles is placed at the water table in layer 1 for column 3, rows 1 through 21. In subproblem 1B, a denser release configuration is used which places a 3 x 3 array of particles on the top face of every cell in layer 1. Both simulations track particles forward to their discharge points.
+
+MODPATH 7 distinguishes between pathline, endpoint, timeseries, and combined (pathline + timeseries) simulations. In the original document, example 1A is solved by a combined pathline and timeseries simulation, and example 1B is solved in a separate endpoint simulation. Here we will run a single combined pathline and timeseries simulation with two particle groups, one for each subproblem, then extract endpoint data from the MODPATH 7 pathline output file.
+
+MODFLOW 6 PRT makes no distinction between simulation modes, instead offering fine-grained control over tracking events, such as particle release, termination, cell-to-cell transitions, timesteps, and timeseries. In this example we enable all tracking events, and provide a custom timeseries to match the 1000-day timeseries interval used for MODPATH 7.
+
+Subproblem 1A tracks particles at a 1000-day time interval~(fig~\ref{fig:ex-prt-mp7-p01-paths-layer}), and can be visualized in 2D and 3D~(fig~\ref{fig:ex-prt-mp7-p01-paths-3d}).
+
+\begin{StandardFigure}{
+    Particle pathlines (1A), with 1000-day path points colored by layer.
+    }{fig:ex-prt-mp7-p01-paths-layer}{../figures/mp7-p01-paths-layer.png}
+\end{StandardFigure}
+
+\begin{StandardFigure}{
+    Particle pathlines (1A), with 1000-day path points colored by layer, three-dimensional perspective.
+    }{fig:ex-prt-mp7-p01-paths-3d}{../figures/mp7-p01-paths-3d.pdf}
+\end{StandardFigure}
+
+Pathlines can be colored by discharge area (well or river)~(fig~\ref{fig:ex-prt-mp7-p01-paths}).
 
 \begin{StandardFigure}{
     Particle pathlines, colored by destination: particles with red pathlines are captured by the well, particles with blue pathlines are captured by the river.
     }{fig:ex-prt-mp7-p01-paths}{../figures/mp7-p01-paths.png}
 \end{StandardFigure}
 
-In figure~(fig~\ref{fig:ex-prt-mp7-p01-rel-destination}), capture areas for the well and river are displayed by plotting the starting locations of all particles, color-coded according to the zone value of the cells in which they terminate.
+To show capture areas~(fig~\ref{fig:ex-prt-mp7-p01-rel-destination}), starting locations of all particles can be color-coded according to the zone value of the cells in which they terminate.
 
 \begin{StandardFigure}{
     Particle release points, colored by destination.
     }{fig:ex-prt-mp7-p01-rel-destination}{../figures/mp7-p01-rel-destination.png}
 \end{StandardFigure}
 
-Travel time analysis is also a common use case for particle tracking. In figure~(fig~\ref{fig:ex-prt-mp7-p01-rel-travel-time}), starting locations are colored by travel time.
+Travel time analysis is also a common use case for particle tracking~(fig~\ref{fig:ex-prt-mp7-p01-rel-travel-time}).
 
 \begin{StandardFigure}{
     Particle release points, colored by travel time.

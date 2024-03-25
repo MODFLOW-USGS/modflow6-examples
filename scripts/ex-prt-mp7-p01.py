@@ -39,6 +39,7 @@ import pandas as pd
 from flopy.plot.styles import styles
 import matplotlib as mpl
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from modflow_devtools.misc import get_env, timed
 
 # Example name and workspace paths. If this example is running
@@ -534,6 +535,12 @@ def get_pathlines(mf6_path, mp7_path):
         axis=1,
     )
 
+    # add markercolor column, color-coding by layer for plots
+    mf6pl["mc"] = mf6pl.apply(
+        lambda row: "green" if row.ilay == 1 else "yellow" if row.ilay == 2 else "red",
+        axis=1,
+    )
+
     # load mp7 pathlines, letting flopy determine capture areas
     mp7plf = flopy.utils.PathlineFile(mp7_path)
     mp7pl_wel = pd.DataFrame(
@@ -551,10 +558,23 @@ def get_pathlines(mf6_path, mp7_path):
     # index by particle group and particle ID
     mp7pl.set_index(["particlegroup", "sequencenumber"], drop=False, inplace=True)
 
+    # convert indices to 1-based (flopy converts them to 0-based, but PRT uses 1-based, so do the same for consistency)
+    kijnames = [
+        "k",
+        "node",
+        "particleid",
+        "particlegroup",
+        "particleidloc",
+        "sequencenumber",
+    ]
+
+    for n in kijnames:
+        mp7pl[n] += 1
+
     # add column mapping particle group to subproblem name (1: A, 2: B)
     mp7pl["subprob"] = mp7pl.apply(
         lambda row: (
-            "A" if row.particlegroup == 0 else "B" if row.particlegroup == 1 else pd.NA
+            "A" if row.particlegroup == 1 else "B" if row.particlegroup == 2 else pd.NA
         ),
         axis=1,
     )
@@ -573,6 +593,11 @@ def get_pathlines(mf6_path, mp7_path):
         .tt
     )
 
+    # add markercolor column, color-coding by layer for plots
+    mp7pl["mc"] = mp7pl.apply(
+        lambda row: "green" if row.k == 1 else "yellow" if row.k == 2 else "red", axis=1
+    )
+
     return mf6pl, mp7pl
 
 
@@ -588,26 +613,38 @@ def get_pathlines(mf6_path, mp7_path):
 colordest = {"well": "red", "river": "blue"}
 
 
-def plot_lines(ax, gwf, data, **kwargs):
+def plot_pathlines(ax, gwf, data, mc_map=None, **kwargs):
     ax.set_aspect("equal")
-    mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
-    mm.plot_grid(lw=0.5, alpha=0.5)
+    pl = flopy.plot.PlotMapView(model=gwf, ax=ax)
+    pl.plot_grid(lw=0.5, alpha=0.5)
+
     for dest in ["well", "river"]:
         label = None
         if "colordest" in kwargs:
             color = kwargs["colordest"][dest]
-            label = "captured by " + dest
+            label = "Captured by " + dest
         elif "color" in kwargs:
             color = kwargs["color"]
         else:
             color = "blue"
-        mm.plot_pathline(
-            data[data.dest == dest],
-            layer="all",
-            colors=[color],
-            label=label,
-            linewidth=0.5,
-        )
+        d = data[data.dest == dest]
+        if mc_map:
+            for k in [1, 2, 3]:
+                pl.plot_pathline(
+                    d,
+                    colors=[color],
+                    layer=k,
+                    label=label,
+                    linewidth=0.5,
+                    marker="o",
+                    markercolor=mc_map[k],
+                    markersize=1,
+                    alpha=0.25,
+                )
+        else:
+            pl.plot_pathline(
+                d, layer="all", colors=[color], label=label, linewidth=0.5, alpha=0.25
+            )
 
 
 def plot_points(ax, gwf, data, **kwargs):
@@ -618,7 +655,7 @@ def plot_points(ax, gwf, data, **kwargs):
         pts = []
         for dest in ["well", "river"]:
             color = kwargs["colordest"][dest]
-            label = "captured by " + dest
+            label = "Captured by " + dest
             pdata = data[data.dest == dest]
             pts.append(
                 ax.scatter(
@@ -634,9 +671,9 @@ def plot_points(ax, gwf, data, **kwargs):
         return ax.scatter(data["x"], data["y"], s=1, c=data["tt"])
 
 
-def plot_grid(gwf, head=False, title=None, idx=0):
+def plot_grid(gwf, title, head=False):
     with styles.USGSPlot():
-        fig = plt.figure(figsize=(6, 6))
+        fig = plt.figure(figsize=(7, 7))
         fig.tight_layout()
         ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pmv = flopy.plot.PlotMapView(gwf, ax=ax)
@@ -655,23 +692,134 @@ def plot_grid(gwf, head=False, title=None, idx=0):
             loc="upper left",
         )
         if title:
-            styles.heading(ax, heading=f" {title}", idx=idx)
+            styles.heading(ax, heading=title)
         if plot_show:
             plt.show()
         if plot_save:
             fig.savefig(figs_path / f"{sim_name}-grid{'-head' if head else ''}.png")
 
 
-def plot_pathlines(gwf, mf6pl, mp7pl, idx):
+def plot_1a_pathpoints(gwf, mf6pl, mp7pl, title):
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(6, 6))
-        styles.heading(
-            axes[0][0], heading=" Pathlines, colored by destination", idx=idx
+        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(7, 7))
+        styles.heading(axes[0], heading=title)
+        mc_map = {1: "green", 2: "yellow", 3: "red"}
+        plot_pathlines(axes[0], gwf, mf6pl[mf6pl.subprob == "A"], mc_map=mc_map)
+        plot_pathlines(axes[1], gwf, mp7pl[mp7pl.subprob == "A"], mc_map=mc_map)
+        axes[0].set_xlabel("MODFLOW 6 PRT")
+        axes[1].set_xlabel("MODPATH 7")
+        axes[0].legend(
+            title="EXPLANATION",
+            handles=[
+                Line2D(
+                    [0], [0], marker="o", markersize=10, markerfacecolor="green", color="w", lw=4, label="Layer 1"
+                ),
+                Line2D(
+                    [0], [0], marker="o", markersize=10, markerfacecolor="gold", color="w", lw=4, label="Layer 2"
+                ),
+                Line2D(
+                    [0], [0], marker="o", markersize=10, markerfacecolor="red", color="w", lw=4, label="Layer 3"
+                ),
+            ],
+            bbox_to_anchor=(1.27, -0.1),
         )
-        plot_lines(axes[0][0], gwf, mf6pl[mf6pl.subprob == "A"], colordest=colordest)
-        plot_lines(axes[1][0], gwf, mf6pl[mf6pl.subprob == "B"], colordest=colordest)
-        plot_lines(axes[0][1], gwf, mp7pl[mp7pl.subprob == "A"], colordest=colordest)
-        plot_lines(axes[1][1], gwf, mp7pl[mp7pl.subprob == "B"], colordest=colordest)
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(figs_path / f"{sim_name}-paths-layer.png")
+
+
+def plot_1a_pathpoints_3d(gwf, pathlines, title):
+    from flopy.export.vtk import Vtk
+    import pyvista as pv
+
+    pv.set_plot_theme("document")
+
+    axes = pv.Axes(show_actor=False, actor_scale=2.0, line_width=5)
+
+    vert_exag = 10
+    pathlines = pathlines[pathlines.particlegroup == 1].to_records(index=False)
+    pathlines["z"] = pathlines["z"] * vert_exag
+
+    vtk = Vtk(model=gwf, binary=False, vertical_exageration=vert_exag, smooth=False)
+    vtk.add_model(gwf)
+    gwf_mesh = vtk.to_pyvista()
+    prt_mesh = pv.PolyData(np.array(tuple(map(tuple, pathlines[["x", "y", "z"]]))))
+    riv_mesh = pv.Box(
+        bounds=[
+            gwf.modelgrid.extent[1] - delc,
+            gwf.modelgrid.extent[1],
+            gwf.modelgrid.extent[2],
+            gwf.modelgrid.extent[3],
+            220 * vert_exag,
+            gwf.output.head().get_data()[(0, 0, ncol - 1)] * vert_exag,
+        ]
+    )
+    wel_mesh = pv.Box(bounds=(4500, 5000, 5000, 5500, 0, 200 * vert_exag))
+    bed_mesh = pv.Box(
+        bounds=[
+            gwf.modelgrid.extent[0],
+            gwf.modelgrid.extent[1],
+            gwf.modelgrid.extent[2],
+            gwf.modelgrid.extent[3],
+            200 * vert_exag,
+            220 * vert_exag,
+        ]
+    )
+    gwf_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    gwf_mesh.rotate_y(-20, point=axes.origin, inplace=True)
+    gwf_mesh.rotate_x(20, point=axes.origin, inplace=True)
+    prt_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    prt_mesh.rotate_y(-20, point=axes.origin, inplace=True)
+    prt_mesh.rotate_x(20, point=axes.origin, inplace=True)
+    riv_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    riv_mesh.rotate_y(-20, point=axes.origin, inplace=True)
+    riv_mesh.rotate_x(20, point=axes.origin, inplace=True)
+    wel_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    wel_mesh.rotate_y(-20, point=axes.origin, inplace=True)
+    wel_mesh.rotate_x(20, point=axes.origin, inplace=True)
+    bed_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    bed_mesh.rotate_y(-20, point=axes.origin, inplace=True)
+    bed_mesh.rotate_x(20, point=axes.origin, inplace=True)
+
+    p = pv.Plotter(window_size=[500, 500])
+    p.add_title(title, font_size=7)
+    p.add_mesh(gwf_mesh, opacity=0.1, style="wireframe")
+    p.add_mesh(prt_mesh, scalars=pathlines.k.ravel(), cmap=["green", "gold", "red"])
+    p.add_mesh(riv_mesh, color="teal", opacity=0.2)
+    p.add_mesh(wel_mesh, color="red", opacity=0.2)
+    p.add_mesh(bed_mesh, color="tan", opacity=0.1)
+    p.remove_scalar_bar()
+    p.add_legend(
+        labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
+        bcolor="white",
+        face="r",
+        size=(0.1, 0.1)
+    )
+    
+    if plot_save:
+        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
+    if plot_show:
+        p.camera.zoom(1.3)
+        p.show()
+
+
+def plot_all_pathlines(gwf, mf6pl, mp7pl, title):
+    with styles.USGSPlot():
+        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(7, 7))
+        styles.heading(axes[0][0], heading=title)
+        plot_pathlines(
+            axes[0][0], gwf, mf6pl[mf6pl.subprob == "A"], colordest=colordest
+        )
+        plot_pathlines(
+            axes[1][0], gwf, mf6pl[mf6pl.subprob == "B"], colordest=colordest
+        )
+        plot_pathlines(
+            axes[0][1], gwf, mp7pl[mp7pl.subprob == "A"], colordest=colordest
+        )
+        plot_pathlines(
+            axes[1][1], gwf, mp7pl[mp7pl.subprob == "B"], colordest=colordest
+        )
         plt.subplots_adjust(hspace=0.1)
         axes[0][0].set_ylabel("1A")
         axes[1][0].set_ylabel("1B")
@@ -693,13 +841,13 @@ def plot_pathlines(gwf, mf6pl, mp7pl, idx):
             fig.savefig(figs_path / f"{sim_name}-paths.png")
 
 
-def plot_release(gwf, mf6pl, mp7pl, idx, color="destination"):
+def plot_all_release_pts(gwf, mf6pl, mp7pl, title, color="destination"):
     mf6sp = mf6pl[mf6pl.ireason == 0]  # release event
     mp7sp = mp7pl[mp7pl.time == 0]
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(6, 6))
+        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(7, 7))
         axes = axes.flatten()
-        styles.heading(axes[0], heading=f" Release points, colored by {color}", idx=idx)
+        styles.heading(axes[0], heading=title)
         kwargs = {}
         if color == "destination":
             kwargs["colordest"] = colordest
@@ -733,7 +881,7 @@ def plot_release(gwf, mf6pl, mp7pl, idx, color="destination"):
             fig.savefig(figs_path / f"{sim_name}-rel-{color}.png")
 
 
-def plot_termination(gwf, mf6pl, mp7pl, idx, color="destination"):
+def plot_all_discharge_pts(gwf, mf6pl, mp7pl, title, color="destination"):
     mf6ep = mf6pl[mf6pl.ireason == 3]  # termination event
     mp7ep = (
         mp7pl.sort_values("time")
@@ -741,11 +889,9 @@ def plot_termination(gwf, mf6pl, mp7pl, idx, color="destination"):
         .tail(1)
     )
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(6, 6))
+        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(7, 7))
         axes = axes.flatten()
-        styles.heading(
-            axes[0], heading=f" Terminating points, colored by {color}", idx=idx
-        )
+        styles.heading(axes[0], heading=title)
         kwargs = {}
         if color == "destination":
             kwargs["colordest"] = colordest
@@ -789,12 +935,47 @@ def plot_all(sim):
     )
 
     # plot the results
-    plot_grid(gwf, title="Boundary Conditions", idx=0)
-    plot_grid(gwf, head=True, title="Simulated Head", idx=1)
-    plot_pathlines(gwf, mf6pathlines, mp7pathlines, idx=2)
-    plot_release(gwf, mf6pathlines, mp7pathlines, idx=3, color="destination")
-    plot_release(gwf, mf6pathlines, mp7pathlines, idx=4, color="travel-time")
-    plot_termination(gwf, mf6pathlines, mp7pathlines, idx=5, color="destination")
+    plot_grid(gwf, title="Boundary Conditions")
+    plot_grid(gwf, title="Simulated Head", head=True)
+    plot_1a_pathpoints(
+        gwf,
+        mf6pathlines,
+        mp7pathlines,
+        title="Pathlines and points (1A), colored by layer",
+    )
+    plot_1a_pathpoints_3d(gwf, mp7pathlines, title="Path points (1A),\ncolored by layer")
+    plot_all_pathlines(
+        gwf, mf6pathlines, mp7pathlines, title="Pathlines, colored by destination"
+    )
+    # skip cross section, flopy intersections are slow
+    # plot_all_pathlines(
+    #     gwf,
+    #     mf6pathlines,
+    #     mp7pathlines,
+    #     title="Pathlines, colored by destination (cross-section, row 4)",
+    #     xc_line={"row": 4},
+    # )
+    plot_all_release_pts(
+        gwf,
+        mf6pathlines,
+        mp7pathlines,
+        title="Release points, colored by destination",
+        color="destination",
+    )
+    plot_all_release_pts(
+        gwf,
+        mf6pathlines,
+        mp7pathlines,
+        title="Release points, colored by travel-time",
+        color="travel-time",
+    )
+    plot_all_discharge_pts(
+        gwf,
+        mf6pathlines,
+        mp7pathlines,
+        title="Terminating points, colored by destination",
+        color="destination",
+    )
 
 
 # -
