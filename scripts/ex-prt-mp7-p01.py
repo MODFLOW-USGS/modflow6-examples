@@ -38,6 +38,7 @@ import numpy as np
 import pandas as pd
 from flopy.plot.styles import styles
 import matplotlib as mpl
+from matplotlib.lines import Line2D
 from modflow_devtools.misc import get_env, timed
 
 # Example name and workspace paths. If this example is running
@@ -242,7 +243,7 @@ p = flopy.modpath.LRCParticleData(subdivisiondata=[sd], lrcregions=[locs1b])
 # Get well and river cell numbers
 nodes = {}
 k, i, j = wel_loc
-nodes["well"] = ncol * (nrow * k + i) + j
+nodes["well"] = [ncol * (nrow * k + i) + j]
 nodes["river"] = []
 for rivspec in rd:
     k, i, j = rivspec[0]
@@ -356,8 +357,15 @@ def build_model(example_name):
         botm=botm,
     )
 
-    # Instantiate the MODFLOW 6 prt model input package
-    flopy.mf6.ModflowPrtmip(prt, pname="mip", porosity=porosity)
+    # Instantiate the MODFLOW 6 prt model input package.
+    # Assign a different zone number to active cells, well cells, and river cells.
+    # This makes it easier to determine where particles terminate.
+    izone = np.zeros((nlay, nrow, ncol), dtype=int)
+    for l, r, c in gwf.modelgrid.get_lrc(nodes["well"]):
+        izone[l, r, c] = 1
+    for l, r, c in gwf.modelgrid.get_lrc(nodes["river"]):
+        izone[l, r, c] = 2
+    flopy.mf6.ModflowPrtmip(prt, pname="mip", porosity=porosity, izone=izone)
 
     # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1A
     flopy.mf6.ModflowPrtprp(
@@ -459,7 +467,7 @@ def build_model(example_name):
         stoptimeoption="extend",
         timepointdata=[500, 1000.0],
         zonedataoption="on",
-        zones=zones,
+        zones=izone,
         particlegroups=[pg1a, pg1b],
     )
 
@@ -485,91 +493,85 @@ def run_model(sim, mp7, silent=True):
 # -
 
 
-# Define functions to load pathline and endpoint data from MODFLOW 6 PRT's particle track CSV files. Note that unlike MODPATH 7, MODFLOW 6 PRT does not make a distinction between pathline and endpoint output files &mdash; all pathline data is saved to track files, and endpoints are computed dynamically.
+# Define a function to load pathline data from MODFLOW 6 PRT and MODPATH 7 pathline files.
 
 # +
-from flopy.plot.plotutil import to_mp7_endpoints, to_mp7_pathlines
 
 
-def load_mf6pathlines(p):
-    pls = pd.read_csv(p)
-    mp7_pls = to_mp7_pathlines(pls)
-    mp7_pls_a = mp7_pls[mp7_pls["particlegroup"] == 1]
-    mp7_pls_b = mp7_pls[mp7_pls["particlegroup"] == 2]
-    mp7_eps = to_mp7_endpoints(pls)
-    mp7_eps_a = mp7_eps[mp7_eps["particlegroup"] == 1]
-    mp7_eps_b = mp7_eps[mp7_eps["particlegroup"] == 2]
+def get_pathlines(mf6_path, mp7_path):
+    # load mf6 pathlines
+    mf6pl = pd.read_csv(mf6_path)
 
-    # determine which particles ended up in which capture area
-    # (for now, use x coordinate of endpoint, todo: use izone)
-    wel_pids_a = mp7_eps_a[mp7_eps_a["x"] <= 9000]["particleid"].unique()
-    riv_pids_a = mp7_eps_a[mp7_eps_a["x"] > 9000]["particleid"].unique()
-    wel_pids_b = mp7_eps_b[mp7_eps_b["x"] <= 9000]["particleid"].unique()
-    riv_pids_b = mp7_eps_b[mp7_eps_b["x"] > 9000]["particleid"].unique()
+    # index by particle group and particle ID
+    mf6pl.set_index(["iprp", "irpt"], drop=False, inplace=True)
 
-    # return a dict keyed by subproblem (particle group) and capture area
-    return {
-        ("1A", "well"): mp7_pls_a[mp7_pls_a["particleid"].isin(wel_pids_a)],
-        ("1A", "river"): mp7_pls_a[mp7_pls_a["particleid"].isin(riv_pids_a)],
-        ("1A", "all"): mp7_pls_a,
-        ("1B", "well"): mp7_pls_b[(mp7_pls_b["particleid"].isin(wel_pids_b))],
-        ("1B", "river"): mp7_pls_b[(mp7_pls_b["particleid"].isin(riv_pids_b))],
-        ("1B", "all"): mp7_pls_b,
-    }
+    # add column mapping particle group to subproblem name (1: A, 2: B)
+    mf6pl["subprob"] = mf6pl.apply(lambda row: "A" if row.iprp == 1 else "B", axis=1)
 
-
-def load_mf6endpoints(p):
-    pls = pd.read_csv(p)
-    mp7_eps = to_mp7_endpoints(pls)
-    mp7_eps_a = mp7_eps[mp7_eps["particlegroup"] == 1]
-    mp7_eps_b = mp7_eps[mp7_eps["particlegroup"] == 2]
+    # add release time and termination time columns
+    mf6pl["t0"] = (
+        mf6pl.groupby(level=["iprp", "irpt"])
+        .apply(lambda x: x.t.min())
+        .to_frame(name="t0")
+        .t0
+    )
+    mf6pl["tt"] = (
+        mf6pl.groupby(level=["iprp", "irpt"])
+        .apply(lambda x: x.t.max())
+        .to_frame(name="tt")
+        .tt
+    )
 
     # determine which particles ended up in which capture area
     # (for now, use x coordinate of endpoint, todo: use izone)
-    wel_pids_a = mp7_eps_a[mp7_eps_a["x"] <= 9000]["particleid"].unique()
-    riv_pids_a = mp7_eps_a[mp7_eps_a["x"] > 9000]["particleid"].unique()
-    wel_pids_b = mp7_eps_b[mp7_eps_b["x"] <= 9000]["particleid"].unique()
-    riv_pids_b = mp7_eps_b[mp7_eps_b["x"] > 9000]["particleid"].unique()
+    mf6pl["destzone"] = mf6pl[mf6pl.istatus > 1].izone
+    mf6pl["dest"] = mf6pl.apply(
+        lambda row: (
+            "well" if row.destzone == 1 else "river" if row.destzone == 2 else pd.NA
+        ),
+        axis=1,
+    )
 
-    # return a dict keyed by subproblem (particle group) and capture area
-    return {
-        ("1A", "well"): mp7_eps_a[mp7_eps_a["particleid"].isin(wel_pids_a)],
-        ("1A", "river"): mp7_eps_a[mp7_eps_a["particleid"].isin(riv_pids_a)],
-        ("1A", "all"): mp7_eps_a,
-        ("1B", "well"): mp7_eps_b[mp7_eps_b["particleid"].isin(wel_pids_b)],
-        ("1B", "river"): mp7_eps_b[mp7_eps_b["particleid"].isin(riv_pids_b)],
-        ("1B", "all"): mp7_eps_b,
-    }
+    # load mp7 pathlines, letting flopy determine capture areas
+    mp7plf = flopy.utils.PathlineFile(mp7_path)
+    mp7pl_wel = pd.DataFrame(
+        mp7plf.get_destination_pathline_data(nodes["well"], to_recarray=True)
+    )
+    mp7pl_wel["destzone"] = 1
+    mp7pl_wel["dest"] = "well"
+    mp7pl_riv = pd.DataFrame(
+        mp7plf.get_destination_pathline_data(nodes["river"], to_recarray=True)
+    )
+    mp7pl_riv["destzone"] = 2
+    mp7pl_riv["dest"] = "river"
+    mp7pl = pd.concat([mp7pl_wel, mp7pl_riv])
 
+    # index by particle group and particle ID
+    mp7pl.set_index(["particlegroup", "sequencenumber"], drop=False, inplace=True)
 
-def load_mp7pathlines(plf):
-    mp7pathlines = {}
-    for dest in ["well", "river"]:
-        pdata = plf.get_destination_pathline_data(nodes[dest], to_recarray=True)
-        for pgidx, subprob in enumerate(["1A", "1B"]):
-            mp7pathlines[(subprob, dest)] = np.array(
-                [point for point in pdata if point["particlegroup"] == pgidx],
-                dtype=pdata.dtype,
-            )
+    # add column mapping particle group to subproblem name (1: A, 2: B)
+    mp7pl["subprob"] = mp7pl.apply(
+        lambda row: (
+            "A" if row.particlegroup == 0 else "B" if row.particlegroup == 1 else pd.NA
+        ),
+        axis=1,
+    )
 
-    return mp7pathlines
+    # add release time and termination time columns
+    mp7pl["t0"] = (
+        mp7pl.groupby(level=["particlegroup", "sequencenumber"])
+        .apply(lambda x: x.time.min())
+        .to_frame(name="t0")
+        .t0
+    )
+    mp7pl["tt"] = (
+        mp7pl.groupby(level=["particlegroup", "sequencenumber"])
+        .apply(lambda x: x.time.max())
+        .to_frame(name="tt")
+        .tt
+    )
 
-
-def load_mp7endpointdata(epf):
-    mp7endpointdata = {}
-    for dest in ["well", "river"]:
-        epd = epf.get_destination_endpoint_data(dest_cells=nodes[dest])
-        for pgidx, subprob in enumerate(["1A", "1B"]):
-            mp7endpointdata[(subprob, dest)] = np.array(
-                [point for point in epd if point["particlegroup"] == pgidx],
-                dtype=epd.dtype,
-            )
-    for subprob in ["1A", "1B"]:
-        mp7endpointdata[(subprob, "all")] = np.concatenate(
-            (mp7endpointdata[(subprob, "well")], mp7endpointdata[(subprob, "river")])
-        )
-
-    return mp7endpointdata
+    return mf6pl, mp7pl
 
 
 # -
@@ -581,228 +583,216 @@ def load_mp7endpointdata(epf):
 
 # +
 # Pathline and starting point colors by capture destination
-colordest = dict.fromkeys(["well", "river"], "blue")
-colordest["well"] = "red"
+colordest = {"well": "red", "river": "blue"}
 
 
-def plot_pathlines(ax, gwf, pathlines, subprob, plottitle=None, legend=False, **kwargs):
+def plot_lines(ax, gwf, data, **kwargs):
     ax.set_aspect("equal")
     mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
-    mm.plot_grid(lw=0.5)
-    if plottitle:
-        ax.set_title(plottitle, fontsize=12)
-
+    mm.plot_grid(lw=0.5, alpha=0.5)
     for dest in ["well", "river"]:
         label = None
         if "colordest" in kwargs:
-            # Use colordest to color pathlines by capture destination
             color = kwargs["colordest"][dest]
             label = "captured by " + dest
         elif "color" in kwargs:
-            # Use the specified color for all pathlines
             color = kwargs["color"]
         else:
-            # Use a default color for all pathlines
             color = "blue"
         mm.plot_pathline(
-            pathlines[(subprob, dest)], layer="all", colors=[color], label=label, linewidth=0.2
+            data[data.dest == dest],
+            layer="all",
+            colors=[color],
+            label=label,
+            linewidth=0.5,
         )
-        if legend and label != None:
-            ax.legend(loc="lower right", bbox_to_anchor=(0.3, -0.3))
 
 
-def plot_endpoints(fig, ax, gwf, pointdata, subprob, plottitle, starting, legend=False, **kwargs):
-    ax.set_title(plottitle, fontsize=12)
+def plot_points(ax, gwf, data, **kwargs):
     ax.set_aspect("equal")
     mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
-    mm.plot_grid(lw=0.5)
-    startingpoint_markersize = 2
+    mm.plot_grid(lw=0.5, alpha=0.5)
     if "colordest" in kwargs:
+        pts = []
         for dest in ["well", "river"]:
             color = kwargs["colordest"][dest]
             label = "captured by " + dest
-            if "PRT" in plottitle:
+            pdata = data[data.dest == dest]
+            pts.append(
                 ax.scatter(
-                    pointdata[(subprob, dest)]["x0" if starting else "x"],
-                    pointdata[(subprob, dest)]["y0" if starting else "y"],
-                    s=startingpoint_markersize
-                    ** 2,  # todo: why does flopy plot_endpoint square s?
+                    pdata["x"],
+                    pdata["y"],
+                    s=3,
                     color=color,
                     label=label,
                 )
-            else:
-                mm.plot_endpoint(
-                    pointdata[(subprob, dest)],
-                    direction="starting" if starting else "ending",
-                    s=startingpoint_markersize,
-                    color=color,
-                    label=label,
-                )
-            if legend:
-                ax.legend(loc="lower right", bbox_to_anchor=(0.3, -0.3))
+            )
+        return pts
     else:
-        if "PRT" in plottitle:
-            pts = ax.scatter(
-                pointdata[(subprob, "all")]["x0" if starting else "x"],
-                pointdata[(subprob, "all")]["y0" if starting else "y"],
-                s=startingpoint_markersize
-                ** 2,  # todo: why does flopy plot_endpoint square s?
-                c=pointdata[(subprob, "all")]["time"],
-            )
-            cax = fig.add_axes([0.05, 0.2, 0.9, 0.01])
-            cb = plt.colorbar(pts, cax=cax, orientation='horizontal')
-            cb.set_label("Travel time")
-        else:
-            mm.plot_endpoint(
-                pointdata[(subprob, "all")],
-                direction="starting" if starting else "ending",
-                s=startingpoint_markersize,
-            )
+        return ax.scatter(data["x"], data["y"], s=1, c=data["tt"])
 
 
-def plot_grid(gwf):
-    fig = plt.figure(figsize=(8, 8))
-    fig.tight_layout()
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    pmv = flopy.plot.PlotMapView(gwf, ax=ax)
-    cb = pmv.plot_array(gwf.output.head().get_data(), alpha=0.2)
-    cbar = plt.colorbar(cb, shrink=0.5)
-    cbar.ax.set_xlabel(r"Head, ($m$)")
-    pmv.plot_bc("WEL", plotAll=True)
-    pmv.plot_bc("RIV", plotAll=True)
-    pmv.plot_grid(lw=0.5)
-    ax.legend(
-        handles=[
-            mpl.patches.Patch(color="red", label="Well"),
-            mpl.patches.Patch(color="teal", label="River"),
-        ],
-        loc="upper left",
-    )
-    plt.suptitle(t="Example 1 head and boundary conditions", fontsize=14, ha="center")
-    if plot_show:
-        plt.show()
-    if plot_save:
-        fig.savefig(figs_path / f"{sim_name}-grid.png")
-
-
-def plot_paths(gwf, mf6pl, mp7pl):
+def plot_grid(gwf, head=False, title=None, idx=0):
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(8, 8))
-        plt.suptitle(
-            t="Example 1 pathlines, colored by destination",
-            fontsize=14,
+        fig = plt.figure(figsize=(6, 6))
+        fig.tight_layout()
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        pmv = flopy.plot.PlotMapView(gwf, ax=ax)
+        if head:
+            cb = pmv.plot_array(gwf.output.head().get_data(), alpha=0.25)
+            cbar = plt.colorbar(cb, shrink=0.5, pad=0.1)
+            cbar.ax.set_xlabel(r"Head ($m$)")
+        pmv.plot_bc("WEL", plotAll=True)
+        pmv.plot_bc("RIV", plotAll=True)
+        pmv.plot_grid(lw=0.5, alpha=0.5)
+        ax.legend(
+            handles=[
+                mpl.patches.Patch(color="red", label="Well"),
+                mpl.patches.Patch(color="teal", label="River"),
+            ],
+            loc="upper left",
         )
-        axes = axes.flatten()
-        plot_pathlines(axes[0], gwf, mf6pl, "1A", "MODFLOW 6 PRT", colordest=colordest)
-        plot_pathlines(axes[1], gwf, mp7pl, "1A", "MODPATH 7", colordest=colordest)
-        plot_pathlines(axes[2], gwf, mf6pl, "1B", legend=True, colordest=colordest)
-        plot_pathlines(axes[3], gwf, mp7pl, "1B", colordest=colordest)
+        if title:
+            styles.heading(ax, heading=f" {title}", idx=idx)
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(figs_path / f"{sim_name}-grid.png")
+
+
+def plot_pathlines(gwf, mf6pl, mp7pl, idx):
+    with styles.USGSPlot():
+        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(6, 6))
+        styles.heading(
+            axes[0][0], heading=" Pathlines, colored by destination", idx=idx
+        )
+        plot_lines(axes[0][0], gwf, mf6pl[mf6pl.subprob == "A"], colordest=colordest)
+        plot_lines(axes[1][0], gwf, mf6pl[mf6pl.subprob == "B"], colordest=colordest)
+        plot_lines(axes[0][1], gwf, mp7pl[mp7pl.subprob == "A"], colordest=colordest)
+        plot_lines(axes[1][1], gwf, mp7pl[mp7pl.subprob == "B"], colordest=colordest)
         plt.subplots_adjust(hspace=0.1)
-        axes[0].set_ylabel("1A")
-        axes[2].set_ylabel("1B")
+        axes[0][0].set_ylabel("1A")
+        axes[1][0].set_ylabel("1B")
+        axes[1][0].set_xlabel("MODFLOW 6 PRT")
+        axes[1][1].set_xlabel("MODPATH 7")
+        styles.graph_legend(
+            handles=[
+                Line2D([0], [0], color="red", lw=4, label="Well"),
+                Line2D([0], [0], color="blue", lw=4, label="River"),
+            ],
+            bbox_to_anchor=(0.77, 0.09),
+            bbox_transform=fig.transFigure,
+            ncol=2,
+        )
+        plt.subplots_adjust(bottom=0.15)
         if plot_show:
             plt.show()
         if plot_save:
             fig.savefig(figs_path / f"{sim_name}-paths.png")
 
 
-def plot_release(gwf, mf6ep, mp7ep):
+def plot_release(gwf, mf6pl, mp7pl, idx, color="destination"):
+    mf6sp = mf6pl[mf6pl.ireason == 0]  # release event
+    mp7sp = mp7pl[mp7pl.time == 0]
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(8, 8), constrained_layout=True)
-        plt.suptitle(
-            t="Example 1B release points, colored by destination",
-            fontsize=14,
-            y=0.8
-        )
-        plt.tight_layout()
+        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(6, 6))
         axes = axes.flatten()
-        plot_endpoints(
-            fig, axes[0], gwf, mf6ep, "1B", "MODFLOW 6 PRT", colordest=colordest, starting=True, legend=True
-        )
-        plot_endpoints(
-            fig, axes[1], gwf, mp7ep, "1B", "MODPATH 7", colordest=colordest, starting=True
-        )
-        
+        styles.heading(axes[0], heading=f" Release points, colored by {color}", idx=idx)
+        kwargs = {}
+        if color == "destination":
+            kwargs["colordest"] = colordest
+        plot_points(axes[0], gwf, mf6sp[mf6sp.subprob == "A"], **kwargs)
+        plot_points(axes[1], gwf, mp7sp[mp7sp.subprob == "A"], **kwargs)
+        plot_points(axes[2], gwf, mf6sp[mf6sp.subprob == "B"], **kwargs)
+        pts = plot_points(axes[3], gwf, mp7sp[mp7sp.subprob == "B"], **kwargs)
+        plt.subplots_adjust(hspace=0.1)
+        axes[0].set_ylabel("1A")
+        axes[2].set_ylabel("1B")
+        axes[2].set_xlabel("MODFLOW 6 PRT")
+        axes[3].set_xlabel("MODPATH 7")
+        if color == "destination":
+            styles.graph_legend(
+                handles=[
+                    Line2D([0], [0], color="red", lw=4, label="Well"),
+                    Line2D([0], [0], color="blue", lw=4, label="River"),
+                ],
+                bbox_to_anchor=(0.77, 0.09),
+                bbox_transform=fig.transFigure,
+                ncol=2,
+            )
+        else:
+            cax = fig.add_axes([0.05, 0.06, 0.9, 0.01])
+            cb = plt.colorbar(pts, cax=cax, orientation="horizontal")
+            cb.set_label("Travel time")
+        plt.subplots_adjust(bottom=0.15)
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(figs_path / f"{sim_name}-rel-capt.png")
-
-    with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(8, 8))
-        plt.suptitle(
-            t="Example 1B release points, colored by travel time",
-            fontsize=14,
-            y=0.8
-        )
-        plt.tight_layout()
-        axes = axes.flatten()
-        plot_endpoints(fig, axes[0], gwf, mf6ep, "1B", "MODFLOW 6 PRT", starting=True, legend=True)
-        plot_endpoints(fig, axes[1], gwf, mp7ep, "1B", "MODPATH 7", starting=True)
-        if plot_show:
-            plt.show()
-        if plot_save:
-            fig.savefig(figs_path / f"{sim_name}-rel-tt.png")
+            fig.savefig(figs_path / f"{sim_name}-rel-{color}.png")
 
 
-def plot_termination(gwf, mf6ep, mp7ep):
-    with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(8, 8))
-        plt.suptitle(
-            t="Example 1B terminating points, colored by destination",
-            fontsize=14,
-            y=0.8
-        )
-        axes = axes.flatten()
-        plot_endpoints(
-            fig,
-            axes[0],
-            gwf,
-            mf6ep,
-            "1B",
-            "MODFLOW 6 PRT",
-            colordest=colordest,
-            starting=False,
-            legend=True
-        )
-        plot_endpoints(
-            fig, axes[1], gwf, mp7ep, "1B", "MODPATH 7", colordest=colordest, starting=False
-        )
-        if plot_show:
-            plt.show()
-        if plot_save:
-            fig.savefig(figs_path / f"{sim_name}-term-capt.png")
-
-    with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(8, 8))
-        plt.suptitle(
-            t="Example 1B terminating points, colored by travel time",
-            fontsize=14,
-            y=0.8
-        )
-        axes = axes.flatten()
-        plot_endpoints(fig, axes[0], gwf, mf6ep, "1B", "MODFLOW 6 PRT", starting=False, legend=True)
-        plot_endpoints(fig, axes[1], gwf, mp7ep, "1B", "MODPATH 7", starting=False)
-        if plot_show:
-            plt.show()
-        if plot_save:
-            fig.savefig(figs_path / f"{sim_name}-term-tt.png")
-
-
-def plot_results(sim):
-    mf6pathlines = load_mf6pathlines(mf6_ws / trackcsvfile_prt)
-    mf6endpoints = load_mf6endpoints(mf6_ws / trackcsvfile_prt)
-    mp7pathlines = load_mp7pathlines(
-        flopy.utils.PathlineFile(mp7_ws / f"{mp7_name}.mppth")
+def plot_termination(gwf, mf6pl, mp7pl, idx, color="destination"):
+    mf6ep = mf6pl[mf6pl.ireason == 3]  # termination event
+    mp7ep = (
+        mp7pl.sort_values("time")
+        .groupby(level=["particlegroup", "sequencenumber"])
+        .tail(1)
     )
-    mp7endpoints = load_mp7endpointdata(
-        flopy.utils.EndpointFile(mp7_ws / f"{mp7_name}.mpend")
-    )
+    with styles.USGSPlot():
+        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(6, 6))
+        axes = axes.flatten()
+        styles.heading(
+            axes[0], heading=f" Terminating points, colored by {color}", idx=idx
+        )
+        kwargs = {}
+        if color == "destination":
+            kwargs["colordest"] = colordest
+        plot_points(axes[0], gwf, mf6ep[mf6ep.subprob == "A"], **kwargs)
+        plot_points(axes[1], gwf, mp7ep[mp7ep.subprob == "A"], **kwargs)
+        plot_points(axes[2], gwf, mf6ep[mf6ep.subprob == "B"], **kwargs)
+        pts = plot_points(axes[3], gwf, mp7ep[mp7ep.subprob == "B"], **kwargs)
+        axes[0].set_ylabel("1A")
+        axes[2].set_ylabel("1B")
+        axes[2].set_xlabel("MODFLOW 6 PRT")
+        axes[3].set_xlabel("MODPATH 7")
+        if color == "destination":
+            styles.graph_legend(
+                handles=[
+                    Line2D([0], [0], color="red", lw=4, label="Well"),
+                    Line2D([0], [0], color="blue", lw=4, label="River"),
+                ],
+                bbox_to_anchor=(0.77, 0.09),
+                bbox_transform=fig.transFigure,
+                ncol=2,
+            )
+        else:
+            cax = fig.add_axes([0.05, 0.06, 0.9, 0.01])
+            cb = plt.colorbar(pts, cax=cax, orientation="horizontal")
+            cb.set_label("Travel time")
+        plt.subplots_adjust(bottom=0.15)
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(figs_path / f"{sim_name}-term-{color}.png")
+
+
+def plot_all(sim):
+    # get gwf model
     gwf = sim.get_model(gwf_name)
-    plot_grid(gwf)
-    plot_paths(gwf, mf6pathlines, mp7pathlines)
-    plot_release(gwf, mf6endpoints, mp7endpoints)
-    plot_termination(gwf, mf6endpoints, mp7endpoints)
+
+    # get pathlines
+    mf6pathlines, mp7pathlines = get_pathlines(
+        mf6_ws / trackcsvfile_prt,
+        mp7_ws / f"{mp7_name}.mppth",
+    )
+
+    # plot the results
+    plot_grid(gwf, title="Boundary Conditions", idx=0)
+    plot_grid(gwf, head=True, title="Simulated Head", idx=1)
+    plot_pathlines(gwf, mf6pathlines, mp7pathlines, idx=2)
+    plot_release(gwf, mf6pathlines, mp7pathlines, idx=3, color="destination")
+    plot_release(gwf, mf6pathlines, mp7pathlines, idx=4, color="travel-time")
+    plot_termination(gwf, mf6pathlines, mp7pathlines, idx=5, color="destination")
 
 
 # -
@@ -819,7 +809,7 @@ def scenario(silent=True):
     if run:
         run_model(sim, mp7, silent=silent)
     if plot:
-        plot_results(sim)
+        plot_all(sim)
 
 
 # We are now ready to run the example problem. Subproblems 1A and 1B are solved by a single MODFLOW 6 run and a single MODPATH 7 run, so they are included under one "scenario". Each of the two subproblems is represented by its own particle release package (for MODFLOW 6) or particle group (for MODPATH 7).
