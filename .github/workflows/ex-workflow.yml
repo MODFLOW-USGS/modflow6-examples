@@ -140,7 +140,7 @@ jobs:
       - name: Build mf6examples LaTeX document
         working-directory: doc
         if: matrix.python == '3.9'
-        run: build-pdf.sh
+        run: ./build-pdf.sh
 
       - name: Rename and move the LaTeX document
         if: matrix.python == '3.9'
