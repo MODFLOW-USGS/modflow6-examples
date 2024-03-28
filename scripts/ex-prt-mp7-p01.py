@@ -784,7 +784,7 @@ def plot_1a_pathpoints_3d(gwf, pathlines, title):
 
     p = pv.Plotter(window_size=[500, 500])
     p.add_title(title, font_size=7)
-    p.add_mesh(gwf_mesh, opacity=0.1, style="wireframe")
+    p.add_mesh(gwf_mesh, opacity=0.05, style="wireframe")
     p.add_mesh(prt_mesh, scalars=pathlines.k.ravel(), cmap=["green", "gold", "red"])
     p.add_mesh(riv_mesh, color="teal", opacity=0.2)
     p.add_mesh(wel_mesh, color="red", opacity=0.2)
@@ -800,7 +800,7 @@ def plot_1a_pathpoints_3d(gwf, pathlines, title):
     if plot_save:
         p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
     if plot_show:
-        p.camera.zoom(1.3)
+        p.camera.zoom(1.6)
         p.show()
 
 
@@ -873,7 +873,7 @@ def plot_all_release_pts(gwf, mf6pl, mp7pl, title, color="destination"):
         else:
             cax = fig.add_axes([0.05, 0.06, 0.9, 0.01])
             cb = plt.colorbar(pts, cax=cax, orientation="horizontal")
-            cb.set_label("Travel time")
+            cb.set_label("Travel time (days)")
         plt.subplots_adjust(bottom=0.15)
         if plot_show:
             plt.show()
