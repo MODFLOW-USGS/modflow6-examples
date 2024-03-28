@@ -1,0 +1,19 @@
+\section{MODPATH 7 Example 2: Unstructured Grid, Steady-State Flow}
+
+Example 2 simulates the same groundwater flow system as example 1 using MODFLOW-USG and MODFLOW-6 with an unstructured grid to refine the area near the well. The unstructured grid is based on the structured grid used in example 1 (referred to as the base grid). The areal grid is refined around the base-grid location that contains the well in example 1 (row 11, column 10). The base-grid cell containing the well is refined three levels, which means that the unstructured grid contains an 8 x 8 array of 64 cells in place of the original base-grid cell. The grid is smoothed so that it will meet the requirements of MODPATH for unstructured grids. The same areal grid is used for all model layers. The three-layer unstructured grid contains a total of 1,953 cells. The well is located in cell 1,623 in layer 3.
+
+todo plot grid and boundary conditions
+
+In simulation 2A a ring of 16 particles is placed around faces 1 through 4 at the mid- depth of layer 3 and then tracked backward to their recharge locations at the water table. For unstructured grid simulations, particle starting locations are specified by cell number rather than by layer, row, column.
+
+\begin{StandardFigure}
+	{fig:ex-prt-p02-paths}
+	{../figures/ex-prt-p02-paths.png}
+\end{StandardFigure}
+
+Simulation 2B uses backward particle tracking to generate a capture area for the well. A 10 x 10 array of 100 particles is placed on faces 1 through 4 of cell 1,623, which contains the well. An additional 4 x 4 array of 16 particles is placed on the top of the cell. Particles are trackied backward using an endpoint analysis.
+
+\begin{StandardFigure}
+	{fig:ex-prt-p02-endpts}
+	{../figures/ex-prt-p02-endpts.png}
+\end{StandardFigure}
