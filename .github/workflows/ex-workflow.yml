@@ -8,9 +8,10 @@ on:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches:
+    branches: 
       - master
       - develop
+      - PRT
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
@@ -44,7 +45,7 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW nightly-build executables
+      - name: Install MODFLOW 6 development build
         uses: modflowpy/install-modflow-action@v1
         with:
           repo: modflow6-nightly-build
@@ -109,13 +110,20 @@ jobs:
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
 
+      - name: OpenGL workaround
+        if: runner.os == 'Linux'
+        run: |
+          # referenced from https://github.com/pyvista/pyvista/blob/main/.github/workflows/vtk-pre-test.yml#L53
+          pip uninstall -y vtk
+          pip install --extra-index-url https://wheels.vtk.org trame vtk-osmesa
+
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW nightly-build executables
+      - name: Install MODFLOW 6 development build
         uses: modflowpy/install-modflow-action@v1
         with:
           repo: modflow6-nightly-build
@@ -130,35 +138,9 @@ jobs:
         run: python process-scripts.py
 
       - name: Build mf6examples LaTeX document
+        working-directory: doc
         if: matrix.python == '3.9'
-        shell: python
-        run: |
-          import sys
-          import subprocess
-
-          ws = "./doc/"
-          bibnam = "mf6examples"
-          texnam = bibnam + ".tex"
-          args = (
-                  ("pdflatex", texnam),
-                  ("bibtex", bibnam),
-                  ("pdflatex", texnam),
-                  ("pdflatex", texnam),
-                 )
-          for arg in args:
-              print("running command...'{}'".format(" ".join(arg)))
-              with subprocess.Popen(arg,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT,
-                                    cwd=ws) as process:
-                  stdout, stderr = process.communicate(timeout=120)
-                  if stdout:
-                      stdout = stdout.decode()
-                      print(stdout)
-                  if stderr:
-                      print("\n\nError condition occurred:\n")
-                      stderr = stderr.decode()
-                      print(stderr)
+        run: ./build-pdf.sh
 
       - name: Rename and move the LaTeX document
         if: matrix.python == '3.9'
