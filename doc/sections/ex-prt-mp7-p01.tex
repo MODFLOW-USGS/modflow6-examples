@@ -1,19 +1,21 @@
 \section{PRT/MP7 Example 1: Particle Tracking on a Structured Grid with Steady-State Flow}
 
-\subsection{Example description}
-
 This example is reproduced from the MODPATH 7 example problems document \citep{modpath7examples} to demonstrate particle-tracking. MODFLOW 6 PRT and MODPATH 7 simulations are run and compared side-by-side.
 
-The example first runs a groundwater flow (GWF) model simulating steady-state flow on a structured grid. The flow system includes an upper and lower aquifer separated by a confining layer with lower conductivity. The grid has 3 layers, 21 rows, and 20 columns, with square cells 500 feet to a side. The system includes two boundary conditions: a well in layer 3, row 11, column 10, and a river in layer 1, column 20, extending along the rightmost column (21)~(fig~\ref{fig:ex-prt-mp7-p01-config}). 
+\subsection{Example description}
+
+The example first runs a groundwater flow (GWF) model simulating steady-state flow on a structured grid. The flow system includes an upper and lower aquifer separated by a confining layer with lower conductivity. The grid has 3 layers, 21 rows, and 20 columns, with square cells 500 feet to a side. The system includes two boundary conditions: a well in layer 3, row 11, column 10, and a river in layer 1, column 20~(fig~\ref{fig:ex-prt-mp7-p01-config}). Model parameters for this example are summarized in table~\ref{tab:ex-prt-mp7-p01-01}.
 
 \begin{StandardFigure}{
-    Conceptual model, reproduced from the MODPATH 7 examples document.
+    Conceptual model. Image reproduced from the MODPATH 7 examples document.
     }{fig:ex-prt-mp7-p01-config}{../images/ex-prt-mp7-p01-config.png}
 \end{StandardFigure}
 
+\input{../tables/ex-prt-mp7-p01-01.tex}
+
 \subsection{Example Results}
 
-In this example a MODFLOW 6 particle tracking (PRT) model runs in the same simulation as a groundwater flow (GWF) model(fig~\ref{fig:ex-prt-mp7-p01-grid-head}), which provides it with intercell flows via a GWF-PRT model exchange.
+In this example a MODFLOW 6 particle tracking (PRT) model runs in the same simulation as a groundwater flow (GWF) model~(fig~\ref{fig:ex-prt-mp7-p01-grid-head}), which provides it with intercell flows via a GWF-PRT model exchange.
 
 \begin{StandardFigure}{
     Heads simulated by the MODFLOW 6 groundwater flow (GWF) model.

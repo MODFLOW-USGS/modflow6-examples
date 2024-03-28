@@ -712,13 +712,34 @@ def plot_1a_pathpoints(gwf, mf6pl, mp7pl, title):
             title="EXPLANATION",
             handles=[
                 Line2D(
-                    [0], [0], marker="o", markersize=10, markerfacecolor="green", color="w", lw=4, label="Layer 1"
+                    [0],
+                    [0],
+                    marker="o",
+                    markersize=10,
+                    markerfacecolor="green",
+                    color="w",
+                    lw=4,
+                    label="Layer 1",
                 ),
                 Line2D(
-                    [0], [0], marker="o", markersize=10, markerfacecolor="gold", color="w", lw=4, label="Layer 2"
+                    [0],
+                    [0],
+                    marker="o",
+                    markersize=10,
+                    markerfacecolor="gold",
+                    color="w",
+                    lw=4,
+                    label="Layer 2",
                 ),
                 Line2D(
-                    [0], [0], marker="o", markersize=10, markerfacecolor="red", color="w", lw=4, label="Layer 3"
+                    [0],
+                    [0],
+                    marker="o",
+                    markersize=10,
+                    markerfacecolor="red",
+                    color="w",
+                    lw=4,
+                    label="Layer 3",
                 ),
             ],
             bbox_to_anchor=(1.27, -0.1),
@@ -783,24 +804,29 @@ def plot_1a_pathpoints_3d(gwf, pathlines, title):
     bed_mesh.rotate_x(20, point=axes.origin, inplace=True)
 
     p = pv.Plotter(window_size=[500, 500])
-    p.add_title(title, font_size=7)
-    p.add_mesh(gwf_mesh, opacity=0.05, style="wireframe")
-    p.add_mesh(prt_mesh, scalars=pathlines.k.ravel(), cmap=["green", "gold", "red"])
+    p.add_title(title, font_size=5)
+    p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
+    p.add_mesh(
+        prt_mesh,
+        scalars=pathlines.k.ravel(),
+        cmap=["green", "gold", "red"],
+        point_size=2,
+    )
     p.add_mesh(riv_mesh, color="teal", opacity=0.2)
-    p.add_mesh(wel_mesh, color="red", opacity=0.2)
+    p.add_mesh(wel_mesh, color="red", opacity=0.3)
     p.add_mesh(bed_mesh, color="tan", opacity=0.1)
     p.remove_scalar_bar()
     p.add_legend(
         labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
         bcolor="white",
         face="r",
-        size=(0.1, 0.1)
+        size=(0.1, 0.1),
     )
-    
+
     if plot_save:
         p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
     if plot_show:
-        p.camera.zoom(1.6)
+        p.camera.zoom(1.7)
         p.show()
 
 
@@ -943,7 +969,9 @@ def plot_all(sim):
         mp7pathlines,
         title="Pathlines and points (1A), colored by layer",
     )
-    plot_1a_pathpoints_3d(gwf, mp7pathlines, title="Path points (1A),\ncolored by layer")
+    plot_1a_pathpoints_3d(
+        gwf, mp7pathlines, title="Path points (1A),\ncolored by layer"
+    )
     plot_all_pathlines(
         gwf, mf6pathlines, mp7pathlines, title="Pathlines, colored by destination"
     )
