@@ -1,3 +1,5 @@
+# ## Interacting Borehole Heat Exchangers in a Geothermal Setting
+
 #
 # This example was originally published in Al-Khoury et al 2021. The original data was calculated using a finite element (FE) mesh and is used to test the MODFLOW 6 solution of a multi-source configuration of borehole heat exchangers.  Whereas the mesh used in Al-Khoury et al. (2021) calculates temperatures at FE mesh points, this setup uses those mesh points as vertices in a DISV grid.
 
