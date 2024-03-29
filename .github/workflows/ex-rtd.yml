@@ -64,6 +64,7 @@ jobs:
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
 
+      # PyVista doesn't like the default vtk
       - name: OpenGL workaround
         if: runner.os == 'Linux'
         run: |
