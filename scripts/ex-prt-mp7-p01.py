@@ -40,7 +40,6 @@ import pandas as pd
 from flopy.mf6 import MFSimulation
 from flopy.plot.styles import styles
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
 from modflow_devtools.misc import get_env, timed
 
 # Example name and workspace paths. If this example is running
