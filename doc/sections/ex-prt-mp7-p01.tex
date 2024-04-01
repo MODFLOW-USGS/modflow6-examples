@@ -1,6 +1,6 @@
 \section{PRT/MP7 Example 1: Particle Tracking on a Structured Grid with Steady-State Flow}
 
-This example demonstrates particle-tracking by reproducing example problem 1 from the MODPATH 7 example problems document \citep{modpath7examples}, included with the MODPATH 7 distribution\citep{modpath7}.
+This example demonstrates particle-tracking by reproducing example problem 1 from the MODPATH 7\citep{pollock2016modpath7} example problems document \citep{modpath7examples}. While only the MODFLOW 6 PRT solution is shown below, PRT and MODPATH 7 results have been evaluated for agreement.
 
 \subsection{Example description}
 
@@ -23,8 +23,6 @@ In this example a MODFLOW 6 particle tracking (PRT) model runs in the same simul
 \end{StandardFigure}
 
 In subproblem 1A, a line of 21 particles is placed at the water table in layer 1 for column 3, rows 1 through 21. In subproblem 1B, a denser release configuration is used which places a 3 x 3 array of particles on the top face of every cell in layer 1. Both simulations track particles forward to their discharge points.
-
-MODFLOW 6 PRT makes no distinction between simulation modes, instead offering fine-grained control over tracking events, such as particle release, termination, cell-to-cell transitions, timesteps, and timeseries. In this example all tracking events are enabled, and a custom timeseries is provided to match the 1000-day timeseries interval used for MODPATH 7.
 
 Subproblem 1A path points on a 1000-day time interval are visualized in 2D~(fig~\ref{fig:ex-prt-mp7-p01-paths-layer}) and 3D~(fig~\ref{fig:ex-prt-mp7-p01-paths-3d}).
 

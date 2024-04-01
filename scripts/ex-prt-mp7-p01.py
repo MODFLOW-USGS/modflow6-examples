@@ -644,7 +644,7 @@ def plot_pathlines(ax, gwf, data, mc_map=None, **kwargs):
         if mc_map:
             for k in [1, 2, 3]:
                 pl.plot_pathline(
-                    d,
+                    d[d.ireason != 1],
                     colors=[color],
                     layer=k,
                     label=label,
@@ -652,7 +652,7 @@ def plot_pathlines(ax, gwf, data, mc_map=None, **kwargs):
                     linestyle="None",
                     marker="o",
                     markercolor=mc_map[k],
-                    markersize=1,
+                    markersize=3,
                     alpha=0.5,
                 )
         pl.plot_pathline(
@@ -729,7 +729,7 @@ def plot_1a_pathpoints(gwf, mf6pl, title=None):
 
         mc_map = {1: "green", 2: "gold", 3: "red"}
         plot_pathlines(
-            ax, gwf, mf6pl[(mf6pl.subprob == "A") & (mf6pl.ireason != 1)], mc_map=mc_map
+            ax, gwf, mf6pl[mf6pl.subprob == "A"], mc_map=mc_map
         )
 
         ax.legend(
