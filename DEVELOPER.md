@@ -260,7 +260,7 @@ GitHub Actions automatically creates a new release whenever code is merged into 
 
 1. Run the examples to generate model input files, disabling model runs and plots &mdash; e.g. from the `autotest/` directory, run `pytest -v -n auto test_scripts.py`. **Note**: if model runs are enabled, the size of the `examples/` directory will balloon from double-digit MB to several GB. We only distribute input files, not output files.
 2. Generate notebooks and tables &mdash; from the `scripts/` directory, run `process-scripts.py` to generate LaTeX tables for the documentation PDF from specially formatted code/comments in the example scripts.
-3. Build the documentation PDF with multiple passes from e.g. `pdflatex` and `bibtex` &mdash; for instance, from the `doc/` directory:
+3. Build the documentation PDF with `build-pdf.sh` or `build-pdf.bat` from the `doc/` directory. This script runs multiple passes of `pdflatex` and `bibtex` to build the PDF document
     1. `pdflatex mf6examples.tex`
     2. `bibtex mf6examples`
     3. `pdflatex mf6examples.tex`
