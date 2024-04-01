@@ -33,11 +33,12 @@ from pprint import pformat
 
 import flopy
 import git
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from flopy.mf6 import MFSimulation
 from flopy.plot.styles import styles
-import matplotlib as mpl
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from modflow_devtools.misc import get_env, timed
@@ -56,9 +57,11 @@ except:
 workspace = root / "examples" if root else pl.Path.cwd()
 figs_path = root / "figures" if root else pl.Path.cwd()
 sim_ws = workspace / sim_name
-mf6_ws = sim_ws / "mf6"
+gwf_ws = sim_ws / "gwf"
+prt_ws = sim_ws / "prt"
 mp7_ws = sim_ws / "mp7"
-mf6_ws.mkdir(exist_ok=True, parents=True)
+gwf_ws.mkdir(exist_ok=True, parents=True)
+prt_ws.mkdir(exist_ok=True, parents=True)
 mp7_ws.mkdir(exist_ok=True, parents=True)
 
 # Define output file names
@@ -93,16 +96,16 @@ nrow = 21  # Number of rows
 ncol = 20  # Number of columns
 delr = 500.0  # Column width ($ft$)
 delc = 500.0  # Row width ($ft$)
-top = 400.0  # Top of the model ($m$)
+top = 400.0  # Top of the model ($ft$)
 botm_str = "220.0, 200.0, 0.0"  # Layer bottom elevations ($ft$)
-porosity = 0.1  # Soil porosity ($\%$)
-rch = 0.005  # Recharge rate ($ft/s$)
-kh = [50.0, 0.01, 200.0]  # Horizontal hydraulic conductivity ($ft/s$)
-kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/s$)
-wel_q = -150000.0  # Well pumping rate
+porosity = 0.1  # Porosity (unitless)
+rch = 0.005  # Recharge rate ($ft/d$)
+kh = [50.0, 0.01, 200.0]  # Horizontal hydraulic conductivity ($ft/d$)
+kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/d$)
+wel_q = -150000.0  # Well pumping rate ($ft^3/d$)
 riv_h = 320.0  # River stage ($ft$)
 riv_z = 317.0  # River bottom ($ft$)
-riv_c = 1.0e5  # River conductance ($l^2/t$)
+riv_c = 1.0e5  # River conductance ($l^2/d$)
 
 # Time discretization
 nstp = 1
@@ -258,17 +261,17 @@ for rivspec in rd:
 
 
 # +
-def build_model(example_name):
+def build_models(example_name):
     print("Building models...{}".format(example_name))
 
-    # Instantiate the MODFLOW 6 simulation object
-    sim = flopy.mf6.MFSimulation(
-        sim_name=gwf_name, exe_name="mf6", version="mf6", sim_ws=mf6_ws
+    # Instantiate the MODFLOW 6 GWF simulation object
+    gwfsim = flopy.mf6.MFSimulation(
+        sim_name=gwf_name, exe_name="mf6", version="mf6", sim_ws=gwf_ws
     )
 
     # Instantiate the MODFLOW 6 temporal discretization package
     flopy.mf6.modflow.mftdis.ModflowTdis(
-        sim,
+        gwfsim,
         pname="tdis",
         time_units="DAYS",
         nper=nper,
@@ -278,7 +281,7 @@ def build_model(example_name):
     # Instantiate the MODFLOW 6 gwf (groundwater-flow) model
     model_nam_file = "{}.nam".format(gwf_name)
     gwf = flopy.mf6.ModflowGwf(
-        sim, modelname=gwf_name, model_nam_file=model_nam_file, save_flows=True
+        gwfsim, modelname=gwf_name, model_nam_file=model_nam_file, save_flows=True
     )
 
     # Instantiate the MODFLOW 6 gwf discretization package
@@ -339,9 +342,33 @@ def build_model(example_name):
         budget_filerecord=budget_record,
     )
 
+    # Create an iterative model solution (IMS) for the MODFLOW 6 gwf model
+    ims = flopy.mf6.ModflowIms(
+        gwfsim,
+        pname="ims",
+        complexity="SIMPLE",
+        outer_dvclose=1e-6,
+        inner_dvclose=1e-6,
+        rcloserecord=1e-6,
+    )
+
+    # Instantiate the MODFLOW 6 PRT simulation object
+    prtsim = flopy.mf6.MFSimulation(
+        sim_name=prt_name, exe_name="mf6", version="mf6", sim_ws=prt_ws
+    )
+
+    # Instantiate the MODFLOW 6 temporal discretization package
+    flopy.mf6.modflow.mftdis.ModflowTdis(
+        prtsim,
+        pname="tdis",
+        time_units="DAYS",
+        nper=nper,
+        perioddata=[(perlen, nstp, tsmult)],
+    )
+
     # Instantiate the MODFLOW 6 prt model
     prt = flopy.mf6.ModflowPrt(
-        sim, modelname=prt_name, model_nam_file="{}.nam".format(prt_name)
+        prtsim, modelname=prt_name, model_nam_file="{}.nam".format(prt_name)
     )
 
     # Instantiate the MODFLOW 6 prt discretization package
@@ -409,36 +436,21 @@ def build_model(example_name):
     )
 
     # Instantiate the MODFLOW 6 prt flow model interface
-    flopy.mf6.ModflowPrtfmi(prt)
-
-    # Create the MODFLOW 6 gwf-prt model exchange
-    flopy.mf6.ModflowGwfprt(
-        sim,
-        exgtype="GWF6-PRT6",
-        exgmnamea=gwf_name,
-        exgmnameb=prt_name,
-        filename="{}.gwfprt".format(sim_name),
-    )
-
-    # Create an iterative model solution (IMS) for the MODFLOW 6 gwf model
-    ims = flopy.mf6.ModflowIms(
-        sim,
-        pname="ims",
-        complexity="SIMPLE",
-        outer_dvclose=1e-6,
-        inner_dvclose=1e-6,
-        rcloserecord=1e-6,
-    )
+    pd = [
+        ("GWFHEAD", gwf_ws / headfile),
+        ("GWFBUDGET", gwf_ws / budgetfile),
+    ]
+    flopy.mf6.ModflowPrtfmi(prt, packagedata=pd)
 
     # Create an explicit model solution (EMS) for the MODFLOW 6 prt model
     ems = flopy.mf6.ModflowEms(
-        sim,
+        prtsim,
         pname="ems",
         filename="{}.ems".format(prt_name),
     )
-    sim.register_solution_package(ems, [prt.name])
+    prtsim.register_solution_package(ems, [prt.name])
 
-    # Instantiate the MODPATH 7 simulation object
+    # Instantiate the MODPATH 7 object
     mp7 = flopy.modpath.Modpath7(
         modelname=mp7_name,
         flowmodel=gwf,
@@ -459,7 +471,7 @@ def build_model(example_name):
         particlegroupname="PG1B", particledata=p, filename=sim_name + "b.sloc"
     )
 
-    # Instantiate the MODPATH 7 simulation data
+    # Instantiate the MODPATH 7 simulation
     mpsim = flopy.modpath.Modpath7Sim(
         mp7,
         simulationtype="combined",
@@ -475,23 +487,25 @@ def build_model(example_name):
         particlegroups=[pg1a, pg1b],
     )
 
-    return sim, mp7
+    return gwfsim, prtsim, mp7
 
 
-def write_model(sim, mp7, silent=True):
-    sim.write_simulation(silent=silent)
-    mp7.write_input()
+def write_models(*sims, silent=True):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            sim.write_simulation(silent=silent)
+        else:
+            sim.write_input()
 
 
 @timed
-def run_model(sim, mp7, silent=True):
-    # Run MODFLOW 6 simulation
-    success, buff = sim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
-
-    # Run MODPATH 7 simulation
-    success, buff = mp7.run_model(silent=silent, report=True)
-    assert success, pformat(buff)
+def run_models(*sims, silent=True):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            success, buff = sim.run_simulation(silent=silent, report=True)
+        else:
+            sim.run_model(silent=silent, report=True)
+        assert success, pformat(buff)
 
 
 # -
@@ -537,7 +551,7 @@ def get_pathlines(mf6_path, mp7_path):
 
     # add markercolor column, color-coding by layer for plots
     mf6pl["mc"] = mf6pl.apply(
-        lambda row: "green" if row.ilay == 1 else "yellow" if row.ilay == 2 else "red",
+        lambda row: "green" if row.ilay == 1 else "gold" if row.ilay == 2 else "red",
         axis=1,
     )
 
@@ -595,7 +609,7 @@ def get_pathlines(mf6_path, mp7_path):
 
     # add markercolor column, color-coding by layer for plots
     mp7pl["mc"] = mp7pl.apply(
-        lambda row: "green" if row.k == 1 else "yellow" if row.k == 2 else "red", axis=1
+        lambda row: "green" if row.k == 1 else "gold" if row.k == 2 else "red", axis=1
     )
 
     return mf6pl, mp7pl
@@ -635,16 +649,16 @@ def plot_pathlines(ax, gwf, data, mc_map=None, **kwargs):
                     colors=[color],
                     layer=k,
                     label=label,
-                    linewidth=0.5,
+                    linewidth=0.0,
+                    linestyle="None",
                     marker="o",
                     markercolor=mc_map[k],
                     markersize=1,
-                    alpha=0.25,
+                    alpha=0.5,
                 )
-        else:
-            pl.plot_pathline(
-                d, layer="all", colors=[color], label=label, linewidth=0.5, alpha=0.25
-            )
+        pl.plot_pathline(
+            d, layer="all", colors=[color], label=label, linewidth=0.5, alpha=0.5
+        )
 
 
 def plot_points(ax, gwf, data, **kwargs):
@@ -671,19 +685,29 @@ def plot_points(ax, gwf, data, **kwargs):
         return ax.scatter(data["x"], data["y"], s=1, c=data["tt"])
 
 
-def plot_grid(gwf, title, head=False):
+def plot_head(gwf, head):
     with styles.USGSPlot():
-        fig = plt.figure(figsize=(7, 7))
+        fig, ax = plt.subplots(figsize=(7, 7))
         fig.tight_layout()
-        ax = fig.add_subplot(1, 1, 1, aspect="equal")
-        pmv = flopy.plot.PlotMapView(gwf, ax=ax)
-        if head:
-            cb = pmv.plot_array(gwf.output.head().get_data(), alpha=0.25)
-            cbar = plt.colorbar(cb, shrink=0.5, pad=0.1)
-            cbar.ax.set_xlabel(r"Head ($m$)")
-        pmv.plot_bc("WEL", plotAll=True)
-        pmv.plot_bc("RIV", plotAll=True)
-        pmv.plot_grid(lw=0.5, alpha=0.5)
+        ax.set_aspect("equal")
+        ilay = 2
+        cint = 0.25
+        hmin = head[ilay, 0, :].min()
+        hmax = head[ilay, 0, :].max()
+        styles.heading(ax=ax, heading="Head, layer {}".format(ilay + 1))
+        mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
+        mm.plot_grid(lw=0.5)
+        mm.plot_bc("WEL", plotAll=True)
+        mm.plot_bc("RIV", plotAll=True)
+
+        pc = mm.plot_array(head[ilay, :, :], edgecolor="black", alpha=0.25)
+        cb = plt.colorbar(pc, shrink=0.25, pad=0.1)
+        cb.ax.set_xlabel(r"Head ($m$)")
+
+        levels = np.arange(np.floor(hmin), np.ceil(hmax) + cint, cint)
+        cs = mm.contour_array(head[ilay, :, :], colors="white", levels=levels)
+        plt.clabel(cs, fmt="%.1f", colors="white", fontsize=11)
+
         ax.legend(
             handles=[
                 mpl.patches.Patch(color="red", label="Well"),
@@ -691,24 +715,25 @@ def plot_grid(gwf, title, head=False):
             ],
             loc="upper left",
         )
-        if title:
-            styles.heading(ax, heading=title)
+
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(figs_path / f"{sim_name}-grid{'-head' if head else ''}.png")
+            fig.savefig(figs_path / "{}-head".format(sim_name))
 
 
-def plot_1a_pathpoints(gwf, mf6pl, mp7pl, title):
+def plot_1a_pathpoints(gwf, mf6pl, title=None):
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(7, 7))
-        styles.heading(axes[0], heading=title)
-        mc_map = {1: "green", 2: "yellow", 3: "red"}
-        plot_pathlines(axes[0], gwf, mf6pl[mf6pl.subprob == "A"], mc_map=mc_map)
-        plot_pathlines(axes[1], gwf, mp7pl[mp7pl.subprob == "A"], mc_map=mc_map)
-        axes[0].set_xlabel("MODFLOW 6 PRT")
-        axes[1].set_xlabel("MODPATH 7")
-        axes[0].legend(
+        fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
+        if title is not None:
+            styles.heading(ax, heading=title)
+
+        mc_map = {1: "green", 2: "gold", 3: "red"}
+        plot_pathlines(
+            ax, gwf, mf6pl[(mf6pl.subprob == "A") & (mf6pl.ireason != 1)], mc_map=mc_map
+        )
+
+        ax.legend(
             title="EXPLANATION",
             handles=[
                 Line2D(
@@ -742,8 +767,8 @@ def plot_1a_pathpoints(gwf, mf6pl, mp7pl, title):
                     label="Layer 3",
                 ),
             ],
-            bbox_to_anchor=(1.27, -0.1),
         )
+
         if plot_show:
             plt.show()
         if plot_save:
@@ -751,8 +776,8 @@ def plot_1a_pathpoints(gwf, mf6pl, mp7pl, title):
 
 
 def plot_1a_pathpoints_3d(gwf, pathlines, title):
-    from flopy.export.vtk import Vtk
     import pyvista as pv
+    from flopy.export.vtk import Vtk
 
     pv.set_plot_theme("document")
 
@@ -830,179 +855,181 @@ def plot_1a_pathpoints_3d(gwf, pathlines, title):
         p.show()
 
 
-def plot_all_pathlines(gwf, mf6pl, mp7pl, title):
+def plot_all_pathlines(gwf, mf6pl, title=None):
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(7, 7))
-        styles.heading(axes[0][0], heading=title)
-        plot_pathlines(
-            axes[0][0], gwf, mf6pl[mf6pl.subprob == "A"], colordest=colordest
-        )
-        plot_pathlines(
-            axes[1][0], gwf, mf6pl[mf6pl.subprob == "B"], colordest=colordest
-        )
-        plot_pathlines(
-            axes[0][1], gwf, mp7pl[mp7pl.subprob == "A"], colordest=colordest
-        )
-        plot_pathlines(
-            axes[1][1], gwf, mp7pl[mp7pl.subprob == "B"], colordest=colordest
-        )
-        plt.subplots_adjust(hspace=0.1)
-        axes[0][0].set_ylabel("1A")
-        axes[1][0].set_ylabel("1B")
-        axes[1][0].set_xlabel("MODFLOW 6 PRT")
-        axes[1][1].set_xlabel("MODPATH 7")
-        styles.graph_legend(
+        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(7, 7))
+        if title is not None:
+            styles.heading(axes[0], heading=title)
+
+        plot_pathlines(axes[0], gwf, mf6pl[mf6pl.subprob == "A"], colordest=colordest)
+        plot_pathlines(axes[1], gwf, mf6pl[mf6pl.subprob == "B"], colordest=colordest)
+
+        axes[0].set_xlabel("1A")
+        axes[1].set_xlabel("1B")
+        axes[0].legend(
             handles=[
-                Line2D([0], [0], color="red", lw=4, label="Well"),
-                Line2D([0], [0], color="blue", lw=4, label="River"),
+                Line2D([0], [0], color="red", lw=1, label="Well"),
+                Line2D([0], [0], color="blue", lw=1, label="River"),
             ],
-            bbox_to_anchor=(0.77, 0.09),
-            bbox_transform=fig.transFigure,
-            ncol=2,
         )
-        plt.subplots_adjust(bottom=0.15)
+
         if plot_show:
             plt.show()
         if plot_save:
             fig.savefig(figs_path / f"{sim_name}-paths.png")
 
 
-def plot_all_release_pts(gwf, mf6pl, mp7pl, title, color="destination"):
-    mf6sp = mf6pl[mf6pl.ireason == 0]  # release event
-    mp7sp = mp7pl[mp7pl.time == 0]
+def plot_all_release_pts(gwf, mf6pl, title=None, color="destination"):
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(7, 7))
-        axes = axes.flatten()
-        styles.heading(axes[0], heading=title)
+        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(7, 7))
+        if title is not None:
+            styles.heading(axes[0], heading=title)
+
+        mf6sp = mf6pl[mf6pl.ireason == 0]  # release event
         kwargs = {}
         if color == "destination":
             kwargs["colordest"] = colordest
+
         plot_points(axes[0], gwf, mf6sp[mf6sp.subprob == "A"], **kwargs)
-        plot_points(axes[1], gwf, mp7sp[mp7sp.subprob == "A"], **kwargs)
-        plot_points(axes[2], gwf, mf6sp[mf6sp.subprob == "B"], **kwargs)
-        pts = plot_points(axes[3], gwf, mp7sp[mp7sp.subprob == "B"], **kwargs)
-        plt.subplots_adjust(hspace=0.1)
-        axes[0].set_ylabel("1A")
-        axes[2].set_ylabel("1B")
-        axes[2].set_xlabel("MODFLOW 6 PRT")
-        axes[3].set_xlabel("MODPATH 7")
+        pts = plot_points(axes[1], gwf, mf6sp[mf6sp.subprob == "B"], **kwargs)
+
+        axes[0].set_xlabel("1A")
+        axes[1].set_xlabel("1B")
+
         if color == "destination":
-            styles.graph_legend(
+            axes[0].legend(
                 handles=[
-                    Line2D([0], [0], color="red", lw=4, label="Well"),
-                    Line2D([0], [0], color="blue", lw=4, label="River"),
+                    Line2D(
+                        [0],
+                        [0],
+                        color="red",
+                        marker="o",
+                        markerfacecolor="red",
+                        markersize=5,
+                        lw=0,
+                        label="Well",
+                    ),
+                    Line2D(
+                        [0],
+                        [0],
+                        color="blue",
+                        marker="o",
+                        markerfacecolor="blue",
+                        markersize=5,
+                        lw=0,
+                        label="River",
+                    ),
                 ],
-                bbox_to_anchor=(0.77, 0.09),
-                bbox_transform=fig.transFigure,
-                ncol=2,
             )
         else:
-            cax = fig.add_axes([0.05, 0.06, 0.9, 0.01])
-            cb = plt.colorbar(pts, cax=cax, orientation="horizontal")
+            cax = fig.add_axes([0.2, 0.2, 0.6, 0.01])
+            cb = plt.colorbar(pts, cax=cax, orientation="horizontal", shrink=0.25)
             cb.set_label("Travel time (days)")
-        plt.subplots_adjust(bottom=0.15)
+
         if plot_show:
             plt.show()
         if plot_save:
             fig.savefig(figs_path / f"{sim_name}-rel-{color}.png")
 
 
-def plot_all_discharge_pts(gwf, mf6pl, mp7pl, title, color="destination"):
+def plot_all_discharge_pts(gwf, mf6pl, title=None, color="destination"):
     mf6ep = mf6pl[mf6pl.ireason == 3]  # termination event
-    mp7ep = (
-        mp7pl.sort_values("time")
-        .groupby(level=["particlegroup", "sequencenumber"])
-        .tail(1)
-    )
+
     with styles.USGSPlot():
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(7, 7))
-        axes = axes.flatten()
-        styles.heading(axes[0], heading=title)
+        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(7, 7))
+        if title is not None:
+            styles.heading(axes[0], heading=title)
+
         kwargs = {}
         if color == "destination":
             kwargs["colordest"] = colordest
+
         plot_points(axes[0], gwf, mf6ep[mf6ep.subprob == "A"], **kwargs)
-        plot_points(axes[1], gwf, mp7ep[mp7ep.subprob == "A"], **kwargs)
-        plot_points(axes[2], gwf, mf6ep[mf6ep.subprob == "B"], **kwargs)
-        pts = plot_points(axes[3], gwf, mp7ep[mp7ep.subprob == "B"], **kwargs)
-        axes[0].set_ylabel("1A")
-        axes[2].set_ylabel("1B")
-        axes[2].set_xlabel("MODFLOW 6 PRT")
-        axes[3].set_xlabel("MODPATH 7")
+        pts = plot_points(axes[1], gwf, mf6ep[mf6ep.subprob == "B"], **kwargs)
+
+        axes[0].set_xlabel("1A")
+        axes[1].set_xlabel("1B")
+
         if color == "destination":
-            styles.graph_legend(
+            axes[0].legend(
                 handles=[
-                    Line2D([0], [0], color="red", lw=4, label="Well"),
-                    Line2D([0], [0], color="blue", lw=4, label="River"),
+                    Line2D(
+                        [0],
+                        [0],
+                        color="red",
+                        marker="o",
+                        markerfacecolor="red",
+                        markersize=5,
+                        lw=0,
+                        label="Well",
+                    ),
+                    Line2D(
+                        [0],
+                        [0],
+                        color="blue",
+                        marker="o",
+                        markerfacecolor="blue",
+                        markersize=5,
+                        lw=0,
+                        label="River",
+                    ),
                 ],
-                bbox_to_anchor=(0.77, 0.09),
-                bbox_transform=fig.transFigure,
-                ncol=2,
             )
         else:
-            cax = fig.add_axes([0.05, 0.06, 0.9, 0.01])
-            cb = plt.colorbar(pts, cax=cax, orientation="horizontal")
+            cax = fig.add_axes([0.2, 0.2, 0.6, 0.01])
+            cb = plt.colorbar(pts, cax=cax, orientation="horizontal", shrink=0.25)
             cb.set_label("Travel time")
-        plt.subplots_adjust(bottom=0.15)
+
         if plot_show:
             plt.show()
         if plot_save:
             fig.savefig(figs_path / f"{sim_name}-term-{color}.png")
 
 
-def plot_all(sim):
+def load_head():
+    head_file = flopy.utils.HeadFile(gwf_ws / (gwf_name + ".hds"))
+    return head_file.get_data()
+
+
+def plot_all(gwfsim):
     # get gwf model
-    gwf = sim.get_model(gwf_name)
+    gwf = gwfsim.get_model(gwf_name)
+    head = load_head()
 
     # get pathlines
     mf6pathlines, mp7pathlines = get_pathlines(
-        mf6_ws / trackcsvfile_prt,
+        prt_ws / trackcsvfile_prt,
         mp7_ws / f"{mp7_name}.mppth",
     )
 
     # plot the results
-    plot_grid(gwf, title="Boundary Conditions")
-    plot_grid(gwf, title="Simulated Head", head=True)
+    plot_head(gwf, head=head)
     plot_1a_pathpoints(
         gwf,
         mf6pathlines,
-        mp7pathlines,
         title="Pathlines and points (1A), colored by layer",
     )
     plot_1a_pathpoints_3d(
         gwf, mp7pathlines, title="Path points (1A),\ncolored by layer"
     )
-    plot_all_pathlines(
-        gwf, mf6pathlines, mp7pathlines, title="Pathlines, colored by destination"
-    )
-    # skip cross section, flopy intersections are slow
-    # plot_all_pathlines(
-    #     gwf,
-    #     mf6pathlines,
-    #     mp7pathlines,
-    #     title="Pathlines, colored by destination (cross-section, row 4)",
-    #     xc_line={"row": 4},
-    # )
+    plot_all_pathlines(gwf, mf6pathlines, title="Pathlines, colored by destination")
     plot_all_release_pts(
         gwf,
         mf6pathlines,
-        mp7pathlines,
         title="Release points, colored by destination",
         color="destination",
-    )
-    plot_all_release_pts(
-        gwf,
-        mf6pathlines,
-        mp7pathlines,
-        title="Release points, colored by travel-time",
-        color="travel-time",
     )
     plot_all_discharge_pts(
         gwf,
         mf6pathlines,
-        mp7pathlines,
         title="Terminating points, colored by destination",
         color="destination",
+    )
+    plot_all_release_pts(
+        gwf,
+        mf6pathlines,
+        title="Release points, colored by travel-time",
+        color="travel-time",
     )
 
 
@@ -1014,13 +1041,13 @@ def plot_all(sim):
 
 
 def scenario(silent=True):
-    sim, mp7 = build_model(sim_name)
+    gwfsim, prtsim, mp7 = build_models(sim_name)
     if write:
-        write_model(sim, mp7, silent=silent)
+        write_models(gwfsim, prtsim, mp7, silent=silent)
     if run:
-        run_model(sim, mp7, silent=silent)
+        run_models(gwfsim, prtsim, mp7, silent=silent)
     if plot:
-        plot_all(sim)
+        plot_all(gwfsim)
 
 
 # We are now ready to run the example problem. Subproblems 1A and 1B are solved by a single MODFLOW 6 run and a single MODPATH 7 run, so they are included under one "scenario". Each of the two subproblems is represented by its own particle release package (for MODFLOW 6) or particle group (for MODPATH 7).
