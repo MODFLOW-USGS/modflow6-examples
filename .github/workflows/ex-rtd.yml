@@ -8,7 +8,7 @@ on:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches:
+    branches: 
       - master
       - develop
     paths-ignore:
@@ -64,17 +64,25 @@ jobs:
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
 
+      # PyVista doesn't like the default vtk
+      - name: OpenGL workaround
+        if: runner.os == 'Linux'
+        run: |
+          # referenced from https://github.com/pyvista/pyvista/blob/main/.github/workflows/vtk-pre-test.yml#L53
+          pip uninstall -y vtk
+          pip install --extra-index-url https://wheels.vtk.org trame vtk-osmesa
+
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW nightly-build executables
+      - name: Install MODFLOW 6 development build
         uses: modflowpy/install-modflow-action@v1
         with:
           repo: modflow6-nightly-build
-
+      
       - name: Create notebooks and run models
         working-directory: autotest
         run: pytest -v -n=auto --durations=0 test_notebooks.py --plot

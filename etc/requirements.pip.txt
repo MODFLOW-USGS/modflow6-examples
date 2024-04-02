@@ -21,3 +21,4 @@ jupyter
 jupytext
 pooch
 GitPython
+pyvista
