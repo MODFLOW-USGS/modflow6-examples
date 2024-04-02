@@ -134,111 +134,39 @@ rch_iface = 6
 rch_iflowface = -1
 # -
 
-# Define shared MODFLOW 6 PRT and MODPATH 7 particle-tracking model parameters.
-
-# +
-# Zones
-def_zone = 1
-wel_zone = 2
-zones_lay1 = def_zone
-zones_lay2 = def_zone
-zones_lay3 = np.full((nrow, ncol), def_zone, dtype=np.int32)
-zones_lay3[wel_loc[1:]] = wel_zone
-
-# Starting location template size for example 1:
-# 3x3 array of particles in each cell in layer 1
-sloc_tmpl_size = 3
-# -
-
-# Define MODPATH 7 model parameters.
-
-# +
-# Zones
-zones = [zones_lay1, zones_lay2, zones_lay3]
-
-# Default iface
-defaultiface = {"RCH": 6, "EVT": 6}
-# -
-
-# Define particle release point data for the MODFLOW 6 PRT particle-tracking model.
+# Define particle release configurations for the MODPATH 7 model, from which we later generate PRT release configurations.
 
 # +
 # Example 1A
-releasepts = {}
-releasepts["1A"] = []
-zrpt = top
-k = 0
-j = 2
-for i in range(nrow):
-    nrpt = i
-    xrpt = (j + 0.5) * delr
-    yrpt = (nrow - i - 0.5) * delc
-    rpt = [nrpt, k, i, j, xrpt, yrpt, zrpt]
-    releasepts["1A"].append(rpt)
-
-# Example 1B
-releasepts["1B"] = []
-ndivc = sloc_tmpl_size
-ndivr = sloc_tmpl_size
-deldivc = delc / ndivc
-deldivr = delr / ndivr
-k = 0
-zrpt = top
-nrpt = -1
-for i in range(nrow):
-    y0 = (nrow - i - 1) * delc
-    for j in range(ncol):
-        x0 = j * delr
-        for idiv in range(ndivc):
-            dy = (idiv + 0.5) * deldivc
-            yrpt = y0 + dy
-            for jdiv in range(ndivr):
-                dx = (jdiv + 0.5) * deldivr
-                xrpt = x0 + dx
-                nrpt += 1
-                rpt = [nrpt, k, i, j, xrpt, yrpt, zrpt]
-                releasepts["1B"].append(rpt)
-# -
-
-# Define particle data for the MODPATH 7 model
-
-# +
-# Example 1A
-plocs = []
-pids = []
-for idx in range(nrow):
-    plocs.append((0, idx, 2))
-    pids.append(idx)
-# issue(flopyex): in the flopy example this notebook is based on,
-#  localz is not set to 1.0 like in the MODPATH examples doc,
-#  so it defaults to 0.5, but it shouldn't really matter because
-#  the particle gets placed at the water table anyway
-part0 = flopy.modpath.ParticleData(
-    plocs, drape=0, structured=True, particleids=pids, localz=1.0
-)
-
-# Example 1B
-divs = sloc_tmpl_size
-locs1b = [[0, 0, 0, 0, nrow - 1, ncol - 1]]
-sd = flopy.modpath.CellDataType(
-    drape=0, columncelldivisions=1, rowcelldivisions=1, layercelldivisions=1
-)
-sd = flopy.modpath.FaceDataType(
+mp7_particle_data_1a = flopy.modpath.ParticleData(
+    [(0, i, 2) for i in range(nrow)],
     drape=0,
-    verticaldivisions1=0,
-    horizontaldivisions1=0,
-    verticaldivisions2=0,
-    horizontaldivisions2=0,
-    verticaldivisions3=0,
-    horizontaldivisions3=0,
-    verticaldivisions4=0,
-    horizontaldivisions4=0,
-    rowdivisions5=0,
-    columndivisions5=0,
-    rowdivisions6=divs,
-    columndivisions6=divs,
+    structured=True,
+    particleids=[i for i in range(nrow)],
+    localz=1.0,
 )
-p = flopy.modpath.LRCParticleData(subdivisiondata=[sd], lrcregions=[locs1b])
+
+# Example 1B
+mp7_particle_data_1b = flopy.modpath.LRCParticleData(
+    subdivisiondata=[
+        flopy.modpath.FaceDataType(
+            drape=0,
+            verticaldivisions1=0,
+            horizontaldivisions1=0,
+            verticaldivisions2=0,
+            horizontaldivisions2=0,
+            verticaldivisions3=0,
+            horizontaldivisions3=0,
+            verticaldivisions4=0,
+            horizontaldivisions4=0,
+            rowdivisions5=0,
+            columndivisions5=0,
+            rowdivisions6=3,
+            columndivisions6=3,
+        )
+    ],
+    lrcregions=[[[0, 0, 0, 0, nrow - 1, ncol - 1]]],
+)
 # -
 
 # Define well and river cell numbers, used to extract and plot model results later.
@@ -261,7 +189,7 @@ for rivspec in rd:
 
 # +
 def build_models(example_name):
-    print("Building models...{}".format(example_name))
+    print(f"Building models for {example_name}")
 
     # Instantiate the MODFLOW 6 GWF simulation object
     gwfsim = flopy.mf6.MFSimulation(
@@ -278,9 +206,8 @@ def build_models(example_name):
     )
 
     # Instantiate the MODFLOW 6 gwf (groundwater-flow) model
-    model_nam_file = "{}.nam".format(gwf_name)
     gwf = flopy.mf6.ModflowGwf(
-        gwfsim, modelname=gwf_name, model_nam_file=model_nam_file, save_flows=True
+        gwfsim, modelname=gwf_name, model_nam_file=f"{gwf_name}.nam", save_flows=True
     )
 
     # Instantiate the MODFLOW 6 gwf discretization package
@@ -367,7 +294,7 @@ def build_models(example_name):
 
     # Instantiate the MODFLOW 6 prt model
     prt = flopy.mf6.ModflowPrt(
-        prtsim, modelname=prt_name, model_nam_file="{}.nam".format(prt_name)
+        prtsim, modelname=prt_name, model_nam_file=f"{prt_name}.nam"
     )
 
     # Instantiate the MODFLOW 6 prt discretization package
@@ -394,25 +321,29 @@ def build_models(example_name):
         izone[l, r, c] = 2
     flopy.mf6.ModflowPrtmip(prt, pname="mip", porosity=porosity, izone=izone)
 
-    # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1A
+    # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1A,
+    # first converting MP7 particle release configurations to PRT format.
+    releasepts_1a = list(mp7_particle_data_1a.to_prp(prt.modelgrid))
     flopy.mf6.ModflowPrtprp(
         prt,
         pname="prp1a",
-        filename="{}_1a.prp".format(prt_name),
-        nreleasepts=len(releasepts["1A"]),
-        packagedata=releasepts["1A"],
+        filename=f"{prt_name}_1a.prp",
+        nreleasepts=len(releasepts_1a),
+        packagedata=releasepts_1a,
         perioddata={
             0: ["FIRST"],
         },
     )
 
-    # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1B
+    # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1B,
+    # first converting MP7 particle release configurations to PRT format.
+    releasepts_1b = list(mp7_particle_data_1b.to_prp(prt.modelgrid))
     flopy.mf6.ModflowPrtprp(
         prt,
         pname="prp1b",
-        filename="{}_1b.prp".format(prt_name),
-        nreleasepts=len(releasepts["1B"]),
-        packagedata=releasepts["1B"],
+        filename=f"{prt_name}_1b.prp",
+        nreleasepts=len(releasepts_1b),
+        packagedata=releasepts_1b,
         perioddata={
             0: ["FIRST"],
         },
@@ -445,7 +376,7 @@ def build_models(example_name):
     ems = flopy.mf6.ModflowEms(
         prtsim,
         pname="ems",
-        filename="{}.ems".format(prt_name),
+        filename=f"{prt_name}.ems",
     )
     prtsim.register_solution_package(ems, [prt.name])
 
@@ -460,14 +391,18 @@ def build_models(example_name):
     )
 
     # Instantiate the MODPATH 7 basic data
-    flopy.modpath.Modpath7Bas(mp7, porosity=porosity, defaultiface=defaultiface)
+    flopy.modpath.Modpath7Bas(mp7, porosity=porosity, defaultiface={"RCH": 6, "EVT": 6})
 
     # Instantiate the MODPATH 7 particle groups
     pg1a = flopy.modpath.ParticleGroup(
-        particlegroupname="PG1A", particledata=part0, filename=sim_name + "a.sloc"
+        particlegroupname="PG1A",
+        particledata=mp7_particle_data_1a,
+        filename=sim_name + "a.sloc",
     )
     pg1b = flopy.modpath.ParticleGroupLRCTemplate(
-        particlegroupname="PG1B", particledata=p, filename=sim_name + "b.sloc"
+        particlegroupname="PG1B",
+        particledata=mp7_particle_data_1b,
+        filename=sim_name + "b.sloc",
     )
 
     # Instantiate the MODPATH 7 simulation
@@ -693,7 +628,7 @@ def plot_head(gwf, head):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading="Head, layer {}".format(ilay + 1))
+        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_grid(lw=0.5)
         mm.plot_bc("WEL", plotAll=True)
@@ -718,19 +653,17 @@ def plot_head(gwf, head):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(figs_path / "{}-head".format(sim_name))
+            fig.savefig(figs_path / f"{sim_name}-head")
 
 
-def plot_1a_pathpoints(gwf, mf6pl, title=None):
+def plot_pathpoints(gwf, mf6pl, title=None):
     with styles.USGSPlot():
         fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 6))
         if title is not None:
             styles.heading(ax, heading=title)
 
         mc_map = {1: "green", 2: "gold", 3: "red"}
-        plot_pathlines(
-            ax, gwf, mf6pl[mf6pl.subprob == "A"], mc_map=mc_map
-        )
+        plot_pathlines(ax, gwf, mf6pl, mc_map=mc_map)
 
         ax.legend(
             title="EXPLANATION",
@@ -774,22 +707,17 @@ def plot_1a_pathpoints(gwf, mf6pl, title=None):
             fig.savefig(figs_path / f"{sim_name}-paths-layer.png")
 
 
-def plot_1a_pathpoints_3d(gwf, pathlines, title):
+def plot_pathpoints_3d(gwf, pathlines, title):
     import pyvista as pv
     from flopy.export.vtk import Vtk
 
     pv.set_plot_theme("document")
-
     axes = pv.Axes(show_actor=False, actor_scale=2.0, line_width=5)
-
     vert_exag = 10
-    pathlines = pathlines[pathlines.particlegroup == 1].to_records(index=False)
-    pathlines["z"] = pathlines["z"] * vert_exag
-
-    vtk = Vtk(model=gwf, binary=False, vertical_exageration=vert_exag, smooth=False)
+    vtk = Vtk(model=gwf, binary=False, vertical_exageration=vert_exag, smooth=True)
     vtk.add_model(gwf)
-    gwf_mesh = vtk.to_pyvista()
-    prt_mesh = pv.PolyData(np.array(tuple(map(tuple, pathlines[["x", "y", "z"]]))))
+    vtk.add_pathline_points(pathlines)
+    gwf_mesh, prt_mesh = vtk.to_pyvista()
     riv_mesh = pv.Box(
         bounds=[
             gwf.modelgrid.extent[1] - delc,
@@ -832,9 +760,10 @@ def plot_1a_pathpoints_3d(gwf, pathlines, title):
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
     p.add_mesh(
         prt_mesh,
-        scalars=pathlines.k.ravel(),
+        scalars="k" if "k" in prt_mesh.point_data else "ilay",
         cmap=["green", "gold", "red"],
         point_size=2,
+        render_points_as_spheres=True,
     )
     p.add_mesh(riv_mesh, color="teal", opacity=0.2)
     p.add_mesh(wel_mesh, color="red", opacity=0.3)
@@ -1003,13 +932,15 @@ def plot_all(gwfsim):
 
     # plot the results
     plot_head(gwf, head=head)
-    plot_1a_pathpoints(
+    plot_pathpoints(
         gwf,
-        mf6pathlines,
+        mf6pathlines[mf6pathlines.iprp == 1],
         title="Pathlines and points (1A), colored by layer",
     )
-    plot_1a_pathpoints_3d(
-        gwf, mp7pathlines, title="Path points (1A),\ncolored by layer"
+    plot_pathpoints_3d(
+        gwf,
+        mf6pathlines[mf6pathlines.iprp == 1],
+        title="Pathlines and points (1A),\ncolored by layer, 3D view",
     )
     plot_all_pathlines(gwf, mf6pathlines, title="Pathlines, colored by destination")
     plot_all_release_pts(
