@@ -32,18 +32,18 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
-from flopy.mf6 import MFSimulation
-from shapely.geometry import MultiPoint, LineString
-from flopy.utils.gridintersect import GridIntersect
 import git
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from flopy.mf6 import MFSimulation
 from flopy.plot.styles import styles
-import matplotlib as mpl
+from flopy.utils.gridintersect import GridIntersect
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from modflow_devtools.misc import get_env, timed
+from shapely.geometry import LineString, MultiPoint
 
 # Example name and workspace paths. If this example is running
 # in the git repository, use the folder structure described in
@@ -212,130 +212,13 @@ g.build(verbose=False)
 grid_props = g.get_gridprops_vertexgrid()
 disv_props = g.get_gridprops_disv()
 grid = flopy.discretization.VertexGrid(**grid_props)
-# -
 
-# Define particle release points for the PRT model. Note that release points for part A and B are not identical, with more particles released in part B.
-
-# +
-releasepts = []
-
-# retrieve GRIDGEN-generated gridprops
 ncpl = disv_props["ncpl"]
 top = disv_props["top"]
 botm = disv_props["botm"]
 nvert = disv_props["nvert"]
 vertices = disv_props["vertices"]
 cell2d = disv_props["cell2d"]
-
-
-def set_releasepts(part):
-    from math import sqrt
-
-    global releasepts
-
-    welcellnode = welcells[0]
-    xctr = cell2d[welcellnode][1]
-    yctr = cell2d[welcellnode][2]
-    vert0 = cell2d[welcellnode][4]
-    vert1 = cell2d[welcellnode][5]
-    x0 = vertices[vert0][1]
-    y0 = vertices[vert0][2]
-    x1 = vertices[vert1][1]
-    y1 = vertices[vert1][2]
-    dx = x1 - x0
-    dy = y1 - y0
-    delcell = sqrt(dx * dx + dy * dy)
-    delcellhalf = 0.5 * delcell
-
-    # Reinitialize for the current scenario
-    releasepts = []
-
-    if part == "A":
-        # Example 2A
-
-        zrpt = 0.5 * (botm[1][welcellnode] + botm[2][welcellnode])
-        npart_on_side = 4
-        delta = delcell / npart_on_side
-        baseoffset = 0.5 * (npart_on_side + 1) * delta
-        xbase = xctr - baseoffset
-        ybase = yctr - baseoffset
-        nrpt = -1
-        for idiv in range(npart_on_side):
-            i = idiv + 1
-            xrpt = xbase + i * delta
-            yrpt = yctr + delcellhalf
-            nrpt += 1
-            rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-            releasepts.append(rpt)
-            yrpt = yctr - delcellhalf
-            nrpt += 1
-            rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-            releasepts.append(rpt)
-            yrpt = ybase + i * delta
-            xrpt = xctr + delcellhalf
-            nrpt += 1
-            rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-            releasepts.append(rpt)
-            xrpt = xctr - delcellhalf
-            nrpt += 1
-            rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-            releasepts.append(rpt)
-
-    else:
-        # Example 2B
-
-        # 4x4 array of particles on top of well cell
-        zrpt = botm[1][welcellnode]
-        npart_on_side = 4
-        delta = delcell / npart_on_side
-        baseoffset = 0.5 * (npart_on_side + 1) * delta
-        xbase = xctr - baseoffset
-        ybase = yctr - baseoffset
-        nrpt = -1
-        for idivx in range(npart_on_side):
-            ix = idivx + 1
-            xrpt = xbase + ix * delta
-            for idivy in range(npart_on_side):
-                iy = idivy + 1
-                yrpt = ybase + iy * delta
-                nrpt += 1
-                rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-                releasepts.append(rpt)
-        # 10x10 arrays of particles on the four sides of well cell
-        zwel = 0.5 * (botm[1][welcellnode] + botm[2][welcellnode])
-        npart_on_side = 10
-        delcellz = botm[1][welcellnode] - botm[2][welcellnode]
-        delta = delcell / npart_on_side
-        deltaz = delcellz / npart_on_side
-        baseoffset = 0.5 * (npart_on_side + 1) * delta
-        baseoffsetz = 0.5 * (npart_on_side + 1) * deltaz
-        xbase = xctr - baseoffset
-        ybase = yctr - baseoffset
-        zbase = zwel - baseoffsetz
-        for idivz in range(npart_on_side):
-            iz = idivz + 1
-            zrpt = zbase + iz * deltaz
-            for idiv in range(npart_on_side):
-                i = idiv + 1
-                xrpt = xbase + i * delta
-                yrpt = yctr + delcellhalf
-                nrpt += 1
-                rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-                releasepts.append(rpt)
-                yrpt = yctr - delcellhalf
-                nrpt += 1
-                rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-                releasepts.append(rpt)
-                yrpt = ybase + i * delta
-                xrpt = xctr + delcellhalf
-                nrpt += 1
-                rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-                releasepts.append(rpt)
-                xrpt = xctr - delcellhalf
-                nrpt += 1
-                rpt = [nrpt, (2, welcellnode), xrpt, yrpt, zrpt]
-                releasepts.append(rpt)
-
 
 # -
 
@@ -344,9 +227,7 @@ def set_releasepts(part):
 
 def get_particle_data(part):
     nodew = ncpl * 2 + welcells[0]
-
     if part == "A":
-        # Example 2A
         pcoord = np.array(
             [
                 [0.000, 0.125, 0.500],
@@ -367,36 +248,33 @@ def get_particle_data(part):
                 [0.875, 1.000, 0.500],
             ]
         )
-        plocs = [nodew for i in range(pcoord.shape[0])]
-        pgdata = flopy.modpath.ParticleData(
-            plocs,
+        return flopy.modpath.ParticleData(
+            [nodew for _ in range(pcoord.shape[0])],
             structured=False,
             localx=pcoord[:, 0],
             localy=pcoord[:, 1],
             localz=pcoord[:, 2],
             drape=0,
         )
-
     else:
-        # Example 2B
-        facedata = flopy.modpath.FaceDataType(
-            drape=0,
-            verticaldivisions1=10,
-            horizontaldivisions1=10,
-            verticaldivisions2=10,
-            horizontaldivisions2=10,
-            verticaldivisions3=10,
-            horizontaldivisions3=10,
-            verticaldivisions4=10,
-            horizontaldivisions4=10,
-            rowdivisions5=0,
-            columndivisions5=0,
-            rowdivisions6=4,
-            columndivisions6=4,
+        return flopy.modpath.NodeParticleData(
+            subdivisiondata=flopy.modpath.FaceDataType(
+                drape=0,
+                verticaldivisions1=10,
+                horizontaldivisions1=10,
+                verticaldivisions2=10,
+                horizontaldivisions2=10,
+                verticaldivisions3=10,
+                horizontaldivisions3=10,
+                verticaldivisions4=10,
+                horizontaldivisions4=10,
+                rowdivisions5=0,
+                columndivisions5=0,
+                rowdivisions6=4,
+                columndivisions6=4,
+            ),
+            nodes=nodew,
         )
-        pgdata = flopy.modpath.NodeParticleData(subdivisiondata=facedata, nodes=nodew)
-
-    return pgdata
 
 
 # -
@@ -547,9 +425,7 @@ def build_prt_sim():
         prpfilename = f"{prt_name}_2{part}.prp"
 
         # Set particle release point data according to the scenario
-        set_releasepts(part)
-        particle_data = get_particle_data(part)
-        prp_pkg_data = list(particle_data.to_prp(grid))
+        releasepts = list(get_particle_data(part).to_prp(grid))
 
         # Instantiate the MODFLOW 6 prt particle release point (prp) package
         pd = {0: ["FIRST"], 1: []}
@@ -557,8 +433,8 @@ def build_prt_sim():
             prt,
             pname=prpname,
             filename=prpfilename,
-            nreleasepts=len(prp_pkg_data),
-            packagedata=prp_pkg_data,
+            nreleasepts=len(releasepts),
+            packagedata=releasepts,
             perioddata=pd,
         )
 
@@ -934,7 +810,7 @@ def plot_nodes_and_vertices(gwf, ax):
     # create map view plot
     pmv = flopy.plot.PlotMapView(gwf, ax=ax)
     pmv.plot_grid(lw=0.5, edgecolor="black", alpha=0.5)
-    styles.heading(ax=ax, heading="Nodes and vertices (indices one-based)")
+    styles.heading(ax=ax, heading="Nodes and vertices (one-based)", fontsize=8)
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
 
@@ -987,43 +863,7 @@ def plot_nodes_and_vertices(gwf, ax):
     )
 
 
-def plot_bc(sim, ibd=None):
-    with styles.USGSPlot():
-        fig = plt.figure(figsize=figure_size_solo)
-        fig.tight_layout()
-        ax = fig.add_subplot(1, 1, 1, aspect="equal")
-        styles.heading(ax=ax, heading="Boundary conditions")
-        gwf = sim.get_model(gwf_name)
-        pmv = flopy.plot.PlotMapView(gwf, ax=ax)
-        pmv.plot_bc("WEL", plotAll=True)
-        pmv.plot_grid(lw=0.5)
-        ax.set_xlim(0, Lx)
-        ax.set_ylim(0, Ly)
-        if ibd is not None:
-            pmv.plot_array(ibd, cmap=cmapbd, edgecolor="gray")
-
-        # create inset
-        axins = ax.inset_axes([-0.76, 0.25, 0.7, 0.9])
-        plot_nodes_and_vertices(gwf, axins)
-        ax.indicate_inset_zoom(axins)
-
-        # create legend
-        ax.legend(
-            handles=[
-                mpl.patches.Patch(color="red", label="Well"),
-                mpl.patches.Patch(color="green", label="River"),
-            ],
-            loc="upper left",
-        )
-
-        # set title
-        if plot_show:
-            plt.show()
-        if plot_save:
-            plt.savefig(figs_path / "{}-bc".format(sim_name))
-
-
-def plot_head(gwf, head):
+def plot_head(gwf, head, ibd):
     with styles.USGSPlot():
         fig = plt.figure(figsize=figure_size_solo)
         fig.tight_layout()
@@ -1036,10 +876,30 @@ def plot_head(gwf, head):
         hmax = head[ilay, 0, :].max()
         styles.heading(ax=ax, heading="Head, layer {}".format(ilay + 1))
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
+        mm.plot_bc("WEL", plotAll=True)
+        mm.plot_bc("RIV", plotAll=True, color="teal")
         mm.plot_grid(lw=0.5)
-        pc = mm.plot_array(head[:, 0, :], edgecolor="black")
+
+        # create inset
+        axins = ax.inset_axes([-0.8, 0.25, 0.7, 0.9])
+        plot_nodes_and_vertices(gwf, axins)
+        ax.indicate_inset_zoom(axins)
+
+        pc = mm.plot_array(head[:, 0, :], edgecolor="black", alpha=0.5)
         cb = plt.colorbar(pc, shrink=0.5, pad=0.1)
         cb.ax.set_xlabel(r"Head ($m$)")
+
+        if ibd is not None:
+            mm.plot_array(ibd, cmap=cmapbd, edgecolor="gray")
+
+        # create legend
+        ax.legend(
+            handles=[
+                mpl.patches.Patch(color="red", label="Well"),
+                mpl.patches.Patch(color="teal", label="River"),
+            ],
+            loc="upper left",
+        )
 
         levels = np.arange(np.floor(hmin), np.ceil(hmax) + cint, cint)
         cs = mm.contour_array(head[:, 0, :], colors="white", levels=levels)
@@ -1098,24 +958,58 @@ def plot_tracks(
     return pts[0] if len(pts) == 1 else pts
 
 
-def plot_2a(gwf, mf6pl, mp7pl, mp7ts, ibd, title=None):
-    fig, axes = plt.subplots(ncols=2, nrows=2, figsize=figure_size_compare)
+def plot_pathlines_and_points(gwf, mf6pl, ibd, title=None):
+    fig, ax = plt.subplots(figsize=figure_size_compare)
     fig.tight_layout()
-    axes = axes.flatten()
 
-    plot_tracks(axes[0], gwf, ibd=ibd, pathlines=mf6pl[mf6pl.subprob == "A"])
-    plot_tracks(axes[1], gwf, ibd=ibd, pathlines=mp7pl[mp7pl.subprob == "A"], timeseries=mp7ts[mp7ts.subprob == "A"])
-    plot_tracks(axes[2], gwf, ibd=ibd, pathlines=mf6pl[mf6pl.subprob == "B"])
-    plot_tracks(axes[3], gwf, ibd=ibd, pathlines=mp7pl[mp7pl.subprob == "B"], timeseries=mp7ts[mp7ts.subprob == "B"])
+    plot_tracks(ax, gwf, ibd=ibd, pathlines=mf6pl)
+
+    axins = ax.inset_axes([-0.85, 0.2, 0.7, 0.9])
+    plot_tracks(axins, gwf, ibd=ibd, pathlines=mf6pl)
+    ax.indicate_inset_zoom(axins)
+    xmin, xmax = 3000, 6300
+    ymin, ymax = 3500, 7000
+    axins.set_xlim([xmin, xmax])
+    axins.set_ylim([ymin, ymax])
+
+    ax.legend(
+        title="EXPLANATION",
+        handles=[
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                markersize=10,
+                markerfacecolor="green",
+                color="w",
+                lw=4,
+                label="Layer 1",
+            ),
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                markersize=10,
+                markerfacecolor="gold",
+                color="w",
+                lw=4,
+                label="Layer 2",
+            ),
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                markersize=10,
+                markerfacecolor="red",
+                color="w",
+                lw=4,
+                label="Layer 3",
+            ),
+        ],
+    )
 
     if title is not None:
-        styles.heading(axes[0], title)
-    axes[0].set_ylabel("1A")
-    axes[2].set_ylabel("1B")
-    axes[2].set_xlabel("MODFLOW 6 PRT")
-    axes[3].set_xlabel("MODPATH 7")
-
-    plt.subplots_adjust(wspace=-0.7)
+        styles.heading(ax, title)
 
     if plot_show:
         plt.show()
@@ -1123,23 +1017,16 @@ def plot_2a(gwf, mf6pl, mp7pl, mp7ts, ibd, title=None):
         fig.savefig(figs_path / "{}-paths".format(sim_name))
 
 
-def plot_2b(gwf, mf6endpoints, mp7endpoints, ibd, title=None):
-    fig, axes = plt.subplots(ncols=2, nrows=1, figsize=figure_size_compare)
-    axes = axes.flatten()
-
-    plot_tracks(axes[0], gwf, ibd=ibd, endpoints=mf6endpoints)
-    pts = plot_tracks(axes[1], gwf, ibd=ibd, endpoints=mp7endpoints)
+def plot_2b(gwf, mf6endpoints, ibd, title=None):
+    fig, ax = plt.subplots(figsize=figure_size_compare)
+    pts = plot_tracks(ax, gwf, ibd=ibd, endpoints=mf6endpoints)
 
     if title is not None:
-        styles.heading(axes[0], title)
-    axes[0].set_xlabel("MODFLOW 6 PRT")
-    axes[1].set_xlabel("MODPATH 7")
+        styles.heading(ax, title)
 
-    cax = fig.add_axes([0.2, 0.085, 0.6, 0.02])
-    cb = plt.colorbar(pts, cax=cax, orientation="horizontal")
+    cax = fig.add_axes([0.4, 0.0, 0.2, 0.02])
+    cb = plt.colorbar(pts, cax=cax, orientation="horizontal", shrink=0.25)
     cb.set_label("Travel time (days)")
-
-    plt.subplots_adjust(bottom=0.2, wspace=-0.2)
 
     if plot_show:
         plt.show()
@@ -1148,21 +1035,18 @@ def plot_2b(gwf, mf6endpoints, mp7endpoints, ibd, title=None):
 
 
 def plot_3d(gwf, pathlines, endpoints=None, title=None):
-    from flopy.export.vtk import Vtk
     import pyvista as pv
+    from flopy.export.vtk import Vtk
 
     pv.set_plot_theme("document")
-
     axes = pv.Axes(show_actor=False, actor_scale=2.0, line_width=5)
 
     vert_exag = 10
     pathlines = pathlines.to_records(index=False)
-    pathlines["z"] = pathlines["z"] * vert_exag
-    
     vtk = Vtk(model=gwf, binary=False, vertical_exageration=vert_exag, smooth=False)
     vtk.add_model(gwf)
-    gwf_mesh = vtk.to_pyvista()
-    pls_mesh = pv.PolyData(np.array(tuple(map(tuple, pathlines[["x", "y", "z"]]))))
+    vtk.add_pathline_points(pathlines)
+    gwf_mesh, prt_mesh = vtk.to_pyvista()
     riv_mesh = pv.Box(
         bounds=[
             gwf.modelgrid.extent[1] - delc,
@@ -1187,9 +1071,9 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     gwf_mesh.rotate_z(-30, point=axes.origin, inplace=True)
     gwf_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     gwf_mesh.rotate_x(10, point=axes.origin, inplace=True)
-    pls_mesh.rotate_z(-30, point=axes.origin, inplace=True)
-    pls_mesh.rotate_y(-10, point=axes.origin, inplace=True)
-    pls_mesh.rotate_x(10, point=axes.origin, inplace=True)
+    prt_mesh.rotate_z(-30, point=axes.origin, inplace=True)
+    prt_mesh.rotate_y(-10, point=axes.origin, inplace=True)
+    prt_mesh.rotate_x(10, point=axes.origin, inplace=True)
     riv_mesh.rotate_z(-30, point=axes.origin, inplace=True)
     riv_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     riv_mesh.rotate_x(10, point=axes.origin, inplace=True)
@@ -1200,16 +1084,17 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[500, 500])
+    p = pv.Plotter(window_size=[700, 700])
     if title is not None:
         p.add_title(title, font_size=5)
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
     p.add_mesh(
-        pls_mesh,
-        scalars=pathlines.k.ravel(),
+        prt_mesh,
+        scalars="k" if "k" in prt_mesh.point_data else "ilay",
         cmap=["green", "gold", "red"],
         point_size=2,
     )
+    p.remove_scalar_bar()
     if endpoints is not None:
         endpoints = endpoints.to_records(index=False)
         endpoints["z"] = endpoints["z"] * vert_exag
@@ -1223,10 +1108,10 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
             cmap=["green", "gold", "red"],
             point_size=2,
         )
+        p.remove_scalar_bar()
     p.add_mesh(riv_mesh, color="teal", opacity=0.2)
     p.add_mesh(wel_mesh, color="red", opacity=0.3)
     p.add_mesh(bed_mesh, color="tan", opacity=0.1)
-    p.remove_scalar_bar()
     p.add_legend(
         labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
         bcolor="white",
@@ -1237,7 +1122,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     if plot_save:
         p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
     if plot_show:
-        p.camera.zoom(1.7)
+        p.camera.zoom(1.8)
         p.show()
 
 
@@ -1256,32 +1141,28 @@ def get_ibound():
 def plot_results(gwf_sim):
     gwf_model = gwf_sim.get_model(gwf_name)
     ibound = get_ibound()
-    plot_bc(gwf_sim, ibound)
-    plot_head(gwf_model, load_head())
-
     mf6pl = get_mf6_pathlines(prt_ws / trackcsvfile_prt)
-    mf6ep = mf6ep = mf6pl[mf6pl.ireason == 3]  # termination event
+    mf6ep = mf6pl[mf6pl.ireason == 3]  # termination event
     mp7pl = get_mp7_pathlines(mp7_ws / f"{mp7_name}.mppth", gwf_model)
     mp7ts = get_mp7_timeseries(mp7_ws / f"{mp7_name}.timeseries", gwf_model)
     mp7ep = get_mp7_endpoints(mp7_ws / f"{mp7_name}.mpend", gwf_model)
-    plot_2a(
+
+    plot_head(gwf_model, load_head(), ibound)
+    plot_pathlines_and_points(
         gwf_model,
-        mf6pl=mf6pl,
-        mp7pl=mp7pl,
-        mp7ts=mp7ts,
-        title="Pathlines, 1000-day time points colored by layer",
+        mf6pl=mf6pl[mf6pl.subprob == "A"],
+        title="Pathlines and points (1A), 1000-day time interval, colored by layer",
         ibd=ibound,
     )
     plot_3d(
         gwf_model,
         pathlines=mp7pl[mp7pl.subprob == "A"],
         endpoints=mp7ep,
-        title="Path points (2A) and recharge points (2B),\ncolored by layer"
+        title="Pathlines (2A) and\nrecharge points (2B),\ncolored by layer",
     )
     plot_2b(
         gwf_model,
         mf6endpoints=mf6ep[mf6ep.subprob == "B"],
-        mp7endpoints=mp7ep[mp7ep.subprob == "B"],
         title="Recharge points (2B), colored by travel time",
         ibd=ibound,
     )
