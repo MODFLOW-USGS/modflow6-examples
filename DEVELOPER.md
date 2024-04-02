@@ -17,7 +17,9 @@ This document describes development procedures and conventions for the MODFLOW 6
   - [Running with `pytest`](#running-with-pytest)
   - [Running with `jupytext`](#running-with-jupytext)
   - [Running with `jupyter`](#running-with-jupyter)
-- [Testing docs locally](#testing-docs-locally)
+- [Building documentation](#building-documentation)
+  - [ReadTheDocs](#readthedocs)
+  - [PDF document](#pdf-document)
 - [Contributing examples](#contributing-examples)
 - [Releasing the examples](#releasing-the-examples)
 
@@ -162,11 +164,12 @@ Scripts should contain a function wrapping all model runs for each scenario, gen
 
 ```python
 from modflow_devtools.misc import timed
+from pprint import pformat
 
 @timed
 def run_models(sim, silent=False):
     success, buff = sim.run_simulation(silent=silent, report=True)
-    assert success, buff
+    assert success, pformat(buff)
 ```
 
 When the scenario is run, a line like the following will be shown:
@@ -215,34 +218,88 @@ jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ip
 
 To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks/` directory after notebooks have been created with `jupytext`.
 
-## Testing docs locally
+## Building documentation
+
+This repository includes a ReadTheDocs site which is built automatically in CI, as well as resources for an example models PDF document distributed with each MODFLOW 6 release. Both can be built and checked locally.
+
+### ReadTheDocs
 
 Notebooks must be created and run (including model runs and plots) before building the ReadTheDocs documentation:
 
 ```shell
-pytest -v -n auto test_notebooks.py
+pytest -v -n auto test_notebooks.py --plot
 ```
 
-This will create and/or update notebooks in `.doc/_notebooks`. Next, build LaTeX and Markdown files:
+This will 
 
-```shell
-python scripts/process-scripts.py
-```
+* create and/or update notebooks in `.doc/_notebooks` from example `scripts/*.py`
+* create model workspaces in `examples/`, write input files, and run models
+* create parameter tables for example descriptions in `tables/`
+* create plots and figures from model outputs in `figures/`
 
-Next, ensure documentation dependencies are installed:
+Next, make sure RTD build dependencies are installed:
 
 ```shell
 pip install -r .doc/requirements.rtd.txt
 ```
 
-Now docs can be built from the `.doc/` directory:
+Next, build LaTeX and Markdown files:
+
+```shell
+python scripts/process-scripts.py
+```
+
+Next, create ReStructuredText (RST) index files from the contents of `doc/body.tex`:
+
+```shell
+python etc/ci_create_examples_rst.py
+```
+
+The docs site can now be built from the `.doc/` directory with `make`:
 
 ```shell
 make clean
 make html
 ```
 
-To host a local development server, switch to the `.doc/_build/html/` directory and run `python -m http.server`, then navigate to `localhost:8000` to view the site.
+To host a local development server, switch to the `.doc/_build/html/` directory and run `python -m http.server`.
+
+### PDF document
+
+The PDF examples document shares several initial steps with the ReadTheDocs site. Scripts must first be run (including model runs and plots):
+
+```shell
+pytest -v -n auto test_scripts.py --plot
+```
+
+The `test_notebooks.py` also suffices, but in this case the conversion from example scripts to notebooks is unnecessary.
+
+Next, build LaTeX and Markdown files:
+
+```shell
+python scripts/process-scripts.py
+```
+
+Next, create ReStructuredText (RST) index files from the contents of `doc/body.tex`:
+
+```shell
+python etc/ci_create_examples_rst.py
+```
+
+The PDF document can now be built from the `doc/` directory:
+
+```shell
+./build-pdf.sh
+```
+
+This script runs multiple passes of `pdflatex` and `bibtex` to build the PDF document:
+
+  1. `pdflatex mf6examples.tex`
+  2. `bibtex mf6examples`
+  3. `pdflatex mf6examples.tex`
+  4. `pdflatex mf6examples.tex`
+
+An equivalent batch script `build-pdf.bat` is also available for Windows.
 
 ## Contributing examples
 
@@ -256,14 +313,10 @@ To add a new example:
 
 ## Releasing the examples
 
-GitHub Actions automatically creates a new release whenever code is merged into the `master` branch of this repository. Steps to prepare for a release include:
+Steps to create a release include:
 
-1. Run the examples to generate model input files, disabling model runs and plots &mdash; e.g. from the `autotest/` directory, run `pytest -v -n auto test_scripts.py`. **Note**: if model runs are enabled, the size of the `examples/` directory will balloon from double-digit MB to several GB. We only distribute input files, not output files.
-2. Generate notebooks and tables &mdash; from the `scripts/` directory, run `process-scripts.py` to generate LaTeX tables for the documentation PDF from specially formatted code/comments in the example scripts.
-3. Build the documentation PDF with `build-pdf.sh` or `build-pdf.bat` from the `doc/` directory. This script runs multiple passes of `pdflatex` and `bibtex` to build the PDF document
-    1. `pdflatex mf6examples.tex`
-    2. `bibtex mf6examples`
-    3. `pdflatex mf6examples.tex`
-    4. `pdflatex mf6examples.tex`
-4. Zip up the model input files.
-5. Release the documentation PDF and model files archive.
+1. Generate model input files, disabling model runs and plots &mdash; e.g. from the `autotest/` directory, run `pytest -v -n auto test_scripts.py`. **Note**: if model runs are enabled, the size of the `examples/` directory will balloon from double-digit MB to several GB. We only distribute input files, not output files.
+2. Build the PDF documentation as described above.
+5. Release the documentation PDF and a zip archive of model input files.
+
+These should not be necessary to perform manually, as GitHub Actions automatically creates a new release whenever code is merged into the `master` branch of this repository.
