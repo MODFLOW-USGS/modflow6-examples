@@ -1,19 +1,43 @@
-\section{MODPATH 7 Example 2: Unstructured Grid, Steady-State Flow}
+\section{PRT/MP7 Example 2: Particle Tracking on an Unstructured Grid with Steady-State Flow}
 
-Example 2 simulates the same groundwater flow system as example 1 using MODFLOW-USG and MODFLOW-6 with an unstructured grid to refine the area near the well. The unstructured grid is based on the structured grid used in example 1 (referred to as the base grid). The areal grid is refined around the base-grid location that contains the well in example 1 (row 11, column 10). The base-grid cell containing the well is refined three levels, which means that the unstructured grid contains an 8 x 8 array of 64 cells in place of the original base-grid cell. The grid is smoothed so that it will meet the requirements of MODPATH for unstructured grids. The same areal grid is used for all model layers. The three-layer unstructured grid contains a total of 1,953 cells. The well is located in cell 1,623 in layer 3.
+This example demonstrates a MODFLOW 6 particle tracking (PRT) model by reproducing example problem 2 from the MODPATH 7 \citep{pollock2016modpath7} example problems document \citep{modpath7examples}. An equivalent MODPATH 7 model is constructed as well.
 
-todo plot grid and boundary conditions
+\subsection{Example description}
 
-In simulation 2A a ring of 16 particles is placed around faces 1 through 4 at the mid- depth of layer 3 and then tracked backward to their recharge locations at the water table. For unstructured grid simulations, particle starting locations are specified by cell number rather than by layer, row, column.
+Example 2 modifies the flow system from example 1 with a quad-refined unstructured grid. The region near the well is refined three levels. This example also employs a backwards tracking analysis, where flow model outputs are reversed before providing them to PRT to track particle trajectories in reverse. The system includes the same well and river boundary conditions. Model parameters for this example are summarized in table~\ref{tab:ex-prt-mp7-p02-01}.
 
-\begin{StandardFigure}
-	{fig:ex-prt-p02-paths}
-	{../figures/ex-prt-p02-paths.png}
+\input{../tables/ex-prt-mp7-p02-01.tex}
+
+\subsection{Example Results}
+
+In this example a MODFLOW 6 particle tracking (PRT) model runs in a separate simulation from the groundwater flow (GWF) model~(fig~\ref{fig:ex-prt-mp7-p02-head}), which provides it with intercell flows via a flow model interface.
+
+\begin{StandardFigure}{
+    Heads simulated by the MODFLOW 6 groundwater flow (GWF) model.
+    }{fig:ex-prt-mp7-p02-head}{../figures/mp7-p02-head.png}
 \end{StandardFigure}
 
-Simulation 2B uses backward particle tracking to generate a capture area for the well. A 10 x 10 array of 100 particles is placed on faces 1 through 4 of cell 1,623, which contains the well. An additional 4 x 4 array of 16 particles is placed on the top of the cell. Particles are trackied backward using an endpoint analysis.
+Subproblem 2A configures 16 particles for release on the horizontal faces of the well. Simulation 2B configures 100 particles for release on the horizontal faces of the well, with another 16 particles released from the top of the cell.
 
-\begin{StandardFigure}
-	{fig:ex-prt-p02-endpts}
-	{../figures/ex-prt-p02-endpts.png}
+Subproblem 2A pathlines and points on a 1000-day time interval are visualized in 2D in fig~\ref{fig:ex-prt-mp7-p02-paths}. Subproblem 2A pathlines and 2B recharge points are shown in 3D in fig~\ref{fig:ex-prt-mp7-p02-paths-3d}. Subproblem 2B recharge points are colored by travel time in fig~\ref{fig:ex-prt-mp7-p02-endpts}.
+
+\begin{StandardFigure}{
+	Particle pathlines and 1000-day points for subproblem 2A. Points are colored by layer.
+}
+	{fig:ex-prt-mp7-p02-paths}
+	{../figures/mp7-p02-paths.png}
+\end{StandardFigure}
+
+\begin{StandardFigure}{
+	Three-dimensional perspective of pathlines and 1000-day points for subproblem 2A. Points are colored by layer.
+}
+	{fig:ex-prt-mp7-p02-paths-3d}
+	{../figures/mp7-p02-paths-3d.pdf}
+\end{StandardFigure}
+
+\begin{StandardFigure}{
+	Particle recharge points for subproblem 2B, colored by travel time.
+}
+	{fig:ex-prt-mp7-p02-endpts}
+	{../figures/mp7-p02-endpts.png}
 \end{StandardFigure}

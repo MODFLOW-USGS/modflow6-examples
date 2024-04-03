@@ -95,21 +95,21 @@ time_units = "days"
 
 # Model parameters
 nper = 1  # Number of periods
-nlay = 3  # Number of layers
-nrow = 21  # Number of rows
-ncol = 20  # Number of columns
+nlay = 3  # Number of layers (base grid)
+nrow = 21  # Number of rows (base grid)
+ncol = 20  # Number of columns (base grid)
 delr = 500.0  # Column width ($ft$)
 delc = 500.0  # Row width ($ft$)
-top = 400.0  # Top of the model ($m$)
+top = 400.0  # Top of the model ($ft$)
 botm_str = "220.0, 200.0, 0.0"  # Layer bottom elevations ($ft$)
-porosity = 0.1  # Soil porosity ($\%$)
-rch = 0.005  # Recharge rate ($ft/s$)
-kh = [50.0, 0.01, 200.0]  # Horizontal hydraulic conductivity ($ft/s$)
-kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/s$)
-wel_q = -150000.0  # Well pumping rate
+porosity = 0.1  # Soil porosity (unitless)
+rch = 0.005  # Recharge rate ($ft/d$)
+kh = [50.0, 0.01, 200.0]  # Horizontal hydraulic conductivity ($ft/d$)
+kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/d$)
+wel_q = -150000.0  # Well pumping rate ($ft^3/d$)
 riv_h = 320.0  # River stage ($ft$)
 riv_z = 317.0  # River bottom ($ft$)
-riv_c = 1.0e5  # River conductance ($l^2/t$)
+riv_c = 1.0e5  # River conductance ($l^2/d$)
 
 # Time discretization
 nstp = 1
@@ -790,8 +790,8 @@ cmapbd = mpl.colors.ListedColormap(
 colors = ["green", "orange", "red"]
 
 # figure sizes
-figure_size_solo = (8.0, 8.0)
-figure_size_compare = (15, 6)
+figure_size_solo = (7.0, 7.0)
+figure_size_compare = (7, 3.5)
 
 
 def plot_nodes_and_vertices(gwf, ax):
@@ -886,7 +886,7 @@ def plot_head(gwf, head, ibd):
         ax.indicate_inset_zoom(axins)
 
         pc = mm.plot_array(head[:, 0, :], edgecolor="black", alpha=0.5)
-        cb = plt.colorbar(pc, shrink=0.5, pad=0.1)
+        cb = plt.colorbar(pc, shrink=0.25, pad=0.1)
         cb.ax.set_xlabel(r"Head ($m$)")
 
         if ibd is not None:
@@ -964,7 +964,7 @@ def plot_pathlines_and_points(gwf, mf6pl, ibd, title=None):
 
     plot_tracks(ax, gwf, ibd=ibd, pathlines=mf6pl)
 
-    axins = ax.inset_axes([-0.85, 0.2, 0.7, 0.9])
+    axins = ax.inset_axes([-0.88, 0.2, 0.7, 0.9])
     plot_tracks(axins, gwf, ibd=ibd, pathlines=mf6pl)
     ax.indicate_inset_zoom(axins)
     xmin, xmax = 3000, 6300
@@ -1024,7 +1024,7 @@ def plot_2b(gwf, mf6endpoints, ibd, title=None):
     if title is not None:
         styles.heading(ax, title)
 
-    cax = fig.add_axes([0.4, 0.0, 0.2, 0.02])
+    cax = fig.add_axes([0.4, 0.02, 0.2, 0.01])
     cb = plt.colorbar(pts, cax=cax, orientation="horizontal", shrink=0.25)
     cb.set_label("Travel time (days)")
 
@@ -1084,7 +1084,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[700, 700])
+    p = pv.Plotter(window_size=[500, 500])
     if title is not None:
         p.add_title(title, font_size=5)
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
