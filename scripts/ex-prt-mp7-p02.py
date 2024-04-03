@@ -1125,7 +1125,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     if plot_save:
         p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
     if plot_show:
-        p.camera.zoom(1.8)
+        p.camera.zoom(2.0)
         p.show()
 
 
@@ -1154,7 +1154,7 @@ def plot_results(gwf_sim):
     plot_pathlines_and_points(
         gwf_model,
         mf6pl=mf6pl[mf6pl.subprob == "A"],
-        title="Pathlines and points (1A), 1000-day\ntime interval, colored by layer",
+        title="Pathlines and points (2A), 1000-day\ntime interval, colored by layer",
         ibd=ibound,
     )
     plot_3d(

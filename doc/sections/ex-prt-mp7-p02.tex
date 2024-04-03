@@ -1,6 +1,6 @@
 \section{PRT/MP7 Example 2: Particle Tracking on an Unstructured Grid with Steady-State Flow}
 
-This example demonstrates a MODFLOW 6 particle tracking (PRT) model by reproducing example problem 2 from the MODPATH 7 \citep{pollock2016modpath7} example problems document \citep{modpath7examples}. An equivalent MODPATH 7 model is constructed as well.
+This example demonstrates a MODFLOW 6 particle tracking (PRT) model by reproducing example problem 2 from the MODPATH 7 \citep{pollock2016modpath7} example problems document \citep{modpath7examples}. An equivalent MODPATH 7 model is constructed for comparison; while only PRT results are visualized below, results have been compared for agreement.
 
 \subsection{Example description}
 
@@ -17,7 +17,7 @@ In this example a MODFLOW 6 particle tracking (PRT) model runs in a separate sim
     }{fig:ex-prt-mp7-p02-head}{../figures/mp7-p02-head.png}
 \end{StandardFigure}
 
-Subproblem 2A configures 16 particles for release on the horizontal faces of the well. Simulation 2B configures 100 particles for release on the horizontal faces of the well, with another 16 particles released from the top of the cell.
+Subproblem 2A configures 16 particles for release on the horizontal faces of the well. Subproblem 2B configures 100 particles for release on the horizontal faces of the well, with another 16 particles released from the top of the cell.
 
 Subproblem 2A pathlines and points on a 1000-day time interval are visualized in 2D in fig~\ref{fig:ex-prt-mp7-p02-paths}. Subproblem 2A pathlines and 2B recharge points are shown in 3D in fig~\ref{fig:ex-prt-mp7-p02-paths-3d}. Subproblem 2B recharge points are colored by travel time in fig~\ref{fig:ex-prt-mp7-p02-endpts}.
 
@@ -29,7 +29,7 @@ Subproblem 2A pathlines and points on a 1000-day time interval are visualized in
 \end{StandardFigure}
 
 \begin{StandardFigure}{
-	Three-dimensional perspective of pathlines and 1000-day points for subproblem 2A. Points are colored by layer.
+	Three-dimensional perspective of pathlines and 1000-day points for subproblem 2A, and recharge points for subproblem 2B. Points are colored by layer.
 }
 	{fig:ex-prt-mp7-p02-paths-3d}
 	{../figures/mp7-p02-paths-3d.pdf}
