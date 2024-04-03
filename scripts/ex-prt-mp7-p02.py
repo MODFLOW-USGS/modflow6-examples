@@ -790,8 +790,8 @@ cmapbd = mpl.colors.ListedColormap(
 colors = ["green", "orange", "red"]
 
 # figure sizes
-figure_size_solo = (7.0, 7.0)
-figure_size_compare = (7, 3.5)
+figure_size_solo = (7, 7)
+figure_size_compare = (7, 5)
 
 
 def plot_nodes_and_vertices(gwf, ax):
@@ -809,7 +809,7 @@ def plot_nodes_and_vertices(gwf, ax):
 
     # create map view plot
     pmv = flopy.plot.PlotMapView(gwf, ax=ax)
-    pmv.plot_grid(lw=0.5, edgecolor="black", alpha=0.5)
+    pmv.plot_grid(edgecolor="black", alpha=0.25)
     styles.heading(ax=ax, heading="Nodes and vertices (one-based)", fontsize=8)
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
@@ -878,7 +878,7 @@ def plot_head(gwf, head, ibd):
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_bc("WEL", plotAll=True)
         mm.plot_bc("RIV", plotAll=True, color="teal")
-        mm.plot_grid(lw=0.5)
+        mm.plot_grid(alpha=0.25)
 
         # create inset
         axins = ax.inset_axes([-0.8, 0.25, 0.7, 0.9])
@@ -914,7 +914,7 @@ def plot_head(gwf, head, ibd):
 def plot_points(ax, gwf, data):
     ax.set_aspect("equal")
     mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
-    mm.plot_grid(lw=0.5, alpha=0.5)
+    mm.plot_grid(alpha=0.25)
     return ax.scatter(
         data["x"],
         data["y"],
@@ -933,7 +933,7 @@ def plot_tracks(
         ax.set_title(title, fontsize=12)
 
     mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
-    mm.plot_grid(lw=0.5)
+    mm.plot_grid(alpha=0.25)
 
     if ibd is not None:
         mm.plot_array(ibd, cmap=cmapbd, edgecolor="gray")
@@ -971,6 +971,7 @@ def plot_pathlines_and_points(gwf, mf6pl, ibd, title=None):
     ymin, ymax = 3500, 7000
     axins.set_xlim([xmin, xmax])
     axins.set_ylim([ymin, ymax])
+    plt.subplots_adjust(left=0.55)
 
     ax.legend(
         title="EXPLANATION",
@@ -1024,9 +1025,11 @@ def plot_2b(gwf, mf6endpoints, ibd, title=None):
     if title is not None:
         styles.heading(ax, title)
 
-    cax = fig.add_axes([0.4, 0.02, 0.2, 0.01])
+    cax = fig.add_axes([0.4, 0.12, 0.2, 0.01])
     cb = plt.colorbar(pts, cax=cax, orientation="horizontal", shrink=0.25)
     cb.set_label("Travel time (days)")
+
+    plt.subplots_adjust(bottom=0.2)
 
     if plot_show:
         plt.show()
@@ -1151,7 +1154,7 @@ def plot_results(gwf_sim):
     plot_pathlines_and_points(
         gwf_model,
         mf6pl=mf6pl[mf6pl.subprob == "A"],
-        title="Pathlines and points (1A), 1000-day time interval, colored by layer",
+        title="Pathlines and points (1A), 1000-day\ntime interval, colored by layer",
         ibd=ibound,
     )
     plot_3d(
