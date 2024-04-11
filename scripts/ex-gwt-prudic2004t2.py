@@ -133,6 +133,7 @@ def get_stream_data():
     connectiondata = [[ireach] for ireach in range(streamdata.shape[0])]
     isegold = -1
     distance_along_segment = []
+    distance = 0
     for ireach, row in enumerate(streamdata):
         iseg = row["seg"] - 1
         if iseg == isegold:

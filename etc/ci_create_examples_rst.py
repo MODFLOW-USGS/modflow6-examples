@@ -116,7 +116,7 @@ for ex in examples:
 
     # read restructured text file as a string
     print(f"reading...'{dst}'")
-    with open(dst, 'r', encoding="utf-8") as file:
+    with open(dst, "r", encoding="utf-8") as file:
         lines = file.read()
 
     # find equation labels in lines
@@ -142,7 +142,7 @@ for ex in examples:
 
     # read restructured text file for example
     print(f"reading...'{dst}'")
-    with open(dst, 'r', encoding="utf-8") as f:
+    with open(dst, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     # editing restructured text file for example

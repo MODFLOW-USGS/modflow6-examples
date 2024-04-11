@@ -129,7 +129,6 @@ parameters = {
 parameter_units = {
     "longitudinal_dispersivity": "$m$",
     "ratio_horizontal_to_longitudinal_dispersivity": "unitless",
-    "ratio_horizontal_to_longitudinal_dispersivity": "unitless",
 }
 
 # Model units

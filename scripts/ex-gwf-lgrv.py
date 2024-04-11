@@ -51,9 +51,9 @@ time_units = "seconds"
 
 # Scenario-specific parameters
 parameters = {
-    f"ex-gwf-lgrv-gr": {"configuration": "Refined"},
-    f"ex-gwf-lgrv-gc": {"configuration": "Coarse"},
-    f"ex-gwf-lgrv-lgr": {"configuration": "LGR"},
+    "ex-gwf-lgrv-gr": {"configuration": "Refined"},
+    "ex-gwf-lgrv-gc": {"configuration": "Coarse"},
+    "ex-gwf-lgrv-lgr": {"configuration": "LGR"},
 }
 
 # Model parameters

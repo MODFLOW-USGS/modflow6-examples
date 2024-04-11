@@ -249,7 +249,7 @@ def build_mf6gwt(
                 gwt, volfrac=volfracim, porosity=porosity_im, zetaim=beta
             )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)

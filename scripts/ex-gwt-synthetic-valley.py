@@ -639,8 +639,8 @@ def build_mf6gwt(sim_folder):
         ],
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
-        ("GWFBUDGET", f"../mf6gwf/flow.cbc", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
+        ("GWFBUDGET", "../mf6gwf/flow.cbc", None),
     ]
     fmi = flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
     sourcerecarray = [

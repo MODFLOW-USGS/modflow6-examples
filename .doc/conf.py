@@ -12,6 +12,7 @@
 #
 import os
 import re
+
 from modflow_devtools.misc import get_env
 
 # -- set boolean indicating if running on readthedocs server -----------------
@@ -149,13 +150,9 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_css_files = [
-    'custom.css',
-    'theme_overrides.css'
-]
+html_css_files = ["custom.css", "theme_overrides.css"]
 
 html_context = {
-    "github_repo": "https://github.com/MODFLOW-USGS/modflow6-examples",  # assuming an exact match
     "display_github": False,
     "github_user": "modflow6-examples",
     "github_repo": "modflow6-examples",
@@ -241,4 +238,3 @@ nbsphinx_prolog = (
 
 # Import Matplotlib to avoid this message in notebooks:
 # "Matplotlib is building the font cache; this may take a moment."
-import matplotlib.pyplot

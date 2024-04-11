@@ -210,7 +210,7 @@ def build_mf6gwt(sim_folder):
         ath2=alpha_tv,
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)

@@ -19,7 +19,9 @@ def write(request) -> bool:
 
 @pytest.fixture(scope="session")
 def run(request) -> bool:
-    return not (request.config.getoption("--init") or request.config.getoption("--no-run"))
+    return not (
+        request.config.getoption("--init") or request.config.getoption("--no-run")
+    )
 
 
 @pytest.fixture(scope="session")
@@ -50,7 +52,10 @@ def pytest_addoption(parser):
         help="Just build and write model input files",
     )
     parser.addoption(
-        "--no-write", action="store_true", default=False, help="Disable model build/write"
+        "--no-write",
+        action="store_true",
+        default=False,
+        help="Disable model build/write",
     )
     parser.addoption(
         "--no-run", action="store_true", default=False, help="Disable model runs"

@@ -206,7 +206,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtadv(gwt, scheme="upstream")
     flopy.mf6.ModflowGwtdsp(gwt, alh=alpha_l, ath1=alpha_th, atv=alpha_tv)
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
         ("GWFMOVER", "../mf6gwf/flow.mvr.bud", None),
         ("MAW-1", "../mf6gwf/flow.maw.bud", None),

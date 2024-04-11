@@ -25,6 +25,7 @@ import copy
 import os
 import pathlib as pl
 from itertools import cycle
+from math import sqrt
 from typing import Dict, List
 
 import flopy
@@ -1527,7 +1528,10 @@ class DisvGridMerger:
                     self.force_snap_cellid.add(ic_new)
 
         if len(self.force_snap_cellid) > 0:
-            dist = lambda v1, v2: sqrt((v2[1] - v1[1]) ** 2 + (v2[2] - v1[2]) ** 2)
+
+            def dist(v1, v2):
+                return sqrt((v2[1] - v1[1]) ** 2 + (v2[2] - v1[2]) ** 2)
+
             mg = self.merged
             vert_xy = np.array([(x, y) for _, x, y in mg.vertices])
             for ic in self.force_snap_cellid:
@@ -1541,7 +1545,7 @@ class DisvGridMerger:
                     mg.cell2d[ic] = tmp[:4] + vert
                 # check if vertices are within cell.
                 cell = [mg.vertices[iv][1:] for iv in vert]
-                path = mpltPath.Path(cell)
+                path = mpltPath.Path(cell)  # noqa: F821
                 contain = np.where(path.contains_points(vert_xy))[0]
                 for iv in contain:
                     # find closest polyline

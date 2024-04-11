@@ -182,6 +182,7 @@ def create_outer_ring_of_ctrl_vols(outer_v, verts, iverts, xc, yc, ivt, idx):
     # Starts at 9 o'clock and proceeds counter-clockwise
     # As such, 'pt3' will be used by the subsequent iverts
     # However, 'pt4' will be re-used by each subseqeuent ivert
+    pt3_id = pt3_rad = pt3_ang = None
     for ii in np.arange(len(outer_v) - 1):
         # Create all the points involved
         pt1 = outer_v.iloc[ii]
@@ -198,6 +199,9 @@ def create_outer_ring_of_ctrl_vols(outer_v, verts, iverts, xc, yc, ivt, idx):
             finish_ang = pt4_ang
 
         else:
+            assert pt3_id is not None
+            assert pt3_rad is not None
+            assert pt3_ang is not None
             pt4_id = pt3_id
             pt4_rad = pt3_rad
             pt4_ang = pt3_ang

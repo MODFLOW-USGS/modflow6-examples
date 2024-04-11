@@ -22,3 +22,4 @@ jupytext
 pooch
 GitPython
 pyvista
+ruff

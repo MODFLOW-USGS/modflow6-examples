@@ -383,7 +383,7 @@ def build_mf2k5_flow_model(
 
     # Instantiate the MODFLOW model
     mf = flopy.modflow.Modflow(
-        modelname=modelname_mf, model_ws=mt3d_ws, exe_name=exe_name_mf
+        modelname=modelname_mf, model_ws=mt3d_ws, exe_name="mf2005"
     )
 
     # Instantiate discretization package
@@ -575,7 +575,7 @@ def build_mt3d_transport_model(
     mt = flopy.mt3d.Mt3dms(
         modelname=modelname_mt,
         model_ws=mt3d_ws,
-        exe_name=exe_name_mt,
+        exe_name="mt3dms",
         modflowmodel=mf,
     )
 
