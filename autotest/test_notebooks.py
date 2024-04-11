@@ -2,10 +2,9 @@
 
 from os import environ
 
+from conftest import NOTEBOOKS_PATH
 from modflow_devtools.markers import requires_exe
 from modflow_devtools.misc import run_cmd, set_env
-
-from conftest import NOTEBOOKS_PATH
 
 
 @requires_exe("jupytext")

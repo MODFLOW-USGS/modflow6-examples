@@ -16,13 +16,14 @@ from pprint import pformat
 
 sys.path.append(os.path.join("..", "common"))
 
-import flopy
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import math
-import pooch
+
+import flopy
 import git
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
+import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
@@ -143,9 +144,7 @@ def mirror_mesh_pts(verts, idx_max):
     verts_mir = []
     vert_on_mir = []
     pairings = {}
-    new_idx = (
-        idx_max - 1
-    )  # at this point, idx_max will be 1-based, new_idx is 0-based
+    new_idx = idx_max - 1  # at this point, idx_max will be 1-based, new_idx is 0-based
 
     for itm in verts:
         if itm[2] == 0.0:
@@ -169,9 +168,7 @@ def mirror_mesh_ctrl_vols(iverts, full_verts, vert_on_mir, pairings):
     for vert in iverts:
         element_id = vert[0]
         if element_id > max_element_no:
-            max_element_no = (
-                element_id  # will be 0-based since they came in that way
-            )
+            max_element_no = element_id  # will be 0-based since they came in that way
 
     # create a "mirrored" control volume for every existing cv
     all_mirrored_ivert_collections = []
@@ -298,6 +295,7 @@ def create_bnd_iverts(bnd_verts, vert_idx, ivert_idx, side):
     bnd_verts.sort(key=lambda x: x[2])
 
     # Once sorted, create rectangular iverts along entire boundary
+    new_pt2 = None
     for i, (v1, v2) in enumerate(zip(bnd_verts[0:-1], bnd_verts[1:])):
         v_x_coord1 = v1[1]
         v_y_coord1 = v1[2]
@@ -317,6 +315,7 @@ def create_bnd_iverts(bnd_verts, vert_idx, ivert_idx, side):
             new_pt1 = [new_vert_no, v_x_coord1_newpt, v_y_coord1_newpt]
             new_bnd_verts.append(new_pt1)
         else:
+            assert new_pt2 is not None
             new_pt1 = new_pt2
 
         vert_idx += 1
@@ -367,9 +366,7 @@ def read_finite_element_mesh(f):
 
     # Mirror about the y=0 line (the bottom of the grid)
     mirrored_verts, vert_on_mir, pairings = mirror_mesh_pts(verts, max_idx)
-    iverts_full = mirror_mesh_ctrl_vols(
-        iverts, mirrored_verts, vert_on_mir, pairings
-    )
+    iverts_full = mirror_mesh_ctrl_vols(iverts, mirrored_verts, vert_on_mir, pairings)
 
     # Make the full verts list
     verts_full = verts + mirrored_verts
@@ -435,14 +432,10 @@ def build_mf6_flow_model(sim_name, silent=True):
     sim_ws = os.path.join(workspace, sim_name, "mf6gwf")
 
     # Instantiate a new MF6 simulation
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 time discretization
-    flopy.mf6.ModflowTdis(
-        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
-    )
+    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
 
     # Instantiating MODFLOW 6 groundwater flow model
     gwf = flopy.mf6.ModflowGwf(
@@ -491,8 +484,8 @@ def build_mf6_flow_model(sim_name, silent=True):
         path=data_path,
         known_hash="md5:f3d321b7690f9f1f7dcd730c2bfe8e23",
     )
-    verts, cell2d, left_iverts, right_iverts, bore_iverts = (
-        read_finite_element_mesh(fpath)
+    verts, cell2d, left_iverts, right_iverts, bore_iverts = read_finite_element_mesh(
+        fpath
     )
     top = np.ones((len(cell2d),))
     botm = np.zeros((1, len(cell2d)))
@@ -573,14 +566,11 @@ def build_mf6_flow_model(sim_name, silent=True):
 
 
 def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
-
     print("Building mf6gwt model...{}".format(sim_name))
     gwename = "gwe-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name, "mf6gwe")
 
-    sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6"
-    )
+    sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 groundwater transport model
     gwe = flopy.mf6.MFModel(
@@ -651,14 +641,10 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
     )
 
     # Instantiating MODFLOW 6 heat transport initial temperature
-    flopy.mf6.ModflowGweic(
-        gwe, strt=strt_temp, filename="{}.ic".format(gwename)
-    )
+    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, filename="{}.ic".format(gwename))
 
     # Instantiating MODFLOW 6 heat transport advection package
-    flopy.mf6.ModflowGweadv(
-        gwe, scheme=scheme, filename="{}.adv".format(gwename)
-    )
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, filename="{}.adv".format(gwename))
 
     # Instantiating MODFLOW 6 heat transport dispersion package
     if ktw != 0:
@@ -709,9 +695,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
             eslspd_bore = []
             for bore_loc in bore_iverts:
                 #               layer,       CV ID,     Watts added)
-                eslspd_bore.append(
-                    [0, bore_loc[0], float((tm + 1) * 10.0 * unitadj)]
-                )
+                eslspd_bore.append([0, bore_loc[0], float((tm + 1) * 10.0 * unitadj)])
 
             eslspd.update({tm: eslspd_bore})
 
@@ -739,9 +723,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         gwe,
         budget_filerecord="{}.cbc".format(gwename),
         temperature_filerecord="{}.ucn".format(gwename),
-        temperatureprintrecord=[
-            ("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")
-        ],
+        temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord={
             49: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
             50: [],  # Turn off output in stress periods 51-99
@@ -819,9 +801,7 @@ def plot_grid(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                figs_path / "{}-grid{}".format(simname, ".png")
-            )
+            fpth = os.path.join(figs_path / "{}-grid{}".format(simname, ".png"))
             fig.savefig(fpth, dpi=300)
 
 
@@ -852,9 +832,7 @@ def plot_grid_inset(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                figs_path / "{}-grid-inset{}".format(simname, ".png")
-            )
+            fpth = os.path.join(figs_path / "{}-grid-inset{}".format(simname, ".png"))
             fig.savefig(fpth, dpi=300)
 
 
@@ -883,9 +861,7 @@ def plot_head(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                figs_path / "{}-head{}".format(simname, ".png")
-            )
+            fpth = os.path.join(figs_path / "{}-head{}".format(simname, ".png"))
             fig.savefig(fpth, dpi=300)
 
 
@@ -950,9 +926,7 @@ def plot_temperature(sim, scen, time_):
         # extract discrete colors from the .plasma map
         cmaplist = [cmap(i) for i in np.linspace(0, 1, len(levels))]
 
-        cs1 = pmv.contour_array(
-            tempXXd, levels=levels, colors=cmaplist, linewidths=0.5
-        )
+        cs1 = pmv.contour_array(tempXXd, levels=levels, colors=cmaplist, linewidths=0.5)
 
         labels = ax.clabel(
             cs1,
@@ -989,14 +963,11 @@ def plot_temperature(sim, scen, time_):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                figs_path / "{}-temp50days{}".format(simname, ".png")
-            )
+            fpth = os.path.join(figs_path / "{}-temp50days{}".format(simname, ".png"))
             fig.savefig(fpth, dpi=300)
 
 
 def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
-
     # Only need to plot the grid once, do it the first time through
     plot_grid(sim_mf6gwf)
     plot_grid_inset(sim_mf6gwf)
@@ -1017,7 +988,6 @@ def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
 
 # +
 def scenario(idx, silent=False):
-
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
 

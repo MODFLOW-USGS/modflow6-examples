@@ -171,6 +171,7 @@ class Wexler1d:
     def analytical(self, x, t, v, l, d, tol=1.0e-20, nval=5000):
         sigma = 0.0
         betalist = self.root3(d, v, l, nval=nval)
+        concold = None
         for i, bi in enumerate(betalist):
             denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
             x1 = (
@@ -186,6 +187,7 @@ class Wexler1d:
             term1 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d)
             conc = 1.0 - term1 * sigma
             if i > 0:
+                assert concold is not None
                 diff = abs(conc - concold)
                 if np.all(diff < tol):
                     break
@@ -231,6 +233,7 @@ class Wexler1d:
         term1 = term1 / denom
         term2 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d - e * t)
         betalist = self.root3(d, v, l, nval=nval)
+        concold = None
         for i, bi in enumerate(betalist):
             denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
             x1 = (
@@ -246,6 +249,7 @@ class Wexler1d:
 
             conc = term1 - term2 * sigma
             if i > 0:
+                assert concold is not None
                 diff = abs(conc - concold)
                 if np.all(diff < tol):
                     break
@@ -376,7 +380,7 @@ def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, deca
         ath1=longitudinal_dispersivity,
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)

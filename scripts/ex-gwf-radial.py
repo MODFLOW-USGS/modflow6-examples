@@ -407,8 +407,8 @@ class RadialUnconfinedDrawdown:
             raise RuntimeError(
                 "RadialUnconfinedDrawdown: "
                 + "well_screen_elevation_top <= well_screen_elevation_bottom\n"
-                + f"That is: {well_screen_elevation_top} <= "
-                + f"{well_screen_elevation_bottom}"
+                + f"That is: {self.well_top} <= "
+                + f"{self.well_bot}"
             )
 
     def drawdown(
@@ -722,7 +722,7 @@ class RadialUnconfinedDrawdown:
             root = j0_roots[-1]
             bad_times = "\n".join([str(times[it]) for it in bessel_root_limit_reached])
             warnings.warn(
-                f"\n\nRadialUnconfinedDrawdown.drawdown_times failed to "
+                "\n\nRadialUnconfinedDrawdown.drawdown_times failed to "
                 + f"meet convergence sumrtol = {sumrtol}"
                 + "\nwithin the precalculated Bessel root solutions "
                 + "(convergence is evaluated at every second Bessel root).\n\n"
