@@ -9,9 +9,9 @@
 # +
 import os
 import pathlib as pl
+from pprint import pformat
 
 import flopy
-import os
 import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -21,10 +21,11 @@ from flopy.discretization import VertexGrid
 from flopy.utils import GridIntersect
 from flopy.utils.triangle import Triangle
 from flopy.utils.voronoi import VoronoiGrid
-from shapely.geometry import LineString, Point
-from scipy.interpolate import CloughTocher2DInterpolator
 from matplotlib.collections import LineCollection
-from modflow_devtools.misc import get_env, timed
+from modflow_devtools.misc import get_env
+from scipy.interpolate import CloughTocher2DInterpolator
+from shapely.geometry import LineString, Point
+
 # -
 
 # +
