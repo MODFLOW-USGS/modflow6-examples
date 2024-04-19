@@ -879,7 +879,7 @@ def plot_pathlines(ax, grid, hd, pl, title=None):
     mm.plot_ibound()
     pc = mm.plot_array(hd, edgecolor="black", alpha=0.5)
     cb = plt.colorbar(pc, shrink=0.25, pad=0.1)
-    cb.ax.set_xlabel(r"Head ($m$)")
+    cb.ax.set_xlabel(r"Head ($ft$)")
     mm.plot_pathline(pl, layer="all", lw=0.3, colors=["black"])
 
 
