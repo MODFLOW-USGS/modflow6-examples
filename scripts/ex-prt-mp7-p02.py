@@ -32,6 +32,7 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
+import flopy.utils.binaryfile as bf
 import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -39,9 +40,9 @@ import numpy as np
 import pandas as pd
 from flopy.mf6 import MFSimulation
 from flopy.plot.styles import styles
+from flopy.utils.gridgen import Gridgen
 from flopy.utils.gridintersect import GridIntersect
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
 from modflow_devtools.misc import get_env, timed
 from shapely.geometry import LineString, MultiPoint
 
@@ -180,7 +181,7 @@ dis = flopy.modflow.ModflowDis(
 # Refine the grid.
 
 # +
-from flopy.utils.gridgen import Gridgen
+
 
 # create Gridgen workspace
 gridgen_ws = sim_ws / "gridgen"
@@ -484,12 +485,12 @@ def build_mp7_sim(gwf_model):
     pga = flopy.modpath.ParticleGroup(
         particlegroupname="PG2A",
         particledata=get_particle_data("A"),
-        filename=f"a.sloc",
+        filename="a.sloc",
     )
     pgb = flopy.modpath.ParticleGroupNodeTemplate(
         particlegroupname="PG2B",
         particledata=get_particle_data("B"),
-        filename=f"b.sloc",
+        filename="b.sloc",
     )
 
     # Instantiate the MODPATH 7 simulation object
@@ -557,7 +558,6 @@ def run_models(*sims, silent=True):
 # Because this problem tracks particles backwards, we need to reverse the head and budget files after running the groundwater flow model and before running the particle tracking model. Define functions to do this.
 
 # +
-import flopy.utils.binaryfile as bf
 
 
 def reverse_budgetfile(fpth, rev_fpth, tdis):
