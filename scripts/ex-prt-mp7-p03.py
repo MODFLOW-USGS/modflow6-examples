@@ -1040,7 +1040,7 @@ def plot_all(gwfsim):
     plot_pathpoints_3d(
         gwf,
         mf6pathlines,
-        title="Pathlines and 2000-day points,\ncolored by layer, 3D view",
+        title="Pathlines and 2000-day points,\ncolored by destination, 3D view",
     )
     plot_all_pts(
         gwf,
