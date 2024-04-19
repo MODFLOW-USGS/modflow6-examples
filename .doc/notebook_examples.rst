@@ -69,5 +69,5 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-gwe-radial
    _notebooks/ex-gwe-geotherm
    _notebooks/ex-prt-mp7-p01
-
+   _notebooks/ex-gwe-prt
 
