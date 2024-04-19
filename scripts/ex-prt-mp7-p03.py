@@ -52,7 +52,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from flopy.plot.styles import styles
-from flopy.utils.modpathfile import EndpointFile
 from matplotlib.lines import Line2D
 from modflow_devtools.misc import get_env, timed
 
@@ -526,7 +525,9 @@ def get_mf6_pathlines(path):
             else (
                 "drain"
                 if row.destzone == 4
-                else "river" if row.destzone == 5 else pd.NA
+                else "river"
+                if row.destzone == 5
+                else pd.NA
             )
         ),
         axis=1,
