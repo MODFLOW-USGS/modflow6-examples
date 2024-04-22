@@ -14,10 +14,12 @@
 
 # ## Particle tracking: transient flow system
 #
-# Application of a MODFLOW 6 particle-tracking (PRT) model and a MODPATH 7 (MP7) model to solve
-# example 3 from the MODPATH 7 documentation.
+# Application of a MODFLOW 6 particle-tracking (PRT)
+# model and a MODPATH 7 (MP7) model to solve example
+# problem 3 from the MODPATH 7 documentation.
 #
-# This example modifies examples 1 and 2 with a transient flow system. There are three periods:
+# This example modifies the system in examples 1 and
+# 2 with transient flow. There are 3 stress periods:
 #
 # | Stress period | Type         | Time steps | Length (days) | Multiplier |
 # |:--------------|:-------------|:-----------|:--------------|:-----------|
@@ -25,21 +27,21 @@
 # | 2             | transient    | 10         | 36500         | 1.5        |
 # | 3             | steady-state | 1          | 100000        | 1          |
 #
-# Particles are released in groups of 25, every 20 days (for 200 days), starting 90,000 days
-# into the simulation. Particles are released from the grid's top left corner. In total 1000
-# particles are released.
+# Particles are released in groups of 25 from the top
+# left corner of the grid. Releases occur in groups of
+# 25 every 20 days (for 200 days), starting 90,000 days
+# into the simulation, for 1000 particles in total.
 #
-# At the beginning of the 2nd stress period, the 2 wells start to pump at a constant rate.
-# This continues until the end of the simulation.
-#
-# The MODPATH solution configures particle release timing via MODPATH 7's reference time option
-# 2, to indicate release should begin 90% of the way through the 1st stress period, and continue
-# for 200 days. PRT achieves the same timing with an explicit selection of release times.
+# At the beginning of the 2nd stress period, 2 wells
+# begin to pump at a constant rate, one in the first
+# layer and another in the third. The wells continue
+# to pump until the simulation ends.
 #
 
 # ### Initial setup
 #
-# Import dependencies, define the example name and workspace, and read settings from environment variables.
+# Import dependencies, define the example name and workspace,
+# and read settings from environment variables.
 
 # +
 import pathlib as pl
@@ -126,7 +128,8 @@ perioddata = [
     (100000, 1, 1),
 ]
 
-# Define well data. Although this notebook will refer to layer/row/column indices starting at 1, indices in FloPy (and more generally in Python) are zero-based. A negative discharge indicates pumping, while a positive value indicates injection.
+# Define well data.
+# Negative discharge indicates pumping, positive injection.
 wells = [
     # layer, row, col, discharge
     (0, 10, 9, -75000),
@@ -143,14 +146,16 @@ rd = []
 for i in range(nrow):
     rd.append([(0, i, ncol - 1), riv_h, riv_c, riv_z, riv_iface, riv_iflowface])
 
-# Configure locations for particle tracking to terminate. We have three explicitly defined termination zones:
+# Configure locations for particle tracking to terminate. We
+# have three explicitly defined termination zones:
 #
 # - 2: the well in layer 1, at row 11, column 10
 # - 3: the well in layer 3, at row 13, column 5
 # - 4: the drain in layer 1, running through row 15 from column 10-20
 # - 5: the river in layer 1, running through column 20
 #
-# MODFLOW 6 reserves zone number 1 to indicate that particles may move freely within the zone.
+# MODFLOW 6 reserves zone number 1 to indicate that particles
+# may move freely within the zone.
 
 
 # +
@@ -184,7 +189,8 @@ izone = get_izone()
 # -
 
 #
-# Define particles to track. Particles are released from the top of a 2x2 square of cells in the upper left of the midel grid's top layer.
+# Define particles to track. Particles are released from the top of a
+# 2x2 square of cells in the upper left of the midel grid's top layer.
 
 # +
 
@@ -234,6 +240,8 @@ for rivspec in rd:
 
 
 # +
+
+release_points = None
 
 
 def build_gwf_model():
@@ -347,7 +355,7 @@ def build_gwf_model():
     return sim
 
 
-def build_prt_model():
+def build_prt_model(gwf):
     # simulation
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, exe_name="mf6", version="mf6", sim_ws=prt_ws
@@ -384,17 +392,24 @@ def build_prt_model():
     # Instantiate the MODFLOW 6 prt model input package.
     flopy.mf6.ModflowPrtmip(prt, pname="mip", porosity=porosity, izone=izone)
 
-    # Instantiate the MODFLOW 6 prt particle release package.
+    # Instantiate the MODFLOW 6 PRT particle release point (PRP) package.
+    # Convert MODPATH 7 particle configuration to format expected by PRP.
+    release_points = list(lrcpd.to_prp(prt.modelgrid))
+    head = gwf.output.head().get_data(totim=100000)
+    release_points = [
+        (r[0], r[1], r[2], r[3], r[4], r[5], botm[0] + ((head[*r[1:4]] - botm[0]) / 2))
+        for r in release_points
+    ]
     # Specify custom release times starting 90,000 days into
     # the simulation, repeating every 20 days, for 200 days.
-    releasepts = list(lrcpd.to_prp(prt.modelgrid))
+    release_times = list(range(90000, 90201, 20))
     flopy.mf6.ModflowPrtprp(
         prt,
         pname="prp1",
         filename="{}_1.prp".format(prt_name),
-        nreleasepts=len(releasepts),
-        packagedata=releasepts,
-        release_timesrecord=list(range(90000, 90201, 20)),
+        nreleasepts=len(release_points),
+        packagedata=release_points,
+        release_timesrecord=release_times,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
@@ -406,7 +421,6 @@ def build_prt_model():
         trackcsv_filerecord=[trackcsvfile_prt],
         track_release=True,
         track_terminate=True,
-        # track_transit=True,
         track_usertime=True,
         track_timesrecord=tracktimes,
         saverecord=[("BUDGET", "ALL")],
@@ -465,8 +479,7 @@ def build_mp7_model(gwf):
 def build_models():
     gwfsim = build_gwf_model()
     prtsim = build_prt_model()
-    gwf = gwfsim.get_model(gwf_name)
-    mp7sim = build_mp7_model(gwf)
+    mp7sim = build_mp7_model(gwfsim.get_model(gwf_name))
     return gwfsim, prtsim, mp7sim
 
 
@@ -483,16 +496,6 @@ def run_models(gwfsim, prtsim, mp7sim, silent=False):
     mp7sim.write_input()
     success, buff = mp7sim.run_model(silent=silent, report=True)
     assert success, pformat(buff)
-
-
-def get_term_zone_nns(grid):
-    wel_locs = [w[0:3] for w in wells]
-    riv_locs = [(0, i, 19) for i in range(20)]
-    drn_locs = [(drain[0], drain[1], d) for d in range(drain[2][0], drain[2][1])]
-    wel_nids = grid.get_node(wel_locs)
-    riv_nids = grid.get_node(riv_locs)
-    drn_nids = grid.get_node(drn_locs)
-    return wel_nids, drn_nids, riv_nids
 
 
 def get_mf6_pathlines(path):
@@ -542,75 +545,11 @@ def get_mf6_pathlines(path):
     return mf6pl
 
 
-def get_mp7_pathlines(path, gwf_model):
-    # load mp7 pathlines, letting flopy determine capture areas
-    mp7plf = flopy.utils.PathlineFile(path)
-    mp7pl_wel1 = pd.DataFrame(
-        mp7plf.get_destination_pathline_data(nodes["well1"], to_recarray=True)
-    )
-    mp7pl_wel2 = pd.DataFrame(
-        mp7plf.get_destination_pathline_data(nodes["well2"], to_recarray=True)
-    )
-    mp7pl_wel1["destzone"] = 2
-    mp7pl_wel1["dest"] = "well1"
-    mp7pl_wel2["destzone"] = 3
-    mp7pl_wel2["dest"] = "well2"
-    mp7pl_drn = pd.DataFrame(
-        mp7plf.get_destination_pathline_data(nodes["drain"], to_recarray=True)
-    )
-    mp7pl_drn["destzone"] = 4
-    mp7pl_drn["dest"] = "drain"
-    mp7pl_riv = pd.DataFrame(
-        mp7plf.get_destination_pathline_data(nodes["river"], to_recarray=True)
-    )
-    mp7pl_riv["destzone"] = 5
-    mp7pl_riv["dest"] = "river"
-    mp7pl = pd.concat([mp7pl_wel1, mp7pl_wel2, mp7pl_drn, mp7pl_riv])
-
-    # index by particle group and particle ID
-    mp7pl.set_index(["particlegroup", "sequencenumber"], drop=False, inplace=True)
-
-    # convert indices to 1-based (flopy converts them to 0-based, but PRT uses 1-based, so do the same for consistency)
-    kijnames = [
-        "k",
-        "node",
-        "particleid",
-        "particlegroup",
-        "particleidloc",
-        "sequencenumber",
-    ]
-
-    for n in kijnames:
-        mp7pl[n] += 1
-
-    # add release time and termination time columns
-    mp7pl["t0"] = (
-        mp7pl.groupby(level=["particlegroup", "sequencenumber"])
-        .apply(lambda x: x.time.min())
-        .to_frame(name="t0")
-        .t0
-    )
-    mp7pl["tt"] = (
-        mp7pl.groupby(level=["particlegroup", "sequencenumber"])
-        .apply(lambda x: x.time.max())
-        .to_frame(name="tt")
-        .tt
-    )
-    mp7pl["time"] = mp7pl["time"] + 90000
-
-    # add markercolor column, color-coding by layer for plots
-    mp7pl["mc"] = mp7pl.apply(
-        lambda row: "green" if row.k == 1 else "gold" if row.k == 2 else "red", axis=1
-    )
-
-    return mp7pl
-
-
 def get_mp7_timeseries(path, gwf_model):
     # load mp7 pathlines, letting flopy determine capture areas
-    mp7tsf = flopy.utils.TimeseriesFile(path)
+    mp7tsfile = flopy.utils.TimeseriesFile(path)
     mp7ts = pd.DataFrame(
-        mp7tsf.get_destination_timeseries_data(list(range(gwf_model.modelgrid.nnodes)))
+        mp7tsfile.get_destination_timeseries_data(list(range(gwf_model.modelgrid.nnodes)))
     )
 
     # index by particle group and particle ID
@@ -629,6 +568,7 @@ def get_mp7_timeseries(path, gwf_model):
         mp7ts[n] += 1
 
     # add release time and termination time columns
+    mp7ts["time"] = mp7ts["time"] + 90000
     mp7ts["t0"] = (
         mp7ts.groupby(level=["particlegroup", "particleid"])
         .apply(lambda x: x.time.min())
@@ -641,22 +581,34 @@ def get_mp7_timeseries(path, gwf_model):
         .to_frame(name="tt")
         .tt
     )
-    mp7ts["time"] = mp7ts["time"] + 90000
-
-    # add markercolor column, color-coding by layer for plots
-    mp7ts["mc"] = mp7ts.apply(
-        lambda row: "green" if row.k == 1 else "yellow" if row.k == 2 else "red", axis=1
-    )
 
     return mp7ts
 
 
 def get_mp7_endpoints(path, gwf_model):
     # load mp7 pathlines, letting flopy determine capture areas
-    mp7epf = flopy.utils.EndpointFile(path)
-    mp7ep = pd.DataFrame(
-        mp7epf.get_destination_endpoint_data(list(range(gwf_model.modelgrid.nnodes)))
+    mp7ep = flopy.utils.EndpointFile(path)
+    mp7ep_wel1 = pd.DataFrame(
+        mp7ep.get_destination_endpoint_data(nodes["well1"])
     )
+    mp7ep_wel1["destzone"] = 2
+    mp7ep_wel1["dest"] = "well1"
+    mp7ep_wel2 = pd.DataFrame(
+        mp7ep.get_destination_endpoint_data(nodes["well2"])
+    )
+    mp7ep_wel2["destzone"] = 3
+    mp7ep_wel2["dest"] = "well"
+    mp7ep_drn = pd.DataFrame(
+        mp7ep.get_destination_endpoint_data(nodes["drain"])
+    )
+    mp7ep_drn["destzone"] = 4
+    mp7ep_drn["dest"] = "drain"
+    mp7ep_riv = pd.DataFrame(
+        mp7ep.get_destination_endpoint_data(nodes["river"])
+    )
+    mp7ep_riv["destzone"] = 5
+    mp7ep_riv["dest"] = "river"
+    mp7ep = pd.concat([mp7ep_wel1, mp7ep_wel2, mp7ep_drn, mp7ep_riv])
 
     # index by particle group and particle ID
     mp7ep.set_index(["particlegroup", "particleid"], drop=False, inplace=True)
@@ -669,11 +621,11 @@ def get_mp7_endpoints(path, gwf_model):
         "particlegroup",
         "particleidloc",
     ]
-
     for n in kijnames:
         mp7ep[n] += 1
 
     # add release time and termination time columns
+    mp7ep["time"] = mp7ep["time"] + 90000
     mp7ep["t0"] = (
         mp7ep.groupby(level=["particlegroup", "particleid"])
         .apply(lambda x: x.time.min())
@@ -685,12 +637,6 @@ def get_mp7_endpoints(path, gwf_model):
         .apply(lambda x: x.time.max())
         .to_frame(name="tt")
         .tt
-    )
-    mp7ep["time"] = mp7ep["time"] + 90000
-
-    # add markercolor column, color-coding by layer for plots
-    mp7ep["mc"] = mp7ep.apply(
-        lambda row: "green" if row.k == 1 else "yellow" if row.k == 2 else "red", axis=1
     )
 
     return mp7ep
@@ -773,7 +719,7 @@ def plot_head(gwf, head):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}")
+        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}, t=0")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_grid(lw=0.5)
         mm.plot_bc("WEL", plotAll=True)
@@ -782,7 +728,7 @@ def plot_head(gwf, head):
 
         pc = mm.plot_array(head[ilay, :, :], edgecolor="black", alpha=0.25)
         cb = plt.colorbar(pc, shrink=0.25, pad=0.1)
-        cb.ax.set_xlabel(r"Head ($m$)")
+        cb.ax.set_xlabel(r"Head ($ft$)")
 
         levels = np.arange(np.floor(hmin), np.ceil(hmax) + cint, cint)
         cs = mm.contour_array(head[ilay, :, :], colors="white", levels=levels)
@@ -945,7 +891,7 @@ def plot_all_pathlines(gwf, mf6pl, title=None):
             fig.savefig(figs_path / f"{sim_name}-paths.png")
 
 
-def plot_all_pts(
+def plot_endpoints(
     gwf, mf6pts, mp7pts=None, title=None, fig_name=None, color="destination"
 ):
     with styles.USGSPlot():
@@ -1013,15 +959,10 @@ def plot_all_pts(
             fig.savefig(figs_path / f"{fig_name}.png")
 
 
-def load_head():
-    head_file = flopy.utils.HeadFile(gwf_ws / (gwf_name + ".hds"))
-    return head_file.get_data()
-
-
 def plot_all(gwfsim):
     # get gwf model
     gwf = gwfsim.get_model(gwf_name)
-    head = load_head()
+    head = flopy.utils.HeadFile(gwf_ws / (gwf_name + ".hds")).get_data()
 
     # get pathlines
     mf6pathlines = get_mf6_pathlines(prt_ws / trackcsvfile_prt)
@@ -1035,6 +976,8 @@ def plot_all(gwfsim):
         gwf,
         mf6pathlines,
         mp7pathlines,
+        # mf6pathlines[(mf6pathlines.irpt == 1) & (mf6pathlines.trelease == 90000)],
+        # mp7pathlines[mp7pathlines.particleid == 1],
         title="Pathlines and 2000-day points, colored by travel time",
     )
     plot_pathpoints_3d(
@@ -1042,15 +985,15 @@ def plot_all(gwfsim):
         mf6pathlines,
         title="Pathlines and 2000-day points,\ncolored by destination, 3D view",
     )
-    plot_all_pts(
+    plot_endpoints(
         gwf,
         mf6pathlines[mf6pathlines.ireason == 0],
-        mp7endpoints[mp7endpoints.time == 90000],
+        mf6pathlines[mf6pathlines.ireason == 3],
         title="Release points, colored by destination",
-        fig_name=f"{sim_name}-rel-dest",
+        fig_name=f"{sim_name}-endpts",
         color="destination",
     )
-    plot_all_pts(
+    plot_endpoints(
         gwf,
         mf6pathlines[mf6pathlines.ireason == 3],
         mp7endpoints[mp7endpoints.time > 90000],
@@ -1069,8 +1012,26 @@ def plot_all(gwfsim):
 
 def scenario(silent=False):
     # build models
-    gwfsim, prtsim, mp7sim = build_models()
-    run_models(gwfsim, prtsim, mp7sim, silent=silent)
+    # gwfsim, prtsim, mp7sim = build_models()
+    # run_models(gwfsim, prtsim, mp7sim, silent=silent)
+
+    gwfsim = build_gwf_model()
+    gwfsim.write_simulation()
+    success, buff = gwfsim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+
+    gwf = gwfsim.get_model(gwf_name)
+
+    prtsim = build_prt_model(gwf)
+    prtsim.write_simulation()
+    success, buff = prtsim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+
+    mp7sim = build_mp7_model(gwf)
+    mp7sim.write_input()
+    success, buff = mp7sim.run_model(silent=silent, report=True)
+    assert success, pformat(buff)
+
     plot_all(gwfsim)
 
 
