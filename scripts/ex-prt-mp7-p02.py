@@ -110,7 +110,7 @@ kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/d$)
 wel_q = -150000.0  # Well pumping rate ($ft^3/d$)
 riv_h = 320.0  # River stage ($ft$)
 riv_z = 317.0  # River bottom ($ft$)
-riv_c = 1.0e5  # River conductance ($l^2/d$)
+riv_c = 1.0e5  # River conductance ($ft^2/d$)
 
 # Time discretization
 nstp = 1
@@ -1125,7 +1125,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     if plot_save:
         p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
     if plot_show:
-        p.camera.zoom(2.0)
+        p.camera.zoom(3.0)
         p.show()
 
 
@@ -1150,7 +1150,7 @@ def plot_results(gwf_sim):
     mp7ts = get_mp7_timeseries(mp7_ws / f"{mp7_name}.timeseries", gwf_model)
     mp7ep = get_mp7_endpoints(mp7_ws / f"{mp7_name}.mpend", gwf_model)
 
-    plot_head(gwf_model, load_head(), ibound)
+    # plot_head(gwf_model, load_head(), ibound)
     plot_pathlines_and_points(
         gwf_model,
         mf6pl=mf6pl[mf6pl.subprob == "A"],
@@ -1186,7 +1186,7 @@ def scenario(silent=False):
     if run:
         run_models(gwf_sim, prt_sim, mp7_sim, silent=silent)
     if plot:
-        plot_results(gwf_sim)  # , prt_sim, mp7_sim)
+        plot_results(gwf_sim)
 
 
 # We are now ready to run the example problem. Subproblems 2A and 2B are solved by a single MODFLOW 6 run and a single MODPATH 7 run, so they are included under one "scenario". Each of the two subproblems is represented by its own particle release package (for MODFLOW 6) or particle group (for MODPATH 7).
