@@ -355,7 +355,7 @@ def build_gwf_model():
     return sim
 
 
-def build_prt_model(gwf):
+def build_prt_model():
     # simulation
     sim = flopy.mf6.MFSimulation(
         sim_name=sim_name, exe_name="mf6", version="mf6", sim_ws=prt_ws
@@ -394,11 +394,8 @@ def build_prt_model(gwf):
 
     # Instantiate the MODFLOW 6 PRT particle release point (PRP) package.
     # Convert MODPATH 7 particle configuration to format expected by PRP.
-    release_points = list(lrcpd.to_prp(prt.modelgrid))
-    head = gwf.output.head().get_data(totim=100000)
     release_points = [
-        (r[0], r[1], r[2], r[3], r[4], r[5], botm[0] + ((head[*r[1:4]] - botm[0]) / 2))
-        for r in release_points
+        (r[0], r[1], r[2], r[3], r[4], r[5], 0.5) for r in lrcpd.to_prp(prt.modelgrid)
     ]
     # Specify custom release times starting 90,000 days into
     # the simulation, repeating every 20 days, for 200 days.
@@ -410,6 +407,9 @@ def build_prt_model(gwf):
         nreleasepts=len(release_points),
         packagedata=release_points,
         release_timesrecord=release_times,
+        # local z coordinates specified, compute global release
+        # coord from cell top if saturated or water table if not
+        local_z=True,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
@@ -546,10 +546,12 @@ def get_mf6_pathlines(path):
 
 
 def get_mp7_timeseries(path, gwf_model):
-    # load mp7 pathlines, letting flopy determine capture areas
+    # load mp7 timeseries
     mp7tsfile = flopy.utils.TimeseriesFile(path)
     mp7ts = pd.DataFrame(
-        mp7tsfile.get_destination_timeseries_data(list(range(gwf_model.modelgrid.nnodes)))
+        mp7tsfile.get_destination_timeseries_data(
+            list(range(gwf_model.modelgrid.nnodes))
+        )
     )
 
     # index by particle group and particle ID
@@ -586,29 +588,11 @@ def get_mp7_timeseries(path, gwf_model):
 
 
 def get_mp7_endpoints(path, gwf_model):
-    # load mp7 pathlines, letting flopy determine capture areas
-    mp7ep = flopy.utils.EndpointFile(path)
-    mp7ep_wel1 = pd.DataFrame(
-        mp7ep.get_destination_endpoint_data(nodes["well1"])
+    # load mp7 endpoints
+    mp7epfile = flopy.utils.EndpointFile(path)
+    mp7ep = pd.DataFrame(
+        mp7epfile.get_destination_endpoint_data(list(range(gwf_model.modelgrid.nnodes)))
     )
-    mp7ep_wel1["destzone"] = 2
-    mp7ep_wel1["dest"] = "well1"
-    mp7ep_wel2 = pd.DataFrame(
-        mp7ep.get_destination_endpoint_data(nodes["well2"])
-    )
-    mp7ep_wel2["destzone"] = 3
-    mp7ep_wel2["dest"] = "well"
-    mp7ep_drn = pd.DataFrame(
-        mp7ep.get_destination_endpoint_data(nodes["drain"])
-    )
-    mp7ep_drn["destzone"] = 4
-    mp7ep_drn["dest"] = "drain"
-    mp7ep_riv = pd.DataFrame(
-        mp7ep.get_destination_endpoint_data(nodes["river"])
-    )
-    mp7ep_riv["destzone"] = 5
-    mp7ep_riv["dest"] = "river"
-    mp7ep = pd.concat([mp7ep_wel1, mp7ep_wel2, mp7ep_drn, mp7ep_riv])
 
     # index by particle group and particle ID
     mp7ep.set_index(["particlegroup", "particleid"], drop=False, inplace=True)
@@ -756,7 +740,8 @@ def plot_pathpoints(gwf, mf6pl, mp7pl=None, title=None):
             styles.heading(ax if mp7pl is None else ax[0], heading=title)
 
         plot_points(fig, ax if mp7pl is None else ax[0], gwf, mf6pl)
-        plot_points(fig, ax if mp7pl is None else ax[1], gwf, mp7pl, colorbar=False)
+        if mp7pl is not None:
+            plot_points(fig, ax[1], gwf, mp7pl, colorbar=False)
 
         if mp7pl is not None:
             ax[0].set_xlabel("MODFLOW 6 PRT")
@@ -811,25 +796,25 @@ def plot_pathpoints_3d(gwf, mf6pl, mp7pl=None, title=None):
             220 * vert_exag,
         ]
     )
-    gwf_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    gwf_mesh.rotate_z(110, point=axes.origin, inplace=True)
     gwf_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     gwf_mesh.rotate_x(10, point=axes.origin, inplace=True)
-    prt_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    prt_mesh.rotate_z(110, point=axes.origin, inplace=True)
     prt_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     prt_mesh.rotate_x(10, point=axes.origin, inplace=True)
-    drn_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    drn_mesh.rotate_z(110, point=axes.origin, inplace=True)
     drn_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     drn_mesh.rotate_x(10, point=axes.origin, inplace=True)
-    riv_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    riv_mesh.rotate_z(110, point=axes.origin, inplace=True)
     riv_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     riv_mesh.rotate_x(10, point=axes.origin, inplace=True)
-    wel_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    wel_mesh.rotate_z(110, point=axes.origin, inplace=True)
     wel_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     wel_mesh.rotate_x(10, point=axes.origin, inplace=True)
-    wel2_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    wel2_mesh.rotate_z(110, point=axes.origin, inplace=True)
     wel2_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     wel2_mesh.rotate_x(10, point=axes.origin, inplace=True)
-    bed_mesh.rotate_z(100, point=axes.origin, inplace=True)
+    bed_mesh.rotate_z(110, point=axes.origin, inplace=True)
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
@@ -839,10 +824,9 @@ def plot_pathpoints_3d(gwf, mf6pl, mp7pl=None, title=None):
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
     p.add_mesh(
         prt_mesh,
-        # scalars="k" if "k" in prt_mesh.point_data else "ilay",
         scalars="destzone",
         cmap=["red", "red", "green", "blue"],
-        point_size=2,
+        point_size=3,
         render_points_as_spheres=True,
     )
     p.add_mesh(drn_mesh, color="green", opacity=0.2)
@@ -865,7 +849,7 @@ def plot_pathpoints_3d(gwf, mf6pl, mp7pl=None, title=None):
     if plot_save:
         p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
     if plot_show:
-        p.camera.zoom(2.0)
+        p.camera.zoom(3)
         p.show()
 
 
@@ -949,7 +933,7 @@ def plot_endpoints(
                 ],
             )
         else:
-            cax = fig.add_axes([0.2, 0.2, 0.6, 0.01])
+            cax = fig.add_axes([0.2, 0.18, 0.6, 0.01])
             cb = plt.colorbar(pts, cax=cax, orientation="horizontal", shrink=0.25)
             cb.set_label("Travel time")
 
@@ -975,20 +959,19 @@ def plot_all(gwfsim):
     plot_pathpoints(
         gwf,
         mf6pathlines,
-        mp7pathlines,
-        # mf6pathlines[(mf6pathlines.irpt == 1) & (mf6pathlines.trelease == 90000)],
-        # mp7pathlines[mp7pathlines.particleid == 1],
+        # mp7pathlines,
         title="Pathlines and 2000-day points, colored by travel time",
     )
     plot_pathpoints_3d(
         gwf,
         mf6pathlines,
+        # mp7pathlines,
         title="Pathlines and 2000-day points,\ncolored by destination, 3D view",
     )
     plot_endpoints(
         gwf,
         mf6pathlines[mf6pathlines.ireason == 0],
-        mf6pathlines[mf6pathlines.ireason == 3],
+        # mp7endpoints[mp7endpoints.time == 90000],
         title="Release points, colored by destination",
         fig_name=f"{sim_name}-endpts",
         color="destination",
@@ -996,7 +979,7 @@ def plot_all(gwfsim):
     plot_endpoints(
         gwf,
         mf6pathlines[mf6pathlines.ireason == 3],
-        mp7endpoints[mp7endpoints.time > 90000],
+        # mp7endpoints[mp7endpoints.time > 90000],
         title="Terminating points, colored by destination",
         fig_name=f"{sim_name}-term-dest",
         color="destination",
@@ -1012,26 +995,8 @@ def plot_all(gwfsim):
 
 def scenario(silent=False):
     # build models
-    # gwfsim, prtsim, mp7sim = build_models()
-    # run_models(gwfsim, prtsim, mp7sim, silent=silent)
-
-    gwfsim = build_gwf_model()
-    gwfsim.write_simulation()
-    success, buff = gwfsim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
-
-    gwf = gwfsim.get_model(gwf_name)
-
-    prtsim = build_prt_model(gwf)
-    prtsim.write_simulation()
-    success, buff = prtsim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
-
-    mp7sim = build_mp7_model(gwf)
-    mp7sim.write_input()
-    success, buff = mp7sim.run_model(silent=silent, report=True)
-    assert success, pformat(buff)
-
+    gwfsim, prtsim, mp7sim = build_models()
+    run_models(gwfsim, prtsim, mp7sim, silent=silent)
     plot_all(gwfsim)
 
 
