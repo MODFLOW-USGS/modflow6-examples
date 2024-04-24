@@ -104,7 +104,7 @@ kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/d$)
 wel_q = -150000.0  # Well pumping rate ($ft^3/d$)
 riv_h = 320.0  # River stage ($ft$)
 riv_z = 317.0  # River bottom ($ft$)
-riv_c = 1.0e5  # River conductance ($l^2/d$)
+riv_c = 1.0e5  # River conductance ($ft^2/d$)
 
 # Time discretization
 nstp = 1
