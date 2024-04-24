@@ -394,9 +394,7 @@ def build_prt_model():
 
     # Instantiate the MODFLOW 6 PRT particle release point (PRP) package.
     # Convert MODPATH 7 particle configuration to format expected by PRP.
-    release_points = [
-        (r[0], r[1], r[2], r[3], r[4], r[5], 0.5) for r in lrcpd.to_prp(prt.modelgrid)
-    ]
+    release_points = list(lrcpd.to_prp(prt.modelgrid, localz=True))
     # Specify custom release times starting 90,000 days into
     # the simulation, repeating every 20 days, for 200 days.
     release_times = list(range(90000, 90201, 20))
