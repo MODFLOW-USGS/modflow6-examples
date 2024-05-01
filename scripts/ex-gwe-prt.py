@@ -443,8 +443,8 @@ def temp_interp(pls, temperatures):
 
     interp = CloughTocher2DInterpolator(list(zip(X, Y)), Z)
     partIDs = pls.name.unique()
-    part1 = pls[pls["name"] == partIDs[0]]
-    part2 = pls[pls["name"] == partIDs[1]]
+    part1 = pls[pls["name"] == partIDs[0]].copy()
+    part2 = pls[pls["name"] == partIDs[1]].copy()
     for index, row in part1.iterrows():
         x_prt = row["x"]
         y_prt = row["y"]
@@ -712,4 +712,4 @@ def scenario(idx, silent=False):
 
 # Run the scenario.
 
-scenario(0, silent=False)
+scenario(0, silent=True)
