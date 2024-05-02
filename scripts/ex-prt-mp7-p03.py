@@ -191,9 +191,13 @@ izone = get_izone()
 #
 # Define particles to track. Particles are released from the top of a
 # 2x2 square of cells in the upper left of the midel grid's top layer.
+# MODPATH 7 uses a reference time value of 0.9 to start the release at
+# 90,000 days into the simulation.
 
 # +
 
+ref_time = 0.9
+ref_time_days = int(ref_time * 10**5)
 rel_minl = rel_maxl = 0
 rel_minr = 2
 rel_maxr = 3
@@ -240,8 +244,6 @@ for rivspec in rd:
 
 
 # +
-
-release_points = None
 
 
 def build_gwf_model():
@@ -392,12 +394,14 @@ def build_prt_model():
     # Instantiate the MODFLOW 6 prt model input package.
     flopy.mf6.ModflowPrtmip(prt, pname="mip", porosity=porosity, izone=izone)
 
-    # Instantiate the MODFLOW 6 PRT particle release point (PRP) package.
     # Convert MODPATH 7 particle configuration to format expected by PRP.
     release_points = list(lrcpd.to_prp(prt.modelgrid, localz=True))
+
     # Specify custom release times starting 90,000 days into
     # the simulation, repeating every 20 days, for 200 days.
-    release_times = list(range(90000, 90201, 20))
+    release_times = list(range(ref_time_days, 90200, 20))
+
+    # Instantiate the MODFLOW 6 PRT particle release point (PRP) package.
     flopy.mf6.ModflowPrtprp(
         prt,
         pname="prp1",
@@ -411,7 +415,7 @@ def build_prt_model():
     )
 
     # Instantiate the MODFLOW 6 prt output control package
-    tracktimes = list(range(90000, 250000, 2000))
+    tracktimes = list(range(90000, 150001, 2000))
     flopy.mf6.ModflowPrtoc(
         prt,
         pname="oc",
@@ -498,28 +502,14 @@ def run_models(gwfsim, prtsim, mp7sim, silent=False):
 
 def get_mf6_pathlines(path):
     # load mf6 pathlines
-    mf6pl = pd.read_csv(path)
+    pl = pd.read_csv(path)
 
-    # index by particle release package, release point, and release time
-    mf6pl.set_index(["iprp", "irpt", "trelease"], drop=False, inplace=True)
-
-    # add release time and termination time columns
-    mf6pl["t0"] = (
-        mf6pl.groupby(level=["iprp", "irpt", "trelease"])
-        .apply(lambda x: x.t.min())
-        .to_frame(name="t0")
-        .t0
-    )
-    mf6pl["tt"] = (
-        mf6pl.groupby(level=["iprp", "irpt", "trelease"])
-        .apply(lambda x: x.t.max())
-        .to_frame(name="tt")
-        .tt
-    )
+    # index temporarily by composite key fields
+    pl.set_index(["iprp", "irpt", "trelease"], drop=False, inplace=True)
 
     # determine which particles ended up in which capture area
-    mf6pl["destzone"] = mf6pl[mf6pl.istatus > 1].izone
-    mf6pl["dest"] = mf6pl.apply(
+    pl["destzone"] = pl[pl.istatus > 1].izone
+    pl["dest"] = pl.apply(
         lambda row: (
             "well"
             if (row.destzone == 2 or row.destzone == 3)
@@ -535,93 +525,55 @@ def get_mf6_pathlines(path):
     )
 
     # add markercolor column, color-coding by layer for plots
-    mf6pl["mc"] = mf6pl.apply(
+    pl["mc"] = pl.apply(
         lambda row: "green" if row.ilay == 1 else "gold" if row.ilay == 2 else "red",
         axis=1,
     )
 
-    return mf6pl
+    # reset index
+    pl.reset_index(drop=True, inplace=True)
+
+    # convert indices to 0-based
+    for n in [
+        "imdl",
+        "iprp",
+        "irpt",
+        "ilay",
+        "icell",
+    ]:
+        pl[n] -= 1
+
+    return pl
 
 
 def get_mp7_timeseries(path, gwf_model):
-    # load mp7 timeseries
-    mp7tsfile = flopy.utils.TimeseriesFile(path)
-    mp7ts = pd.DataFrame(
-        mp7tsfile.get_destination_timeseries_data(
-            list(range(gwf_model.modelgrid.nnodes))
-        )
+    file = flopy.utils.TimeseriesFile(path)
+    ts = pd.DataFrame(
+        file.get_destination_timeseries_data(list(range(gwf_model.modelgrid.nnodes)))
     )
 
-    # index by particle group and particle ID
-    mp7ts.set_index(["particlegroup", "particleid"], drop=False, inplace=True)
+    # adjust time column since mp7 reports time w.r.t. reference time
+    ts["time"] = ts["time"] + ref_time_days
 
-    # convert indices to 1-based (flopy converts them to 0-based, but PRT uses 1-based, so do the same for consistency)
-    kijnames = [
-        "k",
-        "node",
-        "particleid",
-        "particlegroup",
-        "particleidloc",
-    ]
-
-    for n in kijnames:
-        mp7ts[n] += 1
-
-    # add release time and termination time columns
-    mp7ts["time"] = mp7ts["time"] + 90000
-    mp7ts["t0"] = (
-        mp7ts.groupby(level=["particlegroup", "particleid"])
-        .apply(lambda x: x.time.min())
-        .to_frame(name="t0")
-        .t0
-    )
-    mp7ts["tt"] = (
-        mp7ts.groupby(level=["particlegroup", "particleid"])
-        .apply(lambda x: x.time.max())
-        .to_frame(name="tt")
-        .tt
-    )
-
-    return mp7ts
+    return ts
 
 
 def get_mp7_endpoints(path, gwf_model):
-    # load mp7 endpoints
-    mp7epfile = flopy.utils.EndpointFile(path)
-    mp7ep = pd.DataFrame(
-        mp7epfile.get_destination_endpoint_data(list(range(gwf_model.modelgrid.nnodes)))
+    file = flopy.utils.EndpointFile(path)
+    ep = pd.DataFrame(
+        file.get_destination_endpoint_data(list(range(gwf_model.modelgrid.nnodes)))
     )
 
-    # index by particle group and particle ID
-    mp7ep.set_index(["particlegroup", "particleid"], drop=False, inplace=True)
+    # adjust time column since mp7 reports time w.r.t. reference time
+    ep["time"] = ep["time"] + ref_time_days
 
-    # convert indices to 1-based (flopy converts them to 0-based, but PRT uses 1-based, so do the same for consistency)
-    kijnames = [
-        "k",
-        "node",
-        "particleid",
-        "particlegroup",
-        "particleidloc",
-    ]
-    for n in kijnames:
-        mp7ep[n] += 1
+    return ep
 
-    # add release time and termination time columns
-    mp7ep["time"] = mp7ep["time"] + 90000
-    mp7ep["t0"] = (
-        mp7ep.groupby(level=["particlegroup", "particleid"])
-        .apply(lambda x: x.time.min())
-        .to_frame(name="t0")
-        .t0
-    )
-    mp7ep["tt"] = (
-        mp7ep.groupby(level=["particlegroup", "particleid"])
-        .apply(lambda x: x.time.max())
-        .to_frame(name="tt")
-        .tt
-    )
 
-    return mp7ep
+def get_mp7_pathlines(timeseriesfile_path, endpointfile_path, gwf):
+    timeseries = get_mp7_timeseries(timeseriesfile_path, gwf)
+    endpoints = get_mp7_endpoints(endpointfile_path, gwf)
+    return pd.concat([timeseries, endpoints]).reset_index(drop=False)
 
 
 # -
@@ -751,7 +703,7 @@ def plot_pathpoints(gwf, mf6pl, mp7pl=None, title=None):
             fig.savefig(figs_path / f"{sim_name}-paths-layer.png")
 
 
-def plot_pathpoints_3d(gwf, mf6pl, mp7pl=None, title=None):
+def plot_pathpoints_3d(gwf, mf6pl, title=None):
     import pyvista as pv
     from flopy.export.vtk import Vtk
 
@@ -942,15 +894,13 @@ def plot_endpoints(
 
 
 def plot_all(gwfsim):
-    # get gwf model
+    # load results
     gwf = gwfsim.get_model(gwf_name)
     head = flopy.utils.HeadFile(gwf_ws / (gwf_name + ".hds")).get_data()
-
-    # get pathlines
     mf6pathlines = get_mf6_pathlines(prt_ws / trackcsvfile_prt)
-    mp7timeseries = get_mp7_timeseries(mp7_ws / timeseriesfile_mp7, gwf)
-    mp7endpoints = get_mp7_endpoints(mp7_ws / endpointfile_mp7, gwf)
-    mp7pathlines = pd.concat([mp7timeseries, mp7endpoints])
+    mp7pathlines = get_mp7_pathlines(
+        mp7_ws / timeseriesfile_mp7, mp7_ws / endpointfile_mp7, gwf
+    )
 
     # plot the results
     plot_head(gwf, head=head)
@@ -992,7 +942,6 @@ def plot_all(gwfsim):
 
 
 def scenario(silent=False):
-    # build models
     gwfsim, prtsim, mp7sim = build_models()
     run_models(gwfsim, prtsim, mp7sim, silent=silent)
     plot_all(gwfsim)
