@@ -34,6 +34,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from flopy.mf6 import MFSimulation
+from flopy.plot.styles import styles
 from flopy.utils.gridgen import Gridgen
 from matplotlib.collections import LineCollection
 from modflow_devtools.misc import get_env, timed
@@ -810,7 +811,7 @@ def plot_map_view(ax, gwf):
 
 def plot_inset(ax, gwf):
     # create inset
-    axins = ax.inset_axes([-0.75, 0.3, 0.6, 0.8])
+    axins = ax.inset_axes([-0.75, 0.35, 0.6, 0.8])
 
     # plot grid features
     plot_map_view(axins, gwf)
@@ -835,38 +836,40 @@ def plot_inset(ax, gwf):
             markersize=15,
         ),
     ]
-    axins.legend(handles=legend_elements)
+    axins.legend(handles=legend_elements, bbox_to_anchor=(0.2, -0.2, 0.8, 0.1))
 
     # add the inset
     ax.indicate_inset_zoom(axins)
 
 
 def plot_grid(gwf, title=None):
-    # setup the plot
-    fig = plt.figure(figsize=(7, 7))
-    ax = fig.add_subplot(1, 1, 1, aspect="equal")
-    if title is not None:
-        plt.suptitle(t=title, fontsize=14, y=0.9)
+    with styles.USGSPlot():
+        # setup the plot
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot(1, 1, 1, aspect="equal")
+        if title is not None:
+            styles.heading(ax=ax, heading=title)
 
-    # add plot features
-    plot_map_view(ax, gwf)
-    plot_well_ifaces(ax)
-    plot_inset(ax, gwf)
+        # add plot features
+        plot_map_view(ax, gwf)
+        plot_well_ifaces(ax)
+        plot_inset(ax, gwf)
 
-    # add legend
-    ax.legend(
-        handles=[
-            mpl.patches.Patch(color="red", label="Wells"),
-            mpl.patches.Patch(color="blue", label="Constant head boundary"),
-        ]
-    )
+        # add legend
+        ax.legend(
+            handles=[
+                mpl.patches.Patch(color="red", label="Wells"),
+                mpl.patches.Patch(color="blue", label="Constant head boundary"),
+            ],
+            bbox_to_anchor=(-1.2, 0, 0.8, 0.1),
+        )
 
-    plt.subplots_adjust(left=0.43)
+        plt.subplots_adjust(left=0.43)
 
-    if plot_show:
-        plt.show()
-    if plot_save:
-        fig.savefig(figs_path / f"{sim_name}-grid")
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(figs_path / f"{sim_name}-grid")
 
 
 # +
@@ -884,32 +887,29 @@ def plot_pathlines(ax, grid, hd, pl, title=None):
 
 
 def plot_all_pathlines(grid, heads, prtpl, mp7pl=None, title=None):
-    fig, ax = plt.subplots(ncols=1 if mp7pl is None else 2, nrows=1, figsize=(7, 7))
-    if title is not None:
-        plt.suptitle(
-            t=title,
-            fontsize=14,
-            y=0.8,
+    with styles.USGSPlot():
+        fig, ax = plt.subplots(ncols=1 if mp7pl is None else 2, nrows=1, figsize=(7, 7))
+        if title is not None:
+            styles.heading(ax=ax, heading=title)
+
+        plot_pathlines(
+            ax if mp7pl is None else ax[0],
+            grid,
+            heads,
+            prtpl,
+            None if mp7pl is None else "MODFLOW 6 PRT",
         )
+        if mp7pl is not None:
+            plot_pathlines(ax[1], grid, heads, mp7pl, "MODPATH 7")
 
-    plot_pathlines(
-        ax if mp7pl is None else ax[0],
-        grid,
-        heads,
-        prtpl,
-        None if mp7pl is None else "MODFLOW 6 PRT",
-    )
-    if mp7pl is not None:
-        plot_pathlines(ax[1], grid, heads, mp7pl, "MODPATH 7")
+        # for ax in axes:
+        #     ax.set_xlim(2000, 6000)
+        #     ax.set_ylim(6000, 10500)
 
-    # for ax in axes:
-    #     ax.set_xlim(2000, 6000)
-    #     ax.set_ylim(6000, 10500)
-
-    if plot_show:
-        plt.show()
-    if plot_save:
-        fig.savefig(figs_path / f"{sim_name}-paths")
+        if plot_show:
+            plt.show()
+        if plot_save:
+            fig.savefig(figs_path / f"{sim_name}-paths")
 
 
 def plot_all(gwf):
@@ -934,7 +934,7 @@ def plot_all(gwf):
         grid,
         hds,
         prt_pl,
-        title="Heads and pathlines",
+        title="Head and pathlines",
     )
 
 
