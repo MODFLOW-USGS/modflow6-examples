@@ -1,0 +1,44 @@
+\section{PRT/MP7 Example 3: Forward Tracking on a Structured Grid with Transient Flow and Multiple Release Times}
+
+This example demonstrates a MODFLOW 6 particle tracking (PRT) model by reproducing example problem 3 from the MODPATH 7 \citep{pollock2016modpath7} example problems document \citep{modpath7examples}. An equivalent MODPATH 7 model is constructed as well.
+
+\subsection{Example description}
+
+This example modifies the flow system from example 1 with three stress periods: first a steady-state period with a single time step, length 100,000 days, then a transient period with 10 time steps, each with length 36,500 days, and lastly a steady-state period with a single time step lasting 100,000 days.
+
+This example also modifies the boundary conditions from example 1, with not one but two wells. Both are inactive for the first stress period, then begin to discharge as the 2nd stress period begins (after 100,000 days), after which they continue at a constant rate for the rest of the simulation.
+
+Particles are released in batches from a 2x2-cell square (4 total cells) in the upper left of the grid. Ten batches are released in total: the first batch is released at 90,000 days, after which batches are released every 20 days for 200 days.
+
+\subsection{Example Results}
+
+In this example a MODFLOW 6 particle tracking (PRT) model runs after a flow (GWF) model~(fig~\ref{fig:ex-prt-mp7-p01-head}). The flow model provides PRT with intercell flows via a flow model interface.
+
+\begin{StandardFigure}{
+    Heads simulated by the MODFLOW 6 groundwater flow (GWF) model.
+    }{fig:ex-prt-mp7-p03-head}{../figures/mp7-p03-head.png}
+\end{StandardFigure}
+
+Path points on a 2000-day interval are visualized in 2D~(fig~\ref{fig:ex-prt-mp7-p03-paths-layer}) and 3D~(fig~\ref{fig:ex-prt-mp7-p03-paths-3d}).
+
+\begin{StandardFigure}{
+    Particle pathlines and 2000-day points. Points are colored by layer.
+    }{fig:ex-prt-mp7-p03-paths-layer}{../figures/mp7-p03-paths-layer.png}
+\end{StandardFigure}
+
+\begin{StandardFigure}{
+    Three-dimensional perspective of pathlines and 2000-day points. Points are colored by layer.
+    }{fig:ex-prt-mp7-p03-paths-3d}{../figures/mp7-p03-paths-3d.pdf}
+\end{StandardFigure}
+
+Release points are colored by capture destination in fig~\ref{fig:ex-prt-mp7-p03-rel-dest}. Terminating points are colored by capture destination in fig~\ref{fig:ex-prt-mp7-p03-term-dest}.
+
+\begin{StandardFigure}{
+    Release points, colored by capture destination.
+    }{fig:ex-prt-mp7-p03-rel-dest}{../figures/mp7-p03-rel-dest.png}
+\end{StandardFigure}
+
+\begin{StandardFigure}{
+    Terminating points, colored by capture destination.
+    }{fig:ex-prt-mp7-p03-term-dest}{../figures/mp7-p03-term-dest.png}
+\end{StandardFigure}
