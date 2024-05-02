@@ -921,7 +921,7 @@ def plot_all(gwfsim):
         mf6pathlines[mf6pathlines.ireason == 0],
         # mp7endpoints[mp7endpoints.time == 90000],
         title="Release points, colored by destination",
-        fig_name=f"{sim_name}-endpts",
+        fig_name=f"{sim_name}-rel-dest",
         color="destination",
     )
     plot_endpoints(
