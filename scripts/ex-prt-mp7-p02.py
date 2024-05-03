@@ -105,8 +105,8 @@ top = 400.0  # Top of the model ($ft$)
 botm_str = "220.0, 200.0, 0.0"  # Layer bottom elevations ($ft$)
 porosity = 0.1  # Soil porosity (unitless)
 rch = 0.005  # Recharge rate ($ft/d$)
-kh = [50.0, 0.01, 200.0]  # Horizontal hydraulic conductivity ($ft/d$)
-kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/d$)
+kh_str = "50.0, 0.01, 200.0"  # Horizontal hydraulic conductivity ($ft/d$)
+kv_str = "10.0, 0.01, 20.0"  # Vertical hydraulic conductivity ($ft/d$)
 wel_q = -150000.0  # Well pumping rate ($ft^3/d$)
 riv_h = 320.0  # River stage ($ft$)
 riv_z = 317.0  # River bottom ($ft$)
@@ -118,8 +118,10 @@ perlen = 1000.0
 tsmult = 1.0
 tdis_rc = [(perlen, nstp, tsmult)]
 
-# Parse bottom elevations
+# Parse bottom elevation and horiz/vert hydraulic cond.
 botm = [float(value) for value in botm_str.split(",")]
+kh = [float(value) for value in kh_str.split(",")]
+kv = [float(value) for value in kv_str.split(",")]
 
 # Cell types by layer
 icelltype = [1, 0, 0]

@@ -115,8 +115,8 @@ delr = 500.0  # Column width ($ft$)
 delc = 500.0  # Row width ($ft$)
 top = 350.0  # Top of the model ($ft$)
 botm_str = "220.0, 200.0, 0.0"  # Layer bottom elevations ($ft$)
-kh = [50.0, 0.01, 200.0]  # Horizontal hydraulic conductivity ($ft/d$)
-kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/d$)
+kh_str = "50.0, 0.01, 200.0"  # Horizontal hydraulic conductivity ($ft/d$)
+kv_str = "10.0, 0.01, 20.0"  # Vertical hydraulic conductivity ($ft/d$)
 rchv = 0.005  # Recharge rate ($ft/d$)
 riv_h = 320.0  # River stage ($ft$)
 riv_z = 317.0  # River bottom ($ft$)
@@ -131,8 +131,10 @@ perioddata = [
     (100000, 1, 1),
 ]
 
-# Parse bottom elevations
+# Parse bottom elevation and horiz/vert hydraulic cond.
 botm = [float(value) for value in botm_str.split(",")]
+kh = [float(value) for value in kh_str.split(",")]
+kv = [float(value) for value in kv_str.split(",")]
 
 # Layer types
 laytyp = [1, 0, 0]
@@ -916,31 +918,20 @@ def plot_all(gwfsim):
     plot_pathpoints(
         gwf,
         mf6pathlines,
-        # mp7pathlines,
         title="2000-day points, colored by travel time",
     )
     plot_pathpoints_3d(
         gwf,
         mf6pathlines,
-        # mp7pathlines,
         title="Pathlines and 2000-day points,\ncolored by destination, 3D view",
     )
     plot_endpoints(
         gwf,
         mf6pathlines[(mf6pathlines.ireason == 0) | (mf6pathlines.ireason == 3)],
-        # mp7endpoints[mp7endpoints.time == 90000],
         title="Release and termination points, colored by destination",
         fig_name=f"{sim_name}-rel-term",
         color="destination",
     )
-    # plot_endpoints(
-    #     gwf,
-    #     mf6pathlines[mf6pathlines.ireason == 3],
-    #     # mp7endpoints[mp7endpoints.time > 90000],
-    #     title="Terminating points, colored by destination",
-    #     fig_name=f"{sim_name}-term-dest",
-    #     color="destination",
-    # )
 
 
 # -

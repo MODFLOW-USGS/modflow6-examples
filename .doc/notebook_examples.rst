@@ -74,4 +74,3 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-prt-mp7-p04
    _notebooks/ex-gwe-prt
 
-
