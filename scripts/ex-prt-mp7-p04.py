@@ -100,7 +100,7 @@ porosity = 0.1  # Porosity (unitless)
 # Time discretization
 tdis_rc = [(10000, 1, 1.0)]
 
-# Bottom elevations
+# Parse bottom elevations
 botm = np.zeros((nlay, nrow, ncol), dtype=np.float32)
 
 # [GRIDGEN](https://www.usgs.gov/software/gridgen-program-generating-unstructured-finite-volume-grids) can be used to create a quadpatch grid with a refined region in the upper left quadrant.
@@ -836,7 +836,7 @@ def plot_inset(ax, gwf):
             markersize=15,
         ),
     ]
-    axins.legend(handles=legend_elements, bbox_to_anchor=(0.2, -0.2, 0.8, 0.1))
+    axins.legend(handles=legend_elements, bbox_to_anchor=(0.33, -0.2, 0.8, 0.1))
 
     # add the inset
     ax.indicate_inset_zoom(axins)
@@ -861,7 +861,7 @@ def plot_grid(gwf, title=None):
                 mpl.patches.Patch(color="red", label="Wells"),
                 mpl.patches.Patch(color="blue", label="Constant head boundary"),
             ],
-            bbox_to_anchor=(-1.2, 0, 0.8, 0.1),
+            bbox_to_anchor=(-1.1, 0, 0.8, 0.1),
         )
 
         plt.subplots_adjust(left=0.43)
@@ -901,10 +901,6 @@ def plot_all_pathlines(grid, heads, prtpl, mp7pl=None, title=None):
         )
         if mp7pl is not None:
             plot_pathlines(ax[1], grid, heads, mp7pl, "MODPATH 7")
-
-        # for ax in axes:
-        #     ax.set_xlim(2000, 6000)
-        #     ax.set_ylim(6000, 10500)
 
         if plot_show:
             plt.show()
