@@ -107,18 +107,21 @@ length_units = "feet"
 time_units = "days"
 
 # Model parameters
-nlay, nrow, ncol = 3, 21, 20
-delr = delc = 500.0
-top = 350.0
-botm = [220.0, 200.0, 0.0]
-laytyp = [1, 0, 0]
-kh = [50.0, 0.01, 200.0]
-kv = [10.0, 0.01, 20.0]
-rchv = 0.005
-riv_h = 320.0
-riv_z = 317.0
-riv_c = 1.0e5
-porosity = 0.1
+nper = 3  # Number of periods
+nlay = 3  # Number of layers
+nrow = 21  # Number of rows
+ncol = 20  # Number of columns
+delr = 500.0  # Column width ($ft$)
+delc = 500.0  # Row width ($ft$)
+top = 350.0  # Top of the model ($ft$)
+botm_str = "220.0, 200.0, 0.0"  # Layer bottom elevations ($ft$)
+kh = [50.0, 0.01, 200.0]  # Horizontal hydraulic conductivity ($ft/d$)
+kv = [10.0, 0.01, 20.0]  # Vertical hydraulic conductivity ($ft/d$)
+rchv = 0.005  # Recharge rate ($ft/d$)
+riv_h = 320.0  # River stage ($ft$)
+riv_z = 317.0  # River bottom ($ft$)
+riv_c = 1.0e5  # River conductance ($ft^2/d$)
+porosity = 0.1  # Soil porosity (unitless)
 
 # Time discretization
 perioddata = [
@@ -127,6 +130,12 @@ perioddata = [
     (36500, 10, 1.5),
     (100000, 1, 1),
 ]
+
+# Parse bottom elevations
+botm = [float(value) for value in botm_str.split(",")]
+
+# Layer types
+laytyp = [1, 0, 0]
 
 # Define well data.
 # Negative discharge indicates pumping, positive injection.
@@ -653,7 +662,7 @@ def plot_head(gwf, head):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}, t=0")
+        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}, time=0")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_grid(lw=0.5)
         mm.plot_bc("WEL", plotAll=True)
@@ -799,7 +808,7 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
     if plot_save:
         p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
     if plot_show:
-        p.camera.zoom(3)
+        p.camera.zoom(3.8)
         p.show()
 
 
@@ -908,7 +917,7 @@ def plot_all(gwfsim):
         gwf,
         mf6pathlines,
         # mp7pathlines,
-        title="Pathlines and 2000-day points, colored by travel time",
+        title="2000-day points, colored by travel time",
     )
     plot_pathpoints_3d(
         gwf,
@@ -918,20 +927,20 @@ def plot_all(gwfsim):
     )
     plot_endpoints(
         gwf,
-        mf6pathlines[mf6pathlines.ireason == 0],
+        mf6pathlines[(mf6pathlines.ireason == 0) | (mf6pathlines.ireason == 3)],
         # mp7endpoints[mp7endpoints.time == 90000],
-        title="Release points, colored by destination",
-        fig_name=f"{sim_name}-rel-dest",
+        title="Release and termination points, colored by destination",
+        fig_name=f"{sim_name}-rel-term",
         color="destination",
     )
-    plot_endpoints(
-        gwf,
-        mf6pathlines[mf6pathlines.ireason == 3],
-        # mp7endpoints[mp7endpoints.time > 90000],
-        title="Terminating points, colored by destination",
-        fig_name=f"{sim_name}-term-dest",
-        color="destination",
-    )
+    # plot_endpoints(
+    #     gwf,
+    #     mf6pathlines[mf6pathlines.ireason == 3],
+    #     # mp7endpoints[mp7endpoints.time > 90000],
+    #     title="Terminating points, colored by destination",
+    #     fig_name=f"{sim_name}-term-dest",
+    #     color="destination",
+    # )
 
 
 # -

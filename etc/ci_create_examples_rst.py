@@ -53,8 +53,8 @@ with open(os.path.join("..", ".doc", "examples.rst"), "w") as f:
     f.write(lines)
 
     lines = ".. toctree::\n"
-    lines += "    :numbered:\n"
-    lines += "    :maxdepth: 1\n\n"
+    lines += "   :numbered:\n"
+    lines += "   :maxdepth: 1\n\n"
     for base_name in examples:
         lines += f"   _examples/{base_name}.rst\n"
     lines += "\n\n"

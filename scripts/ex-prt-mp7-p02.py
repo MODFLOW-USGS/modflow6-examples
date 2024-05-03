@@ -118,7 +118,7 @@ perlen = 1000.0
 tsmult = 1.0
 tdis_rc = [(perlen, nstp, tsmult)]
 
-# parse parameter strings into tuples
+# Parse bottom elevations
 botm = [float(value) for value in botm_str.split(",")]
 
 # Cell types by layer

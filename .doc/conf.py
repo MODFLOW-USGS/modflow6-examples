@@ -44,7 +44,7 @@ with open("notebook_examples.rst", "w") as f:
     f.write(lines)
 
     lines = ".. nbgallery::\n"
-    lines += "    :name: Examples gallery\n\n"
+    lines += "   :name: Examples gallery\n\n"
     for base_name in examples:
         lines += f"   _notebooks/{base_name}\n"
     lines += "\n\n"
