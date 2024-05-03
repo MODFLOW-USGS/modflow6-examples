@@ -71,6 +71,7 @@ An overview of each MODFLOW 6 example problem.
    _examples/ex-prt-mp7-p01.rst
    _examples/ex-prt-mp7-p02.rst
    _examples/ex-prt-mp7-p03.rst
+   _examples/ex-prt-mp7-p04.rst
    _examples/ex-gwe-prt.rst
 
 
