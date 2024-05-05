@@ -464,7 +464,7 @@ def build_gwf():
 
     # simulation
     sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=gwf_ws, exe_name="mf6", version="mf6"
+        sim_name=gwf_name, sim_ws=gwf_ws, exe_name="mf6", version="mf6"
     )
 
     # temporal discretization
