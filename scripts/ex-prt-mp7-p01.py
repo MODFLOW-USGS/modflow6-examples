@@ -426,7 +426,7 @@ def build_models(example_name):
     return gwfsim, prtsim, mp7
 
 
-def write_models(*sims, silent=True):
+def write_models(*sims, silent=False):
     for sim in sims:
         if isinstance(sim, MFSimulation):
             sim.write_simulation(silent=silent)
@@ -435,7 +435,7 @@ def write_models(*sims, silent=True):
 
 
 @timed
-def run_models(*sims, silent=True):
+def run_models(*sims, silent=False):
     for sim in sims:
         if isinstance(sim, MFSimulation):
             success, buff = sim.run_simulation(silent=silent, report=True)
@@ -972,7 +972,7 @@ def plot_all(gwfsim):
 # Define a function to run the example scenarios and plot results.
 
 
-def scenario(silent=True):
+def scenario(silent=False):
     gwfsim, prtsim, mp7 = build_models(sim_name)
     if write:
         write_models(gwfsim, prtsim, mp7, silent=silent)

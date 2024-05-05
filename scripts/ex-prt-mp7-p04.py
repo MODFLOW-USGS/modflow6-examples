@@ -464,7 +464,7 @@ def build_gwf():
 
     # simulation
     sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, sim_ws=gwf_ws, exe_name="mf6", version="mf6"
+        sim_name=gwf_name, sim_ws=gwf_ws, exe_name="mf6", version="mf6"
     )
 
     # temporal discretization
@@ -665,7 +665,7 @@ def reverse_headfile(fpth, rev_fpth, tdis):
     f.reverse(rev_fpth)
 
 
-def write_models(*sims, silent=True):
+def write_models(*sims, silent=False):
     for sim in sims:
         if isinstance(sim, MFSimulation):
             sim.write_simulation(silent=silent)
@@ -674,20 +674,18 @@ def write_models(*sims, silent=True):
 
 
 @timed
-def run_models(gwfsim, prtsim, mp7sim, silent=False):
-    success, buff = gwfsim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
+def run_models(*sims, silent=False):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            success, buff = sim.run_simulation(silent=silent, report=True)
+        else:
+            sim.run_model(silent=silent, report=True)
+        assert success, pformat(buff)
 
-    # because this problem tracks particles backwards, we need to
-    # reverse the head and budget files after running the flow model
-    reverse_headfile(gwf_ws / headfile, prt_ws / headfile_bkwd, gwfsim.tdis)
-    reverse_budgetfile(gwf_ws / budgetfile, prt_ws / budgetfile_bkwd, gwfsim.tdis)
-
-    success, buff = prtsim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
-
-    success, buff = mp7sim.run_model(silent=silent, report=True)
-    assert success, pformat(buff)
+        if "gwf" in sim.name:
+            # Reverse budget and head files for backward tracking
+            reverse_budgetfile(gwf_ws / budgetfile, prt_ws / budgetfile_bkwd, sim.tdis)
+            reverse_headfile(gwf_ws / headfile, prt_ws / headfile_bkwd, sim.tdis)
 
 
 # -

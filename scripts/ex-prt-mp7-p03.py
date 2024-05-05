@@ -53,6 +53,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from flopy.mf6 import MFSimulation
 from flopy.plot.styles import styles
 from matplotlib.lines import Line2D
 from modflow_devtools.misc import get_env, timed
@@ -496,17 +497,22 @@ def build_models():
     return gwfsim, prtsim, mp7sim
 
 
+def write_models(*sims, silent=False):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            sim.write_simulation(silent=silent)
+        else:
+            sim.write_input()
+
+
 @timed
 def run_models(gwfsim, prtsim, mp7sim, silent=False):
-    gwfsim.write_simulation()
     success, buff = gwfsim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)
 
-    prtsim.write_simulation()
     success, buff = prtsim.run_simulation(silent=silent, report=True)
     assert success, pformat(buff)
 
-    mp7sim.write_input()
     success, buff = mp7sim.run_model(silent=silent, report=True)
     assert success, pformat(buff)
 
@@ -943,6 +949,8 @@ def plot_all(gwfsim):
 
 def scenario(silent=False):
     gwfsim, prtsim, mp7sim = build_models()
+    if write:
+        write_models(gwfsim, prtsim, mp7sim, silent=silent)
     if run:
         run_models(gwfsim, prtsim, mp7sim, silent=silent)
     if plot:
