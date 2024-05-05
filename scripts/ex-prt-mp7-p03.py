@@ -943,8 +943,10 @@ def plot_all(gwfsim):
 
 def scenario(silent=False):
     gwfsim, prtsim, mp7sim = build_models()
-    run_models(gwfsim, prtsim, mp7sim, silent=silent)
-    plot_all(gwfsim)
+    if run:
+        run_models(gwfsim, prtsim, mp7sim, silent=silent)
+    if plot:
+        plot_all(gwfsim)
 
 
 # Run the MODPATH 7 example problem 3 scenario.
