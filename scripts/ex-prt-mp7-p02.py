@@ -532,7 +532,7 @@ def build_models():
     return gwf_sim, prt_sim, mp7_sim
 
 
-def write_models(*sims, silent=True):
+def write_models(*sims, silent=False):
     for sim in sims:
         if isinstance(sim, MFSimulation):
             sim.write_simulation(silent=silent)
@@ -541,7 +541,7 @@ def write_models(*sims, silent=True):
 
 
 @timed
-def run_models(*sims, silent=True):
+def run_models(*sims, silent=False):
     for sim in sims:
         if isinstance(sim, MFSimulation):
             success, buff = sim.run_simulation(silent=silent, report=True)

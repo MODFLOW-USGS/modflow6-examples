@@ -4,8 +4,8 @@ Example descriptions
 An overview of each MODFLOW 6 example problem.
 
 .. toctree::
-    :numbered:
-    :maxdepth: 1
+   :numbered:
+   :maxdepth: 1
 
    _examples/ex-gwf-twri.rst
    _examples/ex-gwf-bcf2ss.rst
