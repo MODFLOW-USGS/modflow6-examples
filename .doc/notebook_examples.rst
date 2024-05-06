@@ -5,7 +5,7 @@ The Jupyter Notebooks used to create the input files and figures for
 each of the MODFLOW 6 `examples <examples.html>`_.
 
 .. nbgallery::
-    :name: Examples gallery
+   :name: Examples gallery
 
    _notebooks/ex-gwf-twri
    _notebooks/ex-gwf-bcf2ss
@@ -73,4 +73,5 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-prt-mp7-p03
    _notebooks/ex-prt-mp7-p04
    _notebooks/ex-gwe-prt
+
 

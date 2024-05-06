@@ -1125,7 +1125,8 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     )
 
     if plot_save:
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
+        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf")
+        p.save_graphic(figs_path / f"{sim_name}-paths-3d.svg")
     if plot_show:
         p.camera.zoom(3.0)
         p.show()

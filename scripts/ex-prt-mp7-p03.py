@@ -601,7 +601,7 @@ def get_mp7_pathlines(timeseriesfile_path, endpointfile_path, gwf):
 
 
 # +
-# Pathline and starting point colors by capture destination
+# Pathline and starting point colors by destination
 colordest = {"well": "red", "drain": "green", "river": "blue"}
 
 
@@ -814,7 +814,8 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
     )
 
     if plot_save:
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
+        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf")
+        p.save_graphic(figs_path / f"{sim_name}-paths-3d.svg")
     if plot_show:
         p.camera.zoom(3.8)
         p.show()
