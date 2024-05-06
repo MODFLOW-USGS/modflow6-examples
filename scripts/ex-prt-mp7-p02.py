@@ -126,10 +126,6 @@ kv = [float(value) for value in kv_str.split(",")]
 # Cell types by layer
 icelltype = [1, 0, 0]
 
-# Conductivities
-k = [50.0, 0.01, 200.0]
-k33 = [10.0, 0.01, 20.0]
-
 # Well
 wel_coords = [(4718.45, 5281.25)]
 wel_q = [-150000.0]
@@ -327,8 +323,8 @@ def build_gwf_sim():
         gwf,
         xt3doptions=[("xt3d")],
         icelltype=icelltype,
-        k=k,
-        k33=k33,
+        k=kh,
+        k33=kv,
         save_saturation=True,
         save_specific_discharge=True,
     )
@@ -1125,7 +1121,8 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     )
 
     if plot_save:
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf", raster=False)
+        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf")
+        p.save_graphic(figs_path / f"{sim_name}-paths-3d.svg")
     if plot_show:
         p.camera.zoom(3.0)
         p.show()

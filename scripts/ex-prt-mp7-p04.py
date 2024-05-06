@@ -94,13 +94,14 @@ ncol = 26  # Number of columns
 delr = 500.0  # Column width ($ft$)
 delc = 500.0  # Row width ($ft$)
 top = 100.0  # Top of the model ($ft$)
-botm_str = "0.0, 0.0, 0.0"  # Layer bottom elevations ($ft$)
+botm = 0.0  # Layer bottom elevations ($ft$)
+kh = 50.0  # Horizontal hydraulic conductivity ($ft/d$)
 porosity = 0.1  # Porosity (unitless)
 
 # Time discretization
 tdis_rc = [(10000, 1, 1.0)]
 
-# Parse bottom elevations
+# Bottom elevations
 botm = np.zeros((nlay, nrow, ncol), dtype=np.float32)
 
 # [GRIDGEN](https://www.usgs.gov/software/gridgen-program-generating-unstructured-finite-volume-grids) can be used to create a quadpatch grid with a refined region in the upper left quadrant.
@@ -518,7 +519,7 @@ def build_gwf():
         save_specific_discharge=True,
         save_saturation=True,
         icelltype=[0],
-        k=[50],
+        k=[kh],
     )
 
     # constant head boundary (period, node number, head)
@@ -813,7 +814,6 @@ def plot_inset(ax, gwf):
 
     # plot grid features
     plot_map_view(axins, gwf)
-    # plot_well_cell_ids(axins)
     plot_well_ifaces(axins)
     plot_well_vertices_on_refinement_boundary(axins)
 
@@ -823,7 +823,13 @@ def plot_inset(ax, gwf):
 
     # add legend
     legend_elements = [
-        mpl.lines.Line2D([0], [0], color="red", lw=4, label="Well IFACEs"),
+        mpl.lines.Line2D(
+            [0],
+            [0],
+            color="red",
+            lw=4,
+            label="Well cell faces assigned flow (IFLOWFACE)",
+        ),
         mpl.lines.Line2D(
             [0],
             [0],
@@ -856,8 +862,8 @@ def plot_grid(gwf, title=None):
         # add legend
         ax.legend(
             handles=[
-                mpl.patches.Patch(color="red", label="Wells"),
-                mpl.patches.Patch(color="blue", label="Constant head boundary"),
+                mpl.patches.Patch(color="red", label="Wells", alpha=0.3),
+                mpl.patches.Patch(color="blue", label="Constant-head boundary"),
             ],
             bbox_to_anchor=(-1.1, 0, 0.8, 0.1),
         )

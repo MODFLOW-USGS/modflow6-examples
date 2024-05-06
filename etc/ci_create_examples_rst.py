@@ -191,7 +191,9 @@ for ex in examples:
 
             tag = ".. figure:: ../figures/"
             if tag in line:
-                line = line.replace(tag, ".. figure:: ../_images/")
+                line = line.replace(tag, ".. figure:: ../_images/").replace(
+                    ".pdf", ".svg"
+                )
 
             tag = ".. figure:: ../images/"
             if tag in line:
@@ -310,7 +312,11 @@ for src_dir in src_dirs:
         file_name
         for file_name in os.listdir(src_dir)
         if os.path.isfile(os.path.join(src_dir, file_name))
-        and (file_name.endswith(".png") or file_name.endswith(".gif"))
+        and (
+            file_name.endswith(".png")
+            or file_name.endswith(".gif")
+            or file_name.endswith(".svg")
+        )
     ]
     for file_name in file_names:
         src = os.path.join(src_dir, file_name)

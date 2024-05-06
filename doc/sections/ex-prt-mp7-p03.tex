@@ -16,9 +16,7 @@ Particles are released in batches from a 2x2-cell square (4 total cells) in the 
 
 In this example a MODFLOW 6 particle tracking (PRT) model runs in a separate simulation from the groundwater flow (GWF) model~(fig~\ref{fig:ex-prt-mp7-p01-head}). Intercell flows are read by the PRT model from the binary budget file written by the GWF model.
 
-Path points on a 2000-day interval are visualized in plan view in fig~\ref{fig:ex-prt-mp7-p03-paths-layer} and in 3D in fig~\ref{fig:ex-prt-mp7-p03-paths-3d}.
-
-Release and termination points are colored by capture destination in fig~\ref{fig:ex-prt-mp7-p03-rel-term}.
+Path points on a 2000-day interval are visualized in plan view in fig~\ref{fig:ex-prt-mp7-p03-paths-layer} and in 3D in fig~\ref{fig:ex-prt-mp7-p03-paths-3d}. Release and termination points are colored by destination in fig~\ref{fig:ex-prt-mp7-p03-rel-term}.
 
 \begin{StandardFigure}{
     Head simulated by the MODFLOW 6 groundwater flow (GWF) model.
@@ -26,16 +24,16 @@ Release and termination points are colored by capture destination in fig~\ref{fi
 \end{StandardFigure}
 
 \begin{StandardFigure}{
-    2000-day particle path points. Points are colored by layer.
+    2000-day particle path points. Points are colored by travel time.
     }{fig:ex-prt-mp7-p03-paths-layer}{../figures/mp7-p03-paths-layer.png}
 \end{StandardFigure}
 
 \begin{StandardFigure}{
-    Three-dimensional perspective of pathlines and 2000-day points. Points are colored by layer.
+    Three-dimensional perspective of pathlines and 2000-day points. Points are colored by destination.
     }{fig:ex-prt-mp7-p03-paths-3d}{../figures/mp7-p03-paths-3d.pdf}
 \end{StandardFigure}
 
 \begin{StandardFigure}{
-    Particle release and termination points, colored by capture destination.
+    Particle release and termination points, colored by destination.
     }{fig:ex-prt-mp7-p03-rel-term}{../figures/mp7-p03-rel-term.png}
 \end{StandardFigure}
