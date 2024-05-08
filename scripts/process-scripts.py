@@ -563,7 +563,7 @@ def build_md_tables(ex_dict):
             line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
-    
+
     # Energy Transport
     pak_link = {
         "cnd": "gwt-cnd.html",
@@ -577,7 +577,7 @@ def build_md_tables(ex_dict):
             line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer + "\n\n"
     f.write(line)
-    
+
     pak_link = {
         "esl": "gwe-esl.html",
         "ctp": "gwt-ctp.html",
@@ -590,7 +590,7 @@ def build_md_tables(ex_dict):
             line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
-    
+
     pak_link = {
         "lke": "gwt-lke.html",
         "sfe": "gwt-sfe.html",
@@ -606,7 +606,7 @@ def build_md_tables(ex_dict):
             line += f" {join_fmt.join(pak_dict[pak])} |\n"
     line += footer
     f.write(line)
-    
+
     f.close()
 
 
