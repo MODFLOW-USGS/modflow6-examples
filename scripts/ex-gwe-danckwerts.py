@@ -156,7 +156,7 @@ cps = 760.0  # Heat capacity of dry solid aquifer material ($\frac{J}{kg \cdot ^
 rhow = 1000.0  # Density of water ($\frac{kg}{m^3}$)
 cpw = 4183.0  # Heat capacity of water ($\frac{J}{kg \cdot ^{\circ} C}$)
 ktw = 0.5918  # Thermal conductivity of water ($\frac{W}{m \cdot ^{\circ} C}$)
-kts = 0.2700  # Thermal conductivity of aquifer material ($\frac{W}{m \cdot ^{\circ} C}$)
+kts = 0.27  # Thermal conductivity of solid aquifer material ($\frac{W}{m \cdot ^{\circ} C}$)
 finf = 0.01  # Infiltration rate ($\frac{m}{d}$)
 chdval = 0.05  # Contant head at the model outlet ($m$)
 thtr = 0.0001  # Residual water content of the unsaturated zone ($-$)
@@ -169,6 +169,7 @@ tinfil = 20.0  # Temperature of infiltrating water ($^{\circ} C$)
 
 # -
 
+# +
 # Solver parameters
 nouter, ninner = 100, 300
 hclose, rclose, relax = 1e-9, 1e-3, 0.97
