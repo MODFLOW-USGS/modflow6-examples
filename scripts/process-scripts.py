@@ -454,6 +454,7 @@ def build_md_tables(ex_dict):
     pak_link = {
         "gwfgwf": "exg-gwfgwf.html",
         "gwfgwt": "exg-gwfgwt.html",
+        "gwfgwe": "exg-gwfgwe.html",
     }
     line = "#### Exchanges\n\n"
     line += header
@@ -490,6 +491,7 @@ def build_md_tables(ex_dict):
         "riv": "gwf-riv.html",
         "wel": "gwf-wel.html",
         "buy": "gwf-buy.html",
+        "vsc": "gwf-vsc.html",
     }
     line = "#### Groundwater Flow Model Standard Boundary Packages\n\n"
     line += header
@@ -554,6 +556,49 @@ def build_md_tables(ex_dict):
         "mvt": "gwt-mvt.html",
     }
     line = "#### Groundwater Transport Model Advanced Boundary Packages\n\n"
+    line += header
+    for pak, value in pak_link.items():
+        if pak in pak_dict.keys():
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
+    line += footer
+    f.write(line)
+
+    # Energy Transport
+    pak_link = {
+        "cnd": "gwt-cnd.html",
+        "est": "gwe-est.html",
+    }
+    line = "#### Groundwater Transport Model Internal Flow Packages\n\n"
+    line += header
+    for pak, value in pak_link.items():
+        if pak in pak_dict.keys():
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
+    line += footer + "\n\n"
+    f.write(line)
+
+    pak_link = {
+        "esl": "gwe-esl.html",
+        "ctp": "gwt-ctp.html",
+    }
+    line = "#### Groundwater Energy Transport Model Standard Boundary Packages\n\n"
+    line += header
+    for pak, value in pak_link.items():
+        if pak in pak_dict.keys():
+            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+            line += f" {join_fmt.join(pak_dict[pak])} |\n"
+    line += footer
+    f.write(line)
+
+    pak_link = {
+        "lke": "gwt-lke.html",
+        "sfe": "gwt-sfe.html",
+        "mwe": "gwt-mwe.html",
+        "uze": "gwt-uze.html",
+        "mve": "gwt-mve.html",
+    }
+    line = "#### Groundwater Energy Transport Model Advanced Boundary Packages\n\n"
     line += header
     for pak, value in pak_link.items():
         if pak in pak_dict.keys():
