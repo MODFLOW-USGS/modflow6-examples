@@ -661,7 +661,7 @@ def plot_sim_vs_analytical_sln(sim):
     ]
 
     ax1.legend(handles=legend_elements, loc="lower right", frameon=False)
-    ax1.set_xlabel("Energy Flux, $\dfrac{Watts}{m^2}$")
+    ax1.set_xlabel(r"Energy Flux, $\dfrac{Watts}{m^2}$")
     ax1.set_ylabel("Depth, m")
 
     # 50 days
@@ -680,7 +680,7 @@ def plot_sim_vs_analytical_sln(sim):
     ax2.set_ylim([9.9, 0.0])  # or xlims[::-1]
     ax2.plot(simulated_sln[50], z, "-", color="blue", linewidth=2)
     ax2.plot(analytical_sln[50], z, "-.", color="red")
-    ax2.set_xlabel("Energy Flux, $\dfrac{Watts}{m^2}$")
+    ax2.set_xlabel(r"Energy Flux, $\dfrac{Watts}{m^2}$")
     ax2.text(4.9, 0.4, "50 Days")
 
     # 100 days
@@ -699,7 +699,7 @@ def plot_sim_vs_analytical_sln(sim):
     ax3.set_ylim([9.9, 0.0])  # or xlims[::-1]
     ax3.plot(simulated_sln[100], z, "-", color="blue", linewidth=2)
     ax3.plot(analytical_sln[100], z, "-.", color="red")
-    ax3.set_xlabel("Energy Flux, $\dfrac{Watts}{m^2}$")
+    ax3.set_xlabel(r"Energy Flux, $\dfrac{Watts}{m^2}$")
     ax3.text(4.9, 0.4, "100 Days")
 
     plt.tight_layout()
@@ -727,7 +727,7 @@ def plot_sim_vs_analytical_sln(sim):
     ax.text(7.25, 4.70, "100 days", fontsize=10)
 
     plt.gca().invert_yaxis()
-    ax.set_xlabel("Energy Flux, $\dfrac{Watts}{m^2}$")
+    ax.set_xlabel(r"Energy Flux, $\dfrac{Watts}{m^2}$")
     ax.set_ylabel("Depth, $m$")
     plt.minorticks_on()
     plt.axhline(y=0.0)
