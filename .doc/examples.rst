@@ -68,6 +68,7 @@ An overview of each MODFLOW 6 example problem.
    _examples/ex-gwf-curvilinear.rst
    _examples/ex-gwe-radial.rst
    _examples/ex-gwe-geotherm.rst
+   _examples/ex-gwe-danckwerts.rst
    _examples/ex-prt-mp7-p01.rst
    _examples/ex-prt-mp7-p02.rst
    _examples/ex-prt-mp7-p03.rst
