@@ -1,30 +1,5 @@
 #  An example demonstrating that a specified energy flux boundary condition works as expected when compared to an analytical solution.
 #
-#  Outer columns not active for unsaturated zone, but are present to host constant head boundaries at the bottom of the model.
-#
-#     +-------+
-#     |///////| = Inactive cell
-#     +-------+
-#
-#     Model depiction:
-#
-#     +-------+-------+-------+
-#     |///////|       |///////|  Layer 1
-#     +-------+-------+-------+
-#     |///////|       |///////|  Layer 2
-#     +-------+-------+-------+
-#     |///////|       |///////|  Layer 3
-#     +-------+-------+-------+
-#     |///////|       |///////|
-#     + -- -- + -- -- + -- -- +
-#     |///////|       |///////|  Layer x  (Middle portion of model not shown)
-#     + -- -- + -- -- + -- -- +
-#     |///////|       |///////|
-#     +-------+-------+-------+
-#     |       |       |       |  Layer 99
-#     +-------+-------+-------+
-#     |       |       |       |  Layer 100
-#     +-------+-------+-------+
 
 # ### Initial Setup
 #
@@ -63,6 +38,7 @@ except:
 workspace = root / "examples" if root else pl.Path.cwd()
 figs_path = root / "figures" if root else pl.Path.cwd()
 data_path = root / "data" / sim_name if root else pl.Path.cwd()
+sim_ws = workspace / sim_name
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -140,7 +116,7 @@ time_units = "days"
 # Model parameters
 nlay = 101  # Number of layers ($-$)
 nrow = 1  # Number of rows ($-$)
-ncol = 3  # Number of columns ($-$)
+ncol = 1  # Number of columns ($-$)
 nper = 2  # Number of simulated periods ($-$)
 delr = 1.0  # Cell width ($m$)
 delc = 1.0  # Cell length ($m$)
@@ -190,16 +166,7 @@ for i in np.arange(1, nlay):
     bot = 10.0 - (i * delz)
     botm.append(round(bot, 1))
 
-idomain_u = [0, 1, 0]
-idomain_l = [1, 1, 1]
-idomain = []
-for i in np.arange(nlay):
-    if i < 99:
-        idomain.append(idomain_u)
-    else:
-        idomain.append(idomain_l)
-
-idomain = np.array(idomain)
+idomain = [1] * nlay
 
 q = finf  # infiltration rate
 area = delr * delc
@@ -209,17 +176,17 @@ lhv = 2500.0  # Latent heat of vaporization
 
 # transient uzf info
 # iuzno  cellid landflg ivertcn surfdp vks thtr thts thti eps [bndnm]
-uzf_pkdat = [[0, (0, 0, 1), 1, 1, 0.00001, vks, thtr, thts, thti, eps]]
+uzf_pkdat = [[0, (0, 0, 0), 1, 1, 0.00001, vks, thtr, thts, thti, eps]]
 
 # Continue building the UZF list of objects
-for iuzno in np.arange(1, 101, 1):
-    if iuzno < nlay - 1:
+for iuzno in np.arange(1, 100, 1):
+    if iuzno < nlay - 2:
         ivertconn = iuzno + 1
     else:
         ivertconn = -1
 
     uzf_pkdat.append(
-        [iuzno, (iuzno, 0, 1), 0, ivertconn, 0.01, vks, thtr, thts, thti, eps]
+        [iuzno, (iuzno, 0, 0), 0, ivertconn, 0.01, vks, thtr, thts, thti, eps]
     )
 
 iuz_cell_dict = {}
@@ -246,7 +213,7 @@ def build_model(sim_name):
 
     # build MODFLOW 6 files
     sim = flopy.mf6.MFSimulation(
-        sim_name=sim_name, version="mf6", exe_name="mf6", sim_ws=workspace
+        sim_name=sim_name, version="mf6", exe_name="mf6", sim_ws=sim_ws
     )
 
     print(sim.sim_path)
@@ -328,7 +295,7 @@ def build_model(sim_name):
     )
 
     # constant head for draining the model
-    chdspd = {0: [[(100, 0, 0), chdval, 10.0], [(100, 0, 2), chdval, 10.0]]}
+    chdspd = {0: [[(100, 0, 0), chdval, 10.0]]}
 
     flopy.mf6.ModflowGwfchd(
         gwf,
@@ -463,7 +430,7 @@ def build_model(sim_name):
     )
 
     # Instantiating MODFLOW 6 energy transport source-sink mixing package
-    uzepackagedata = [(iuz, 10.0) for iuz in range(nlay)]
+    uzepackagedata = [(iuz, 10.0) for iuz in range(nlay - 1)]
     uzeperioddata = {0: [[0, "INFILTRATION", 10.0]], 1: [[0, "INFILTRATION", 20.0]]}
 
     flopy.mf6.ModflowGweuze(
@@ -568,7 +535,7 @@ def plot_sim_vs_analytical_sln(sim):
     Kts = kts * 86400
     Ktw = 0.0
 
-    steady_wc = wc[1, 0, 0, 1]
+    steady_wc = wc[1, 0, 0, 0]
     Sw = steady_wc / prsity
 
     rhoCp_bulk = Sw * prsity * rhowCpw + (1 - prsity) * rhosCps
@@ -606,7 +573,7 @@ def plot_sim_vs_analytical_sln(sim):
 
             (uze1, uze2, floadv) = flowsadv[i][2 * j + 1]
             floadv /= rhowCpw
-            (fjunk1, flocond, fjunk2) = flowscond[2][j][0]
+            flocond = flowscond[2][j][0][0]
             flocond /= rhowCpw
 
             flo = floadv * rhowCpw * unitadj + flocond * rhowCpw * unitadj
