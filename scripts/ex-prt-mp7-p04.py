@@ -12,15 +12,24 @@
 #     name: python3
 # ---
 
-# ## Particle tracking through a steady-state system with lateral flow boundaries and a refined vertex grid.
+# ## Particle tracking: steady-state, refined vertex grid, lateral flow boundaries
 #
-# Application of a MODFLOW 6 particle-tracking (PRT) model to solve example 4 from the MODPATH 7 documentation.
+# Application of a MODFLOW 6 particle-tracking (PRT) model
+# to solve example 4 from the MODPATH 7 documentation.
 #
-# This notebook demonstrates a steady-state MODFLOW 6 simulation using a quadpatch DISV grid with an irregular domain and a large number of inactive cells. Particles are tracked backwards from terminating locations, including a pair of wells in a locally-refined region of the grid and constant-head cells along the grid's right side, to release locations along the left border of the grid's active region. Injection wells along the left-hand border are used to generate boundary flows.
+# This notebook demonstrates a steady-state MODFLOW 6 simulation
+# using a quadpatch DISV grid with an irregular domain and a large
+# number of inactive cells. Particles are tracked backwards from
+# terminating locations, including a pair of wells in a locally-
+# refined region of the grid and constant-head cells along the grid's
+# right side, to release locations along the left border of the grid's
+# active region. Injection wells along the left-hand border are used
+# to generate boundary flows.
 #
 # ### Initial setup
 #
-# Import dependencies, define the example name and workspace, and read settings from environment variables.
+# Import dependencies, define the example name and workspace,
+# and read settings from environment variables.
 
 # +
 import pathlib as pl
@@ -104,11 +113,14 @@ tdis_rc = [(10000, 1, 1.0)]
 # Bottom elevations
 botm = np.zeros((nlay, nrow, ncol), dtype=np.float32)
 
-# [GRIDGEN](https://www.usgs.gov/software/gridgen-program-generating-unstructured-finite-volume-grids) can be used to create a quadpatch grid with a refined region in the upper left quadrant.
+# [GRIDGEN](https://www.usgs.gov/software/gridgen-program-generating-unstructured-finite-volume-grids)
+# can be used to create a quadpatch grid with a refined region in the upper left quadrant.
 #
-# We will create a grid with 3 refinement levels, all nearly but not perfectly rectangular: a 500x500 area is carved out of the corners of the rectangle for each level. To form each region's polygon we combine 5 rectangles.
+# We will create a grid with 3 refinement levels, all nearly but not perfectly rectangular:
+# a 500x500 area is carved out of the corners of the rectangle for each level. To form each
+# refinement region's polygon we combine 5 rectangles.
 #
-# Create the top-level grid discretization.
+# First create the top-level grid discretization.
 
 # +
 ms = flopy.modflow.Modflow()
@@ -377,7 +389,8 @@ wells = [
 
 assert len(wells) == 68
 
-# Define particle release locations, initially in the representation for MODPATH 7 particle input style 1.
+# Define particle release locations, initially in the
+# representation for MODPATH 7 particle input style 1.
 particles = [
     # MODPATH 7 input style 1
     # (node number, localx, localy, localz)
@@ -435,7 +448,12 @@ particles = [
     (891, 0.875, 1.000, 0.500),
 ]
 
-# For vertex grids, the MODFLOW 6 PRT model's PRP (particle release point) package expects initial particle locations as tuples `(particle ID, (layer, cell ID), x coord, y coord, z coord)`. While MODPATH 7 input style 1 expects local coordinates, PRT expects global coordinates (the user must guarantee that each release point's coordinates fall within the cell with the given ID). FloPy's `ParticleData` class provides a `to_coords()` utility method to convert local coordinates to global coordinates for easier migration from MODPATH 7 to PRT.
+# For vertex grids, the MODFLOW 6 PRT model's PRP (particle release point) package expects initial
+# particle locations as tuples `(particle ID, (layer, cell ID), x coord, y coord, z coord)`. While
+# MODPATH 7 input style 1 expects local coordinates, PRT expects global coordinates (the user must
+# guarantee that each release point's coordinates fall within the cell with the given ID). FloPy's
+# `ParticleData` class provides a `to_coords()` utility method to convert local coordinates to
+# global coordinates for easier migration from MODPATH 7 to PRT.
 partdata = flopy.modpath.ParticleData(
     partlocs=[p[0] for p in particles],
     structured=False,
@@ -695,7 +713,10 @@ def run_models(*sims, silent=False):
 #
 # Define functions to plot the grid, boundary conditions, and model results.
 #
-# Below we highlight the vertices of well-containing cells which lie on the boundary between coarser- and finer-grained refinement regions (there are 7 of these). Note the disagreement between values of `IFLOWFACE` and `IFACE` for these cells. This is because the cells have 5 polygonal faces.
+# Below we highlight the vertices of well-containing cells which lie on the boundary between
+# coarser- and finer-grained refinement regions (there are 7 of these). Note the disagreement
+# between values of MODFLOW 6 PRT's `IFLOWFACE` and MODPATH 7's `IFACE` for these cells. This
+# is because the cells have 5 polygonal faces.
 
 
 # +
