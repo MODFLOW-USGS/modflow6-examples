@@ -1120,12 +1120,11 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
         size=(0.1, 0.1),
     )
 
-    if plot_save:
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf")
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.svg")
+    p.camera.zoom(2)
     if plot_show:
-        p.camera.zoom(3.0)
-        p.show()
+        p.show(auto_close=False)
+    if plot_save:
+        p.show(screenshot=figs_path / f"{sim_name}-paths-3d.png")
 
 
 def load_head():

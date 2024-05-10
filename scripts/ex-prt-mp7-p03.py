@@ -524,26 +524,14 @@ def get_mf6_pathlines(path):
     # index temporarily by composite key fields
     pl.set_index(["iprp", "irpt", "trelease"], drop=False, inplace=True)
 
-    # determine which particles ended up in which capture area
-    pl["destzone"] = pl[pl.istatus > 1].izone
-    pl["dest"] = pl.apply(
+    # determine which particles ended up in which capture zone
+    pl["czone"] = pl[pl.istatus > 1].izone
+    pl["cname"] = pl.apply(
         lambda row: (
             "well"
-            if (row.destzone == 2 or row.destzone == 3)
-            else (
-                "drain"
-                if row.destzone == 4
-                else "river"
-                if row.destzone == 5
-                else pd.NA
-            )
+            if (row.czone == 2 or row.czone == 3)
+            else ("drain" if row.czone == 4 else "river" if row.czone == 5 else pd.NA)
         ),
-        axis=1,
-    )
-
-    # add markercolor column, color-coding by layer for plots
-    pl["mc"] = pl.apply(
-        lambda row: "green" if row.ilay == 1 else "gold" if row.ilay == 2 else "red",
         axis=1,
     )
 
@@ -622,7 +610,7 @@ def plot_pathlines(ax, gwf, data, **kwargs):
             color = kwargs["color"]
         else:
             color = "grey"
-        d = data[data.dest == dest]
+        d = data[data.cname == dest]
         pl.plot_pathline(
             d, layer="all", colors=[color], label=label, linewidth=0.5, alpha=0.5
         )
@@ -637,7 +625,7 @@ def plot_points(fig, ax, gwf, data, colorbar=True, **kwargs):
         for dest in ["well", "river", "drain"]:
             color = kwargs["colordest"][dest]
             label = "Captured by " + dest
-            pdata = data[data.dest == dest]
+            pdata = data[data.cname == dest]
             pts.append(
                 ax.scatter(
                     pdata["x"],
@@ -791,7 +779,7 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
     p.add_mesh(
         prt_mesh,
-        scalars="destzone",
+        scalars="czone",
         cmap=["red", "red", "green", "blue"],
         point_size=3,
         render_points_as_spheres=True,
@@ -813,12 +801,11 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
         size=(0.1, 0.1),
     )
 
-    if plot_save:
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf")
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.svg")
+    p.camera.zoom(2.5)
     if plot_show:
-        p.camera.zoom(3.8)
-        p.show()
+        p.show(auto_close=False)
+    if plot_save:
+        p.show(screenshot=figs_path / f"{sim_name}-paths-3d.png")
 
 
 def plot_all_pathlines(gwf, mf6pl, title=None):

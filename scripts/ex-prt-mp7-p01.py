@@ -778,12 +778,11 @@ def plot_pathpoints_3d(gwf, pathlines, title):
         size=(0.1, 0.1),
     )
 
-    if plot_save:
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf")
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.svg")
+    p.camera.zoom(1.7)
     if plot_show:
-        p.camera.zoom(1.7)
-        p.show()
+        p.show(auto_close=False)
+    if plot_save:
+        p.show(screenshot=figs_path / f"{sim_name}-paths-3d.png")
 
 
 def plot_all_pathlines(gwf, mf6pl, title=None):
