@@ -1085,9 +1085,10 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[500, 500])
+    p = pv.Plotter(window_size=[700, 700])
+    p.enable_anti_aliasing()
     if title is not None:
-        p.add_title(title, font_size=5)
+        p.add_title(title, font_size=7)
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
     p.add_mesh(
         prt_mesh,
@@ -1117,7 +1118,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
         labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
         bcolor="white",
         face="r",
-        size=(0.1, 0.1),
+        size=(0.2, 0.2),
     )
 
     p.camera.zoom(2)

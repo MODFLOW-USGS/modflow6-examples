@@ -476,7 +476,7 @@ def get_pathlines(mf6_path, mp7_path):
         .tt
     )
 
-    # determine which particles ended up in which capture area
+    # determine which particles ended up in which capture zone
     mf6pl["destzone"] = mf6pl[mf6pl.istatus > 1].izone
     mf6pl["dest"] = mf6pl.apply(
         lambda row: (
@@ -757,8 +757,9 @@ def plot_pathpoints_3d(gwf, pathlines, title):
     bed_mesh.rotate_y(-20, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(20, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[500, 500])
-    p.add_title(title, font_size=5)
+    p = pv.Plotter(window_size=[700, 700])
+    p.enable_anti_aliasing()
+    p.add_title(title, font_size=7)
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
     p.add_mesh(
         prt_mesh,
@@ -775,7 +776,7 @@ def plot_pathpoints_3d(gwf, pathlines, title):
         labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
         bcolor="white",
         face="r",
-        size=(0.1, 0.1),
+        size=(0.2, 0.2),
     )
 
     p.camera.zoom(1.7)

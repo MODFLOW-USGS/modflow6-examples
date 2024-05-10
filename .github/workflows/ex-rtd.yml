@@ -56,6 +56,9 @@ jobs:
         with:
           python-version: 3.9
 
+      - name: Set up headless display
+        uses: pyvista/setup-headless-display-action@v2
+
       - name: Install Python packages
         working-directory: etc
         run: |
@@ -63,14 +66,6 @@ jobs:
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
-
-      # PyVista doesn't like the default vtk
-      - name: OpenGL workaround
-        if: runner.os == 'Linux'
-        run: |
-          # referenced from https://github.com/pyvista/pyvista/blob/main/.github/workflows/vtk-pre-test.yml#L53
-          pip uninstall -y vtk
-          pip install --extra-index-url https://wheels.vtk.org trame vtk-osmesa trame-vtk trame-components
 
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup

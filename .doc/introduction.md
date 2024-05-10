@@ -89,26 +89,3 @@ Examples have been included for the MODFLOW 6 components summarized in the table
 | [MVT](https://modflow6.readthedocs.io/en/latest/_mf6io/gwt-mvt.html) | [ex-gwt-mt3dsupp82](_examples/ex-gwt-mt3dsupp82.html), [ex-gwt-prudic2004t2](_examples/ex-gwt-prudic2004t2.html) |
 
 
-#### Groundwater Transport Model Internal Flow Packages
-
-| Package | Examples                                                           |
-|---------|--------------------------------------------------------------------|
-| [CND](https://modflow6.readthedocs.io/en/latest/_mf6io/gwt-cnd.html) | [ex-gwe-radial-slow](_examples/ex-gwe-radial.html), [ex-gwe-geotherm](_examples/ex-gwe-geotherm.html) |
-| [EST](https://modflow6.readthedocs.io/en/latest/_mf6io/gwe-est.html) | [ex-gwe-radial-slow](_examples/ex-gwe-radial.html), [ex-gwe-geotherm](_examples/ex-gwe-geotherm.html) |
-
-
-
-
-#### Groundwater Energy Transport Model Standard Boundary Packages
-
-| Package | Examples                                                           |
-|---------|--------------------------------------------------------------------|
-| [ESL](https://modflow6.readthedocs.io/en/latest/_mf6io/gwe-esl.html) | [ex-gwe-radial-slow](_examples/ex-gwe-radial.html), [ex-gwe-geotherm](_examples/ex-gwe-geotherm.html) |
-
-
-#### Groundwater Energy Transport Model Advanced Boundary Packages
-
-| Package | Examples                                                           |
-|---------|--------------------------------------------------------------------|
-
-

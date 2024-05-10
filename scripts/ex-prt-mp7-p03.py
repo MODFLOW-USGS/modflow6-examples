@@ -525,12 +525,18 @@ def get_mf6_pathlines(path):
     pl.set_index(["iprp", "irpt", "trelease"], drop=False, inplace=True)
 
     # determine which particles ended up in which capture zone
-    pl["czone"] = pl[pl.istatus > 1].izone
-    pl["cname"] = pl.apply(
+    pl["destzone"] = pl[pl.istatus > 1].izone
+    pl["dest"] = pl.apply(
         lambda row: (
             "well"
-            if (row.czone == 2 or row.czone == 3)
-            else ("drain" if row.czone == 4 else "river" if row.czone == 5 else pd.NA)
+            if (row.destzone == 2 or row.destzone == 3)
+            else (
+                "drain"
+                if row.destzone == 4
+                else "river"
+                if row.destzone == 5
+                else pd.NA
+            )
         ),
         axis=1,
     )
@@ -610,7 +616,7 @@ def plot_pathlines(ax, gwf, data, **kwargs):
             color = kwargs["color"]
         else:
             color = "grey"
-        d = data[data.cname == dest]
+        d = data[data.dest == dest]
         pl.plot_pathline(
             d, layer="all", colors=[color], label=label, linewidth=0.5, alpha=0.5
         )
@@ -625,7 +631,7 @@ def plot_points(fig, ax, gwf, data, colorbar=True, **kwargs):
         for dest in ["well", "river", "drain"]:
             color = kwargs["colordest"][dest]
             label = "Captured by " + dest
-            pdata = data[data.cname == dest]
+            pdata = data[data.dest == dest]
             pts.append(
                 ax.scatter(
                     pdata["x"],
@@ -773,13 +779,14 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[500, 500])
+    p = pv.Plotter(window_size=[700, 700])
+    p.enable_anti_aliasing()
     if title is not None:
-        p.add_title(title, font_size=5)
+        p.add_title(title, font_size=7)
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
     p.add_mesh(
         prt_mesh,
-        scalars="czone",
+        scalars="destzone",
         cmap=["red", "red", "green", "blue"],
         point_size=3,
         render_points_as_spheres=True,
@@ -798,10 +805,10 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
         ],
         bcolor="white",
         face="r",
-        size=(0.1, 0.1),
+        size=(0.2, 0.2),
     )
 
-    p.camera.zoom(2.5)
+    p.camera.zoom(2.2)
     if plot_show:
         p.show(auto_close=False)
     if plot_save:
@@ -917,7 +924,7 @@ def plot_all(gwfsim):
     plot_pathpoints_3d(
         gwf,
         mf6pathlines,
-        title="Pathlines and 2000-day points,\ncolored by destination, 3D view",
+        title="Pathlines and 2000-day points,\ncolored by destination",
     )
     plot_endpoints(
         gwf,
