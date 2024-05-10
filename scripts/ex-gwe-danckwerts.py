@@ -1,3 +1,5 @@
+# ## Infiltrating heat front
+#
 #  An example demonstrating that a specified energy flux boundary condition works as expected when compared to an analytical solution.
 #
 
@@ -78,6 +80,10 @@ def flux_analyt(t, z, qt0, qtinfil, v, d):
     return flux
 
 
+# -
+
+
+# +
 def temp_analyt(t, z, t0, tinfil, v, d):
     if t == 0.0:
         temp = t0
@@ -111,7 +117,6 @@ def temp_analyt(t, z, t0, tinfil, v, d):
 # Model units
 length_units = "meters"
 time_units = "days"
-
 
 # Model parameters
 nlay = 101  # Number of layers ($-$)
@@ -486,6 +491,10 @@ def write_model(sim, silent=True):
         sim.write_input()
 
 
+# -
+
+
+# +
 @timed
 def run_model(sim, silent=True):
     print("running 1D Danckwerts test model...")
@@ -498,9 +507,8 @@ def run_model(sim, silent=True):
 
 # -
 
+
 # +
-
-
 def plot_sim_vs_analytical_sln(sim):
     print("comparing simulated results to analytical solution...")
 
@@ -590,6 +598,36 @@ def plot_sim_vs_analytical_sln(sim):
             flux = flo / area
             simulated_sln[i, j] = flux
 
+    # A summary figure without parsing advection and conduction
+    fig, ax = plt.subplots(ncols=1, figsize=(3, 6))
+    ax.plot(analytical_sln[10], z, "-", color="red", label="Analytical")
+    ax.plot(simulated_sln[10], z, "-.", color="blue", label="MODFLOW 6")
+    # 50th transient stress period
+    ax.plot(analytical_sln[50], z, "-", color="red")
+    ax.plot(simulated_sln[50], z, "-.", color="blue")
+    # last stress period
+    ax.plot(analytical_sln[100], z, "-", color="red")
+    ax.plot(simulated_sln[100], z, "-.", color="blue")
+    # add labels
+    ax.text(5.2, 1.95, "10 days", fontsize=10)
+    ax.text(6.5, 3.30, "50 days", fontsize=10)
+    ax.text(7.25, 4.70, "100 days", fontsize=10)
+
+    plt.gca().invert_yaxis()
+    ax.set_xlabel(r"Energy Flux, $\dfrac{Watts}{m^2}$")
+    ax.set_ylabel("Depth, $m$")
+    plt.minorticks_on()
+    plt.axhline(y=0.0)
+    plt.legend(loc="lower right", frameon=False)
+    plt.tight_layout()
+
+    # show and/or save figure
+    if plot_show:
+        plt.show()
+    if plot_save:
+        fpth = figs_path / "{}{}".format("ex-" + gwename + "-01", ".png")
+        fig.savefig(fpth, dpi=600)
+
     # Generate plots corresponding to three different times
     fig, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(7.0, 5))
 
@@ -676,36 +714,6 @@ def plot_sim_vs_analytical_sln(sim):
         fpth = figs_path / "{}{}".format("ex-" + gwename + "-02", ".png")
         fig.savefig(fpth, dpi=600)
 
-    # A summary figure without parsing advection and conduction
-    fig, ax = plt.subplots(ncols=1, figsize=(1.5, 6))
-    ax.plot(analytical_sln[10], z, "-", color="red", label="Analytical")
-    ax.plot(simulated_sln[10], z, "-.", color="blue", label="MODFLOW 6")
-    # 50th transient stress period
-    ax.plot(analytical_sln[50], z, "-", color="red")
-    ax.plot(simulated_sln[50], z, "-.", color="blue")
-    # last stress period
-    ax.plot(analytical_sln[100], z, "-", color="red")
-    ax.plot(simulated_sln[100], z, "-.", color="blue")
-    # add labels
-    ax.text(5.2, 1.95, "10 days", fontsize=10)
-    ax.text(6.5, 3.30, "50 days", fontsize=10)
-    ax.text(7.25, 4.70, "100 days", fontsize=10)
-
-    plt.gca().invert_yaxis()
-    ax.set_xlabel(r"Energy Flux, $\dfrac{Watts}{m^2}$")
-    ax.set_ylabel("Depth, $m$")
-    plt.minorticks_on()
-    plt.axhline(y=0.0)
-    plt.legend(loc="lower right", frameon=False)
-    plt.tight_layout()
-
-    # show and/or save figure
-    if plot_show:
-        plt.show()
-    if plot_save:
-        fpth = figs_path / "{}{}".format("ex-" + gwename + "-01", ".png")
-        fig.savefig(fpth, dpi=600)
-
 
 # -
 
@@ -725,7 +733,9 @@ def scenario(silent=True):
         plot_sim_vs_analytical_sln(sim)
 
 
-# Initiate model construction, write, run, and plot sequence
-scenario(silent=False)
+# -
 
+# +
+# Initiate model construction, write, run, and plot sequence
+scenario(silent=True)
 # -
