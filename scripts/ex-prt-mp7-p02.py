@@ -1085,7 +1085,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[700, 700])
+    p = pv.Plotter(window_size=[500, 500])
     p.enable_anti_aliasing()
     if title is not None:
         p.add_title(title, font_size=7)
@@ -1108,7 +1108,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
             eps_mesh,
             scalars=endpoints.k.ravel(),
             cmap=["green", "gold", "red"],
-            point_size=2,
+            point_size=4,
         )
         p.remove_scalar_bar()
     p.add_mesh(riv_mesh, color="teal", opacity=0.2)
@@ -1118,7 +1118,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
         labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
         bcolor="white",
         face="r",
-        size=(0.2, 0.2),
+        size=(0.15, 0.15),
     )
 
     p.camera.zoom(2)

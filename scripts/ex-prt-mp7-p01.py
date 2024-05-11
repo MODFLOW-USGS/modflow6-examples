@@ -757,7 +757,7 @@ def plot_pathpoints_3d(gwf, pathlines, title):
     bed_mesh.rotate_y(-20, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(20, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[700, 700])
+    p = pv.Plotter(window_size=[500, 500])
     p.enable_anti_aliasing()
     p.add_title(title, font_size=7)
     p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
@@ -765,7 +765,7 @@ def plot_pathpoints_3d(gwf, pathlines, title):
         prt_mesh,
         scalars="k" if "k" in prt_mesh.point_data else "ilay",
         cmap=["green", "gold", "red"],
-        point_size=2,
+        point_size=4,
         render_points_as_spheres=True,
     )
     p.add_mesh(riv_mesh, color="teal", opacity=0.2)
@@ -776,7 +776,7 @@ def plot_pathpoints_3d(gwf, pathlines, title):
         labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
         bcolor="white",
         face="r",
-        size=(0.2, 0.2),
+        size=(0.15, 0.15),
     )
 
     p.camera.zoom(1.7)

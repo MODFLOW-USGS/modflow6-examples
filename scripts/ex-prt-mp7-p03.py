@@ -779,7 +779,7 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[700, 700])
+    p = pv.Plotter(window_size=[500, 500])
     p.enable_anti_aliasing()
     if title is not None:
         p.add_title(title, font_size=7)
@@ -788,7 +788,7 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
         prt_mesh,
         scalars="destzone",
         cmap=["red", "red", "green", "blue"],
-        point_size=3,
+        point_size=4,
         render_points_as_spheres=True,
     )
     p.add_mesh(drn_mesh, color="green", opacity=0.2)
