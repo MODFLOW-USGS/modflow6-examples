@@ -524,7 +524,7 @@ def get_mf6_pathlines(path):
     # index temporarily by composite key fields
     pl.set_index(["iprp", "irpt", "trelease"], drop=False, inplace=True)
 
-    # determine which particles ended up in which capture area
+    # determine which particles ended up in which capture zone
     pl["destzone"] = pl[pl.istatus > 1].izone
     pl["dest"] = pl.apply(
         lambda row: (
@@ -538,12 +538,6 @@ def get_mf6_pathlines(path):
                 else pd.NA
             )
         ),
-        axis=1,
-    )
-
-    # add markercolor column, color-coding by layer for plots
-    pl["mc"] = pl.apply(
-        lambda row: "green" if row.ilay == 1 else "gold" if row.ilay == 2 else "red",
         axis=1,
     )
 
@@ -785,40 +779,52 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[500, 500])
-    if title is not None:
-        p.add_title(title, font_size=5)
-    p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
-    p.add_mesh(
-        prt_mesh,
-        scalars="destzone",
-        cmap=["red", "red", "green", "blue"],
-        point_size=3,
-        render_points_as_spheres=True,
-    )
-    p.add_mesh(drn_mesh, color="green", opacity=0.2)
-    p.add_mesh(riv_mesh, color="teal", opacity=0.2)
-    p.add_mesh(wel_mesh, color="red", opacity=0.3)
-    p.add_mesh(wel2_mesh, color="red", opacity=0.2)
-    p.add_mesh(bed_mesh, color="tan", opacity=0.1)
-    p.remove_scalar_bar()
-    p.add_legend(
-        labels=[
-            ("Well (layer 3)", "red"),
-            ("Drain", "green"),
-            ("River", "blue"),
-        ],
-        bcolor="white",
-        face="r",
-        size=(0.1, 0.1),
-    )
+    def _plot(screenshot=False):
+        p = pv.Plotter(
+            window_size=[500, 500],
+            off_screen=screenshot,
+            notebook=False if screenshot else None,
+        )
+        p.enable_anti_aliasing()
+        if title is not None:
+            p.add_title(title, font_size=7)
+        p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
+        p.add_mesh(
+            prt_mesh,
+            scalars="destzone",
+            cmap=["red", "red", "green", "blue"],
+            point_size=4,
+            line_width=3,
+            render_points_as_spheres=True,
+            render_lines_as_tubes=True,
+            smooth_shading=True,
+        )
+        p.add_mesh(drn_mesh, color="green", opacity=0.2)
+        p.add_mesh(riv_mesh, color="teal", opacity=0.2)
+        p.add_mesh(wel_mesh, color="red", opacity=0.3)
+        p.add_mesh(wel2_mesh, color="red", opacity=0.2)
+        p.add_mesh(bed_mesh, color="tan", opacity=0.1)
+        p.remove_scalar_bar()
+        p.add_legend(
+            labels=[
+                ("Well (layer 3)", "red"),
+                ("Drain", "green"),
+                ("River", "blue"),
+            ],
+            bcolor="white",
+            face="r",
+            size=(0.2, 0.2),
+        )
 
-    if plot_save:
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.pdf")
-        p.save_graphic(figs_path / f"{sim_name}-paths-3d.svg")
-    if plot_show:
-        p.camera.zoom(3.8)
+        p.camera.zoom(2.2)
         p.show()
+        if screenshot:
+            p.screenshot(figs_path / f"{sim_name}-paths-3d.png")
+
+    if plot_show:
+        _plot()
+    if plot_save:
+        _plot(screenshot=True)
 
 
 def plot_all_pathlines(gwf, mf6pl, title=None):
@@ -930,7 +936,7 @@ def plot_all(gwfsim):
     plot_pathpoints_3d(
         gwf,
         mf6pathlines,
-        title="Pathlines and 2000-day points,\ncolored by destination, 3D view",
+        title="Pathlines, 2000-day points,\ncolored by destination",
     )
     plot_endpoints(
         gwf,
