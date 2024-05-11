@@ -757,33 +757,45 @@ def plot_pathpoints_3d(gwf, pathlines, title):
     bed_mesh.rotate_y(-20, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(20, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[500, 500])
-    p.enable_anti_aliasing()
-    p.add_title(title, font_size=7)
-    p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
-    p.add_mesh(
-        prt_mesh,
-        scalars="k" if "k" in prt_mesh.point_data else "ilay",
-        cmap=["green", "gold", "red"],
-        point_size=4,
-        render_points_as_spheres=True,
-    )
-    p.add_mesh(riv_mesh, color="teal", opacity=0.2)
-    p.add_mesh(wel_mesh, color="red", opacity=0.3)
-    p.add_mesh(bed_mesh, color="tan", opacity=0.1)
-    p.remove_scalar_bar()
-    p.add_legend(
-        labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
-        bcolor="white",
-        face="r",
-        size=(0.15, 0.15),
-    )
+    def _plot(screenshot=False):
+        p = pv.Plotter(
+            window_size=[500, 500],
+            off_screen=screenshot,
+            notebook=False if screenshot else None,
+        )
+        p.enable_anti_aliasing()
+        p.add_title(title, font_size=7)
+        p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
+        p.add_mesh(
+            prt_mesh,
+            scalars="k" if "k" in prt_mesh.point_data else "ilay",
+            cmap=["green", "gold", "red"],
+            point_size=4,
+            line_width=4,
+            render_points_as_spheres=True,
+            render_lines_as_tubes=True,
+            smooth_shading=True,
+        )
+        p.add_mesh(riv_mesh, color="teal", opacity=0.2)
+        p.add_mesh(wel_mesh, color="red", opacity=0.3)
+        p.add_mesh(bed_mesh, color="tan", opacity=0.1)
+        p.remove_scalar_bar()
+        p.add_legend(
+            labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
+            bcolor="white",
+            face="r",
+            size=(0.15, 0.15),
+        )
 
-    p.camera.zoom(1.7)
+        p.camera.zoom(1.7)
+        p.show()
+        if screenshot:
+            p.screenshot(figs_path / f"{sim_name}-paths-3d.png")
+
     if plot_show:
-        p.show(auto_close=False)
+        _plot()
     if plot_save:
-        p.show(screenshot=figs_path / f"{sim_name}-paths-3d.png")
+        _plot(screenshot=True)
 
 
 def plot_all_pathlines(gwf, mf6pl, title=None):

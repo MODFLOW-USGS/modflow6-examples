@@ -1085,47 +1085,64 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
     bed_mesh.rotate_y(-10, point=axes.origin, inplace=True)
     bed_mesh.rotate_x(10, point=axes.origin, inplace=True)
 
-    p = pv.Plotter(window_size=[500, 500])
-    p.enable_anti_aliasing()
-    if title is not None:
-        p.add_title(title, font_size=7)
-    p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
-    p.add_mesh(
-        prt_mesh,
-        scalars="k" if "k" in prt_mesh.point_data else "ilay",
-        cmap=["green", "gold", "red"],
-        point_size=2,
-    )
-    p.remove_scalar_bar()
+    plot_endpoints = False
     if endpoints is not None:
+        plot_endpoints = True
         endpoints = endpoints.to_records(index=False)
         endpoints["z"] = endpoints["z"] * vert_exag
         eps_mesh = pv.PolyData(np.array(tuple(map(tuple, endpoints[["x", "y", "z"]]))))
         eps_mesh.rotate_z(-30, point=axes.origin, inplace=True)
         eps_mesh.rotate_y(-10, point=axes.origin, inplace=True)
         eps_mesh.rotate_x(10, point=axes.origin, inplace=True)
+
+    def _plot(screenshot=False):
+        p = pv.Plotter(
+            window_size=[500, 500],
+            off_screen=screenshot,
+            notebook=False if screenshot else None,
+        )
+        p.enable_anti_aliasing()
+        if title is not None:
+            p.add_title(title, font_size=7)
+        p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
         p.add_mesh(
-            eps_mesh,
-            scalars=endpoints.k.ravel(),
+            prt_mesh,
+            scalars="k" if "k" in prt_mesh.point_data else "ilay",
             cmap=["green", "gold", "red"],
             point_size=4,
+            line_width=4,
+            render_points_as_spheres=True,
+            render_lines_as_tubes=True,
+            smooth_shading=True,
         )
         p.remove_scalar_bar()
-    p.add_mesh(riv_mesh, color="teal", opacity=0.2)
-    p.add_mesh(wel_mesh, color="red", opacity=0.3)
-    p.add_mesh(bed_mesh, color="tan", opacity=0.1)
-    p.add_legend(
-        labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
-        bcolor="white",
-        face="r",
-        size=(0.15, 0.15),
-    )
+        if plot_endpoints:
+            p.add_mesh(
+                eps_mesh,
+                scalars=endpoints.k.ravel(),
+                cmap=["green", "gold", "red"],
+                point_size=4,
+            )
+            p.remove_scalar_bar()
+        p.add_mesh(riv_mesh, color="teal", opacity=0.2)
+        p.add_mesh(wel_mesh, color="red", opacity=0.3)
+        p.add_mesh(bed_mesh, color="tan", opacity=0.1)
+        p.add_legend(
+            labels=[("Layer 1", "green"), ("Layer 2", "gold"), ("Layer 3", "red")],
+            bcolor="white",
+            face="r",
+            size=(0.15, 0.15),
+        )
 
-    p.camera.zoom(2)
+        p.camera.zoom(2)
+        p.show()
+        if screenshot:
+            p.screenshot(figs_path / f"{sim_name}-paths-3d.png")
+
     if plot_show:
-        p.show(auto_close=False)
+        _plot()
     if plot_save:
-        p.show(screenshot=figs_path / f"{sim_name}-paths-3d.png")
+        _plot(screenshot=True)
 
 
 def load_head():
