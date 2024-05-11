@@ -794,7 +794,7 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
             scalars="destzone",
             cmap=["red", "red", "green", "blue"],
             point_size=4,
-            line_width=4,
+            line_width=3,
             render_points_as_spheres=True,
             render_lines_as_tubes=True,
             smooth_shading=True,
@@ -936,7 +936,7 @@ def plot_all(gwfsim):
     plot_pathpoints_3d(
         gwf,
         mf6pathlines,
-        title="Pathlines and 2000-day points,\ncolored by destination",
+        title="Pathlines, 2000-day points,\ncolored by destination",
     )
     plot_endpoints(
         gwf,

@@ -1110,7 +1110,7 @@ def plot_3d(gwf, pathlines, endpoints=None, title=None):
             scalars="k" if "k" in prt_mesh.point_data else "ilay",
             cmap=["green", "gold", "red"],
             point_size=4,
-            line_width=4,
+            line_width=3,
             render_points_as_spheres=True,
             render_lines_as_tubes=True,
             smooth_shading=True,
