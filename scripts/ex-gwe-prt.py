@@ -639,7 +639,7 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         axes[1].set_xlim(0, 2000)
         xticks = np.arange(0, 2100, 250)
         axes[1].set_xticks(xticks)
-        axes[1].set_ylabel("Temperature, $^{\circ}C$")
+        axes[1].set_ylabel(r"Temperature, $^{\circ}C$")
         axes[1].set_ylim(40, 80.0)
         yticks = np.arange(40, 81, 10)
         axes[1].set_yticks(yticks)
