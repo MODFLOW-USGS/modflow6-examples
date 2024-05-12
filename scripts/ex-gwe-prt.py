@@ -248,8 +248,6 @@ def build_gwf_sim(name):
 
 
 def build_gwe_sim(name):
-    gwe_name = "gwe"
-
     grid, dummy, gi = buildout_grid(gwe_ws)
 
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=gwe_ws, exe_name="mf6")
@@ -333,7 +331,6 @@ def build_gwe_sim(name):
         printrecord=[("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
     )
 
-    gwf_name = "gwf"
     pd = [
         ("GWFHEAD", gwf_ws / f"{gwf_name}.hds", None),
         ("GWFBUDGET", gwf_ws / f"{gwf_name}.cbc", None),
@@ -491,6 +488,7 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         ax.set_ylim([0, 1000])
 
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
+        ax.set_aspect("equal")
         pmv.plot_grid(alpha=0.25)
         pmv.plot_ibound(alpha=0.5)
         tempmesh = pmv.plot_array(temperatures, alpha=0.7)
@@ -498,11 +496,10 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         plt.clabel(cv, colors="k")
         plt.colorbar(
             tempmesh,
-            shrink=0.95,
+            shrink=0.5,
             ax=ax,
             label="Temperature",
-            location="right",
-            pad=0.01,
+            location="bottom",
             fraction=0.1,
         )
         handles = [
@@ -601,14 +598,15 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         segments2t = np.concatenate([points2t[:-1], points2t[1:]], axis=1)
 
         # Create a continuous norm to map from data points to colors
+        pad = 5
         norm = plt.Normalize(
-            np.min([part1["therm"].min(), part2["therm"].min()]),
-            np.max([part1["therm"].max(), part2["therm"].max()]),
+            np.min([part1["therm"].min(), part2["therm"].min()]) - pad,
+            np.max([part1["therm"].max(), part2["therm"].max()]) + pad,
         )
-        lc1 = LineCollection(segments1, cmap="rainbow", norm=norm)
-        lc1t = LineCollection(segments1t, cmap="rainbow", norm=norm)
-        lc2 = LineCollection(segments2, cmap="rainbow", norm=norm)
-        lc2t = LineCollection(segments2t, cmap="rainbow", norm=norm)
+        lc1 = LineCollection(segments1, norm=norm)
+        lc1t = LineCollection(segments1t, norm=norm)
+        lc2 = LineCollection(segments2, norm=norm)
+        lc2t = LineCollection(segments2t, norm=norm)
 
         # Set the values used for colormapping
         lc1.set_array(part1["therm"])
@@ -621,16 +619,6 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         lc2t.set_linewidth(3)
         line1 = axes[1].add_collection(lc1)
         line2 = axes[1].add_collection(lc2)
-        plt.colorbar(
-            line1,
-            shrink=0.95,
-            ax=axes[1],
-            label="Temperature",
-            location="right",
-            pad=0.01,
-            fraction=0.10,
-            aspect=7,
-        )
         axes[1].annotate("Particle 2", xy=(400, 68), xycoords="data")
         axes[1].annotate("Particle 1", xy=(400, 50), xycoords="data")
         axes[1].set_xlabel("X ($m$)")
@@ -645,16 +633,6 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         # Third plot - particle travel time vs temperature
         line1t = axes[2].add_collection(lc1t)
         line2t = axes[2].add_collection(lc2t)
-        plt.colorbar(
-            line1t,
-            shrink=0.95,
-            ax=axes[2],
-            label="Temperature",
-            location="right",
-            pad=0.01,
-            fraction=0.10,
-            aspect=7,
-        )
         axes[2].annotate("Particle 2", xy=(15000, 68), xycoords="data")
         axes[2].annotate("Particle 1", xy=(15000, 50), xycoords="data")
         axes[2].set_xlabel("Time ($days$)")
