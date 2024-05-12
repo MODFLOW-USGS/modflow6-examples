@@ -12,20 +12,31 @@
 #     name: python3
 # ---
 
-# ## Particle tracking: steady state, structured grid
+# ## Forward Tracking, Structured Grid, Steady-State Flow
 #
-# Application of a MODFLOW 6 particle-tracking (PRT) model and a MODPATH 7 (MP7) model to solve example 1 from the MODPATH 7 documentation.
+# Application of a MODFLOW 6 particle-tracking (PRT) model
+# and a MODPATH 7 (MP7) model to solve example 1 from the
+# MODPATH 7 documentation.
 #
-# This example problem involves a flow system consisting of two aquifers separated by a low conductivity confining layer, modeled on a nearly square structured grid with uniform square cells. There is a single well in the center of the grid, with a river running along the grid's right-hand boundary.
+# This example problem involves a flow system consisting of
+# two aquifers separated by a low conductivity confining layer,
+# modeled on a nearly square structured grid with uniform
+# square cells. There is a single well in the center of the
+# grid, with a river running along the grid's right-hand boundary.
 #
-# In part A, 21 particles are released at the water table in layer 1, all along the grid's third column, and tracked until discharge locations are reached. Some of the particles discharge to the well, while some discharge to the river.
+# In part A, 21 particles are released at the water table in layer
+# 1, all along the grid's third column, and tracked until discharge
+# locations are reached. Some of the particles discharge to the well,
+# while some discharge to the river.
 #
-# In part B, 9 particles are released from points evenly distributed over the top face of each cell in layer 1.
+# In part B, 9 particles are released from points evenly distributed
+# over the top face of each cell in layer 1.
 #
 
 # ### Initial setup
 #
-# Import dependencies, define the example name and workspace, and read settings from environment variables.
+# Import dependencies, define the example name and workspace,
+# and read settings from environment variables.
 
 # +
 import pathlib as pl
@@ -440,7 +451,7 @@ def run_models(*sims, silent=False):
         if isinstance(sim, MFSimulation):
             success, buff = sim.run_simulation(silent=silent, report=True)
         else:
-            sim.run_model(silent=silent, report=True)
+            succes, buff = sim.run_model(silent=silent, report=True)
         assert success, pformat(buff)
 
 
@@ -771,7 +782,7 @@ def plot_pathpoints_3d(gwf, pathlines, title):
             scalars="k" if "k" in prt_mesh.point_data else "ilay",
             cmap=["green", "gold", "red"],
             point_size=4,
-            line_width=4,
+            line_width=3,
             render_points_as_spheres=True,
             render_lines_as_tubes=True,
             smooth_shading=True,

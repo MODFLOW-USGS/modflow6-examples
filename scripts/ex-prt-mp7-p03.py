@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# ## Particle tracking: transient flow system
+# ## Forward Tracking, Structured Grid, Transient Flow
 #
 # Application of a MODFLOW 6 particle-tracking (PRT)
 # model and a MODPATH 7 (MP7) model to solve example
@@ -506,15 +506,13 @@ def write_models(*sims, silent=False):
 
 
 @timed
-def run_models(gwfsim, prtsim, mp7sim, silent=False):
-    success, buff = gwfsim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
-
-    success, buff = prtsim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
-
-    success, buff = mp7sim.run_model(silent=silent, report=True)
-    assert success, pformat(buff)
+def run_models(*sims, silent=False):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            success, buff = sim.run_simulation(silent=silent, report=True)
+        else:
+            success, buff = sim.run_model(silent=silent, report=True)
+        assert success, pformat(buff)
 
 
 def get_mf6_pathlines(path):

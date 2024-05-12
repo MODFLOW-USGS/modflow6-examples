@@ -12,20 +12,33 @@
 #     name: python3
 # ---
 
-# ## Particle tracking: steady state, unstructured quad-refined grid
+# ## Backward Tracking, Quad-Refined Grid, Steady-State Flow
 #
-# Application of a MODFLOW 6 particle-tracking (PRT) model and a MODPATH 7 (MP7) model to solve example 2 from the MODPATH 7 documentation.
+# Application of a MODFLOW 6 particle-tracking (PRT) model
+# and a MODPATH 7 (MP7) model to solve example 2 from the
+# MODPATH 7 documentation.
 #
-# This example problem adapts the flow system in example 1, consisting of two aquifers separated by a low conductivity confining layer, with an unstructured grid with a quad-refined region around the central well. A river still runs along the grid's right-hand boundary.
+# This example problem adapts the flow system in example 1,
+# consisting of two aquifers separated by a low conductivity
+# confining layer, with an unstructured grid with a quad-
+# refined region around the central well. A river still runs
+# along the grid's right-hand boundary.
 #
-# In part A, 16 particles are distributed evenly for release around the four horizontal faces of the well. To determine recharge points, particles are then tracked backwards to the water table.
+# In part A, 16 particles are distributed evenly for release
+# around the four horizontal faces of the well. To determine
+# recharge points, particles are then tracked backwards to
+# the water table.
 #
-# In part B, 100 particles are evenly distributed in a 10 x 10 square over the horizontal faces of the well, with 16 more release points on the well cell's top face. Particles are again tracked backwards to determine the well's capture area.
+# In part B, 100 particles are evenly distributed in a 10 x 10
+# square over the horizontal faces of the well, with 16 more
+# release points on the well cell's top face. Particles are
+# again tracked backwards to determine the well's capture area.
 #
 
 # ### Initial setup
 #
-# Import dependencies, define the example name and workspace, and read settings from environment variables.
+# Import dependencies, define the example name and workspace,
+# and read settings from environment variables.
 
 # +
 import pathlib as pl
@@ -517,7 +530,6 @@ def build_mp7_sim(gwf_model):
         particlegroups=[pga, pgb],
     )
 
-    # Return the simulation
     return mp7
 
 
@@ -542,7 +554,7 @@ def run_models(*sims, silent=False):
         if isinstance(sim, MFSimulation):
             success, buff = sim.run_simulation(silent=silent, report=True)
         else:
-            sim.run_model(silent=silent, report=True)
+            success, buff = sim.run_model(silent=silent, report=True)
         assert success, pformat(buff)
 
         if "gwf" in sim.name:

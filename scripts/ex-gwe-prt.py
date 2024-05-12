@@ -7,7 +7,6 @@
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
 
 # +
-import os
 import pathlib as pl
 from pprint import pformat
 
@@ -18,11 +17,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from flopy.discretization import VertexGrid
+from flopy.mf6 import MFSimulation
 from flopy.utils import GridIntersect
 from flopy.utils.triangle import Triangle
 from flopy.utils.voronoi import VoronoiGrid
 from matplotlib.collections import LineCollection
-from modflow_devtools.misc import get_env
+from modflow_devtools.misc import get_env, timed
 from scipy.interpolate import CloughTocher2DInterpolator
 from shapely.geometry import LineString, Point
 
@@ -33,14 +33,23 @@ from shapely.geometry import LineString, Point
 # in the git repository, use the folder structure described in
 # the README. Otherwise just use the current working directory.
 sim_name = "ex-gwe-prt"
+gwf_name = sim_name + "-gwf"
+gwe_name = sim_name + "-gwe"
+prt_name = sim_name + "-prt"
 try:
     root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
 except:
     root = None
-
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 workspace = root / "examples" if root else pl.Path.cwd()
 figs_path = root / "figures" if root else pl.Path.cwd()
-data_path = root / "data" / sim_name if root else pl.Path.cwd()
+sim_ws = workspace / sim_name
+gwf_ws = sim_ws / "gwf"
+gwe_ws = sim_ws / "gwe"
+prt_ws = sim_ws / "prt"
+gwf_ws.mkdir(exist_ok=True, parents=True)
+gwe_ws.mkdir(exist_ok=True, parents=True)
+prt_ws.mkdir(exist_ok=True, parents=True)
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -89,8 +98,6 @@ botm = [botm]
 nodes = ncol * nrow
 lhv = 2500.0
 rpts = [[20, i, 0.5] for i in range(1, 999, 20)]
-times = [False]
-tracktimes = list(np.linspace(0, 40000, 100))
 
 # Convert kts and ktw units to use days
 ktw = ktw * 86400
@@ -128,13 +135,11 @@ def buildout_grid(ws):
     return grid, vgrid, gi
 
 
-def build_gwf_sim(name, ws):
+def build_gwf_sim(name):
     global cell2d
-    ws = pl.Path(ws) / "gwf"
-    gwf_name = "gwf"
 
     # create grid
-    grid, vgrid, gi = buildout_grid(ws)
+    grid, vgrid, gi = buildout_grid(gwf_ws)
 
     # identify cells on left edge
     line = LineString([(xmin, ymin), (xmin, ymax)])
@@ -157,7 +162,7 @@ def build_gwf_sim(name, ws):
 
     # create simulation
     sim = flopy.mf6.MFSimulation(
-        sim_name=name, version="mf6", exe_name="mf6", sim_ws=ws
+        sim_name=name, version="mf6", exe_name="mf6", sim_ws=gwf_ws
     )
     flopy.mf6.ModflowTdis(sim, time_units=time_units, perioddata=[[1.0, 1, 1.0]])
     gwf = flopy.mf6.ModflowGwf(sim, modelname=gwf_name, save_flows=True)
@@ -242,13 +247,12 @@ def build_gwf_sim(name, ws):
     return sim
 
 
-def build_gwe_sim(name, ws):
-    ws = pl.Path(ws) / "gwe"
+def build_gwe_sim(name):
     gwe_name = "gwe"
 
-    grid, dummy, gi = buildout_grid(ws)
+    grid, dummy, gi = buildout_grid(gwe_ws)
 
-    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=ws, exe_name="mf6")
+    sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=gwe_ws, exe_name="mf6")
 
     flopy.mf6.ModflowTdis(sim, time_units=time_units, perioddata=[[1.0e6, 1000, 1.003]])
 
@@ -331,19 +335,15 @@ def build_gwe_sim(name, ws):
 
     gwf_name = "gwf"
     pd = [
-        ("GWFHEAD", os.path.join("..", "gwf", gwf_name + ".hds"), None),
-        ("GWFBUDGET", os.path.join("..", "gwf", gwf_name + ".cbc"), None),
+        ("GWFHEAD", gwf_ws / f"{gwf_name}.hds", None),
+        ("GWFBUDGET", gwf_ws / f"{gwf_name}.cbc", None),
     ]
     flopy.mf6.ModflowGwefmi(gwe, packagedata=pd)
 
     return sim
 
 
-def build_prt_sim(idx, name, prt_ws, gwf_ws):
-    prt_ws = pl.Path(prt_ws) / "prt"
-    gwf_name = "gwf"
-    prt_name = "prt"
-
+def build_prt_sim(name):
     # create grid
     grid, vgrid, gi = buildout_grid(prt_ws)
 
@@ -384,14 +384,12 @@ def build_prt_sim(idx, name, prt_ws, gwf_ws):
         pname="oc",
         track_filerecord=[prt_track_file],
         trackcsv_filerecord=[prt_track_csv_file],
-        track_all=not times[idx],
-        track_usertime=times[idx],
-        track_timesrecord=tracktimes if times[idx] else None,
+        track_all=True,
     )
 
     pd = [
-        ("GWFHEAD", os.path.join("..", "gwf", gwf_name + ".hds"), None),
-        ("GWFBUDGET", os.path.join("..", "gwf", gwf_name + ".cbc"), None),
+        ("GWFHEAD", gwf_ws / f"{gwf_name}.hds", None),
+        ("GWFBUDGET", gwf_ws / f"{gwf_name}.cbc", None),
     ]
 
     flopy.mf6.ModflowPrtfmi(
@@ -408,26 +406,29 @@ def build_prt_sim(idx, name, prt_ws, gwf_ws):
     return sim
 
 
-def build_models(idx):
-    gwf_sim = build_gwf_sim(sim_name, workspace)
-    gwe_sim = build_gwe_sim(sim_name, workspace)
-    prt_sim = build_prt_sim(idx, sim_name, workspace, str(workspace) + "-gwf")
+def build_models():
+    gwf_sim = build_gwf_sim(sim_name)
+    gwe_sim = build_gwe_sim(sim_name)
+    prt_sim = build_prt_sim(sim_name)
     return gwf_sim, gwe_sim, prt_sim
 
 
-def write_sim(sim, silent=True):
-    success = False
-    if sim is not None:
-        success = sim.write_simulation(silent=silent)
+def write_models(*sims, silent=False):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            sim.write_simulation(silent=silent)
+        else:
+            sim.write_input()
 
-    return success
 
-
-def run_sim(sim, silent=True):
-    success = True
-    success, buff = sim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
-    return success
+@timed
+def run_models(*sims, silent=False):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            success, buff = sim.run_simulation(silent=silent, report=True)
+        else:
+            success, buff = sim.run_model(silent=silent, report=True)
+        assert success, pformat(buff)
 
 
 def temp_interp(pls, temperatures):
@@ -463,9 +464,6 @@ def temp_interp(pls, temperatures):
 
 
 def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
-    prt_ws = workspace / "prt"
-    prt_name = "prt"
-
     # get gwf output
     gwf = gwf_sim.get_model()
     gwe = gwe_sim.get_model()
@@ -475,7 +473,7 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
     qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(spdis, gwf)
 
     # get prt output
-    prt_track_csv_file = f"{prt_name}.prp.trk.csv"
+    prt_track_csv_file = f"{prt_name}.trk.csv"
     pls = pd.read_csv(prt_ws / prt_track_csv_file, na_filter=False)
 
     pls = temp_interp(pls, temperatures[0, 0])
@@ -679,32 +677,14 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
 
 
 # +
-def scenario(idx, silent=False):
-    success_gwf = False
-    success_gwe = False
-    success_prt = False
-
-    # Build the flow model as a steady-state simulation
-    gwf_sim, gwe_sim, prt_sim = build_models(idx)
-
+def scenario(silent=False):
+    gwf_sim, gwe_sim, prt_sim = build_models()
     if write:
-        if gwf_sim is not None:
-            write_sim(gwf_sim, silent=silent)
-        if gwe_sim is not None:
-            write_sim(gwe_sim, silent=silent)
-        if prt_sim is not None:
-            write_sim(prt_sim, silent=silent)
-
+        write_models(gwf_sim, gwe_sim, prt_sim, silent=silent)
     if run:
-        success_gwf = run_sim(gwf_sim, silent=silent)
-        if success_gwf:
-            success_gwe = run_sim(gwe_sim, silent=silent)
-        if success_gwf:
-            success_prt = run_sim(prt_sim, silent=silent)
-
+        run_models(gwf_sim, gwe_sim, prt_sim, silent=silent)
     if plot:
-        if success_gwf and success_gwe and success_prt:
-            plot_results(gwf_sim, gwe_sim, prt_sim, silent=silent)
+        plot_results(gwf_sim, gwe_sim, prt_sim, silent=silent)
 
 
 # -
@@ -712,4 +692,4 @@ def scenario(idx, silent=False):
 
 # Run the scenario.
 
-scenario(0, silent=True)
+scenario(silent=True)

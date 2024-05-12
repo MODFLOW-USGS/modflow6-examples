@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# ## Particle tracking: steady-state, refined vertex grid, lateral flow boundaries
+# ## Backward Tracking, Refined Grid, Lateral Flow Boundaries
 #
 # Application of a MODFLOW 6 particle-tracking (PRT) model
 # to solve example 4 from the MODPATH 7 documentation.
@@ -698,7 +698,7 @@ def run_models(*sims, silent=False):
         if isinstance(sim, MFSimulation):
             success, buff = sim.run_simulation(silent=silent, report=True)
         else:
-            sim.run_model(silent=silent, report=True)
+            success, buff = sim.run_model(silent=silent, report=True)
         assert success, pformat(buff)
 
         if "gwf" in sim.name:
