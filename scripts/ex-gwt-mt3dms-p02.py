@@ -1,4 +1,4 @@
-# ## One-dimensional steady flow with transport
+# ## MT3DMS Problem 2
 #
 # This is the second example problem presented in Zheng 1999, titled "One-dimensional transport
 # with nonlinear or nonequilibrium sorption. The purpose of this example is to demonstrate

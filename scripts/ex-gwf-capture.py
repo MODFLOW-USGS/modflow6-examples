@@ -1,4 +1,4 @@
-# ## Capture fraction analysis
+# ## Capture Fraction Analysis
 #
 # This problem is an example of a capture fraction analysis based on
 # Leake and others (2010) using the model developed by Freyberg (1988) and

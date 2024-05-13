@@ -1,4 +1,4 @@
-# ## Two-Dimensional Transport with the UZF and UZT packages active.
+# ## Two-Dimensional Test of Unsaturated-Saturated Transport
 #
 # This problem tests transport in the unsaturated zone.
 # This example originally appeared in Morway et al (2013).

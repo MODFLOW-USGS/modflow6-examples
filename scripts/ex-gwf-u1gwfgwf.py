@@ -1,4 +1,4 @@
-# ## USG-ex1 with GWF-GWF Exchange and XT3D
+# ## Nested Grid Problem, Two Domains
 #
 # This example shows how the MODFLOW 6 GWF-GWF Exchange can be used to simulate
 # a nested grid problem. The example corresponds to the first example

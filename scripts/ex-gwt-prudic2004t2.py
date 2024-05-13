@@ -1,4 +1,4 @@
-# ## Stream-lake interaction with solute transport
+# ## SFR1 Manual Problem 2
 #
 # This problem is based on the stream-aquifer interaction problem
 # described as Test 2 by Prudic et al 2004, which modifies another

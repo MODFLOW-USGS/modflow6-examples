@@ -1,4 +1,4 @@
-# ## Sagehen example with UZF, SFR, and MVR advanced packages activated
+# ## Sagehen UZF1 Package Problem 1
 #
 # This script reproduces example 1 in the UZF1 Techniques and Methods
 # (Niswonger et al., 2006).

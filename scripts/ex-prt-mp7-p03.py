@@ -1,17 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.14.7
-#   kernelspec:
-#     display_name: venv
-#     language: python
-#     name: python3
-# ---
-
 # ## Forward Tracking, Structured Grid, Transient Flow
 #
 # Application of a MODFLOW 6 particle-tracking (PRT)

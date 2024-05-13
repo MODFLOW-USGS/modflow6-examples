@@ -1,4 +1,4 @@
-# ## Whirl example
+# ## Groundwater Whirls
 #
 # This is a 10 layer steady-state problem involving anisotropic groundwater
 # flow.  The XT3D formulation is used to represent variable hydraulic

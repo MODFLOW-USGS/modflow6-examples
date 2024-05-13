@@ -1,4 +1,4 @@
-# ## Jacob (1939) elastic aquifer loading example
+# ## Jacob (1939) Elastic Aquifer Loading
 #
 # This problem simulates elastic compaction of aquifer materials in response to the
 # loading of an aquifer by a passing train. Water-level responses were simulated for

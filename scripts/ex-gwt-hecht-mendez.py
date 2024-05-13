@@ -1,4 +1,4 @@
-# ## Three-dimensional heat transport example
+# ## Hecht-Mendez 3D Borehole Heat Exchanger Problem
 #
 # The purpose of this script is to (1) recreate the 3D heat transport example
 # first published in Groundwater in 2010 titled, "Evaluating MT3DMS for Heat

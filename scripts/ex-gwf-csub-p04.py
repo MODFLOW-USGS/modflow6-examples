@@ -1,4 +1,4 @@
-# ## One-dimensional compaction in a three-dimensional flow field example
+# ## One-Dimensional Compaction in a Three-Dimensional Flow Field
 #
 # This problem is based on the problem presented in the SUB-WT report
 # (Leake and Galloway, 2007) and represent groundwater development in a

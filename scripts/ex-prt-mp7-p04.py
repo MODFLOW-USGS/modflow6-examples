@@ -1,17 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.14.6
-#   kernelspec:
-#     display_name: venv
-#     language: python
-#     name: python3
-# ---
-
 # ## Backward Tracking, Refined Grid, Lateral Flow Boundaries
 #
 # Application of a MODFLOW 6 particle-tracking (PRT) model

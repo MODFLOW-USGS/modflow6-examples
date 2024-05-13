@@ -1,4 +1,4 @@
-# ## Rotating interface example
+# ## Rotating Interface Problem
 #
 # This example demonstrates density-driven groundwater flow.
 

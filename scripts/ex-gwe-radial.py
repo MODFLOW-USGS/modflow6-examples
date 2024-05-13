@@ -1,4 +1,4 @@
-# ## Radial heat transport example
+# ## Radial Heat Transport
 #
 # This example was originally published in Al-Khoury et al 2020. The original data by Al-Khoury et al. (2020) was for a radially symmetric finite-element mesh.  Where their mesh calculates values at mesh points, this setup uses those points as vertices in a DISV grid.
 

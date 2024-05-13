@@ -1,4 +1,4 @@
-# ## Zero-order production in a dual-domain system
+# ## MT3DMS Supplemental Guide Problem 6.3.2
 #
 # This example tests the capabilities of the GWT model to simulate
 # 0-order production in a dual-domain system with & without sorption.

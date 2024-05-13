@@ -1,4 +1,4 @@
-# ## Three-Dimensional Field Case Study, Comparison of MODFLOW 6 Transport with MT3DMS
+# ## MT3DMS Problem 10
 #
 # The purpose of this script is to (1) recreate the example problems that were first
 # described in the 1999 MT3DMS report, and (2) compare MF6-GWT solutions to the

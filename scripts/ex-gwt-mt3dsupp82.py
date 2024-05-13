@@ -1,4 +1,4 @@
-# ## Simulating effect of recirculation well
+# ## MT3DMS Supplemental Guide Problem 8.2
 #
 # This example is for a recirculating well.  It is based on example problem 8.2
 # described in Zheng 2010. The problem consists of a two-dimensional, one-layer

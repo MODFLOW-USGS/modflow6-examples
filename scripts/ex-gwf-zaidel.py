@@ -1,4 +1,4 @@
-# ## Zaidel (2013) example
+# ## Zaidel Problem
 #
 # Described in Zaidel (2013), representing a discontinuous
 # water table configuration over a stairway impervious base.

@@ -1,4 +1,4 @@
-# ## SPBC example
+# ## Laattoe Periodic Boundary Condition
 #
 # Periodic boundary condition problem is based on Laattoe and others (2014).
 # A MODFLOW 6 GWF-GWF Exchange is used to connect the left column with the
