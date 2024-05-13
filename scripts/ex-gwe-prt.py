@@ -1,4 +1,4 @@
-# ## PRT with GWE example
+# ## Thermal Profile along a Particle Path
 
 # Using a Voronoi grid, this example demonstrates the combined use of GWF, GWE, and PRT.  A steady flow field is established, followed by the establishment of a steady-state temperature field.  Two particles are then routed through the model domain and the temperature of the particle is determined along the flow path.
 
