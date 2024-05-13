@@ -1,4 +1,4 @@
-# ## Comparing MODFLOW 6 GWT-GWT to the single model results from MT3DMS problem 10
+# ## MT3DMS Problem 10 Two Domains
 #
 # The purpose of this example is to demonstrate the model setup for
 # a coupled GWF-GWT simulation with submodels. It replicates the

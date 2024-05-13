@@ -1,4 +1,4 @@
-# ## Delay interbed drainage example
+# ## Delay Interbed Drainage
 #
 # This problem simulates the drainage of a thick interbed caused by a step
 # decrease in hydraulic head in the aquifer and is based on MODFLOW-2000 subsidence

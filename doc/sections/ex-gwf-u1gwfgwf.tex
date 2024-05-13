@@ -1,4 +1,4 @@
-\section{Nested Grid Problem - Two Domains}
+\section{Nested Grid Problem, Two Domains}
 
 % Describe source of problem
 This example reproduces the nested grid problem described in the MODFLOW-USG documentation \citep{modflowusg}. A single model setup with a grid based on the Discretization by Vertices (DISV) input is presented elsewhere in these examples. This problem is set up using two individual GWF models with a regular grid (DIS) that are coupled through a GWF Exchange. A plan view of the combined grid for the two models is shown in figure~\ref{fig:ex-gwf-u1gwfgwf-s1-grid}. The XT3D option in the NPF package can be applied to avoid inaccuracies at the cell refinement interface \citep{modflow6xt3d}, which is the model boundary in this example. However, for this coupled system it is not sufficient to enable XT3D for the models independently: the correct flow calculation around the model interface relies on information from both models.

@@ -1,4 +1,4 @@
-# ## One-dimensional compaction example
+# ## One-Dimensional Compaction
 #
 # A one-dimensional MODFLOW 6 model was developed by Sneed (2008) to simulate
 # aquitard drainage, compaction and, land subsidence at the Holly site, located at

@@ -1,11 +1,13 @@
-# ## Infiltrating heat front
+# ## Infiltrating Heat Front
 #
-#  An example demonstrating that a specified energy flux boundary condition works as expected when compared to an analytical solution.
+# An example demonstrating that a specified energy flux boundary condition
+# works as expected when compared to an analytical solution.
 #
 
 # ### Initial Setup
 #
-# Import dependencies, define the example name and workspace, and read settings from environment variables.
+# Import dependencies, define the example name and workspace,
+# and read settings from environment variables.
 
 # +
 import math

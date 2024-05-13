@@ -1,4 +1,4 @@
-# ## USG1DISV example
+# ## Nested Grid Problem
 #
 # This example shows how the MODFLOW 6 DISV Package can be used to simulate
 # a nested grid problem.  The example corresponds to the first example

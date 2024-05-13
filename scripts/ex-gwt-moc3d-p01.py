@@ -1,4 +1,4 @@
-# ## One-dimensional steady flow with transport
+# ## MOC3D Problem 1
 #
 # This problem corresponds to the first problem presented in the MOC3D
 # report Konikow 1996, involving the transport of a dissolved constituent

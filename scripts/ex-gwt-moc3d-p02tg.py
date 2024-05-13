@@ -1,4 +1,4 @@
-# ## Three-Dimensional Steady Flow with Transport
+# ## MOC3D Problem 2 with Triangular Grid
 #
 # This problem corresponds to the second problem presented in the MOC3D
 # report Konikow 1996, which involves the transport of a dissolved

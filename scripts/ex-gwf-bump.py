@@ -1,4 +1,4 @@
-# ## Flow diversion example
+# ## Flow Diversion
 #
 # This example simulates unconfined groundwater flow in an aquifer with a high bottom elevation in the center of the aquifer and groundwater flow around a high bottom elevation.
 

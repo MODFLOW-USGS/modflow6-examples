@@ -1,4 +1,4 @@
-# ## Streamflow Routing (SFR) Package problem 1
+# ## Streamflow Routing (SFR) Package Problem 1
 #
 # This is the stream-aquifer interaction example problem (test 1) from the
 # Streamflow Routing Package documentation (Prudic, 1989). All reaches have

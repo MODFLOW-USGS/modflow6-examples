@@ -1,4 +1,4 @@
-# ## Zero-Order Growth in a Uniform Flow Field
+# ## MT3DMS Supplemental Guide Problem 6.3.1
 #
 # This example is for zero-order production in a uniform flow field.
 # It is based on example problem 6.3.1 described in Zheng 2010. The
