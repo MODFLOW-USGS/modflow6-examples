@@ -1,4 +1,4 @@
-# ## Curvilinear example
+# ## Multipart Curvilinear Groundwater Flow Model
 #
 # This example, ex-gwf-curvilinear, shows how the MODFLOW 6 DISV Package
 # can be used to simulate a multipart curvilinear models.
@@ -14,8 +14,6 @@
 #    3) 90 to 0 degree curvilinear grid
 # that are merged, as 1-2-3, to make the final multipart curvilinear grid.
 
-# ### Initial setup
-#
 # ### Initial setup
 #
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
