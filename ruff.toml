@@ -1,0 +1,19 @@
+target-version = "py39"
+include = [
+    "autotest/**/*.py",
+    "scripts/**/*.py",
+    "etc/**/*.py",
+    ".doc/**/*.py",
+]
+extend-include = [
+    ".doc/**/*.ipynb"
+]
+
+[lint]
+select = ["F", "E", "I001"]
+ignore = [
+    "E501", # line too long TODO FIXME
+    "E722", # do not use bare `except`
+    "E741", # ambiguous variable name
+    "F841", # local variable assigned but never used
+]

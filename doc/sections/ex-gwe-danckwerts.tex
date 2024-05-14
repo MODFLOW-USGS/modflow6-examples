@@ -1,0 +1,59 @@
+\section{Infiltrating Heat Front}
+
+% Describe source of problem
+An analytical solution used in chemical engineering for modeling concentration in packed-bed reactors , commonly referred to as a ``Danckwerts'' (or ``third-type'') boundary condition, is adapted here for confirming the accuracy of heat transport as solved by the UZE package in \mf.  The analytical solution has the following characteristics: (1) it solves for total energy flux (advection and conduction) along a 1-dimensional (1D) profile [i.e., there is no conduction (``thermal bleeding'') with the surrounding materials], (2) heat flux can only enter the active domain with the inflow (in this case, the infiltration) and it does not require the temperature at the boundary to be equal to the temperature of the infiltration, and (3) it solves for total heat flux (instead of temperature) throughout the 1D domain.
+
+The Danckwerts analytical solution takes the following form:
+
+\bigskip
+$q_{T_z} = q_{T_0} + \dfrac{1}{2} \left( q_{T_{infil}} - q_{T_0} \right) \left( \textit{erfc} \biggl\{ \dfrac{z-\nu t}{2 \sqrt{Dt}} \biggr\}  + \textit{exp} \Bigl\{ \dfrac{\nu z}{D}\Bigr\} \cdot \textit{erfc} \biggl\{ \dfrac{z+\nu t}{2 \sqrt{Dt}} \biggr\} \right)$
+\bigskip
+
+\noindent where $q_{T_z}$ is the heat flux and depth $z$, $q_{T_0}$is the infiltrating heat flux at $t=0$, $q_{T_{infil}}$ is the amount of infiltrating heat flux at $t > 0$, $\textit{erfc}$ is the complementary error function, $z$ is the distance from infiltrating heat flux boundary, which, in this example is the depth below land surface, $t$ is time (in days), $\nu$ represents the ``thermal convection velocity'' determined from,
+
+\bigskip
+$\nu=q \cdot \dfrac{\rho_w C_{p_w}}{S_{w_z} \theta \rho_w C_{p_w} + \left( 1-\theta \right) \rho_s C_{p_w}}$
+\bigskip
+
+\noindent with $q$ equal to the volumetric infiltration rate, $\rho_w$ is the density of water, $C_{p_w}$ is the heat capacity of water, $S_{w_z}$ is the saturation at depth $z$, $\theta$ is the water content, $rho_s$ is the density of a aquifer solids, and $C_{p_w}$ is the heat capacity of the aquifer solids. Additionally, $D$ represents the bulk thermal diffusivity,
+
+\bigskip
+$D=\dfrac{k_{T_{bulk}}}{S_{w_z} \theta \rho_w C_{p_w} + \left(1 - \theta \right) \rho_s C_{p_w}}$
+\bigskip
+
+\noindent and $k_{T_{bulk}}$ is the bulk thermal conductivity represented by,
+
+\bigskip
+$k_{T_{bulk}} = S_{w_z} \theta k_{T_w} + \left(1-\theta \right) k_{T_s}$
+\bigskip
+
+\noindent and $k_{T_w}$ and $k_{T_s}$ are the thermal conductivities of the water and aquifer material, respectively.
+
+\subsection{Example description}
+
+A 1D model grid of the unsaturated zone is used to simulate the downward migration of an infiltrating heat front ({fig.~\ref{fig:ex-gwe-danck}}).  Steady flow conditions are simulated with the GWF model.  The UZF package simulates flow through the unsaturated zone with a constant infiltration rate of 0.01 $\frac{m}{d}$. An initial temperature of 10$^{\circ}C$ is specified for the entire model domain.  After steady flow and transport conditions are established with a quasi-steady-state stress period, the temperature of the infiltration is increased to 20$^{\circ}C$ resulting in an energy source loading of 9.68$\frac{J}{s}$ (calculated from $q_{infil} \cdot T_{infil} \cdot \rho_w \cdot C_{p_w}$). Other pertinent parameter values are provided in table~\ref{tab:ex-gwe-danckwerts-01}. 
+
+A constant head boundary is placed at the bottom of the model to remove water that recharges the water table in order to prevent the water table from rising into the unsaturated column ({fig.~\ref{fig:ex-gwe-danck}}).
+
+% figure of model domain
+\begin{StandardFigure}{
+   View of 1-dimensional model setup. Total thickness of the unsaturated zone is 10 $m$ and is discretized with 100 cells that are each 10 $cm$ thick.}{fig:ex-gwe-danck}{../images/ex-gwe-danck.png}
+\end{StandardFigure}
+
+% add static parameter table(s)
+\input{../tables/ex-gwe-danckwerts-01}
+
+% for examples without scenarios
+\subsection{Example Results}
+
+The heat front that migrates downward through the unsaturated zone as a result of energy loading associated with the infiltration is shown in figure~\ref{fig:ex-gwe-danckwerts-01} at 10, 50, and 100 days.  Figure~\ref{fig:ex-gwe-danckwerts-02} shows the same comparison broken out into 3 subplots, but further parses the downward heat migration into its advective (dark green) and conductive (light green) components.  Where the temperature gradients are steepest, the conductive flux of energy plays a more prominent role in the downward migration of heat.
+
+% a results figure
+\begin{StandardFigure}{
+   Comparison of simulated migration of infiltrating heat front to an analytical solution}{fig:ex-gwe-danckwerts-01}{../figures/ex-gwe-danckwerts-01.png}
+\end{StandardFigure}
+
+% a 2nd results figure
+\begin{StandardFigure}{
+   The same infiltrating heat fronts as shown in figure~\ref{fig:ex-gwe-danckwerts-01}, but highlights the advective and conductive heat fluxes separately}{fig:ex-gwe-danckwerts-02}{../figures/ex-gwe-danckwerts-02.png}
+\end{StandardFigure}

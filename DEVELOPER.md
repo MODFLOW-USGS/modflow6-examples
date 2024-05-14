@@ -6,14 +6,20 @@ This document describes development procedures and conventions for the MODFLOW 6
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Overview](#overview)
-- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
   - [Create a Python environment](#create-a-python-environment)
   - [Install MODFLOW programs](#install-modflow-programs)
   - [Update FloPy classes](#update-flopy-classes)
+- [Conventions](#conventions)
+  - [Workspace and data access](#workspace-and-data-access)
+  - [Structure and configuration](#structure-and-configuration)
 - [Running the examples](#running-the-examples)
   - [Running with `pytest`](#running-with-pytest)
   - [Running with `jupytext`](#running-with-jupytext)
   - [Running with `jupyter`](#running-with-jupyter)
+- [Building documentation](#building-documentation)
+  - [ReadTheDocs](#readthedocs)
+  - [PDF document](#pdf-document)
 - [Contributing examples](#contributing-examples)
 - [Releasing the examples](#releasing-the-examples)
 
@@ -23,27 +29,7 @@ This document describes development procedures and conventions for the MODFLOW 6
 
 The example models in this repository are composed with FloPy in the Python files under `scripts/`. Notebooks are generated from these with [`jupytext`](https://github.com/mwouts/jupytext) for the [online documentation](https://modflow6-examples.readthedocs.io/en/stable/) and/or for use with `jupyter`. A small volume of supporting data live in files under `data/`.
 
-**Note:** example scripts do not access the `data/` folder directly &mdash; rather, on first run, they download and cache files from GitHub with a tool called [Pooch](https://www.fatiando.org/pooch/latest/). This allows running scripts and/or notebooks downloaded from the [documentation site](https://modflow6-examples.readthedocs.io/en/stable/) without first cloning the repository and/or manually downloading data files.
-
-Scripts may contain one or more example scenarios. Each script creates one or more subdirectories of `examples/` to use as a workspace, one per example scenario. Internally, the scripts are structured similarly, proceeding through the following steps:
-
-1. Define & build models
-2. Write input files
-3. Run models
-4. Plot results
-
-The scripts parse environment variables to control several behaviors, all of which accept case-insensitive `true/false` strings:
-
-- `WRITE`: whether to write model input files to subdirectories of `examples/`
-- `RUN`: whether to run models
-- `PLOT`: whether to create plots of results
-- `PLOT_SHOW`: whether to show static plots (disabled by default when run with `pytest`)
-- `PLOT_SAVE`: whether to save static plots to `figures/`
-- `GIF`: whether to save GIFs to `figures/` (only relevant for a small subset of scripts)
-
-If variables are not found when a script is run directly, behaviors are enabled by default. When scripts are run via `pytest`, by default plots are not shown (to avoid the need to manually close plot widgets). Pytest CLI flags can be used to control each switch &mdash; see below for details.
-
-## Prerequisites
+## Requirements
 
 To develop the examples one must first:
 
@@ -88,7 +74,109 @@ FloPy and MODFLOW 6 versions must be kept in sync for FloPy to properly generate
 python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 ```
 
-The `--repo` argument can be used to select an alternative repository (e.g. your fork). See [the FloPy documentation](https://flopy.readthedocs.io/en/stable/md/generate_classes.html) for more info.
+The `--owner` and `--repo` arguments can be used to select an alternative repository (e.g. your fork). See [the FloPy documentation](https://flopy.readthedocs.io/en/stable/md/generate_classes.html) for more info.
+
+## Conventions
+
+Example scripts should follow a number of conventions. These keep behavior consistent, reduce barriers to entry for new users, and avoid surprises when building the examples documentation.
+
+### Workspace and data access
+
+Examples may need supporting data which is too large or unwieldy to define in code. For instance, large arrays are better stored in external files, and loaded by the example script at runtime. At the same time, we prefer to avoid implicit dependencies on the local filesystem, so that scripts or notebooks downloaded from the [documentation site](https://modflow6-examples.readthedocs.io/en/stable/) can be run without first cloning the repository and/or manually downloading data files.
+
+To solve this problem, example scripts employ two access patterns:
+
+1. If the script is running inside the repository, the `data/` folder may be assumed to exist, and local files can be accessed directly. Each script creates one or more subdirectories of `examples/` to use as a workspace, one per example scenario. Figures are written to `figures/`. If the script creates any tables, they are written to `tables/`.
+2. If the script is not running inside the repository, the current working directory is used as the example workspace. Model input files, output files and figures are all written to that location. Data files are downloaded from GitHub with a tool called [Pooch](https://www.fatiando.org/pooch/latest/). 
+
+The following snippet, which determines whether the example is running inside the repository and sets workspace paths, should appear at the beginning of each example script:
+
+```python
+sim_name = "my_example_name"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
+```
+
+Provided a file name `fname` and data directory `data_path`, the following snippet suffices to retrieve a data file:
+
+```python
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/develop/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
+    known_hash="md5:<MD5 hash of the file>",
+)
+```
+
+Pooch will first check whether the file already exists in the `data_path`, only downloading the file if necessary.
+
+**Note**: When a new example is first added to the repository, the Pooch URL must point to the `develop` branch, as the data file will not be available on the `master` branch until the next release time &mdash; see the [Releasing the examples](#releasing-the-examples) section below. Once an example has reached a stable status, and data files are unlikely to change, the URL may be changed to point to `master`.
+
+**Note**: File hashes are sensitive to newline characters. To avoid disagreements, this repository's `.gitattributes` file overrules Windows' default newline (CR+LF) in favor of POSIX-style newlines (LF) for all text-based files under `data/`.
+
+### Structure and configuration
+
+Scripts may contain one or more example scenarios. Generally, each scenario proceeds through the following steps:
+
+1. Define & build models
+2. Write input files
+3. Run models
+4. Plot results
+
+Scenarios should be wrapped with a function, such that an example script can run multiple scenarios with e.g.
+
+```python
+scenario(0)
+scenario(1)
+...
+```
+
+Scenario steps 2-4 listed above can be toggled programmatically via environment variables, all of which accept case-insensitive `true/false` strings:
+
+- `WRITE`: whether to write model input files to subdirectories of `examples/`
+- `RUN`: whether to run models
+- `PLOT`: whether to create plots of results
+- `PLOT_SHOW`: whether to show static plots (disabled by default when run with `pytest`)
+- `PLOT_SAVE`: whether to save static plots to `figures/`
+- `GIF`: whether to save GIFs to `figures/` (only relevant for a small subset of scripts)
+
+If any environment variable is not found when a script is run directly, the corresponding behavior should be enabled by default. To parse settings from environment variables:
+
+```python
+from modflow_devtools.misc import get_env
+
+write = get_env("WRITE", True)
+run = get_env("RUN", True)
+plot = get_env("PLOT", True)
+plot_show = get_env("PLOT_SHOW", True)
+plot_save = get_env("PLOT_SAVE", True)
+gif_save = get_env("GIF", True)
+```
+
+**Note**: When scripts are run via `pytest`, plots are skipped by default, to avoid the need to manually close plot widgets. Pytest CLI flags can be used to control each switch &mdash; see the [Running with `pytest`](#running-with-pytest) section below for details.
+
+Scripts should contain a function wrapping all model runs for each scenario, generally named `run_models()`. This function should be decorated with `@timed`. This measures the example scenario's runtime, providing a rough performance benchmark. For instance:
+
+```python
+from modflow_devtools.misc import timed
+from pprint import pformat
+
+@timed
+def run_models(sim, silent=False):
+    success, buff = sim.run_simulation(silent=silent, report=True)
+    assert success, pformat(buff)
+```
+
+When the scenario is run, a line like the following will be shown:
+
+```
+run_models took 74.64 ms
+```
 
 ## Running the examples
 
@@ -130,25 +218,105 @@ jupytext --from py --to ipynb scripts/ex-gwf-twri.py -o notebooks/ex-gwf-twri.ip
 
 To start a Jupyter browser interface, run `jupyter notebook` from the `notebooks/` directory after notebooks have been created with `jupytext`.
 
+## Building documentation
+
+This repository includes a ReadTheDocs site which is built automatically in CI, as well as resources for an example models PDF document distributed with each MODFLOW 6 release. Both can be built and checked locally.
+
+### ReadTheDocs
+
+Notebooks must be created and run (including model runs and plots) before building the ReadTheDocs documentation:
+
+```shell
+pytest -v -n auto test_notebooks.py --plot
+```
+
+This will 
+
+* create and/or update notebooks in `.doc/_notebooks` from example `scripts/*.py`
+* create model workspaces in `examples/`, write input files, and run models
+* create parameter tables for example descriptions in `tables/`
+* create plots and figures from model outputs in `figures/`
+
+Next, make sure RTD build dependencies are installed:
+
+```shell
+pip install -r .doc/requirements.rtd.txt
+```
+
+Next, build LaTeX and Markdown files:
+
+```shell
+python scripts/process-scripts.py
+```
+
+Next, create ReStructuredText (RST) index files from the contents of `doc/body.tex`:
+
+```shell
+python etc/ci_create_examples_rst.py
+```
+
+The docs site can now be built from the `.doc/` directory with `make`:
+
+```shell
+make clean
+make html
+```
+
+To host a local development server, switch to the `.doc/_build/html/` directory and run `python -m http.server`.
+
+### PDF document
+
+The PDF examples document shares several initial steps with the ReadTheDocs site. Scripts must first be run (including model runs and plots):
+
+```shell
+pytest -v -n auto test_scripts.py --plot
+```
+
+The `test_notebooks.py` also suffices, but in this case the conversion from example scripts to notebooks is unnecessary.
+
+Next, build LaTeX and Markdown files:
+
+```shell
+python scripts/process-scripts.py
+```
+
+Next, create ReStructuredText (RST) index files from the contents of `doc/body.tex`:
+
+```shell
+python etc/ci_create_examples_rst.py
+```
+
+The PDF document can now be built from the `doc/` directory:
+
+```shell
+./build-pdf.sh
+```
+
+This script runs multiple passes of `pdflatex` and `bibtex` to build the PDF document:
+
+  1. `pdflatex mf6examples.tex`
+  2. `bibtex mf6examples`
+  3. `pdflatex mf6examples.tex`
+  4. `pdflatex mf6examples.tex`
+
+An equivalent batch script `build-pdf.bat` is also available for Windows.
+
 ## Contributing examples
 
 To add a new example:
 
-1. Add a new example script in the `scripts/` folder
+1. Add a new example script in the `scripts/` folder, use existing example scripts as a template. Use the environment variable settings described above to condition whether the script writes model input files, runs models, and plots results.
 2. Add a new LaTeX description in the `doc/sections/` folder
 3. Ensure the script runs successfully and creates any expected files
-3. Open a pull request from your fork to the upstream repo's `develop` branch
+4. Build the documentation locally and verify that everything looks good
+5. Open a pull request from your fork to the upstream repo's `develop` branch
 
 ## Releasing the examples
 
-GitHub Actions automatically creates a new release whenever code is merged into the `master` branch of this repository. Steps to prepare for a release include:
+Steps to create a release include:
 
-1. Run the examples to generate model input files, disabling model runs and plots &mdash; e.g. from the `autotest/` directory, run `pytest -v -n auto test_scripts.py`. **Note**: if model runs are enabled, the size of the `examples/` directory will balloon from double-digit MB to several GB. We only distribute input files, not output files.
-2. Generate notebooks and tables &mdash; from the `scripts/` directory, run `process-scripts.py` to generate LaTeX tables for the documentation PDF from specially formatted code/comments in the example scripts.
-3. Build the documentation PDF with multiple passes from e.g. `pdflatex` and `bibtex` &mdash; for instance, from the `doc/` directory:
-    1. `pdflatex mf6examples.tex`
-    2. `bibtex mf6examples`
-    3. `pdflatex mf6examples.tex`
-    4. `pdflatex mf6examples.tex`
-4. Zip up the model input files.
-5. Release the documentation PDF and model files archive.
+1. Generate model input files, disabling model runs and plots &mdash; e.g. from the `autotest/` directory, run `pytest -v -n auto test_scripts.py`. **Note**: if model runs are enabled, the size of the `examples/` directory will balloon from double-digit MB to several GB. We only distribute input files, not output files.
+2. Build the PDF documentation as described above.
+5. Release the documentation PDF and a zip archive of model input files.
+
+These should not be necessary to perform manually, as GitHub Actions automatically creates a new release whenever code is merged into the `master` branch of this repository.

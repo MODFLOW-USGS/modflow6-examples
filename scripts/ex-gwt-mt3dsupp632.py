@@ -1,4 +1,4 @@
-# ## Zero-order production in a dual-domain system
+# ## MT3DMS Supplemental Guide Problem 6.3.2
 #
 # This example tests the capabilities of the GWT model to simulate
 # 0-order production in a dual-domain system with & without sorption.
@@ -18,12 +18,20 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -220,7 +228,7 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
         ath1=longitudinal_dispersivity,
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
@@ -419,7 +427,7 @@ def plot_results():
             plt.show()
         if plot_save:
             fname = "{}{}".format("ex-gwt-mt3dsupp632", ".png")
-            fpth = os.path.join("..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
@@ -459,7 +467,7 @@ def plot_scenario_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 

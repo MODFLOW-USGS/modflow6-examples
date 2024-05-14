@@ -29,14 +29,22 @@ from math import sqrt
 from typing import Dict, List
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-curve-90"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -53,7 +61,6 @@ plot_save = get_env("PLOT_SAVE", True)
 
 # +
 class DisvPropertyContainer:
-
     """
     Dataclass that stores MODFLOW 6 DISV grid information.
 
@@ -1521,7 +1528,10 @@ class DisvGridMerger:
                     self.force_snap_cellid.add(ic_new)
 
         if len(self.force_snap_cellid) > 0:
-            dist = lambda v1, v2: sqrt((v2[1] - v1[1]) ** 2 + (v2[2] - v1[2]) ** 2)
+
+            def dist(v1, v2):
+                return sqrt((v2[1] - v1[1]) ** 2 + (v2[2] - v1[2]) ** 2)
+
             mg = self.merged
             vert_xy = np.array([(x, y) for _, x, y in mg.vertices])
             for ic in self.force_snap_cellid:
@@ -1535,7 +1545,7 @@ class DisvGridMerger:
                     mg.cell2d[ic] = tmp[:4] + vert
                 # check if vertices are within cell.
                 cell = [mg.vertices[iv][1:] for iv in vert]
-                path = mpltPath.Path(cell)
+                path = mpltPath.Path(cell)  # noqa: F821
                 contain = np.where(path.contains_points(vert_xy))[0]
                 for iv in contain:
                     # find closest polyline
@@ -2391,7 +2401,7 @@ def plot_grid(sim, verbose=False):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -2426,7 +2436,7 @@ def plot_head(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
+            fpth = figs_path / f"{sim_name}-head.png"
             fig.savefig(fpth)
 
 
@@ -2457,11 +2467,7 @@ def plot_analytical(sim, verbose=False):
         styles.graph_legend(ax)
         fig.tight_layout()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}-{}{}".format(sim_name, obs_fig, ".png"),
-            )
+            fpth = figs_path / "{}-{}{}".format(sim_name, obs_fig, ".png")
             fig.savefig(fpth)
 
 

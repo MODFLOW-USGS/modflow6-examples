@@ -1,4 +1,4 @@
-# ## One-dimensional steady flow with transport
+# ## MT3DMS Problem 2
 #
 # This is the second example problem presented in Zheng 1999, titled "One-dimensional transport
 # with nonlinear or nonequilibrium sorption. The purpose of this example is to demonstrate
@@ -15,13 +15,21 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 example_name = "ex-gwt-mt3dms-p02"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from an environment variables
 write = get_env("WRITE", True)
@@ -241,7 +249,7 @@ def build_mf6gwt(
                 gwt, volfrac=volfracim, porosity=porosity_im, zetaim=beta
             )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
@@ -434,7 +442,7 @@ def plot_results_ct(sims, idx, **kwargs):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-ct.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
@@ -479,7 +487,7 @@ def plot_results():
             plt.show()
         if plot_save:
             fname = f"{example_name}.png"
-            fpth = os.path.join("..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 

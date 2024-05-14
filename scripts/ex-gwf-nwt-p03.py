@@ -15,6 +15,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,9 +23,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-nwt-p03"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -85,21 +94,27 @@ shape3d = (nlay, nrow, ncol)
 ticklabels = np.arange(0, 10000, 2000)
 
 # Load the bottom
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:0fd4b16db652808c7e36a5a2a25da0a2",
 )
-botm = np.loadtxt(fpth).reshape(shape3d)
+botm = np.loadtxt(fpath).reshape(shape3d)
 
 # Set the starting heads
 strt = botm + 20.0
 
 # Load the high recharge rate
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge_high.txt",
+fname = "recharge_high.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:8d8f8bb3cec22e7a0cbe6aba95da8f35",
 )
-rch_high = np.loadtxt(fpth)
+rch_high = np.loadtxt(fpath)
 
 # Generate the low recharge rate from the high recharge rate
 rch_low = rch_high.copy() * 1e-3
@@ -302,11 +317,7 @@ def plot_grid(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -389,11 +400,7 @@ def plot_recharge(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 
@@ -520,11 +527,7 @@ def plot_results(idx, sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-{idx + 2:02d}.png",
-            )
+            fpth = figs_path / f"{sim_name}-{idx + 2:02d}.png"
             fig.savefig(fpth)
 
 

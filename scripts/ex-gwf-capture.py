@@ -1,4 +1,4 @@
-# ## Capture fraction analysis
+# ## Capture Fraction Analysis
 #
 # This problem is an example of a capture fraction analysis based on
 # Leake and others (2010) using the model developed by Freyberg (1988) and
@@ -21,6 +21,7 @@ import shutil
 import sys
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import modflowapi
@@ -29,9 +30,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-capture"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -51,21 +60,30 @@ length_units = "meters"
 time_units = "seconds"
 
 # Load the bottom, hydraulic conductivity, and idomain arrays
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:201758a5b7febb0390b8b52e634be27f",
 )
-bottom = np.loadtxt(pth)
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/hydraulic_conductivity.txt",
+bottom = np.loadtxt(fpath)
+fname = "hydraulic_conductivity.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:6c78564ba92e850d7d51d6e957b8a3ff",
 )
-k11 = np.loadtxt(pth)
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+k11 = np.loadtxt(fpath)
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:435d4490adff7a35d1d4928661e45d81",
 )
-idomain = np.loadtxt(pth, dtype=np.int32)
+idomain = np.loadtxt(fpath, dtype=np.int32)
 
 # Model parameters
 nper = 1  # Number of periods
@@ -391,7 +409,7 @@ def plot_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(os.path.join("..", "figures", f"{sim_name}-01.png"))
+            fig.savefig(figs_path / f"{sim_name}-01.png")
 
 
 # -

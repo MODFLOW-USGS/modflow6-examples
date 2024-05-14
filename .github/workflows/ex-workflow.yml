@@ -8,7 +8,7 @@ on:
       - 'README.md'
       - 'DEVELOPER.md'
   pull_request:
-    branches:
+    branches: 
       - master
       - develop
     paths-ignore:
@@ -16,9 +16,36 @@ on:
       - 'DEVELOPER.md'
 
 jobs:
+  lint:
+    name: lint python files
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout MODFLOW6 examples repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+
+      - name: Install Python packages
+        working-directory: etc
+        run: |
+          python --version
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.pip.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Check format
+        run: ruff format . --check
+
   zip_files:
     name: zip input files
     runs-on: ubuntu-latest
+    needs: lint
 
     steps:
       - name: Checkout MODFLOW6 examples repo
@@ -44,7 +71,7 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW nightly-build executables
+      - name: Install MODFLOW 6 development build
         uses: modflowpy/install-modflow-action@v1
         with:
           repo: modflow6-nightly-build
@@ -69,6 +96,7 @@ jobs:
   build:
     name: current-build
     runs-on: ubuntu-latest
+    needs: lint
     strategy:
       fail-fast: false
       matrix:
@@ -101,6 +129,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Set up headless display
+        uses: pyvista/setup-headless-display-action@v2
+
       - name: Install Python packages
         working-directory: etc
         run: |
@@ -115,7 +146,7 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW nightly-build executables
+      - name: Install MODFLOW 6 development build
         uses: modflowpy/install-modflow-action@v1
         with:
           repo: modflow6-nightly-build
@@ -130,35 +161,9 @@ jobs:
         run: python process-scripts.py
 
       - name: Build mf6examples LaTeX document
+        working-directory: doc
         if: matrix.python == '3.9'
-        shell: python
-        run: |
-          import sys
-          import subprocess
-
-          ws = "./doc/"
-          bibnam = "mf6examples"
-          texnam = bibnam + ".tex"
-          args = (
-                  ("pdflatex", texnam),
-                  ("bibtex", bibnam),
-                  ("pdflatex", texnam),
-                  ("pdflatex", texnam),
-                 )
-          for arg in args:
-              print("running command...'{}'".format(" ".join(arg)))
-              with subprocess.Popen(arg,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT,
-                                    cwd=ws) as process:
-                  stdout, stderr = process.communicate(timeout=120)
-                  if stdout:
-                      stdout = stdout.decode()
-                      print(stdout)
-                  if stderr:
-                      print("\n\nError condition occurred:\n")
-                      stderr = stderr.decode()
-                      print(stderr)
+        run: ./build-pdf.sh
 
       - name: Rename and move the LaTeX document
         if: matrix.python == '3.9'

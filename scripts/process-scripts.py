@@ -49,17 +49,20 @@ Flag1 Flag2    Arg1 Arg2  Description
     >>> process-scripts.py -f *-maw-*  # print to prompt MAW example problems.
     >>> process-scripts.py -k *-maw-*  # process all MAW example problems.
 """
+
 import ast
 import fnmatch
 import os
 import re
 import sys
+from pathlib import Path
 
 import flopy
 from modflow_devtools.latex import get_footer, get_header
 
 # path to the example files
-ex_pth = os.path.join("..", "examples")
+proj_root = Path(__file__).parents[1]
+ex_pth = proj_root / "examples"
 
 # only process python files starting with ex_
 files = sorted(
@@ -108,7 +111,7 @@ def table_footer():
 
 
 def make_tables():
-    tab_pth = os.path.join("..", "tables")
+    tab_pth = proj_root / "tables"
     if not os.path.isdir(tab_pth):
         os.makedirs(tab_pth)
 
@@ -263,7 +266,7 @@ def get_ordered_examples(verbose=True):
     # get order of examples from body.text
     ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
     ex_order = []
-    pth = os.path.join("..", "doc", "body.tex")
+    pth = proj_root / "doc" / "body.tex"
     with open(pth) as f:
         lines = f.read()
     for v in ex_regex.findall(lines):
@@ -281,21 +284,16 @@ def get_examples_list(verbose=True):
     ex_order = get_ordered_examples(verbose)
 
     # get list of all examples
-    ex_list = []
-    for name in sorted(os.listdir(ex_pth)):
-        if name in exclude:
-            continue
-        pth = os.path.join(ex_pth, name)
-        if os.path.isdir(pth):
-            ex_list.append(name)
+    ex_list = sorted(
+        [str(p) for p in Path(ex_pth).glob("*") if p.is_dir() and p.name not in exclude]
+    )
 
     # create final list with all of the examples in body.tex order
     ex_final = []
     for o in ex_order:
         for n in ex_list:
-            if n.startswith(o):
-                if n not in ex_final:
-                    ex_final.append(n)
+            if n.startswith(o) and n not in ex_final:
+                ex_final.append(n)
 
     # add any orphans
     if len(ex_final) != len(ex_list):
@@ -407,159 +405,220 @@ def build_md_tables(ex_dict):
         pak_dict[pak] = ex_list
 
     rtd_link = "https://modflow6.readthedocs.io/en/latest/_mf6io/"
+    pth = proj_root / ".doc" / "introduction.md"
 
-    pth = os.path.join("..", ".doc", "introduction.md")
-    f = open(pth, "w")
+    with open(pth, "w") as f:
+        line = "### Introduction\n\n"
+        line += (
+            "This document describes example problems for MODFLOW 6. The examples "
+            + "demonstrate use of the capabilities for select components of "
+            + "MODFLOW 6. A pdf of the examples can be downloaded from "
+            + "[ReadtheDocs](https://modflow6-examples.readthedocs.io/en/latest/) "
+            + "or from the [current release](https://github.com/MODFLOW-USGS/"
+            + "modflow6-examples/releases/download/current/mf6examples.pdf) on "
+            + "[GitHub](https://github.com/MODFLOW-USGS/modflow6-examples/).\n\n"
+            + "Examples have been included for the MODFLOW 6 components "
+            + "summarized in the tables below.\n\n"
+        )
+        f.write(line)
 
-    line = "### Introduction\n\n"
-    line += (
-        "This document describes example problems for MODFLOW 6. The examples "
-        + "demonstrate use of the capabilities for select components of "
-        + "MODFLOW 6. A pdf of the examples can be downloaded from "
-        + "[ReadtheDocs](https://modflow6-examples.readthedocs.io/en/latest/) "
-        + "or from the [current release](https://github.com/MODFLOW-USGS/"
-        + "modflow6-examples/releases/download/current/mf6examples.pdf) on "
-        + "[GitHub](https://github.com/MODFLOW-USGS/modflow6-examples/).\n\n"
-        + "Examples have been included for the MODFLOW 6 components "
-        + "summarized in the tables below.\n\n"
-    )
-    f.write(line)
+        join_fmt = ", "
+        header = (
+            "| Package | Examples                                            "
+            + "               |\n"
+            + "|---------|------------------------------"
+            + "--------------------------------------|\n"
+        )
+        footer = "\n\n"
 
-    join_fmt = ", "
-    header = (
-        "| Package | Examples                                            "
-        + "               |\n"
-        + "|---------|------------------------------"
-        + "--------------------------------------|\n"
-    )
-    footer = "\n\n"
+        # Discretization
+        pak_link = {
+            "dis": "gwf-dis.html",
+            "disv": "gwf-disv.html",
+            "disu": "gwf-disu.html",
+        }
+        line = "#### Discretization types\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
-    pak_link = {
-        "dis": "gwf-dis.html",
-        "disv": "gwf-disv.html",
-        "disu": "gwf-disu.html",
-    }
-    line = "#### Discretization types\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer
-    f.write(line)
+        # Exchanges
+        pak_link = {
+            "gwfgwf": "exg-gwfgwf.html",
+            "gwfgwt": "exg-gwfgwt.html",
+            "gwfgwe": "exg-gwfgwe.html",
+            "gwfprt": "exg-gwfprt.html",
+        }
+        line = "#### Exchanges\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
-    pak_link = {
-        "gwfgwf": "exg-gwfgwf.html",
-        "gwfgwt": "exg-gwfgwt.html",
-    }
-    line = "#### Exchanges\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer
-    f.write(line)
+        # Groundwater Flow
+        pak_link = {
+            "npf": "gwf-npf.html",
+            "hfb": "gwf-hfb.html",
+            "sto": "gwf-sto.html",
+            "csub": "gwf-csub.html",
+        }
+        line = "#### Groundwater Flow Model Internal Flow Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
-    pak_link = {
-        "npf": "gwf-npf.html",
-        "hfb": "gwf-hfb.html",
-        "sto": "gwf-sto.html",
-        "csub": "gwf-csub.html",
-    }
-    line = "#### Groundwater Flow Model Internal Flow Packages\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer
-    f.write(line)
+        pak_link = {
+            "rch": "gwf-rch.html",
+            "rcha": "gwf-rcha.html",
+            "evt": "gwf-evt.html",
+            "evta": "gwf-evta.html",
+            "chd": "gwf-chd.html",
+            "drn": "gwf-drn.html",
+            "ghb": "gwf-ghb.html",
+            "riv": "gwf-riv.html",
+            "wel": "gwf-wel.html",
+            "buy": "gwf-buy.html",
+            "vsc": "gwf-vsc.html",
+        }
+        line = "#### Groundwater Flow Model Standard Boundary Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
-    pak_link = {
-        "rch": "gwf-rch.html",
-        "rcha": "gwf-rcha.html",
-        "evt": "gwf-evt.html",
-        "evta": "gwf-evta.html",
-        "chd": "gwf-chd.html",
-        "drn": "gwf-drn.html",
-        "ghb": "gwf-ghb.html",
-        "riv": "gwf-riv.html",
-        "wel": "gwf-wel.html",
-        "buy": "gwf-buy.html",
-    }
-    line = "#### Groundwater Flow Model Standard Boundary Packages\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer
-    f.write(line)
+        pak_link = {
+            "lak": "gwf-lak.html",
+            "sfr": "gwf-sfr.html",
+            "maw": "gwf-maw.html",
+            "uzf": "gwf-uzf.html",
+            "mvr": "gwf-mvr.html",
+        }
+        line = "#### Groundwater Flow Model Advanced Boundary Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
-    pak_link = {
-        "lak": "gwf-lak.html",
-        "sfr": "gwf-sfr.html",
-        "maw": "gwf-maw.html",
-        "uzf": "gwf-uzf.html",
-        "mvr": "gwf-mvr.html",
-    }
-    line = "#### Groundwater Flow Model Advanced Boundary Packages\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer
-    f.write(line)
+        # Groundwater Transport
+        pak_link = {
+            "adv": "gwt-adv.html",
+            "dsp": "gwt-dsp.html",
+            "mst": "gwt-mst.html",
+            "ist": "gwt-ist.html",
+            "fmi": "gwt-fmi.html",
+        }
+        line = "#### Groundwater Transport Model Internal Flow Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer + "\n\n"
+        f.write(line)
 
-    pak_link = {
-        "adv": "gwt-adv.html",
-        "dsp": "gwt-dsp.html",
-        "mst": "gwt-mst.html",
-        "ist": "gwt-ist.html",
-        "fmi": "gwt-fmi.html",
-    }
-    line = "#### Groundwater Transport Model Internal Flow Packages\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer + "\n\n"
-    f.write(line)
+        pak_link = {
+            "ssm": "gwt-ssm.html",
+            "src": "gwt-src.html",
+            "cnc": "gwt-cnc.html",
+        }
+        line = "#### Groundwater Transport Model Standard Boundary Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
-    pak_link = {
-        "ssm": "gwt-ssm.html",
-        "src": "gwt-src.html",
-        "cnc": "gwt-cnc.html",
-    }
-    line = "#### Groundwater Transport Model Standard Boundary Packages\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer
-    f.write(line)
+        pak_link = {
+            "lkt": "gwt-lkt.html",
+            "sft": "gwt-sft.html",
+            "mwt": "gwt-mwt.html",
+            "uzt": "gwt-uzt.html",
+            "mvt": "gwt-mvt.html",
+        }
+        line = "#### Groundwater Transport Model Advanced Boundary Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
-    pak_link = {
-        "lkt": "gwt-lkt.html",
-        "sft": "gwt-sft.html",
-        "mwt": "gwt-mwt.html",
-        "uzt": "gwt-uzt.html",
-        "mvt": "gwt-mvt.html",
-    }
-    line = "#### Groundwater Transport Model Advanced Boundary Packages\n\n"
-    line += header
-    for pak, value in pak_link.items():
-        if pak in pak_dict.keys():
-            line += f"| [{pak.upper()}]({rtd_link}{value}) |"
-            line += f" {join_fmt.join(pak_dict[pak])} |\n"
-    line += footer
-    f.write(line)
+        # Energy Transport
+        pak_link = {
+            "cnd": "gwt-cnd.html",
+            "est": "gwe-est.html",
+        }
+        line = "#### Groundwater Transport Model Internal Flow Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer + "\n\n"
+        f.write(line)
 
-    f.close()
+        pak_link = {
+            "esl": "gwe-esl.html",
+            "ctp": "gwt-ctp.html",
+        }
+        line = "#### Groundwater Energy Transport Model Standard Boundary Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
+
+        pak_link = {
+            "lke": "gwt-lke.html",
+            "sfe": "gwt-sfe.html",
+            "mwe": "gwt-mwe.html",
+            "uze": "gwt-uze.html",
+            "mve": "gwt-mve.html",
+        }
+        line = "#### Groundwater Energy Transport Model Advanced Boundary Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
+
+        # Particle Tracking
+        pak_link = {
+            "mip": "prt-mip.html",
+            "prp": "prt-prp.html",
+        }
+        line = "#### Particle Tracking Model Packages\n\n"
+        line += header
+        for pak, value in pak_link.items():
+            if pak in pak_dict.keys():
+                line += f"| [{pak.upper()}]({rtd_link}{value}) |"
+                line += f" {join_fmt.join(pak_dict[pak])} |\n"
+        line += footer
+        f.write(line)
 
 
 def build_tex_tables(ex_dict):
@@ -649,7 +708,7 @@ def build_tex_tables(ex_dict):
     lines += get_footer()
 
     # create table
-    pth = os.path.join("..", "tables", "ex-table.tex")
+    pth = proj_root / "tables" / "ex-table.tex"
     f = open(pth, "w")
     f.write(lines)
     f.close()

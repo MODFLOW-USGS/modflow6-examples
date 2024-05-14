@@ -13,6 +13,7 @@ from pprint import pformat
 
 import flopy
 import flopy.plot.styles as styles
+import git
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -115,9 +116,18 @@ def circle_function(center=(0, 0), radius=1.0, dtheta=10.0):
     return np.array([(x, y) for x, y in zip(xpts, ypts)])
 
 
-# Example name and base workspace
-example_name = "ex-gwt-synthetic-valley"
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+sim_name = "ex-gwt-synthetic-valley"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = pl.Path(f"../data/{sim_name}")
+data_path = data_path if data_path.is_dir() else pl.Path.cwd()
 
 # Conversion factors
 ft2m = 1.0 / 3.28081
@@ -231,31 +241,50 @@ voronoi_grid = VertexGrid(**gridprops, nlay=1, idomain=idomain_vor)
 
 # +
 # load raster data files
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_aq_SI.tif",
+fname = "k_aq_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:d233e5c393ab6c029c63860d73818856",
 )
-kaq = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/k_clay_SI.tif",
+kaq = flopy.utils.Raster.load(fpath)
+
+fname = "k_clay_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:a08999c37f42b35884468e4ef896d5f9",
 )
-kclay = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/top_SI.tif",
+kclay = flopy.utils.Raster.load(fpath)
+
+fname = "top_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:781155bdcc2b9914e1cad6b10de0e9c7",
 )
-top_base = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/bottom_SI.tif",
+top_base = flopy.utils.Raster.load(fpath)
+
+fname = "bottom_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:00b4a39fbf5180e65c0367cdb6f15c93",
 )
-bot = flopy.utils.Raster.load(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{example_name}/lake_location_SI.tif",
+bot = flopy.utils.Raster.load(fpath)
+
+fname = "lake_location_SI.tif"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:38600d6f0eef7c033ede278252dc6343",
 )
-lake_location = flopy.utils.Raster.load(fname)
+lake_location = flopy.utils.Raster.load(fpath)
 # -
 
 # +
@@ -610,8 +639,8 @@ def build_mf6gwt(sim_folder):
         ],
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
-        ("GWFBUDGET", f"../mf6gwf/flow.cbc", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
+        ("GWFBUDGET", "../mf6gwf/flow.cbc", None),
     ]
     fmi = flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
     sourcerecarray = [
@@ -921,7 +950,7 @@ def plot_river_mapping(sims, idx):
         if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-river-discretization.png"
-            fig.savefig(os.path.join(workspace, "..", "figures", fname))
+            fig.savefig(figs_path / fname)
 
 
 def plot_head_results(sims, idx):
@@ -1101,7 +1130,7 @@ def plot_head_results(sims, idx):
         if plot_save:
             sim_folder = os.path.basename(os.path.split(sim_ws)[0])
             fname = f"{sim_folder}-head.png"
-            fig.savefig(os.path.join(workspace, "..", "figures", fname))
+            fig.savefig(figs_path / fname)
 
 
 def plot_conc_results(sims):
@@ -1223,7 +1252,7 @@ def plot_conc_results(sims):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
-            fig.savefig(os.path.join(workspace, "..", "figures", fname))
+            fig.savefig(figs_path / fname)
 
 
 # -
@@ -1235,7 +1264,7 @@ def plot_conc_results(sims):
 
 # +
 def scenario(idx, silent=True):
-    sim = build_models(example_name)
+    sim = build_models(sim_name)
     if write:
         write_models(sim, silent=silent)
     if run:

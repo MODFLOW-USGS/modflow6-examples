@@ -16,6 +16,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 import pooch
@@ -23,9 +24,18 @@ from flopy.plot.styles import styles
 from modflow_devtools.latex import build_table, exp_format, float_format, int_format
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-drn-p01"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+tbls_path = root / "tables" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -88,37 +98,62 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and uzf/mvr arrays
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-sfr-p01/idomain.txt",
+sfr_sim_name = "ex-gwf-sfr-p01"  # some data files come from another example
+sfr_data_path = data_path.parent / sfr_sim_name if root else pl.Path.cwd()
+
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sfr_sim_name}/{fname}",
+    fname=fname,
+    path=sfr_data_path,
     known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
 )
-idomain = np.loadtxt(fpth, dtype=int)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-sfr-p01/bottom.txt",
+idomain = np.loadtxt(fpath, dtype=int)
+
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sfr_sim_name}/{fname}",
+    fname=fname,
+    path=sfr_data_path,
     known_hash="md5:fa5fe276f4f58a01eabfe88516cc90af",
 )
-botm = np.loadtxt(fpth, dtype=float)
+botm = np.loadtxt(fpath, dtype=float)
 
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top.txt",
+fname = "top.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:88cc15f87824ebfd35ed5b4be7f68387",
 )
-top = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/infilt_mult.txt",
+top = np.loadtxt(fpath, dtype=float)
+
+fname = "infilt_mult.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:8bf0a48d604263cb35151587a9d8ca29",
 )
-infilt_mult = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/extwc_mult.txt",
+infilt_mult = np.loadtxt(fpath, dtype=float)
+
+fname = "extwc_mult.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:6e289692a2b55b7bafb8bd9d71b0a2cb",
 )
-extwc_mult = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/routing_map.txt",
+extwc_mult = np.loadtxt(fpath, dtype=float)
+
+fname = "routing_map.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:1bf9a6bb3513a184aa5093485e622f5b",
 )
-routing_map = np.loadtxt(fpth, dtype=int)
+routing_map = np.loadtxt(fpath, dtype=int)
 
 # convert routing map to zero-based reach numbers
 routing_map -= 1
@@ -1226,11 +1261,7 @@ def plot_gwseep_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 
@@ -1242,7 +1273,7 @@ def export_tables(silent=True):
             "Infiltration rate",
             "Pumping rate",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-02.tex")
+        fpth = tbls_path / f"{sim_name}-02.tex"
         dtype = [
             ("nper", "U30"),
             ("infilt", "U30"),

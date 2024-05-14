@@ -1,3 +1,4 @@
+nbconvert==7.16.3
 nbsphinx
 nbsphinx_link
 ipython

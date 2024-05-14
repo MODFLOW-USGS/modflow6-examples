@@ -8,8 +8,7 @@ TABLES_PATH = PROJ_ROOT / "tables"
 IMAGES_PATH = PROJ_ROOT / "images"
 FIGURES_PATH = PROJ_ROOT / "figures"
 EXAMPLES_PATH = PROJ_ROOT / "examples"
-NOTEBOOKS_PATH = PROJ_ROOT / "notebooks"
-RTD_PATH = PROJ_ROOT / ".doc" / "_notebooks"
+NOTEBOOKS_PATH = PROJ_ROOT / ".doc" / "_notebooks"
 EXCLUDE = []
 
 
@@ -20,7 +19,9 @@ def write(request) -> bool:
 
 @pytest.fixture(scope="session")
 def run(request) -> bool:
-    return not (request.config.getoption("--init") or request.config.getoption("--no-run"))
+    return not (
+        request.config.getoption("--init") or request.config.getoption("--no-run")
+    )
 
 
 @pytest.fixture(scope="session")
@@ -51,7 +52,10 @@ def pytest_addoption(parser):
         help="Just build and write model input files",
     )
     parser.addoption(
-        "--no-write", action="store_true", default=False, help="Disable model build/write"
+        "--no-write",
+        action="store_true",
+        default=False,
+        help="Disable model build/write",
     )
     parser.addoption(
         "--no-run", action="store_true", default=False, help="Disable model runs"
@@ -82,8 +86,7 @@ def pytest_generate_tests(metafunc):
     IMAGES_PATH.mkdir(exist_ok=True)
     FIGURES_PATH.mkdir(exist_ok=True)
     EXAMPLES_PATH.mkdir(exist_ok=True)
-    NOTEBOOKS_PATH.mkdir(exist_ok=True)
-    RTD_PATH.mkdir(exist_ok=True, parents=True)
+    NOTEBOOKS_PATH.mkdir(exist_ok=True, parents=True)
 
     # generate example scenarios
     if "example_script" in metafunc.fixturenames:

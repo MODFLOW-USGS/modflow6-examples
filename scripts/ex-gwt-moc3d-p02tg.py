@@ -1,4 +1,4 @@
-# ## Three-Dimensional Steady Flow with Transport
+# ## MOC3D Problem 2 with Triangular Grid
 #
 # This problem corresponds to the second problem presented in the MOC3D
 # report Konikow 1996, which involves the transport of a dissolved
@@ -20,15 +20,23 @@ import pathlib as pl
 
 import flopy
 import flopy.utils.cvfdutil
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 from scipy.special import erfc
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 example_name = "ex-gwt-moc3d-p02tg"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -291,7 +299,7 @@ def build_mf6gwt(sim_folder):
         ath2=alpha_tv,
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
@@ -389,7 +397,7 @@ def plot_grid(sims):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-grid.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
@@ -424,7 +432,7 @@ def plot_results(sims):
             )[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-map.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 

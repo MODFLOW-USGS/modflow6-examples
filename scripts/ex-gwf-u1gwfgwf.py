@@ -1,4 +1,4 @@
-# ## USG-ex1 with GWF-GWF Exchange and XT3D
+# ## Nested Grid Problem, Two Domains
 #
 # This example shows how the MODFLOW 6 GWF-GWF Exchange can be used to simulate
 # a nested grid problem. The example corresponds to the first example
@@ -22,6 +22,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
@@ -29,8 +30,15 @@ from flopy.utils.lgrutil import Lgr
 from matplotlib.colors import ListedColormap
 from modflow_devtools.misc import get_env, timed
 
-# Base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -338,7 +346,7 @@ def plot_grid(idx, sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -448,7 +456,7 @@ def plot_stencils(idx, sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-stencils.png")
+            fpth = figs_path / f"{sim_name}-stencils.png"
             fig.savefig(fpth)
 
 
@@ -537,7 +545,7 @@ def plot_head(idx, sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-head.png")
+            fpth = figs_path / f"{sim_name}-head.png"
             fig.savefig(fpth)
 
 

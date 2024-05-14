@@ -1,4 +1,4 @@
-# ## One-dimensional steady flow with transport
+# ## MOC3D Problem 1
 #
 # This problem corresponds to the first problem presented in the MOC3D
 # report Konikow 1996, involving the transport of a dissolved constituent
@@ -14,14 +14,22 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 example_name = "ex-gwt-moc3dp1"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -163,6 +171,7 @@ class Wexler1d:
     def analytical(self, x, t, v, l, d, tol=1.0e-20, nval=5000):
         sigma = 0.0
         betalist = self.root3(d, v, l, nval=nval)
+        concold = None
         for i, bi in enumerate(betalist):
             denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
             x1 = (
@@ -178,6 +187,7 @@ class Wexler1d:
             term1 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d)
             conc = 1.0 - term1 * sigma
             if i > 0:
+                assert concold is not None
                 diff = abs(conc - concold)
                 if np.all(diff < tol):
                     break
@@ -223,6 +233,7 @@ class Wexler1d:
         term1 = term1 / denom
         term2 = 2.0 * v * l / d * np.exp(v * x / 2.0 / d - v**2 * t / 4.0 / d - e * t)
         betalist = self.root3(d, v, l, nval=nval)
+        concold = None
         for i, bi in enumerate(betalist):
             denom = bi**2 + (v * l / 2.0 / d) ** 2 + v * l / d
             x1 = (
@@ -238,6 +249,7 @@ class Wexler1d:
 
             conc = term1 - term2 * sigma
             if i > 0:
+                assert concold is not None
                 diff = abs(conc - concold)
                 if np.all(diff < tol):
                     break
@@ -368,7 +380,7 @@ def build_mf6gwt(sim_folder, longitudinal_dispersivity, retardation_factor, deca
         ath1=longitudinal_dispersivity,
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, packagedata=pd)
@@ -492,7 +504,7 @@ def plot_results_ct(
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-ct.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
@@ -558,7 +570,7 @@ def plot_results_cd(
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-cd.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 

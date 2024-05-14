@@ -1,9 +1,7 @@
-# ## Flow diversion example
+# ## Flow Diversion
 #
 # This example simulates unconfined groundwater flow in an aquifer with a high bottom elevation in the center of the aquifer and groundwater flow around a high bottom elevation.
 
-# ### Initial setup
-#
 # ### Initial setup
 #
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
@@ -13,6 +11,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,9 +19,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-bump"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -81,11 +88,14 @@ extents = (0, xlen, 0, ylen)
 shape3d = (nlay, nrow, ncol)
 
 # Load the bottom
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:9287f9e214147d95e6ed159732079a0b",
 )
-botm = np.loadtxt(fpth).reshape(shape3d)
+botm = np.loadtxt(fpath).reshape(shape3d)
 
 # Create a cylinder
 cylinder = botm.copy()
@@ -310,11 +320,7 @@ def plot_grid(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -424,13 +430,7 @@ def plot_results(idx, sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(
-                os.path.join(
-                    "..",
-                    "figures",
-                    f"{sim_name}-{idx + 1:02d}.png",
-                )
-            )
+            fig.savefig(figs_path / f"{sim_name}-{idx + 1:02d}.png")
 
 
 # -

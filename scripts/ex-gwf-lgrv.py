@@ -13,14 +13,24 @@ import pathlib as pl
 
 import flopy
 import flopy.utils.lgrutil
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+sim_name = "ex-gwf-lgrv"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -74,11 +84,14 @@ tsmult = [1.0]
 tdis_ds = list(zip(perlen, nstp, tsmult))
 
 # load data files and process into arrays
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/top.dat",
+fname = "top.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:7e95923e78d0a2e2133929376d913ecf",
 )
-top = np.loadtxt(fname)
+top = np.loadtxt(fpath)
 ikzone = np.empty((nlay, nrow, ncol), dtype=float)
 hashes = [
     "548876af515cb8db0c17e7cba0cda364",
@@ -108,13 +121,19 @@ hashes = [
     "432b9a02f3ff4906a214b271c965ebad",
 ]
 for k in range(nlay):
-    fname = pooch.retrieve(
-        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/ikzone{k + 1}.dat",
+    fname = f"ikzone{k + 1}.dat"
+    fpath = pooch.retrieve(
+        url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+        fname=fname,
+        path=data_path,
         known_hash=f"md5:{hashes[k]}",
     )
-    ikzone[k, :, :] = np.loadtxt(fname)
-fname = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwf-lgrv/riv.dat",
+    ikzone[k, :, :] = np.loadtxt(fpath)
+fname = "riv.dat"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:5ccbe4f29940376309db445dbb2d75d0",
 )
 dt = [
@@ -125,7 +144,7 @@ dt = [
     ("conductance", float),
     ("rbot", float),
 ]
-rivdat = np.loadtxt(fname, dtype=dt)
+rivdat = np.loadtxt(fpath, dtype=dt)
 rivdat["k"] -= 1
 rivdat["i"] -= 1
 rivdat["j"] -= 1
@@ -525,7 +544,7 @@ def plot_grid(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-grid.png")
+            fpth = figs_path / f"{name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -552,7 +571,7 @@ def plot_xsect(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-xsect.png")
+            fpth = figs_path / f"{name}-xsect.png"
             fig.savefig(fpth)
 
 
@@ -607,7 +626,7 @@ def plot_heads(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-head.png")
+            fpth = figs_path / f"{name}-head.png"
             fig.savefig(fpth)
 
 

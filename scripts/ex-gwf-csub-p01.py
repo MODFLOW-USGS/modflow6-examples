@@ -1,4 +1,4 @@
-# ## Jacob (1939) elastic aquifer loading example
+# ## Jacob (1939) Elastic Aquifer Loading
 #
 # This problem simulates elastic compaction of aquifer materials in response to the
 # loading of an aquifer by a passing train. Water-level responses were simulated for
@@ -15,6 +15,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,9 +23,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-csub-p01"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -77,11 +86,14 @@ for idx in range(1, ncol):
 locw201 = 11
 
 # Load the aquifer load time series
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/train_load_193704231304.csv",
+fname = "train_load_193704231304.csv"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:32dc8e7b7e39876374af43605e264725",
 )
-csv_load = np.genfromtxt(pth, names=True, delimiter=",")
+csv_load = np.genfromtxt(fpath, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file
 csub_ts = []
@@ -296,7 +308,7 @@ def plot_results(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
         # get the simulated heads
@@ -306,12 +318,15 @@ def plot_results(sim, silent=True):
         sim_date = [dstart + datetime.timedelta(seconds=x) for x in sim_obs["totim"]]
 
         # get the observed head
-        pth = pooch.retrieve(
-            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/s201_gw_2sec.csv",
+        fname = "s201_gw_2sec.csv"
+        fpath = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+            fname=fname,
+            path=data_path,
             known_hash="md5:1098bcd3f4fc1bd3b38d3d55152a8fbb",
         )
         dtype = [("date", object), ("dz_m", float)]
-        obs_head = np.genfromtxt(pth, names=True, delimiter=",", dtype=dtype)
+        obs_head = np.genfromtxt(fpath, names=True, delimiter=",", dtype=dtype)
         obs_date = []
         for s in obs_head["date"]:
             obs_date.append(
@@ -372,7 +387,7 @@ def plot_results(sim, silent=True):
             if plot_show:
                 plt.show()
             if plot_save:
-                fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
+                fpth = figs_path / f"{sim_name}-01.png"
                 fig.savefig(fpth)
 
 

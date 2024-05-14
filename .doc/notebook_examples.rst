@@ -5,7 +5,7 @@ The Jupyter Notebooks used to create the input files and figures for
 each of the MODFLOW 6 `examples <examples.html>`_.
 
 .. nbgallery::
-    :name: Examples gallery
+   :name: Examples gallery
 
    _notebooks/ex-gwf-twri
    _notebooks/ex-gwf-bcf2ss
@@ -37,9 +37,6 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-gwf-drn-p01
    _notebooks/ex-gwf-sagehen
    _notebooks/ex-gwf-capture
-   _notebooks/ex-gwf-radial
-   _notebooks/ex-gwf-curvilinear-90
-   _notebooks/ex-gwf-curvilinear
    _notebooks/ex-gwt-keating
    _notebooks/ex-gwt-moc3d-p01
    _notebooks/ex-gwt-moc3d-p02
@@ -66,5 +63,16 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-gwt-hecht-mendez
    _notebooks/ex-gwt-stallman
    _notebooks/ex-gwt-synthetic-valley
+   _notebooks/ex-gwf-radial
+   _notebooks/ex-gwf-curvilinear-90
+   _notebooks/ex-gwf-curvilinear
+   _notebooks/ex-gwe-radial
+   _notebooks/ex-gwe-geotherm
+   _notebooks/ex-gwe-danckwerts
+   _notebooks/ex-prt-mp7-p01
+   _notebooks/ex-prt-mp7-p02
+   _notebooks/ex-prt-mp7-p03
+   _notebooks/ex-prt-mp7-p04
+   _notebooks/ex-gwe-prt
 
 

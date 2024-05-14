@@ -1,4 +1,4 @@
-# ## Simulating effect of recirculation well
+# ## MT3DMS Supplemental Guide Problem 8.2
 #
 # This example is for a recirculating well.  It is based on example problem 8.2
 # described in Zheng 2010. The problem consists of a two-dimensional, one-layer
@@ -20,14 +20,22 @@ import pathlib as pl
 from pprint import pformat
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 example_name = "ex-gwt-mt3dsupp82"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -198,7 +206,7 @@ def build_mf6gwt(sim_folder):
     flopy.mf6.ModflowGwtadv(gwt, scheme="upstream")
     flopy.mf6.ModflowGwtdsp(gwt, alh=alpha_l, ath1=alpha_th, atv=alpha_tv)
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
         ("GWFMOVER", "../mf6gwf/flow.mvr.bud", None),
         ("MAW-1", "../mf6gwf/flow.maw.bud", None),
@@ -412,7 +420,7 @@ def plot_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-map.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 

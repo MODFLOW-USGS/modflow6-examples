@@ -1,4 +1,4 @@
-# ## One-dimensional compaction in a three-dimensional flow field example
+# ## One-Dimensional Compaction in a Three-Dimensional Flow Field
 #
 # This problem is based on the problem presented in the SUB-WT report
 # (Leake and Galloway, 2007) and represent groundwater development in a
@@ -14,6 +14,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,9 +22,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-csub-p04"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -88,11 +97,14 @@ cg_ske = [float(value) for value in cg_ske_str.split(",")]
 ib_thick = [float(value) for value in ib_thick_str.split(",")]
 
 # Load active domain and create idomain array
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:2f05a27b6f71e564c0d3616e3fd00ac8",
 )
-ib = np.loadtxt(pth, dtype=int)
+ib = np.loadtxt(fpath, dtype=int)
 idomain = np.tile(ib, (nlay, 1))
 
 # Constant head boundary cells
@@ -657,7 +669,7 @@ def plot_grid(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -736,7 +748,7 @@ def plot_stresses(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-01.png")
+            fpth = figs_path / f"{name}-01.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -816,7 +828,7 @@ def plot_compaction(sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{name}-02.png")
+            fpth = figs_path / f"{name}-02.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)

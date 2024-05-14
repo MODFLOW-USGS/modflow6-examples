@@ -1,4 +1,4 @@
-# ## Streamflow Routing (SFR) Package problem 1
+# ## Streamflow Routing (SFR) Package Problem 1
 #
 # This is the stream-aquifer interaction example problem (test 1) from the
 # Streamflow Routing Package documentation (Prudic, 1989). All reaches have
@@ -13,6 +13,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,9 +21,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-sfr-p01"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -70,31 +79,46 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, top, bottom, and evapotranspiration surface arrays
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:a0b12472b8624aecdc79e5c19c97040c",
 )
-idomain = np.loadtxt(fpth, dtype=int)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top.txt",
+idomain = np.loadtxt(fpath, dtype=int)
+fname = "top.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:ab5097c1dc22e60fb313bf7f10dd8efe",
 )
-top = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bottom.txt",
+top = np.loadtxt(fpath, dtype=float)
+fname = "bottom.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:fa5fe276f4f58a01eabfe88516cc90af",
 )
-botm = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/recharge.txt",
+botm = np.loadtxt(fpath, dtype=float)
+fname = "recharge.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:82ed1ed29a457f1f38e51cd2657676e1",
 )
-recharge = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/surf.txt",
+recharge = np.loadtxt(fpath, dtype=float)
+fname = "surf.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:743ce03e5e46867cf5af94f1ac283514",
 )
-surf = np.loadtxt(fpth, dtype=float)
+surf = np.loadtxt(fpath, dtype=float)
 
 # Create hydraulic conductivity and specific yield
 k11 = np.zeros(shape2d, dtype=float)
@@ -1054,11 +1078,7 @@ def plot_grid(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -1071,7 +1091,7 @@ def plot_head_results(gwf, silent=True):
 
     kstpkper = hobj.get_kstpkper()
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig = plt.figure(figsize=figure_size, constrained_layout=False)
         gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
         plt.axis("off")
@@ -1186,16 +1206,12 @@ def plot_head_results(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 
 def plot_sfr_results(gwf, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # load the observations
         results = gwf.sfr.output.obs().data
 
@@ -1278,11 +1294,7 @@ def plot_sfr_results(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-02.png",
-            )
+            fpth = figs_path / f"{sim_name}-02.png"
             fig.savefig(fpth)
 
 

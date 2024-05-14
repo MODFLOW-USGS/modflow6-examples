@@ -1,4 +1,4 @@
-pytest
+pytest!=8.1.0
 pytest-xdist
 appdirs
 requests
@@ -20,3 +20,6 @@ rasterstats
 jupyter
 jupytext
 pooch
+GitPython
+pyvista
+ruff

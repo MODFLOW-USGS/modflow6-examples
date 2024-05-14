@@ -12,6 +12,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 import pooch
@@ -23,9 +24,17 @@ from modflow_devtools.misc import get_env, timed
 figure_size = (6.3, 5.6)
 masked_values = (0, 1e30, -1e30)
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-lak-p02"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -131,17 +140,23 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain arrays
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes-01.txt",
+fname = "lakes-01.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:a74ded5357aa667b9df793847e5f8f41",
 )
 lake_map = np.ones(shape3d, dtype=int) * -1
-lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes-02.txt",
+lake_map[0, :, :] = np.loadtxt(fpath, dtype=int) - 1
+fname = "lakes-02.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:7830e5223c958c35be349a3be24a60a3",
 )
-lake_map[1, :, :] = np.loadtxt(fpth, dtype=int) - 1
+lake_map[1, :, :] = np.loadtxt(fpath, dtype=int) - 1
 
 # create linearly varying evapotranspiration surface
 xlen = delr.sum() - 0.5 * (delr[0] + delr[-1])
@@ -990,11 +1005,7 @@ def plot_grid(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -1097,11 +1108,7 @@ def plot_lak_results(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 

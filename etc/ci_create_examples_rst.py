@@ -30,15 +30,11 @@ else:
 pth = os.path.join("..", "doc", "body.tex")
 with open(pth) as f:
     lines = f.read()
-gwf_list = []
-gwt_list = []
+examples = []
 ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
 for v in ex_regex.findall(lines):
-    if "ex-gwf-" in v:
-        gwf_list.append(v.replace(".tex", ""))
-    elif "ex-gwt-" in v:
-        gwt_list.append(v.replace(".tex", ""))
-ex_list = gwf_list + gwt_list
+    if "ex-" in v:
+        examples.append(v.replace(".tex", ""))
 
 # get list of example problems
 ex_dirs = []
@@ -51,15 +47,18 @@ for name in sorted(os.listdir(ex_pth)):
 # create examples rst
 print(f"creating...'{pth}'")
 with open(os.path.join("..", ".doc", "examples.rst"), "w") as f:
-    line = "====================\n"
-    line += "Example descriptions\n"
-    line += "====================\n\n\n"
-    line += ".. toctree::\n"
-    line += "   :numbered:\n"
-    line += "   :maxdepth: 1\n\n"
-    for ex in ex_list:
-        line += f"   _examples/{ex}.rst\n"
-    f.write(line)
+    lines = "Example descriptions\n"
+    lines += (len(lines) - 1) * "-" + "\n\n"
+    lines += "An overview of each MODFLOW 6 example problem.\n\n"
+    f.write(lines)
+
+    lines = ".. toctree::\n"
+    lines += "   :numbered:\n"
+    lines += "   :maxdepth: 1\n\n"
+    for base_name in examples:
+        lines += f"   _examples/{base_name}.rst\n"
+    lines += "\n\n"
+    f.write(lines)
 
 # create rtd examples directory
 dst = os.path.join("..", ".doc", "_examples")
@@ -77,7 +76,7 @@ with open(pth) as f:
 latex_tag = "\\input{./body.tex}"
 frontmatter_tag = "\\input{./frontmatter.tex}"
 doc_pth = os.path.join("..", "doc")
-for ex in ex_list:
+for ex in examples:
     print(f"creating restructured text file for {ex} example")
     src = os.path.join("..", "doc", "ex.tex")
     with open(src, "w") as f:
@@ -117,7 +116,7 @@ for ex in ex_list:
 
     # read restructured text file as a string
     print(f"reading...'{dst}'")
-    with open(dst) as file:
+    with open(dst, "r", encoding="utf-8") as file:
         lines = file.read()
 
     # find equation labels in lines
@@ -143,12 +142,12 @@ for ex in ex_list:
 
     # read restructured text file for example
     print(f"reading...'{dst}'")
-    with open(dst) as f:
+    with open(dst, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     # editing restructured text file for example
     print(f"editing...'{dst}'")
-    with open(dst, "w") as f:
+    with open(dst, "w", encoding="utf-8") as f:
         write_line = True
         in_reference = False
         eq_no = 0

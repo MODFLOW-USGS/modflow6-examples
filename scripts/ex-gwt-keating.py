@@ -14,6 +14,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.patches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,9 +22,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
-example_name = "ex-gwt-keating"
-workspace = pl.Path("../examples")
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
+sim_name = "ex-gwt-keating"
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -105,10 +114,10 @@ rchspd[1] = [[(0, 0, j), rrate, 0.0] for j in rcol]
 
 
 # +
-def build_mf6gwf(sim_folder):
-    print(f"Building mf6gwf model...{sim_folder}")
+def build_mf6gwf():
+    print(f"Building mf6gwf model...{sim_name}")
     name = "flow"
-    sim_ws = os.path.join(workspace, sim_folder, "mf6gwf")
+    sim_ws = os.path.join(workspace, sim_name, "mf6gwf")
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((period1, 1, 1.0), (period2, 1, 1.0))
     flopy.mf6.ModflowTdis(
@@ -189,10 +198,10 @@ def build_mf6gwf(sim_folder):
     return sim
 
 
-def build_mf6gwt(sim_folder):
-    print(f"Building mf6gwt model...{sim_folder}")
+def build_mf6gwt():
+    print(f"Building mf6gwt model...{sim_name}")
     name = "trans"
-    sim_ws = os.path.join(workspace, sim_folder, "mf6gwt")
+    sim_ws = os.path.join(workspace, sim_name, "mf6gwt")
     sim = flopy.mf6.MFSimulation(
         sim_name=name,
         sim_ws=sim_ws,
@@ -237,7 +246,7 @@ def build_mf6gwt(sim_folder):
         gwt, xt3d_off=True, alh=alpha_l, ath1=alpha_th, atv=alpha_tv
     )
     pd = [
-        ("GWFHEAD", f"../mf6gwf/flow.hds", None),
+        ("GWFHEAD", "../mf6gwf/flow.hds", None),
         ("GWFBUDGET", "../mf6gwf/flow.bud", None),
     ]
     flopy.mf6.ModflowGwtfmi(gwt, flow_imbalance_correction=True, packagedata=pd)
@@ -283,11 +292,11 @@ def build_mf6gwt(sim_folder):
     return sim
 
 
-def build_models(sim_name):
-    sim_mf6gwf = build_mf6gwf(sim_name)
-    sim_mf6gwt = build_mf6gwt(sim_name)
-    sim_mf2005 = None  # build_mf2005(sim_name)
-    sim_mt3dms = None  # build_mt3dms(sim_name, sim_mf2005)
+def build_models():
+    sim_mf6gwf = build_mf6gwf()
+    sim_mf6gwt = build_mf6gwt()
+    sim_mf2005 = None  # build_mf2005()
+    sim_mt3dms = None  # build_mt3dms(sim_mf2005)
     return sim_mf6gwf, sim_mf6gwt, sim_mf2005, sim_mt3dms
 
 
@@ -317,22 +326,22 @@ def run_models(sims, silent=True):
 figure_size = (7.5, 3)
 
 
-def plot_results(sims, idx):
+def plot_results(sims):
     print("Plotting model results...")
-    plot_head_results(sims, idx)
-    plot_conc_results(sims, idx)
-    plot_cvt_results(sims, idx)
+    plot_head_results(sims)
+    plot_conc_results(sims)
+    plot_cvt_results(sims)
     if plot_save and gif_save:
-        make_animated_gif(sims, idx)
+        make_animated_gif(sims)
 
 
-def plot_head_results(sims, idx):
+def plot_head_results(sims):
     print("Plotting head model results...")
     sim_mf6gwf, _, _, _ = sims
     gwf = sim_mf6gwf.flow
     botm = gwf.dis.botm.array
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         sim_ws = sim_mf6gwf.simulation_data.mfpath.get_sim_path()
         head = gwf.output.head().get_data()
         head = np.where(head > botm, head, np.nan)
@@ -356,18 +365,18 @@ def plot_head_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-head.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
-def plot_conc_results(sims, idx):
+def plot_conc_results(sims):
     print("Plotting conc model results...")
     sim_mf6gwf, sim_mf6gwt, _, _ = sims
     gwf = sim_mf6gwf.flow
     gwt = sim_mf6gwt.trans
     botm = gwf.dis.botm.array
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         head = gwf.output.head().get_data()
         head = np.where(head > botm, head, np.nan)
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
@@ -420,18 +429,17 @@ def plot_conc_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-conc.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
-def make_animated_gif(sims, idx):
+def make_animated_gif(sims):
     import copy
 
     import matplotlib as mpl
     from matplotlib.animation import FuncAnimation, PillowWriter
 
     print("Animating conc model results...")
-    sim_name = example_name
     sim_mf6gwf, sim_mf6gwt, _, _ = sims
     gwf = sim_mf6gwf.flow
     gwt = sim_mf6gwt.trans
@@ -481,29 +489,37 @@ def make_animated_gif(sims, idx):
         idx_end = (np.abs(conc_times - 18000.0)).argmin()
         ani = FuncAnimation(fig, update, range(1, idx_end), init_func=init)
         writer = PillowWriter(fps=25)
-        fpth = os.path.join("..", "figures", "{}{}".format(sim_name, ".gif"))
+        fpth = figs_path / "{}{}".format(sim_name, ".gif")
         ani.save(fpth, writer=writer)
 
 
-def plot_cvt_results(sims, idx):
+def plot_cvt_results(sims):
     print("Plotting cvt model results...")
-    sim_mf6gwf, sim_mf6gwt, _, _ = sims
+    _, sim_mf6gwt, _, _ = sims
     gwt = sim_mf6gwt.trans
 
     with styles.USGSMap():
         sim_ws = sim_mf6gwt.simulation_data.mfpath.get_sim_path()
         mf6gwt_ra = gwt.obs.output.obs().data
         dt = [("totim", "f8"), ("obs", "f8")]
-        fname = pooch.retrieve(
-            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-keating/keating_obs1.csv",
+
+        fname = "keating_obs1.csv"
+        fpath = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+            fname=fname,
+            path=data_path,
             known_hash="md5:174c5548c3bbb9ea4ebc8b5a33ea2851",
         )
-        obs1ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
-        fname = pooch.retrieve(
-            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/ex-gwt-keating/keating_obs2.csv",
+        obs1ra = np.genfromtxt(fpath, delimiter=",", deletechars="", dtype=dt)
+
+        fname = "keating_obs2.csv"
+        fpath = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+            fname=fname,
+            path=data_path,
             known_hash="md5:8de2ef529a2537ecd6c62bc207b67fb5",
         )
-        obs2ra = np.genfromtxt(fname, delimiter=",", deletechars="", dtype=dt)
+        obs2ra = np.genfromtxt(fpath, delimiter=",", deletechars="", dtype=dt)
         fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
         ax = axes[0]
         ax.plot(
@@ -557,7 +573,7 @@ def plot_cvt_results(sims, idx):
             sim_folder = os.path.split(sim_ws)[0]
             sim_folder = os.path.basename(sim_folder)
             fname = f"{sim_folder}-cvt.png"
-            fpth = os.path.join(workspace, "..", "figures", fname)
+            fpth = figs_path / fname
             fig.savefig(fpth)
 
 
@@ -569,15 +585,15 @@ def plot_cvt_results(sims, idx):
 
 
 # +
-def scenario(idx, silent=True):
-    sim = build_models(example_name)
+def scenario(silent=True):
+    sim = build_models()
     if write:
         write_models(sim, silent=silent)
     if run:
         run_models(sim, silent=silent)
     if plot:
-        plot_results(sim, idx)
+        plot_results(sim)
 
 
-scenario(0)
+scenario()
 # -

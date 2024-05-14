@@ -1,4 +1,4 @@
-# ## Three-dimensional heat transport example
+# ## Hecht-Mendez 3D Borehole Heat Exchanger Problem
 #
 # The purpose of this script is to (1) recreate the 3D heat transport example
 # first published in Groundwater in 2010 titled, "Evaluating MT3DMS for Heat
@@ -29,15 +29,24 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 from scipy.special import erf, erfc
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 name = "hecht-mendez"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -374,7 +383,7 @@ def build_mf2k5_flow_model(
 
     # Instantiate the MODFLOW model
     mf = flopy.modflow.Modflow(
-        modelname=modelname_mf, model_ws=mt3d_ws, exe_name=exe_name_mf
+        modelname=modelname_mf, model_ws=mt3d_ws, exe_name="mf2005"
     )
 
     # Instantiate discretization package
@@ -566,7 +575,7 @@ def build_mt3d_transport_model(
     mt = flopy.mt3d.Mt3dms(
         modelname=modelname_mt,
         model_ws=mt3d_ws,
-        exe_name=exe_name_mt,
+        exe_name="mt3dms",
         modflowmodel=mf,
     )
 
@@ -949,13 +958,9 @@ def plot_results(
             plt.show()
         if plot_save:
             letter = chr(ord("@") + idx + 1)
-            fpth = os.path.join(
-                "..",
-                "figures",
-                "{}{}".format(
-                    "ex-" + sim_name + "-" + letter,
-                    ".png",
-                ),
+            fpth = figs_path / "{}{}".format(
+                "ex-" + sim_name + "-" + letter,
+                ".png",
             )
             fig.savefig(fpth)
 

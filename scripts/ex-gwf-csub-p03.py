@@ -1,4 +1,4 @@
-# ## One-dimensional compaction example
+# ## One-Dimensional Compaction
 #
 # A one-dimensional MODFLOW 6 model was developed by Sneed (2008) to simulate
 # aquitard drainage, compaction and, land subsidence at the Holly site, located at
@@ -15,6 +15,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,9 +25,18 @@ from flopy.plot.styles import styles
 from modflow_devtools.latex import build_table, exp_format, float_format, int_format
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-csub-p03"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+tbls_path = root / "tables" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -42,11 +52,14 @@ plot_save = get_env("PLOT_SAVE", True)
 
 # +
 # Load the constant time series
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
+fname = "boundary_heads.csv"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
 )
-csv_head = np.genfromtxt(pth, names=True, delimiter=",")
+csv_head = np.genfromtxt(fpath, names=True, delimiter=",")
 
 # Reformat csv data into format for MODFLOW 6 timeseries file
 chd_ts = []
@@ -674,7 +687,7 @@ def export_tables(silent=True):
             "Hydraulic conductivity",
             "Initial head",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-01.tex")
+        fpth = tbls_path / f"{sim_name}-01.tex"
         dtype = [
             ("k", "U30"),
             ("thickness", "U30"),
@@ -699,7 +712,7 @@ def export_tables(silent=True):
             "Thickness",
             "Initial stress",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-02.tex")
+        fpth = tbls_path / f"{sim_name}-02.tex"
         dtype = [
             ("ib", "U30"),
             ("k", "U30"),
@@ -725,7 +738,7 @@ def export_tables(silent=True):
             "Layer",
             "Specific Storage",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-03.tex")
+        fpth = tbls_path / f"{sim_name}-03.tex"
         dtype = [("k", "U30"), ("ss", "U30")]
         arr = np.zeros(4, dtype=dtype)
         for idx, k in enumerate((4, 6, 11, 13)):
@@ -743,7 +756,7 @@ def export_tables(silent=True):
             "Inelastic \\newline Specific \\newline Storage",
             "Elastic \\newline Specific \\newline Storage",
         )
-        fpth = os.path.join("..", "tables", f"{sim_name}-04.tex")
+        fpth = tbls_path / f"{sim_name}-04.tex"
         dtype = [
             ("ib", "U30"),
             ("k", "U30"),
@@ -769,11 +782,13 @@ def export_tables(silent=True):
 
 
 def get_obs_dataframe(file_name, hash):
-    fpth = pooch.retrieve(
+    fpath = pooch.retrieve(
         url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{file_name}",
+        fname=file_name,
+        path=data_path,
         known_hash=f"md5:{hash}",
     )
-    df = pd.read_csv(fpth, index_col=0)
+    df = pd.read_csv(fpath, index_col=0)
     df.index = pd.to_datetime(df.index.values)
     df.rename({"mean": "observed"}, inplace=True, axis=1)
     return df
@@ -1082,7 +1097,7 @@ def plot_grid(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-grid.png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1135,7 +1150,7 @@ def plot_boundary_heads(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-01.png")
+            fpth = figs_path / f"{sim_name}-01.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1220,24 +1235,27 @@ def plot_head_es_comparison(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-02.png")
+            fpth = figs_path / f"{sim_name}-02.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
 
 
 def plot_calibration(silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         name = list(parameters.keys())[1]
-        pth = os.path.join(workspace, name, f"{name}.csub.obs.csv")
-        df_sim = get_sim_dataframe(pth)
+        fpath = os.path.join(workspace, name, f"{name}.csub.obs.csv")
+        df_sim = get_sim_dataframe(fpath)
         df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
-        pth = pooch.retrieve(
-            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/boundary_heads.csv",
+        fname = "boundary_heads.csv"
+        fpath = pooch.retrieve(
+            url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+            fname=fname,
+            path=data_path,
             known_hash="md5:8177e15feeeedcdd59ee15745e796e59",
         )
-        df_obs_heads, col_list = process_sim_csv(pth)
+        df_obs_heads, col_list = process_sim_csv(fpath)
 
         ccolors = (
             "black",
@@ -1500,7 +1518,7 @@ def plot_calibration(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-03.png")
+            fpth = figs_path / f"{sim_name}-03.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)
@@ -1637,7 +1655,7 @@ def plot_vertical_head(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join("..", "figures", f"{sim_name}-04.png")
+            fpth = figs_path / f"{sim_name}-04.png"
             if not silent:
                 print(f"saving...'{fpth}'")
             fig.savefig(fpth)

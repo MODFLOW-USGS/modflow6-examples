@@ -14,6 +14,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,9 +23,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-sfr-p01b"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -94,53 +103,74 @@ shape2d = (nrow, ncol)
 shape3d = (nlay, nrow, ncol)
 
 # Load the idomain, lake locations, top, bottom, and evapotranspiration surface arrays
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/strt1.txt",
+fname = "strt1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:273db6e876e7cfb4985b0b09c232f7cc",
 )
-strt1 = np.loadtxt(fpth, dtype=float)
+strt1 = np.loadtxt(fpath, dtype=float)
 strt2 = strt1
 strt = [strt1, strt2]
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/idomain.txt",
+fname = "idomain.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:3fb0b80939ff6ccc9dc47d010e002a3c",
 )
-idomain1 = np.loadtxt(fpth, dtype=int)
+idomain1 = np.loadtxt(fpath, dtype=int)
 idomain = [idomain1, idomain1]
 lake_map = np.ones(shape3d, dtype=int) * -1
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/lakes.txt",
+fname = "lakes.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:c344195438bda85738cab2ce34a16733",
 )
-lake_map[0, :, :] = np.loadtxt(fpth, dtype=int) - 1
+lake_map[0, :, :] = np.loadtxt(fpath, dtype=int) - 1
 lake_map = np.ma.masked_where(lake_map < 0, lake_map)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/top1.txt",
+fname = "top1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:ba3f1422f45388b19dc1ef6b3076fa96",
 )
-top = np.loadtxt(fpth, dtype=float)
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/bot1.txt",
+top = np.loadtxt(fpath, dtype=float)
+fname = "bot1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:4343c79bbf3ad039638d2379d335d06e",
 )
-bot1 = np.loadtxt(fpth, dtype=float)
+bot1 = np.loadtxt(fpath, dtype=float)
 bot2 = np.ones_like(bot1) * 300.0
 botm = [bot1, bot2]
 
 # Create hydraulic conductivity and specific yield
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/k11_lay1.txt",
+fname = "k11_lay1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:287160064d1a9bc0bae94b018bf187d7",
 )
-k11_lay1 = np.loadtxt(fpth, dtype=float) * 2.5
+k11_lay1 = np.loadtxt(fpath, dtype=float) * 2.5
 k11_lay2 = np.ones_like(k11_lay1) * 0.35e-2
 k11 = [k11_lay1, k11_lay2]
 k33 = 0.5e-5
-fpth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/sy1.txt",
+fname = "sy1.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:80be4a9ba817465cf5c05934f94dd675",
 )
-sy1 = np.loadtxt(fpth, dtype=float)
+sy1 = np.loadtxt(fpath, dtype=float)
 sy2 = np.ones_like(sy1) * 0.20
 sy = [sy1, sy2]
 
@@ -4011,7 +4041,7 @@ masked_values = (0, 1e30, -1e30)
 
 
 def plot_grid(gwf, silent=True):
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig = plt.figure(figsize=figure_size, constrained_layout=False)
         gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
         plt.axis("off")
@@ -4172,11 +4202,7 @@ def plot_grid(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
@@ -4189,7 +4215,7 @@ def plot_head_results(gwf, silent=True):
 
     kstpkper = hobj.get_kstpkper()
 
-    with styles.USGSMap() as fs:
+    with styles.USGSMap():
         fig = plt.figure(figsize=figure_size, constrained_layout=False)
         gs = mpl.gridspec.GridSpec(ncols=10, nrows=7, figure=fig, wspace=5)
         plt.axis("off")
@@ -4304,16 +4330,12 @@ def plot_head_results(gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-01.png",
-            )
+            fpth = figs_path / f"{sim_name}-01.png"
             fig.savefig(fpth)
 
 
 def plot_mvr_results(idx, gwf, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         # load the observations
         mvr = gwf.get_package("MVR-1")
         mvr_Q = mvr.output.budget()
@@ -4432,16 +4454,12 @@ def plot_mvr_results(idx, gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-mvr.png",
-            )
+            fpth = figs_path / f"{sim_name}-mvr.png"
             fig.savefig(fpth)
 
 
 def plot_uzfcolumn_results(idx, gwf, silent=True):
-    with styles.USGSPlot() as fs:
+    with styles.USGSPlot():
         sim_ws = os.path.join(workspace, sim_name)
         fname = os.path.join(sim_ws, "obs_uzf_column.csv")
         uzf_dat = pd.read_csv(fname, header=0)
@@ -4482,11 +4500,7 @@ def plot_uzfcolumn_results(idx, gwf, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-uz.png",
-            )
+            fpth = figs_path / f"{sim_name}-uz.png"
             fig.savefig(fpth)
 
 

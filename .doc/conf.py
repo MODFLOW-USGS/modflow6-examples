@@ -12,6 +12,7 @@
 #
 import os
 import re
+
 from modflow_devtools.misc import get_env
 
 # -- set boolean indicating if running on readthedocs server -----------------
@@ -27,15 +28,12 @@ ex_regex = re.compile("\\\\input{sections/(.*?)\\}")
 pth = os.path.join("..", "doc", "body.tex")
 with open(pth) as f:
     lines = f.read()
-gwf_list = []
-gwt_list = []
+examples = []
 for v in ex_regex.findall(lines):
-    if "ex-gwf-" in v:
-        gwf_list.append(v.replace(".tex", ""))
-    elif "ex-gwt-" in v:
-        gwt_list.append(v.replace(".tex", ""))
+    if "ex-" in v:
+        examples.append(v.replace(".tex", ""))
 
-# -- Build examples.rst for notebooks to .doc --------------------------------
+# -- Build notebook_examples.rst ---------------------------------------------
 with open("notebook_examples.rst", "w") as f:
     lines = "Example notebooks\n"
     lines += (len(lines) - 1) * "-" + "\n\n"
@@ -46,10 +44,8 @@ with open("notebook_examples.rst", "w") as f:
     f.write(lines)
 
     lines = ".. nbgallery::\n"
-    lines += "    :name: Examples gallery\n\n"
-    for base_name in gwf_list:
-        lines += f"   _notebooks/{base_name}\n"
-    for base_name in gwt_list:
+    lines += "   :name: Examples gallery\n\n"
+    for base_name in examples:
         lines += f"   _notebooks/{base_name}\n"
     lines += "\n\n"
     f.write(lines)
@@ -154,13 +150,9 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-html_css_files = [
-    'custom.css',
-    'theme_overrides.css'
-]
+html_css_files = ["custom.css", "theme_overrides.css"]
 
 html_context = {
-    "github_repo": "https://github.com/MODFLOW-USGS/modflow6-examples",  # assuming an exact match
     "display_github": False,
     "github_user": "modflow6-examples",
     "github_repo": "modflow6-examples",
@@ -246,4 +238,3 @@ nbsphinx_prolog = (
 
 # Import Matplotlib to avoid this message in notebooks:
 # "Matplotlib is building the font cache; this may take a moment."
-import matplotlib.pyplot

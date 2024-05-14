@@ -1,7 +1,7 @@
-====================
 Example descriptions
-====================
+--------------------
 
+An overview of each MODFLOW 6 example problem.
 
 .. toctree::
    :numbered:
@@ -37,9 +37,6 @@ Example descriptions
    _examples/ex-gwf-drn-p01.rst
    _examples/ex-gwf-sagehen.rst
    _examples/ex-gwf-capture.rst
-   _examples/ex-gwf-radial.rst
-   _examples/ex-gwf-curvilinear-90.rst
-   _examples/ex-gwf-curvilinear.rst
    _examples/ex-gwt-keating.rst
    _examples/ex-gwt-moc3d-p01.rst
    _examples/ex-gwt-moc3d-p02.rst
@@ -66,3 +63,16 @@ Example descriptions
    _examples/ex-gwt-hecht-mendez.rst
    _examples/ex-gwt-stallman.rst
    _examples/ex-gwt-synthetic-valley.rst
+   _examples/ex-gwf-radial.rst
+   _examples/ex-gwf-curvilinear-90.rst
+   _examples/ex-gwf-curvilinear.rst
+   _examples/ex-gwe-radial.rst
+   _examples/ex-gwe-geotherm.rst
+   _examples/ex-gwe-danckwerts.rst
+   _examples/ex-prt-mp7-p01.rst
+   _examples/ex-prt-mp7-p02.rst
+   _examples/ex-prt-mp7-p03.rst
+   _examples/ex-prt-mp7-p04.rst
+   _examples/ex-gwe-prt.rst
+
+

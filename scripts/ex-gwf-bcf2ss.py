@@ -18,6 +18,7 @@ import os
 import pathlib as pl
 
 import flopy
+import git
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,9 +26,17 @@ import pooch
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
-# Example name and base workspace
+# Example name and workspace paths. If this example is running
+# in the git repository, use the folder structure described in
+# the README. Otherwise just use the current working directory.
 sim_name = "ex-gwf-bcf2ss"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
+data_path = root / "data" / sim_name if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -47,11 +56,14 @@ length_units = "feet"
 time_units = "days"
 
 # Load the wetdry array for layer 1
-pth = pooch.retrieve(
-    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/wetdry01.txt",
+fname = "wetdry01.txt"
+fpath = pooch.retrieve(
+    url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/master/data/{sim_name}/{fname}",
+    fname=fname,
+    path=data_path,
     known_hash="md5:3a4b357b7d2cd5175a205f3347ab973d",
 )
-wetdry_layer0 = np.loadtxt(pth)
+wetdry_layer0 = np.loadtxt(fpath)
 
 # Scenario-specific parameters
 parameters = {
@@ -356,13 +368,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(
-                os.path.join(
-                    "..",
-                    "figures",
-                    f"{sim_name}-{num:02d}.png",
-                )
-            )
+            fig.savefig(figs_path / f"{sim_name}-{num:02d}.png")
 
 
 def plot_results(silent=True):
@@ -469,11 +475,7 @@ def plot_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(
-                "..",
-                "figures",
-                f"{sim_name}-grid.png",
-            )
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
         # figure with wetdry array
@@ -492,7 +494,7 @@ def plot_results(silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(os.path.join("..", "figures", f"{sim_name}-01.png"))
+            fig.savefig(figs_path / f"{sim_name}-01.png")
 
         # plot simulated rewetting results
         plot_simulated_results(2, gwf, hobj, cobj)
