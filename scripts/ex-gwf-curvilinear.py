@@ -1,4 +1,4 @@
-# ## Curvilinear example
+# ## Curvilinear Example
 #
 # This example, ex-gwf-curvilinear, shows how the MODFLOW 6 DISV Package
 # can be used to simulate a multipart curvilinear models.
