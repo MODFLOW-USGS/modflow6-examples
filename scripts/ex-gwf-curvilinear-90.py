@@ -1,4 +1,4 @@
-# ## Curvilinear example
+# ## Curvilinear 90 Degree Example
 #
 # This example, ex-gwf-curvilinear, shows how the MODFLOW 6 DISV Package
 # can be used to simulate a curvilinear models.
