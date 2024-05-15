@@ -1,4 +1,4 @@
-# ## FHB example
+# ## Flow and Head Boundary (FHB) Package Replication
 #
 # This example shows how the time series capability in MODFLOW 6 can be
 # combined with the constant head and well packages to replicate the

@@ -1,4 +1,4 @@
-# ## Streamflow Routing (SFR) Package problem 1 with MVR applied among advanced packages
+# ## Advanced Packages with MVR
 #
 # This is the stream-aquifer interaction example problem (test 1) from the
 # Streamflow Routing Package documentation (Prudic, 1989) with a couple of

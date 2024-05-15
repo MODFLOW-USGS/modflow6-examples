@@ -1,4 +1,4 @@
-# ## Backward Tracking, Quad-Refined Grid, Steady-State Flow
+# ## Backward Particle Tracking, Quad-Refined Grid, Steady-State Flow
 #
 # Application of a MODFLOW 6 particle-tracking (PRT) model
 # and a MODPATH 7 (MP7) model to solve example 2 from the

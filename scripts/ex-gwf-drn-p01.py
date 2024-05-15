@@ -1,4 +1,4 @@
-# ## Unsaturated Zone Flow (UZF) Package example 2
+# ## Drainage Discharge Scaling
 #
 # This is the unsaturated zone package example problem (test 2) from the
 # Unsaturated Zone Flow Package documentation (Niswonger and others, 2006).

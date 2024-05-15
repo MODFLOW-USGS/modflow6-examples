@@ -1,4 +1,4 @@
-# ## USG1DISV example
+# ## Circular Island with Triangular Mesh
 #
 # Demonstration of a triangular mesh with the DISV Package to discretize a
 # circular island with a radius of 1500 meters.  The model has 2 layers and

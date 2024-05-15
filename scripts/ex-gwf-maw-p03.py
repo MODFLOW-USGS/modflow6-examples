@@ -1,4 +1,4 @@
-# ## Reilly multi-aquifer well example
+# ## Reilly Multi-Aquifer Well Problem
 #
 # This is the multi-aquifer well example from Reilly and others (1989).
 

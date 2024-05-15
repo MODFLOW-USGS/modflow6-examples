@@ -1,4 +1,4 @@
-# ## BCF2SS example
+# ## BCF2SS Model
 #
 # This problem is described in McDonald and Harbaugh (1988) and duplicated
 # in Harbaugh and McDonald (1996). This problem is also is distributed with
