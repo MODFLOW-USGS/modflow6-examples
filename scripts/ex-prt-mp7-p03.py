@@ -1,4 +1,4 @@
-# ## Forward Tracking, Structured Grid, Transient Flow
+# ## Forward Particle Tracking, Structured Grid, Transient Flow
 #
 # Application of a MODFLOW 6 particle-tracking (PRT)
 # model and a MODPATH 7 (MP7) model to solve example

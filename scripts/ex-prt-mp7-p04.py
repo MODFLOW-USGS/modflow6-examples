@@ -1,4 +1,4 @@
-# ## Backward Tracking, Refined Grid, Lateral Flow Boundaries
+# ## Backward Particle Tracking, Refined Grid, Lateral Flow Boundaries
 #
 # Application of a MODFLOW 6 particle-tracking (PRT) model
 # to solve example 4 from the MODPATH 7 documentation.

@@ -1,4 +1,4 @@
-# ## Flow diversion example
+# ## MODFLOW-NWT Problem 2
 #
 # This example is based on problem 2 in Niswonger et al 2011, which
 # used the Newton-Raphson formulation to simulate dry cells under a

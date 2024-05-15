@@ -1,4 +1,4 @@
-# ## LGR example with MVR for SFR between two models
+# ## LGR with MVR and SFR
 #
 # This script reproduces the model in Mehl and Hill (2013).
 

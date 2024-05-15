@@ -1,4 +1,4 @@
-# ## Hani example
+# ## Hani Problem
 #
 # Simple steady state model using a regular MODFLOW grid to simulate the
 # response of an anisotropic confined aquifer to a pumping well. A

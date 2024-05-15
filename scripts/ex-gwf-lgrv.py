@@ -1,4 +1,4 @@
-# ## LGRV example
+# ## Vilhelmsen LGR
 #
 # These are the models described in Vilhelmsen et al. (2012).  The parent
 # model is 9 layers, the child model is 25 layers.
