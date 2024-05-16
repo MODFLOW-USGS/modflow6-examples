@@ -19,7 +19,7 @@ In this example a MODFLOW 6 particle tracking (PRT) model runs in the same simul
 
 \begin{StandardFigure}{
     Heads simulated by the MODFLOW 6 groundwater flow (GWF) model.
-    }{fig:ex-prt-mp7-p01-head}{../figures/mp7-p01-head.png}
+    }{fig:ex-prt-mp7-p01-head}{../figures/ex-prt-mp7-p01-head.png}
 \end{StandardFigure}
 
 In subproblem 1A, a line of 21 particles is placed at the water table in layer 1 for column 3, rows 1 through 21. In subproblem 1B, a denser release configuration is used which places a 3 x 3 array of particles on the top face of every cell in layer 1. Both simulations track particles forward to their discharge points.
@@ -28,22 +28,22 @@ Subproblem 1A path points on a 1000-day time interval are shown in fig~\ref{fig:
 
 \begin{StandardFigure}{
     Particle pathlines and 1000-day points for subproblem 1A. Points are colored by layer.
-    }{fig:ex-prt-mp7-p01-paths-layer}{../figures/mp7-p01-paths-layer.png}
+    }{fig:ex-prt-mp7-p01-paths-layer}{../figures/ex-prt-mp7-p01-paths-layer.png}
 \end{StandardFigure}
 
 To illustrate discharge points, pathlines are colored by discharge area (well or river) in fig~\ref{fig:ex-prt-mp7-p01-paths}. To show capture areas, starting locations of all particles are color-coded according to the zone value of the cells in which they terminate in fig~\ref{fig:ex-prt-mp7-p01-rel-destination}. Travel time analysis is also a common use case for particle tracking. Particle release points are colored by total travel time to capture in fig~\ref{fig:ex-prt-mp7-p01-rel-travel-time}.
 
 \begin{StandardFigure}{
     Particle pathlines, colored by destination: particles with red pathlines are captured by the well, particles with blue pathlines are captured by the river.
-    }{fig:ex-prt-mp7-p01-paths}{../figures/mp7-p01-paths.png}
+    }{fig:ex-prt-mp7-p01-paths}{../figures/ex-prt-mp7-p01-paths.png}
 \end{StandardFigure}
 
 \begin{StandardFigure}{
     Particle release points, colored by destination.
-    }{fig:ex-prt-mp7-p01-rel-destination}{../figures/mp7-p01-rel-destination.png}
+    }{fig:ex-prt-mp7-p01-rel-destination}{../figures/ex-prt-mp7-p01-rel-destination.png}
 \end{StandardFigure}
 
 \begin{StandardFigure}{
     Particle release points, colored by travel time.
-    }{fig:ex-prt-mp7-p01-rel-travel-time}{../figures/mp7-p01-rel-travel-time.png}
+    }{fig:ex-prt-mp7-p01-rel-travel-time}{../figures/ex-prt-mp7-p01-rel-travel-time.png}
 \end{StandardFigure}
