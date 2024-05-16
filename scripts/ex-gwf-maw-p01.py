@@ -1,4 +1,4 @@
-# ## Neville-Tonkin Multi-Aquifer Well Problem,
+# ## Neville-Tonkin Multi-Aquifer Well Problem
 #
 # This is the Neville-Tonkin Multi-Aquifer Well from the
 # Lake Package documentation (Neville and Tonkin, 2004).

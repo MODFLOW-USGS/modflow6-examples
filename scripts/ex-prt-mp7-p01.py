@@ -1,4 +1,4 @@
-# ## Forward Tracking, Structured Grid, Steady-State Flow
+# ## Forward Particle Tracking, Structured Grid, Steady-State Flow
 #
 # Application of a MODFLOW 6 particle-tracking (PRT) model
 # and a MODPATH 7 (MP7) model to solve example 1 from the
@@ -42,10 +42,11 @@ from modflow_devtools.misc import get_env, timed
 # Example name and workspace paths. If this example is running
 # in the git repository, use the folder structure described in
 # the README. Otherwise just use the current working directory.
-sim_name = "mp7-p01"
-gwf_name = sim_name + "-gwf"
-prt_name = sim_name + "-prt"
-mp7_name = sim_name + "-mp7"
+sim_name = "ex-prt-mp7-p01"
+# shorten model names so they fit in 16-char limit
+gwf_name = sim_name.replace("ex-prt-", "") + "-gwf"
+prt_name = sim_name.replace("ex-prt-", "") + "-prt"
+mp7_name = sim_name.replace("ex-prt-", "") + "-mp7"
 try:
     root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
 except:

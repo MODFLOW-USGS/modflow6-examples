@@ -1,4 +1,4 @@
-# ## Flowing well Multi-Aquifer Well Problem,
+# ## Multi-Aquifer Well Problem, Flowing Well Option
 #
 # This is a modified version of the Neville-Tonkin Multi-Aquifer Well problem
 # from Neville and Tonkin, 2004 that uses the flowing well option.

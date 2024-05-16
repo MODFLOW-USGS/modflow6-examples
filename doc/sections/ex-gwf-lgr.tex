@@ -1,4 +1,4 @@
-\section{LGR2 Problem 3}
+\section{LGR with MVR and SFR}
 
 This example is based on LGR2 Problem 3 in \cite{mehl2013}, which includes two models arranged in a nested parent-child grid setup, where the parent model uses a coarse grid that surrounds the finely-gridded child model (Figure~\ref{fig:mvr_lgr_planview}).  Parent-child model setups limit grid refinement to localized regions of interest within large model domains to keep model runtimes to a minimum.  Owing to the relative ease of setup for this type of model arrangement in \mf, particularly when developing a model (i.e., simulation) with a support utility like flopy \citep{bakker2016}, the use of multi-model arrangements necessitates a generalized supporting package like MVR to transfer water among features within a simulation.  To demonstrate, this example uses MVR to cascade streamflow from an upstream SFR reach in the parent model to a downstream SFR reach in the child model.  Further downstream MVR again cascades streamflow from the last child model SFR reach to the appropriate SFR reach in the parent model.  
 

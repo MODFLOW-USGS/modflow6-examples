@@ -1012,4 +1012,4 @@ def scenario(idx, silent=False):
 # -
 
 # Run the scenario
-scenario(0)
+scenario(0, silent=True)

@@ -466,7 +466,7 @@ def make_animated_gif(sims):
             extent=(0, 10000, 0, 2000),
         )
 
-        cmap = copy.copy(mpl.cm.get_cmap("jet"))
+        cmap = copy.copy(mpl.colormaps["jet"])
         cmap.set_bad("white")
         nodata = -999.0
         a = np.where(head > botm, conc[0], nodata)

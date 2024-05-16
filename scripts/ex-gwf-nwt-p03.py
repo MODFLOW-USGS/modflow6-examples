@@ -1,4 +1,4 @@
-# ## MODFLOW-NWT Problem 3 example
+# ## MODFLOW-NWT Problem 3
 #
 # This example is based on problem 3 in Niswonder et al 2011, which used
 # the Newton-Raphson formulation to simulate water levels in a rectangular,

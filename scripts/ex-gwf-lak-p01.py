@@ -1,4 +1,4 @@
-# ## Lake package (LAK) example 1
+# ## Lake Package Problem 1
 #
 # This is the lake package example problem (test 1) from the
 # Lake Package documentation (Merritt and Konikow, 2000).

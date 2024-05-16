@@ -1,4 +1,4 @@
-# ## MT3DMS Problem 10 Two Domains
+# ## MT3DMS Problem 10, Two Domains
 #
 # The purpose of this example is to demonstrate the model setup for
 # a coupled GWF-GWT simulation with submodels. It replicates the

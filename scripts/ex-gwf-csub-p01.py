@@ -1,9 +1,9 @@
-# ## Jacob (1939) Elastic Aquifer Loading
+# ## Elastic Aquifer Loading
 #
 # This problem simulates elastic compaction of aquifer materials in response to the
 # loading of an aquifer by a passing train. Water-level responses were simulated for
 # an eastbound train leaving the Smithtown Station in Long Island, New York at 13:04
-# on April 23, 1937
+# on April 23, 1937.
 
 # ### Initial setup
 #

@@ -1,7 +1,7 @@
-# ## Curvilinear example
+# ## Curvilinear Groundwater Flow Model
 #
-# This example, ex-gwf-curvilinear, shows how the MODFLOW 6 DISV Package
-# can be used to simulate a curvilinear models.
+# This example, ex-gwf-curvilinear-90, shows how the MODFLOW 6 DISV Package
+# can be used to simulate a curvilinear models with a 90 degree rotation.
 #
 # The example corresponds to Figure 3d (lower-right) in:
 #    Romero, D. M., & Silver, S. E. (2006).
@@ -14,8 +14,6 @@
 #    Oxford. England: Clarendon.
 # The equation is transformed here to use head instead of concentration
 
-# ### Initial setup
-#
 # ### Initial setup
 #
 # Import dependencies, define the example name and workspace, and read settings from environment variables.

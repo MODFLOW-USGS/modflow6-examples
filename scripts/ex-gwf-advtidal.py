@@ -1,4 +1,4 @@
-# ## Advgwtidal example
+# ## Tidal Model
 #
 # This model represents highlands bordered by a tidal estuary.  The model
 # has 3 layers representing an upper aquifer, confining bed, and lower aquifer.
