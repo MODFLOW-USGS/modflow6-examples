@@ -277,15 +277,16 @@ def get_ordered_examples(verbose=True):
 def get_examples_list(verbose=True):
     if verbose:
         print("creating a list of available examples")
+
     # examples to exclude
     exclude = ("ex-gwf-csub-p02c",)
 
     # get order of examples from body.text
     ex_order = get_ordered_examples(verbose)
 
-    # get list of all examples
+    # get list of all example names
     ex_list = sorted(
-        [str(p) for p in Path(ex_pth).glob("*") if p.is_dir() and p.name not in exclude]
+        [p.stem for p in Path(ex_pth).glob("*") if p.is_dir() and p.name not in exclude]
     )
 
     # create final list with all of the examples in body.tex order
