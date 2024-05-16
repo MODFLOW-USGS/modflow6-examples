@@ -48,10 +48,11 @@ from shapely.geometry import LineString, MultiPoint
 # Example name and workspace paths. If this example is running
 # in the git repository, use the folder structure described in
 # the README. Otherwise just use the current working directory.
-sim_name = "mp7-p02"
-gwf_name = sim_name + "-gwf"
-prt_name = sim_name + "-prt"
-mp7_name = sim_name + "-mp7"
+sim_name = "ex-prt-mp7-p02"
+# shorten model names so they fit in 16-char limit
+gwf_name = sim_name.replace("ex-prt-", "") + "-gwf"
+prt_name = sim_name.replace("ex-prt-", "") + "-prt"
+mp7_name = sim_name.replace("ex-prt-", "") + "-mp7"
 try:
     root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
 except:
