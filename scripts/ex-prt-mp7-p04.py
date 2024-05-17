@@ -589,7 +589,7 @@ def build_prt():
         perioddata={
             0: ["FIRST"],
         },
-        exit_solve_tolerance=1e-5
+        exit_solve_tolerance=1e-5,
     )
 
     # Instantiate the MODFLOW 6 prt output control package

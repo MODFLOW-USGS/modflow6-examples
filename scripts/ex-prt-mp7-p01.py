@@ -333,7 +333,7 @@ def build_models(example_name):
         perioddata={
             0: ["FIRST"],
         },
-        exit_solve_tolerance=1e-5
+        exit_solve_tolerance=1e-5,
     )
 
     # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1B,
@@ -348,7 +348,7 @@ def build_models(example_name):
         perioddata={
             0: ["FIRST"],
         },
-        exit_solve_tolerance=1e-10
+        exit_solve_tolerance=1e-10,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
