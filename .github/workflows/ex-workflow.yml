@@ -79,12 +79,13 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Build MODFLOW 6
+      - name: Build and copy MODFLOW 6
         working-directory: modflow6
         run: |
-          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=$(dirname $(which mf6))
+          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
           meson install -C builddir
           meson test --verbose --no-rebuild -C builddir
+          cp bin/* ~/.local/bin/modflow/
 
       - name: Create model
         working-directory: modflow6-examples/autotest
@@ -165,12 +166,13 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Build MODFLOW 6
+      - name: Build and copy MODFLOW 6
         working-directory: modflow6
         run: |
-          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=$(dirname $(which mf6))
+          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
           meson install -C builddir
           meson test --verbose --no-rebuild -C builddir
+          cp bin/* ~/.local/bin/modflow/
 
       - name: Test example scripts and create input files
         working-directory: modflow6-examples/autotest

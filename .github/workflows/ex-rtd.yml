@@ -87,9 +87,10 @@ jobs:
       - name: Build MODFLOW 6
         working-directory: modflow6
         run: |
-          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=$(dirname $(which mf6))
+          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
           meson install -C builddir
           meson test --verbose --no-rebuild -C builddir
+          cp bin/* ~/.local/bin/modflow/
       
       - name: Create notebooks and run models
         working-directory: modflow6-examples/autotest
