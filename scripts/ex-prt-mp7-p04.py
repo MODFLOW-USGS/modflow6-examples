@@ -609,8 +609,8 @@ def build_prt():
     flopy.mf6.ModflowPrtfmi(
         prt,
         packagedata=[
-            ("GWFHEAD", headfile_bkwd),
-            ("GWFBUDGET", budgetfile_bkwd),
+            ("GWFHEAD", (gwf_ws / headfile_bkwd).relative_to(prt_ws, walk_up=True)),
+            ("GWFBUDGET", (gwf_ws / budgetfile_bkwd).relative_to(prt_ws, walk_up=True)),
         ],
     )
 
@@ -690,8 +690,8 @@ def run_models(*sims, silent=False):
 
         if "gwf" in sim.name:
             # Reverse budget and head files for backward tracking
-            reverse_budgetfile(gwf_ws / budgetfile, prt_ws / budgetfile_bkwd, sim.tdis)
-            reverse_headfile(gwf_ws / headfile, prt_ws / headfile_bkwd, sim.tdis)
+            reverse_budgetfile(gwf_ws / budgetfile, gwf_ws / budgetfile_bkwd, sim.tdis)
+            reverse_headfile(gwf_ws / headfile, gwf_ws / headfile_bkwd, sim.tdis)
 
 
 # -

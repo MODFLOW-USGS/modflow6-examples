@@ -385,8 +385,16 @@ def build_prt_sim(name):
     )
 
     pd = [
-        ("GWFHEAD", gwf_ws / f"{gwf_name}.hds", None),
-        ("GWFBUDGET", gwf_ws / f"{gwf_name}.cbc", None),
+        (
+            "GWFHEAD",
+            (gwf_ws / f"{gwf_name}.hds").relative_to(prt_ws, walk_up=True),
+            None,
+        ),
+        (
+            "GWFBUDGET",
+            (gwf_ws / f"{gwf_name}.cbc").relative_to(prt_ws, walk_up=True),
+            None,
+        ),
     ]
 
     flopy.mf6.ModflowPrtfmi(
