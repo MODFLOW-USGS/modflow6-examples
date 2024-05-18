@@ -462,8 +462,8 @@ def build_prt_sim():
     # Instantiate the MODFLOW 6 prt flow model interface
     # using "time-reversed" budget and head files
     pd = [
-        ("GWFHEAD", (gwf_ws / headfile_bkwd).relative_to(prt_ws, walk_up=True)),
-        ("GWFBUDGET", (gwf_ws / budgetfile_bkwd).relative_to(prt_ws, walk_up=True)),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{headfile_bkwd}")),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{budgetfile_bkwd}")),
     ]
     flopy.mf6.ModflowPrtfmi(prt, packagedata=pd)
 
