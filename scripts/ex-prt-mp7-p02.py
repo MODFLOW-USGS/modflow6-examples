@@ -435,6 +435,7 @@ def build_prt_sim():
             nreleasepts=len(releasepts),
             packagedata=releasepts,
             perioddata=pd,
+            exit_solve_tolerance=1e-5,
         )
 
     add_prp("A")
