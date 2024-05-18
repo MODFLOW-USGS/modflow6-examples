@@ -119,6 +119,14 @@ jobs:
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v4
+        with:
+          path: modflow6-examples
+
+      - name: Checkout MODFLOW 6 repo
+        uses: actions/checkout@v4
+        with:
+          repository: MODFLOW-USGS/modflow6
+          path: modflow6
 
       - name: Install TeX Live and additional TrueType fonts
         run: |
@@ -144,7 +152,7 @@ jobs:
         uses: pyvista/setup-headless-display-action@v2
 
       - name: Install Python packages
-        working-directory: etc
+        working-directory: modflow6-examples/etc
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
@@ -157,26 +165,29 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW 6 development build
-        uses: modflowpy/install-modflow-action@v1
-        with:
-          repo: modflow6-nightly-build
+      - name: Build MODFLOW 6
+        working-directory: modflow6
+        run: |
+          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=$(dirname $(which mf6))
+          meson install -C builddir
+          meson test --verbose --no-rebuild -C builddir
 
       - name: Test example scripts and create input files
-        working-directory: autotest
+        working-directory: modflow6-examples/autotest
         run: pytest -v -n=auto --durations=0 test_scripts.py --plot
 
       - name: Run processing script
-        working-directory: scripts
+        working-directory: modflow6-examples/scripts
         if: matrix.python == '3.9'
         run: python process-scripts.py
 
       - name: Build mf6examples LaTeX document
-        working-directory: doc
+        working-directory: modflow6-examples/doc
         if: matrix.python == '3.9'
         run: ./build-pdf.sh
 
       - name: Rename and move the LaTeX document
+        working-directory: modflow6-examples
         if: matrix.python == '3.9'
         run: |
           ls -l ./doc/
@@ -188,7 +199,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: current
-          path: mf6examples.pdf
+          path: modflow6-examples/mf6examples.pdf
 
   # make the release if the "build" job was successful
   release:
