@@ -81,9 +81,6 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
-
       - name: Build MODFLOW 6
         working-directory: modflow6
         run: |
