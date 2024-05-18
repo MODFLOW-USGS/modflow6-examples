@@ -23,3 +23,5 @@ pooch
 GitPython
 pyvista
 ruff
+meson
+ninja
