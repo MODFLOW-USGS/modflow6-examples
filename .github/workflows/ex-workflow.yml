@@ -76,6 +76,9 @@ jobs:
       - name: Update flopy MODFLOW 6 classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
+      - name: Install MODFLOW executables release
+        uses: modflowpy/install-modflow-action@v1
+
       - name: Build MODFLOW 6
         working-directory: modflow6
         run: |
