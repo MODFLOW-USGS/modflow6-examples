@@ -432,8 +432,8 @@ def build_prt_model():
     flopy.mf6.ModflowPrtfmi(
         prt,
         packagedata=[
-            ("GWFHEAD", gwf_ws / headfile),
-            ("GWFBUDGET", gwf_ws / budgetfile),
+            ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{headfile}")),
+            ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{budgetfile}")),
         ],
     )
 

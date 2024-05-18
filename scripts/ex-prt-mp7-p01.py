@@ -369,8 +369,8 @@ def build_models(example_name):
 
     # Instantiate the MODFLOW 6 prt flow model interface
     pd = [
-        ("GWFHEAD", gwf_ws / headfile),
-        ("GWFBUDGET", gwf_ws / budgetfile),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{headfile}")),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{budgetfile}")),
     ]
     flopy.mf6.ModflowPrtfmi(prt, packagedata=pd)
 
