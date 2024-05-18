@@ -382,7 +382,6 @@ def build_prt_sim(name):
         pname="oc",
         track_filerecord=[prt_track_file],
         trackcsv_filerecord=[prt_track_csv_file],
-        track_all=True,
     )
 
     pd = [
