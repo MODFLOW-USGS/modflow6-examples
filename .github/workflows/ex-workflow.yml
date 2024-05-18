@@ -79,7 +79,7 @@ jobs:
       - name: Build MODFLOW 6
         working-directory: modflow6
         run: |
-          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
+          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=$(dirname $(which mf6))
           meson install -C builddir
           meson test --verbose --no-rebuild -C builddir
 
