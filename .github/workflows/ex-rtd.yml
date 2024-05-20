@@ -28,6 +28,14 @@ jobs:
 
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v4
+        with:
+          path: modflow6-examples
+
+      - name: Checkout MODFLOW 6
+        uses: actions/checkout@v4
+        with:
+          repository: MODFLOW-USGS/modflow6
+          path: modflow6
 
       - name: Output repo information
         run: |
@@ -60,7 +68,7 @@ jobs:
         uses: pyvista/setup-headless-display-action@v2
 
       - name: Install Python packages
-        working-directory: etc
+        working-directory: modflow6-examples/etc
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
@@ -73,30 +81,36 @@ jobs:
       - name: Install MODFLOW executables release
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Install MODFLOW 6 development build
-        uses: modflowpy/install-modflow-action@v1
-        with:
-          repo: modflow6-nightly-build
+      - name: Build MODFLOW 6
+        working-directory: modflow6
+        run: |
+          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
+          meson install -C builddir
+          meson test --verbose --no-rebuild -C builddir
+          cp bin/* ~/.local/bin/modflow/
       
       - name: Create notebooks and run models
-        working-directory: autotest
+        working-directory: modflow6-examples/autotest
         run: pytest -v -n=auto --durations=0 test_notebooks.py --plot
 
       - name: Run processing script
-        working-directory: scripts
+        working-directory: modflow6-examples/scripts
         run: python process-scripts.py
 
       - name: Create package tables and examples.rst for ReadtheDocs
-        working-directory: etc
+        working-directory: modflow6-examples/etc
         run: python ci_create_examples_rst.py
 
       - name: List example rst files for ReadtheDocs
+        working-directory: modflow6-examples
         run: ls -R .doc/_examples/
 
       - name: List example image files for ReadtheDocs
+        working-directory: modflow6-examples
         run: ls -R .doc/_images/
 
       - name: List example notebook files for ReadtheDocs
+        working-directory: modflow6-examples
         run: ls -R .doc/_notebooks/
 
       - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
@@ -104,11 +118,11 @@ jobs:
         with:
           name: rtd-files-for-${{ github.sha }}
           path: |
-            .doc/introduction.md
-            .doc/examples.rst
-            .doc/_examples
-            .doc/_images
-            .doc/_notebooks
+            modflow6-examples/.doc/introduction.md
+            modflow6-examples/.doc/examples.rst
+            modflow6-examples/.doc/_examples
+            modflow6-examples/.doc/_images
+            modflow6-examples/.doc/_notebooks
 
   # trigger rtd if "rtd_build" job was successful
   rtd_trigger:

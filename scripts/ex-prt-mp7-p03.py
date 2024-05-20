@@ -411,6 +411,7 @@ def build_prt_model():
         # local z coordinates specified, compute global release
         # coord from cell top if saturated or water table if not
         local_z=True,
+        exit_solve_tolerance=1e-5,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
@@ -431,8 +432,8 @@ def build_prt_model():
     flopy.mf6.ModflowPrtfmi(
         prt,
         packagedata=[
-            ("GWFHEAD", gwf_ws / headfile),
-            ("GWFBUDGET", gwf_ws / budgetfile),
+            ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{headfile}")),
+            ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{budgetfile}")),
         ],
     )
 

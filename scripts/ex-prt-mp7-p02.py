@@ -435,6 +435,7 @@ def build_prt_sim():
             nreleasepts=len(releasepts),
             packagedata=releasepts,
             perioddata=pd,
+            exit_solve_tolerance=1e-5,
         )
 
     add_prp("A")
@@ -454,7 +455,6 @@ def build_prt_sim():
         budget_filerecord=budget_record,
         track_filerecord=track_record,
         trackcsv_filerecord=trackcsv_record,
-        track_all=False,
         track_timesrecord=tracktimes,
         saverecord=[("BUDGET", "ALL")],
     )
@@ -462,8 +462,8 @@ def build_prt_sim():
     # Instantiate the MODFLOW 6 prt flow model interface
     # using "time-reversed" budget and head files
     pd = [
-        ("GWFHEAD", headfile_bkwd),
-        ("GWFBUDGET", budgetfile_bkwd),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{headfile_bkwd}")),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{budgetfile_bkwd}")),
     ]
     flopy.mf6.ModflowPrtfmi(prt, packagedata=pd)
 
@@ -546,8 +546,8 @@ def run_models(*sims, silent=False):
 
         if "gwf" in sim.name:
             # Reverse budget and head files for backward tracking
-            reverse_budgetfile(gwf_ws / budgetfile, prt_ws / budgetfile_bkwd, sim.tdis)
-            reverse_headfile(gwf_ws / headfile, prt_ws / headfile_bkwd, sim.tdis)
+            reverse_budgetfile(gwf_ws / budgetfile, gwf_ws / budgetfile_bkwd, sim.tdis)
+            reverse_headfile(gwf_ws / headfile, gwf_ws / headfile_bkwd, sim.tdis)
 
 
 # -

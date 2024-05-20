@@ -333,6 +333,7 @@ def build_models(example_name):
         perioddata={
             0: ["FIRST"],
         },
+        exit_solve_tolerance=1e-5,
     )
 
     # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1B,
@@ -347,6 +348,7 @@ def build_models(example_name):
         perioddata={
             0: ["FIRST"],
         },
+        exit_solve_tolerance=1e-10,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
@@ -360,15 +362,14 @@ def build_models(example_name):
         budget_filerecord=budget_record,
         track_filerecord=track_record,
         trackcsv_filerecord=trackcsv_record,
-        track_all=True,
         track_timesrecord=tracktimes,
         saverecord=[("BUDGET", "ALL")],
     )
 
     # Instantiate the MODFLOW 6 prt flow model interface
     pd = [
-        ("GWFHEAD", gwf_ws / headfile),
-        ("GWFBUDGET", gwf_ws / budgetfile),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{headfile}")),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{budgetfile}")),
     ]
     flopy.mf6.ModflowPrtfmi(prt, packagedata=pd)
 

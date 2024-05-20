@@ -373,6 +373,7 @@ def build_prt_sim(name):
         trackcsv_filerecord=[prp_track_csv_file],
         boundnames=True,
         stop_at_weak_sink=True,  # currently required for this problem
+        exit_solve_tolerance=1e-10,
     )
     prt_track_file = f"{prt_name}.trk"
     prt_track_csv_file = f"{prt_name}.trk.csv"
@@ -381,12 +382,19 @@ def build_prt_sim(name):
         pname="oc",
         track_filerecord=[prt_track_file],
         trackcsv_filerecord=[prt_track_csv_file],
-        track_all=True,
     )
 
     pd = [
-        ("GWFHEAD", gwf_ws / f"{gwf_name}.hds", None),
-        ("GWFBUDGET", gwf_ws / f"{gwf_name}.cbc", None),
+        (
+            "GWFHEAD",
+            pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"),
+            None,
+        ),
+        (
+            "GWFBUDGET",
+            pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"),
+            None,
+        ),
     ]
 
     flopy.mf6.ModflowPrtfmi(
