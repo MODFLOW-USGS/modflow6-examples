@@ -30,7 +30,7 @@ from modflow_devtools.misc import get_env, timed
 # Example name and workspace paths. If this example is running
 # in the git repository, use the folder structure described in
 # the README. Otherwise just use the current working directory.
-sim_name = "danckwerts"
+sim_name = "ex-gwe-danckwerts"
 gwfname = "gwf-" + sim_name
 gwename = "gwe-" + sim_name
 
