@@ -332,8 +332,16 @@ def build_gwe_sim(name):
     )
 
     pd = [
-        ("GWFHEAD", gwf_ws / f"{gwf_name}.hds", None),
-        ("GWFBUDGET", gwf_ws / f"{gwf_name}.cbc", None),
+        (
+            "GWFHEAD",
+            pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"),
+            None,
+        ),
+        (
+            "GWFBUDGET",
+            pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"),
+            None,
+        ),
     ]
     flopy.mf6.ModflowGwefmi(gwe, packagedata=pd)
 
