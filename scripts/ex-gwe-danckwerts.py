@@ -31,8 +31,9 @@ from modflow_devtools.misc import get_env, timed
 # in the git repository, use the folder structure described in
 # the README. Otherwise just use the current working directory.
 sim_name = "ex-gwe-danckwerts"
-gwfname = "gwf-" + sim_name
-gwename = "gwe-" + sim_name
+# shorten model names so they fit in 16-char limit
+gwfname = "gwf-" + sim_name.replace("ex-prt-", "")
+gwename = "gwe-" + sim_name.replace("ex-prt-", "")
 
 try:
     root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
