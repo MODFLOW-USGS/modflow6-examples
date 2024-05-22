@@ -108,8 +108,7 @@ It is also common to define model names up front, e.g.
 
 ```python
 gwf_name = sim_name + "-gwf"
-prt_name = sim_name + "-prt"
-mp7_name = sim_name + "-mp7"
+gwt_name = sim_name + "-gwt"
 ```
 
 **Note:** MODFLOW 6 restricts model names to 16-characters &mdash; if the example name (i.e. `sim_name`) is long, model names will need abbreviation, e.g.
@@ -117,8 +116,7 @@ mp7_name = sim_name + "-mp7"
 ```python
 # shorten model names so they fit in 16-char limit
 gwf_name = sim_name.replace("ex-prt-", "") + "-gwf"
-prt_name = sim_name.replace("ex-prt-", "") + "-prt"
-mp7_name = sim_name.replace("ex-prt-", "") + "-mp7"
+gwt_name = sim_name.replace("ex-gwt-", "") + "-gwt"
 ```
 
 Provided a file name `fname` and data directory `data_path`, the following snippet suffices to retrieve a data file:
