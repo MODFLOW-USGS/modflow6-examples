@@ -89,10 +89,10 @@ To solve this problem, example scripts employ two access patterns:
 1. If the script is running inside the repository, the `data/` folder may be assumed to exist, and local files can be accessed directly. Each script creates one or more subdirectories of `examples/` to use as a workspace, one per example scenario. Figures are written to `figures/`. If the script creates any tables, they are written to `tables/`.
 2. If the script is not running inside the repository, the current working directory is used as the example workspace. Model input files, output files and figures are all written to that location. Data files are downloaded from GitHub with a tool called [Pooch](https://www.fatiando.org/pooch/latest/). 
 
-The following snippet, which determines whether the example is running inside the repository and sets workspace paths, should appear at the beginning of each example script:
+A snippet like the following, which determines whether the example is running inside the repository and sets workspace paths, should appear at the beginning of each example script:
 
 ```python
-sim_name = "my_example_name"
+sim_name = "ex-gwf-advtidal"
 try:
     root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
 except:
@@ -100,6 +100,23 @@ except:
 workspace = root / "examples" if root else pl.Path.cwd()
 figs_path = root / "figures" if root else pl.Path.cwd()
 data_path = root / "data" / sim_name if root else pl.Path.cwd()
+```
+
+**Note:** The build automation expects the simulation name `sim_name` and workspace directory name to match the example name as listed in `doc/body.tex`.
+
+It is also common to define model names up front, e.g.
+
+```python
+gwf_name = sim_name + "-gwf"
+gwt_name = sim_name + "-gwt"
+```
+
+**Note:** MODFLOW 6 restricts model names to 16-characters &mdash; if the example name (i.e. `sim_name`) is long, model names will need abbreviation, e.g.
+
+```python
+# shorten model names so they fit in 16-char limit
+gwf_name = sim_name.replace("ex-gwf-", "") + "-gwf"
+gwt_name = sim_name.replace("ex-gwt-", "") + "-gwt"
 ```
 
 Provided a file name `fname` and data directory `data_path`, the following snippet suffices to retrieve a data file:
