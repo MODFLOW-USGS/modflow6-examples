@@ -773,7 +773,7 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
         )
         p.enable_anti_aliasing()
         if title is not None:
-            p.add_title(title, font_size=7)
+            p.add_title(title, font_size=5)
         p.add_mesh(gwf_mesh, opacity=0.025, style="wireframe")
         p.add_mesh(
             prt_mesh,
@@ -799,10 +799,10 @@ def plot_pathpoints_3d(gwf, mf6pl, title=None):
             ],
             bcolor="white",
             face="r",
-            size=(0.2, 0.2),
+            size=(0.15, 0.15),
         )
 
-        p.camera.zoom(2.2)
+        p.camera.zoom(2)
         p.show()
         if screenshot:
             p.screenshot(figs_path / f"{sim_name}-paths-3d.png")
