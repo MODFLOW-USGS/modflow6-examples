@@ -115,7 +115,7 @@ gwt_name = sim_name + "-gwt"
 
 ```python
 # shorten model names so they fit in 16-char limit
-gwf_name = sim_name.replace("ex-prt-", "") + "-gwf"
+gwf_name = sim_name.replace("ex-gwf-", "") + "-gwf"
 gwt_name = sim_name.replace("ex-gwt-", "") + "-gwt"
 ```
 
