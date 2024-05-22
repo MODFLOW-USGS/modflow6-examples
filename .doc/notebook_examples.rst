@@ -70,9 +70,7 @@ each of the MODFLOW 6 `examples <examples.html>`_.
    _notebooks/ex-gwe-geotherm
    _notebooks/ex-gwe-danckwerts
    _notebooks/ex-prt-mp7-p01
-   _notebooks/ex-prt-mp7-p02
    _notebooks/ex-prt-mp7-p03
-   _notebooks/ex-prt-mp7-p04
    _notebooks/ex-gwe-prt
 
 
