@@ -495,7 +495,7 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         fig, axes = plt.subplots(
             3,
             1,
-            figsize=(7, 9),
+            figsize=(6, 7),
             tight_layout=True,
             gridspec_kw={"height_ratios": [3, 1, 1]},
         )
