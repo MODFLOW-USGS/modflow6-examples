@@ -1,0 +1,39 @@
+\section{Viscosity}
+
+% Describe source of problem
+In hydrogeologic settings where variations in viscosity significantly impact groundwater flows, the viscosity package can be activated to scale intercell conductance in response to temperature or concentration variations.  Adjustment of intercell conductance may, in turn, have important implications for solute transport or geothermal model applications.  For example, a migrating contaminant plume may be significantly delayed or sped up in settings where the ambient groundwater temperature is significantly different from the reference groundwater temperature – the temperature at which viscosity effects are negligible.
+
+\subsection{Example description}
+
+Application of the viscosity (VSC) package is demonstrated with a simple two-dimensional (2D) test problem.  The 2D demonstration model is adapted from test case 3 in \cite{zheng1999mt3dms} titled ``Two-dimensional transport in a uniform flow field’’.  Specified heads drive groundwater flow through a confined system from left to right.  No flow boundaries are specified along the other model edges.  Water injected into the middle of the model domain enters with a specified concentration of 1,000 $mg/L$.  In the original problem, the simulated development of a contaminant plume was compared to an established analytical solution \citep{wilson1978} to confirm that the advective and dispersive spread of the contaminant was accurately simulated.
+
+For this demonstration, the original groundwater flow (GWF) and groundwater solute transport (GWT) models remain unchanged.  However, an additional 3 models are added to the /mf simulation to explore the importance of viscosity effects on the developing and migrating contaminant plume.  This results in five models in a single /mf simulation (fig.~\ref{fig:vsc-test-setup}).  The three additional models include one each of a GWF, GWT, and groundwater energy transport (GWE) model. The only difference between the original GWF model and the duplicated GWF model is the activation of the VSC package that get the calculated groundwater temperatures from the only GWE model included in the simulation.
+
+% a figure
+\begin{StandardFigure}{
+    The /mf simulation setup includes two GWF models (blue rectangles), two GWT models (green rectangles), and one GWE model (orange rectangle). Solid arrows highlight the exchange of information among the models included in the simulation.  Dashed arrows show the generation of output used to highlight the effects of viscosity on a solute transport model.}
+    {fig:vsc-test-setup}{../images/vsc-test-setup.png}
+\end{StandardFigure}
+
+The initial temperature of the GWE model is 4$^{\circ}C$ which also happens to be the temperature of the groundwater entering the model domain through the constant head boundary on the left side of the model.  Inputs to the VSC package, including parameters for the nonlinear viscosity formulation, are listed in table ~\ref{tab:ex-gwe-vsc-01}.  Within /mf, specifically the VSC package (within the GWF model), pointers to the simulated groundwater temperature enable the VSC package to modify intercell conductance calculated by the node-property flow (NPF) package.  Altered intercell conductance in turn affects the flow solution used by the duplicated GWT model (fig.~\ref{fig:vsc-test-setup}) that would otherwise be the same as the original GWT model ultimately resulting in an altered transport solution, leading to the comparison shown next.
+
+% add static parameter table(s)
+\input{../tables/ex-gwe-vsc-01}
+
+% brief description of results
+\subsection{Example Results}
+
+Output from each GWT model is collected and displayed in figure ~\ref{fig:ex-gwe-vsc-conc-2plts}. Using simple visual inspection differences are apparent between the two plots; however, the magnitude of the difference is more readily observed by differencing the plots, as shown in Figure~\ref{fig:ex-gwe-vsc-diff-02}.  Wherever this difference is negative, meaning the concentrations in the viscosity model run are greater than the no-viscosity model run, the calculated concentrations in the no viscosity model are considered under predicted.  Conversely, higher concentrations in the no viscosity model run compared to the with viscosity model suggest concentrations are over predicted when neglecting viscosity.
+
+It is vital to emphasize the contrived nature of this example.  Given that the calculated temperature field is constant throughout the model domain, the so-called ``effects'' of viscosity shown in Figure~\ref{fig:ex-gwe-vsc-diff-02} would normally be  swamped by the uncertainty of the hydraulic conductivity field.  A more appropriate application of the viscosity package is likely in settings where stark contrasts in groundwater temperature have been observed that may affect the flow field.  In such a setting, activation of the viscosity package may appropriately adjust the intercell conductance values in response to viscosity and reduce compansatory adjustment of the hydraulic conductivity field during a calibration routine, for example.
+
+
+% a results figure
+\begin{StandardFigure}{
+   (Top) A concentration plume after 365 days that does not account for the effects of viscosity.  (Bottom) The calculated concentration plume after 365 days that also includes the use of a GWE model and the viscosity package}{fig:ex-gwe-vsc-conc-2plts}{../figures/ex-gwe-vsc-conc-2plts.png}
+\end{StandardFigure}
+
+% a 2nd results figure
+\begin{StandardFigure}{
+   Difference between two concentration fields calculated by two closely related model runs.  In one model setup, the effect of viscosity on flows is ignored, whereas the other model setup does account for viscosity.  The difference is calculated by subtracting the 2D concentration field calculated by the model that includes viscosity from the model run that ignores viscosity.}{fig:ex-gwe-vsc-diff-02}{../figures/ex-gwe-vsc-diff-02.png}
+\end{StandardFigure}
