@@ -56,6 +56,29 @@ plot_save = get_env("PLOT_SAVE", True)
 # Define model units, parameters and other settings.
 
 # +
+# Model units
+length_units = "meters"
+time_units = "days"
+
+
+# Set scenario parameters (make sure there is at least one blank line before next item)
+# This entire dictionary is passed to _build_models()_ using the kwargs argument
+parameters = {
+    "30degGrad": {
+        "temp_upper": 4.0,
+        "temp_lower": 34.0,
+    },
+    "90degGrad": {
+        "temp_upper": 4.0,
+        "temp_lower": 94.0,
+    }
+}
+
+# Scenario parameter units
+parameter_units = {
+    "temp_upper": "$^{\circ}C$",
+    "temp_lower": "$^{\circ}C$",
+}
 
 # Model parameters
 nlay = 1  # Number of layers
@@ -98,10 +121,6 @@ nper = len(perlen)
 nstp = [2, 730]
 tsmult = [1.0, 1.0]
 
-# Model units
-length_units = "meters"
-time_units = "days"
-
 # Set some additional parameters
 ath1 = al * trpt
 botm = [top - delz]  # Model geometry
@@ -119,13 +138,8 @@ h1 = q * Lx
 strt = np.zeros((nlay, nrow, ncol), dtype=float)
 strt[0, :, 0] = h1
 
-# ibound_mf2k5 = np.ones((nlay, nrow, ncol), dtype=int)
-# ibound_mf2k5[0, :, 0] = -1
-# ibound_mf2k5[0, :, -1] = -1
 idomain = np.ones((nlay, nrow, ncol), dtype=int)
 cnc_spd = [[(0, 0, 0), c0]]
-# icbund = 1
-
 
 # Set solver parameter values (and related)
 nouter, ninner = 100, 300
@@ -415,7 +429,18 @@ def add_gwt_model(sim, gwtname):
 
 
 # +
-def add_gwe_model(sim, gwename):
+def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
+
+    # Set up initial temperatures and left boundary inflow temperature
+    ini_temp = np.ones((nrow, ncol))
+    ctp_spd = []
+    temp_diff = temp_lower - temp_upper
+    for i in range(nrow):
+        temp = temp_diff * i / (nrow - 1) + temp_upper
+        ini_temp[i, :] = temp
+        ctp_spd.append([(0, i, 0), temp])
+
+    # Instantiate a GWE model
     gwe = flopy.mf6.ModflowGwe(sim, modelname=gwename)
 
     # Instantiating solver for GWT
@@ -465,10 +490,19 @@ def add_gwe_model(sim, gwename):
     )
 
     # Instantiate Energy Transport Initial Conditions package
-    flopy.mf6.ModflowGweic(gwe, strt=gw_temp)
+    flopy.mf6.ModflowGweic(gwe, strt=ini_temp)
 
     # Instantiate Advection package
     flopy.mf6.ModflowGweadv(gwe, scheme=scheme)
+
+    # Instantiate Constant Temperature package
+    flopy.mf6.ModflowGwectp(
+        gwe,
+        maxbound=len(ctp_spd),
+        stress_period_data=ctp_spd,
+        pname="CTP",
+        filename="{}.ctp".format(gwename)
+    )
 
     # Instantiate Dispersion package (also handles conduction)
     flopy.mf6.ModflowGwecnd(
@@ -507,7 +541,8 @@ def add_gwe_model(sim, gwename):
 
 
 # +
-def build_models(sim_name, silent=False):
+def build_models(sim_name, silent=False, temp_upper=4.0, temp_lower=4.0):
+
     # Set model names to have 2 of each type of model (GWF & GWE) in a
     # single simulation
     gwfname1 = sim_name.replace("gwe", "gwf") + "-01"
@@ -544,7 +579,7 @@ def build_models(sim_name, silent=False):
 
         if i > 0:
             gwename = sim_name + "-" + str(i + 1).zfill(2)
-            sim = add_gwe_model(sim, gwename)
+            sim = add_gwe_model(sim, gwename, temp_upper=temp_upper, temp_lower=temp_lower)
 
             # Instantiate Gwf-Gwe Exchange package
             flopy.mf6.ModflowGwfgwe(
@@ -589,7 +624,17 @@ figure_size_1 = (5.5, 5.667)
 figure_size_2 = (6.15, 2.833)
 
 
-def plot_results(sim):
+def plot_results(sim, idx, temp_upper=4.0, temp_lower=4.0):
+    inline_spacing = 25.0
+    suffix = "-" + str(round(temp_lower - temp_upper)) + "C"
+    ticks = [0.01, 0.1, 1, 10]
+    if idx == 0:
+        ticks_over = [0.01, 0.1, 1.0]
+        ticks_under = [0.01, 0.1, 0.25]
+    elif idx == 1:
+        ticks_over = [0.01, 0.1, 1.0]
+        ticks_under = [0.01, 0.1, 1.0, 8.0]
+
     gwtname1 = sim.name.replace("gwe", "gwt") + "-01"
     gwtname2 = sim.name.replace("gwe", "gwt") + "-02"
 
@@ -601,10 +646,15 @@ def plot_results(sim):
     conc_gwt_wvsc = gwt2.output.concentration().get_alldata()
 
     # Work up plot arrays
-    thresh = 0.001
+    thresh = 0.0009
     conc_diff = conc_gwt_novsc[-1, 0] - conc_gwt_wvsc[-1, 0]
     underpred_ma = ma.masked_where(conc_diff < thresh, conc_diff)
     overpred_ma = ma.masked_where(conc_diff > -1 * thresh, -1 * conc_diff)
+
+    underpred_vmin = 0.001
+    underpred_vmax = underpred_ma.max()
+    overpred_vmin = 0.001
+    overpred_vmax = overpred_ma.max()
 
     cmap = plt.get_cmap("jet")
     over_cmap = truncate_colormap(cmap, 0.6, 0.9)
@@ -655,7 +705,7 @@ def plot_results(sim):
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = figs_path / f"{sim_name}-conc-2plts.png"
+        fpth = figs_path / f"{sim_name}-conc-2plts{suffix}.png"
         fig.savefig(fpth)
 
     # Make a difference plot, as in: actually make a difference
@@ -670,35 +720,35 @@ def plot_results(sim):
     mm = flopy.plot.PlotMapView(model=gwt1, ax=ax)
     mm.plot_grid(color=".5", alpha=0.2, linewidth=0.35)
     cb1 = mm.plot_array(
-        overpred_ma, alpha=0.5, cmap=over_cmap, norm=LogNorm(vmin=0.01, vmax=10)
+        overpred_ma, alpha=0.5, cmap=over_cmap, norm=LogNorm(vmin=overpred_vmin, vmax=overpred_vmax)
     )
     cs1 = mm.contour_array(
-        overpred_ma, levels=[0.1, 1.0, 10], colors="r", linestyles="--"
+        overpred_ma, levels=ticks_over, colors="r", linestyles="--"
     )
-    plt.clabel(cs1, inline=1, fontsize=fontsize, colors="k")
+    plt.clabel(cs1, inline=1, inline_spacing=inline_spacing, fontsize=fontsize, colors="k")
     cb2 = mm.plot_array(
-        underpred_ma, alpha=0.5, cmap=under_cmap, norm=LogNorm(vmin=1e-2, vmax=4)
+        underpred_ma, alpha=0.5, cmap=under_cmap, norm=LogNorm(vmin=underpred_vmin, vmax=underpred_vmax)
     )
     cs2 = mm.contour_array(
-        underpred_ma, levels=[0.01, 0.1, 1, 3], colors="b", linestyles="--"
+        underpred_ma, levels=ticks_under, colors="b", linestyles="--"
     )
     ax.set_aspect("equal")
     ax.set_ylabel("Y, m")
     plt.xlabel("X, m")
     plt.tight_layout()
 
-    plt.clabel(cs2, inline=1, fontsize=fontsize, colors="b")
+    plt.clabel(cs2, inline=1, inline_spacing=inline_spacing, fontsize=fontsize, colors="b")
     plt.colorbar(
-        cb1, ticks=[0.01, 0.1, 1, 10], label="Over Prediction, $mg/L$", shrink=0.8
+        cb1, ticks=ticks, label="Over Prediction, $mg/L$", shrink=0.8
     )  # , fontsize=fontsize
     plt.colorbar(
-        cb2, ticks=[0, 1, 2, 3, 4], label="Under Prediction, $mg/L$", shrink=0.8
+        cb2, ticks=ticks, label="Under Prediction, $mg/L$", shrink=0.8
     )
 
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = figs_path / f"{sim_name}-diff-02.png"
+        fpth = figs_path / f"{sim_name}-diff-02{suffix}.png"
         fig.savefig(fpth)
 
 
@@ -711,17 +761,29 @@ def plot_results(sim):
 
 # +
 def scenario(idx, silent=True):
-    sim = build_models(sim_name)
+
+    key = list(parameters.keys())[idx]
+    parameter_dict = parameters[key]
+
+    sim = build_models(sim_name, **parameter_dict)
     if write:
         write_models(sim, silent=silent)
     if run:
         run_simulation(sim, silent=silent)
     if plot:
-        plot_results(sim)
+        plot_results(sim, idx, **parameter_dict)
 
 
 # -
 
 # +
-scenario(0)
+# Compares the solute plume with and without accounting for viscosity in a
+# 30 deg C temperature gradient (4 deg C top, 34 deg C bottom)
+scenario(0, silent=False)
+
+# Compares the solute plume with and without accounting for viscosity in a
+# 90 deg C temperature gradient (4 deg C top, 94 deg C bottom)
+scenario(1, silent=False)
+# -
+
 # -
