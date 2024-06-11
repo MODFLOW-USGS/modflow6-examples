@@ -71,7 +71,7 @@ parameters = {
     "90degGrad": {
         "temp_upper": 4.0,
         "temp_lower": 94.0,
-    }
+    },
 }
 
 # Scenario parameter units
@@ -430,7 +430,6 @@ def add_gwt_model(sim, gwtname):
 
 # +
 def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
-
     # Set up initial temperatures and left boundary inflow temperature
     ini_temp = np.ones((nrow, ncol))
     ctp_spd = []
@@ -501,7 +500,7 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
         maxbound=len(ctp_spd),
         stress_period_data=ctp_spd,
         pname="CTP",
-        filename="{}.ctp".format(gwename)
+        filename="{}.ctp".format(gwename),
     )
 
     # Instantiate Dispersion package (also handles conduction)
@@ -542,7 +541,6 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
 
 # +
 def build_models(sim_name, silent=False, temp_upper=4.0, temp_lower=4.0):
-
     # Set model names to have 2 of each type of model (GWF & GWE) in a
     # single simulation
     gwfname1 = sim_name.replace("gwe", "gwf") + "-01"
@@ -579,7 +577,9 @@ def build_models(sim_name, silent=False, temp_upper=4.0, temp_lower=4.0):
 
         if i > 0:
             gwename = sim_name + "-" + str(i + 1).zfill(2)
-            sim = add_gwe_model(sim, gwename, temp_upper=temp_upper, temp_lower=temp_lower)
+            sim = add_gwe_model(
+                sim, gwename, temp_upper=temp_upper, temp_lower=temp_lower
+            )
 
             # Instantiate Gwf-Gwe Exchange package
             flopy.mf6.ModflowGwfgwe(
@@ -720,14 +720,20 @@ def plot_results(sim, idx, temp_upper=4.0, temp_lower=4.0):
     mm = flopy.plot.PlotMapView(model=gwt1, ax=ax)
     mm.plot_grid(color=".5", alpha=0.2, linewidth=0.35)
     cb1 = mm.plot_array(
-        overpred_ma, alpha=0.5, cmap=over_cmap, norm=LogNorm(vmin=overpred_vmin, vmax=overpred_vmax)
+        overpred_ma,
+        alpha=0.5,
+        cmap=over_cmap,
+        norm=LogNorm(vmin=overpred_vmin, vmax=overpred_vmax),
     )
-    cs1 = mm.contour_array(
-        overpred_ma, levels=ticks_over, colors="r", linestyles="--"
+    cs1 = mm.contour_array(overpred_ma, levels=ticks_over, colors="r", linestyles="--")
+    plt.clabel(
+        cs1, inline=1, inline_spacing=inline_spacing, fontsize=fontsize, colors="k"
     )
-    plt.clabel(cs1, inline=1, inline_spacing=inline_spacing, fontsize=fontsize, colors="k")
     cb2 = mm.plot_array(
-        underpred_ma, alpha=0.5, cmap=under_cmap, norm=LogNorm(vmin=underpred_vmin, vmax=underpred_vmax)
+        underpred_ma,
+        alpha=0.5,
+        cmap=under_cmap,
+        norm=LogNorm(vmin=underpred_vmin, vmax=underpred_vmax),
     )
     cs2 = mm.contour_array(
         underpred_ma, levels=ticks_under, colors="b", linestyles="--"
@@ -737,13 +743,13 @@ def plot_results(sim, idx, temp_upper=4.0, temp_lower=4.0):
     plt.xlabel("X, m")
     plt.tight_layout()
 
-    plt.clabel(cs2, inline=1, inline_spacing=inline_spacing, fontsize=fontsize, colors="b")
+    plt.clabel(
+        cs2, inline=1, inline_spacing=inline_spacing, fontsize=fontsize, colors="b"
+    )
     plt.colorbar(
         cb1, ticks=ticks, label="Over Prediction, $mg/L$", shrink=0.8
     )  # , fontsize=fontsize
-    plt.colorbar(
-        cb2, ticks=ticks, label="Under Prediction, $mg/L$", shrink=0.8
-    )
+    plt.colorbar(cb2, ticks=ticks, label="Under Prediction, $mg/L$", shrink=0.8)
 
     if plot_show:
         plt.show()
@@ -761,7 +767,6 @@ def plot_results(sim, idx, temp_upper=4.0, temp_lower=4.0):
 
 # +
 def scenario(idx, silent=True):
-
     key = list(parameters.keys())[idx]
     parameter_dict = parameters[key]
 
