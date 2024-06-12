@@ -746,9 +746,7 @@ def plot_results(sim, idx, temp_upper=4.0, temp_lower=4.0):
     plt.clabel(
         cs2, inline=1, inline_spacing=inline_spacing, fontsize=fontsize, colors="b"
     )
-    plt.colorbar(
-        cb1, ticks=ticks, label="Over Prediction, $mg/L$", shrink=0.8
-    )
+    plt.colorbar(cb1, ticks=ticks, label="Over Prediction, $mg/L$", shrink=0.8)
     plt.colorbar(cb2, ticks=ticks, label="Under Prediction, $mg/L$", shrink=0.8)
 
     if plot_show:
