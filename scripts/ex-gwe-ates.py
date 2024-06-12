@@ -232,7 +232,7 @@ fpath = pooch.retrieve(
     url=f"https://github.com/MODFLOW-USGS/modflow6-examples/raw/develop/data/{sim_name}/{fname}",
     fname=fname,
     path=data_path,
-    known_hash="md5:a8feb5281a1f1d52667630bff6d4333d",
+    known_hash="md5:d107d2a5e01646a861e73bb3465f0747",
 )
 # fpath = os.path.join(data_path, fname)
 
