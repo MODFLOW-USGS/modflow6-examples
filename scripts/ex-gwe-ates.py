@@ -21,7 +21,6 @@
 # Import dependencies, define the example name and workspace, and read settings from environment variables.
 
 # +
-import os
 import pathlib as pl
 from pprint import pformat
 
