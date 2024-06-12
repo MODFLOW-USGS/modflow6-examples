@@ -235,7 +235,7 @@ fpath = pooch.retrieve(
     path=data_path,
     known_hash="md5:a8feb5281a1f1d52667630bff6d4333d",
 )
-fpath = os.path.join(data_path, fname)
+#fpath = os.path.join(data_path, fname)
 
 
 # Model timing
