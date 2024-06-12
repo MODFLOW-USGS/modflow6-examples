@@ -76,8 +76,8 @@ parameters = {
 
 # Scenario parameter units
 parameter_units = {
-    "temp_upper": "$^{\circ}C$",
-    "temp_lower": "$^{\circ}C$",
+    "temp_upper": r"$^{\circ}C$",
+    "temp_lower": r"$^{\circ}C$",
 }
 
 # Model parameters
@@ -748,7 +748,7 @@ def plot_results(sim, idx, temp_upper=4.0, temp_lower=4.0):
     )
     plt.colorbar(
         cb1, ticks=ticks, label="Over Prediction, $mg/L$", shrink=0.8
-    )  # , fontsize=fontsize
+    )
     plt.colorbar(cb2, ticks=ticks, label="Under Prediction, $mg/L$", shrink=0.8)
 
     if plot_show:
