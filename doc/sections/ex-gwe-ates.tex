@@ -1,0 +1,36 @@
+\section{Aquifer Thermal Energy Storage}
+
+% Describe source of problem
+Aquifer thermal energy storage (ATES) systems use groundwater wells to store and extract energy from aquifers for reducing energy costs associated with heating, ventilating, and air conditioning (HVAC) systems.  For example, during cold winter months, an ATES system pumps air-chilled water into an aquifer for later recovery (extraction) during hot summer months, thereby reducing energy costs associated with cooling. Furthermore, when the water is pulled out for cooling purposes during hot summer months and is warmed as a result, it can subsequently be stored in a different part of the aquifer and used for heating purposes during cold winter months.  
+
+% add scenario parameter table
+\input{../tables/ex-gwe-ates-01}
+
+An obvious requirement for an ATES system is that a suitable aquifer for storing water is present.  The viability of an ATES system also depends on the size of the proposed ATES site. That is, the cold and warm storage areas need to have enough separation to ensure the two storage regions do not interact. Thus, some level of hydrogeologic investigation and accompanying model analysis to determine an aquifer's suitability for hosting an ATES will likely precede the development of an ATES. The groundwater energy transport (GWE) model in \mf offers the functionality for investigating proposed sites for ATES systems.
+
+\subsection{Example description}
+
+A hypothetical ATES is demonstrated with \mf using a two-dimensional (2D) discretization by vertices (DISV) grid with triangular cells.  Water is extracted and re-injected into the left side of the middle layer of an idealized 3-layer aquifer system (fig.~\ref{fig:ex-gwe-ates-prsity}) that otherwise has no-flow boundaries on all other sides.  There is additional grid refinement on the left-side of the model domain where the well is located.  The user-specified aquifer properties in the upper and lower layers are identical; properties in the middle layer are distinct from the upper and lower layers (fig.~\ref{fig:ex-gwe-ates-prsity}).  Table ~ref{tab:ex-gwe-ates-01} lists the flow and transport parameters used in the simulation.  Figure~\ref{fig:ex-gwe-ates-pmprate} shows the extraction and injection pumping intervals.
+
+% a figure
+\begin{StandardFigure}{
+    The DISV grid used in the groundwater flow (GWF) and groundwater energy transport (GWE) models.  Flow and transport parameter values for the middle layer, referred to as zone 1, are provided in table~\ref{tab:ex-gwe-ates-01}.  Property values for zone 2 comprising both the upper and lower layers also are shown in table~\ref{tab:ex-gwe-ates-01}.}
+    {fig:ex-gwe-ates-prsity}{../figures/ex-gwe-ates-prsity.png}
+\end{StandardFigure}
+
+% a figure
+\begin{StandardFigure}{
+    A time series of the extraction and injection pumping rates. Negative and positive values indicate extraction and injection, respectively.  Pumping occurs on the left side of zone 1 (figure~\ref{fig:ex-gwe-ates-prsity}). }
+    {fig:ex-gwe-ates-pmprate}{../figures/ex-gwe-ates-pmprate.png}
+\end{StandardFigure}
+
+% for examples without scenarios
+\subsection{Scenario Results}
+
+Simulated temperatures within the aquifer are shown at (A) 210, (B) 340, (C) 520, and (D) 1,270 days (fig.~\ref{fig:ex-gwe-ates-temp2x2}).  The displayed times correspond to (A) 10 days after the initial injection period, (B) the end of the first 130 day injection period, (C) the end of the second extraction period, and (D) the end of the simulation period after cycling through 4 extraction and 3 injection periods (fig.~\ref{fig:ex-gwe-ates-pmprate}).  Owing to the higher hydraulic conductivity of zone 1, the injected water predominantly flows deeper into zone 1, though some will flow into the upper and lower zone 2 areas.  Importantly, however, the example demonstrates ``thermal bleeding'' into zone 2 that prevents the full amount of injected thermal energy from being re-extracted which is indicative of an ATES systems with efficiencies less than 1.0.  
+
+% a figure
+\begin{StandardFigure}{
+    Simulated aquifer temperatures at 210, 340, 520, and 1270 days.}
+    {fig:ex-gwe-ates-temp2x2}{../figures/ex-gwe-ates-temp2x2.png}
+\end{StandardFigure}
