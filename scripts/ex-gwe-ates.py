@@ -985,5 +985,5 @@ def scenario(idx, silent=True):
 
 # +
 # Initiate model construction, write, run, and plot sequence
-scenario(0, silent=False)
+scenario(0, silent=True)
 # -

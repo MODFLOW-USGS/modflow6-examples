@@ -782,11 +782,9 @@ def scenario(idx, silent=True):
 # +
 # Compares the solute plume with and without accounting for viscosity in a
 # 30 deg C temperature gradient (4 deg C top, 34 deg C bottom)
-scenario(0, silent=False)
+scenario(0, silent=True)
 
 # Compares the solute plume with and without accounting for viscosity in a
 # 90 deg C temperature gradient (4 deg C top, 94 deg C bottom)
-scenario(1, silent=False)
-# -
-
+scenario(1, silent=True)
 # -
