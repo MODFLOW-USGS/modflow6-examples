@@ -100,7 +100,7 @@ jobs:
         shell: python
 
       - name: Upload build artifacts for current release
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zip_files
           path: ./modflow6-examples/modflow6-examples.zip
@@ -198,7 +198,7 @@ jobs:
 
       - name: Upload build artifacts for current release
         if: matrix.python == '3.9'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: current
           path: modflow6-examples/mf6examples.pdf
