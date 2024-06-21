@@ -306,9 +306,11 @@ def build_gwe_sim(name):
     flopy.mf6.ModflowGweest(
         gwe,
         porosity=porosity,
+        heat_capacity_water=cpw,
+        density_water=rhow,
+        latent_heat_vaporization=lhv,
         cps=cps,
         rhos=rhos,
-        packagedata=[cpw, rhow, lhv],
         pname="EST-e",
         filename="{}.est".format(gwe_name),
     )

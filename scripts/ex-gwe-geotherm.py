@@ -662,9 +662,11 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
     flopy.mf6.ModflowGweest(
         gwe,
         porosity=prsity,
+        heat_capacity_water=cpw,
+        density_water=rhow,
+        latent_heat_vaporization=lhv,
         cps=cps,
         rhos=rhos,
-        packagedata=[cpw, rhow, lhv],
         pname="EST",
         filename="{}.est".format(gwename),
     )
