@@ -412,6 +412,7 @@ def build_prt_model():
         # coord from cell top if saturated or water table if not
         local_z=True,
         exit_solve_tolerance=1e-5,
+        extend_tracking=True,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
