@@ -334,6 +334,7 @@ def build_models(example_name):
             0: ["FIRST"],
         },
         exit_solve_tolerance=1e-5,
+        extend_tracking=True,
     )
 
     # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1B,
