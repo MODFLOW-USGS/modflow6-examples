@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pooch
+from flopy.mf6 import MFSimulation
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
 
@@ -279,7 +280,7 @@ def scooch_cell_center(xcoll, ycoll):
     return xnew, ynew
 
 
-def generate_control_volumes(basedata, verts, flat_list, idx):
+def generate_control_volumes(basedata, verts, flat_list, idx, silent=True):
     global left_x, right_x, Lx
     ivt = -1
     iverts = []
@@ -401,7 +402,8 @@ def generate_control_volumes(basedata, verts, flat_list, idx):
             else:
                 iverts.append([ivt] + subverts[::-1])
 
-        print("Working on radius level " + str(i))
+        if not silent:
+            print("Working on radius level " + str(i))
 
     # After the function call above, an outer ring of control volumes with constant
     # heads needs to be added. For the constant head boundary, we want a
@@ -458,7 +460,7 @@ def remove_euclidian_duplicates(pd_with_dupes):
     return out
 
 
-def create_divs_objs(fl):
+def create_divs_objs(fl, silent=True):
     # Read the FE mesh data:
     radat = pd.read_csv(fl, header=None, names=["X", "Y", "Temp"])
 
@@ -511,7 +513,7 @@ def create_divs_objs(fl):
         right_chd_spd_slow,
         left_chd_spd_fast,
         right_chd_spd_fast,
-    ) = generate_control_volumes(radat, verts, flat_list, idx)
+    ) = generate_control_volumes(radat, verts, flat_list, idx, silent)
 
     # Create the cell2d object
     cell2d = build_cell2d_obj(iverts, xc, yc)
@@ -535,7 +537,9 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
 
     # Instantiating MODFLOW 6 time discretization
-    flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
+    tdis = flopy.mf6.ModflowTdis(
+        sim, nper=nper, perioddata=tdis_ds, time_units=time_units
+    )
 
     # Instantiating MODFLOW 6 groundwater flow model
     gwf = flopy.mf6.ModflowGwf(
@@ -829,18 +833,22 @@ def build_mf6_heat_model(
     return sim
 
 
-def write_mf6_models(sim_mf6gwe, sim_mf6gwf=None, silent=True):
-    if sim_mf6gwf is not None:
-        sim_mf6gwf.write_simulation(silent=silent)
-
-    sim_mf6gwe.write_simulation(silent=silent)
+def write_models(*sims, silent=False):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            sim.write_simulation(silent=silent)
+        else:
+            sim.write_input()
 
 
 @timed
-def run_model(sim, silent=True):
-    success = True
-    success, buff = sim.run_simulation(silent=silent, report=True)
-    assert success, pformat(buff)
+def run_models(*sims, silent=False):
+    for sim in sims:
+        if isinstance(sim, MFSimulation):
+            success, buff = sim.run_simulation(silent=silent, report=True)
+        else:
+            success, buff = sim.run_model(silent=silent, report=True)
+        assert success, pformat(buff)
 
 
 # -
@@ -1028,7 +1036,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
 
 
 # Generates 4 figures
-def plot_results(idx, sim_mf6gwf, sim_mf6gwe, silent=True):
+def plot_results(idx, sim_mf6gwf, sim_mf6gwe):
     plot_grid(sim_mf6gwf)
     plot_grid_inset(sim_mf6gwf)
     plot_head(sim_mf6gwf)
@@ -1067,7 +1075,7 @@ def scenario(idx, silent=False):
         right_chd_spd_slow,
         left_chd_spd_fast,
         right_chd_spd_fast,
-    ) = create_divs_objs(fpath)
+    ) = create_divs_objs(fpath, silent)
 
     top = np.ones((len(cell2d),))
     botm = np.zeros((1, len(cell2d)))
@@ -1078,23 +1086,18 @@ def scenario(idx, silent=False):
 
     scen_ext = key[-2:]
 
-    # Build the flow model as a steady-state simulation
     sim_mf6gwf = build_mf6_flow_model(
         key[:-2],
         left_chd_spd=left_chd_spd,
         right_chd_spd=right_chd_spd,
         silent=silent,
     )
-
-    # Run the transport model as a transient simulation, requires reading the
-    # steady-state flow output saved in binary files.
     sim_mf6gwe = build_mf6_heat_model(key, scen_ext, **parameter_dict, silent=silent)
+
     if write:
-        write_mf6_models(sim_mf6gwe, sim_mf6gwf=sim_mf6gwf, silent=silent)
+        write_models(sim_mf6gwe, sim_mf6gwf, silent=silent)
     if run:
-        if sim_mf6gwf is not None:
-            run_model(sim_mf6gwf, silent)
-        run_model(sim_mf6gwe, silent)
+        run_models(sim_mf6gwf, sim_mf6gwe, silent=silent)
     if plot:
         plot_results(idx, sim_mf6gwf, sim_mf6gwe)
 
