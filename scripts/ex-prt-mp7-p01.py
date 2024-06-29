@@ -350,6 +350,7 @@ def build_models(example_name):
             0: ["FIRST"],
         },
         exit_solve_tolerance=1e-10,
+        extend_tracking=True
     )
 
     # Instantiate the MODFLOW 6 prt output control package
