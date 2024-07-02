@@ -263,7 +263,7 @@ pip install -r .doc/requirements.rtd.txt
 Next, build LaTeX and Markdown files:
 
 ```shell
-python scripts/process-scripts.py
+python scripts/process_scripts.py
 ```
 
 Next, create ReStructuredText (RST) index files from the contents of `doc/body.tex`:
@@ -294,7 +294,7 @@ The `test_notebooks.py` also suffices, but in this case the conversion from exam
 Next, build LaTeX and Markdown files:
 
 ```shell
-python scripts/process-scripts.py
+python scripts/process_scripts.py
 ```
 
 Next, create ReStructuredText (RST) index files from the contents of `doc/body.tex`:
