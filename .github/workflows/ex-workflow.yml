@@ -183,7 +183,7 @@ jobs:
       - name: Run postprocessing
         working-directory: modflow6-examples/scripts
         if: matrix.python == '3.9'
-        run: python process_scripts.py
+        run: python process-scripts.py
 
       - name: Build PDF document
         working-directory: modflow6-examples/doc

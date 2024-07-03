@@ -94,7 +94,7 @@ jobs:
 
       - name: Run postprocessing
         working-directory: modflow6-examples/scripts
-        run: python process_scripts.py
+        run: python process-scripts.py
 
       - name: Create Markdown tables
         working-directory: modflow6-examples/etc
