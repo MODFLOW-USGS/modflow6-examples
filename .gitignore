@@ -172,7 +172,7 @@ bin/
 figures/
 tables/
 examples/
-doc/mf6examples.pdf
+doc/*.pdf
 temp
 .doc/_build/
 .doc/_notebooks/

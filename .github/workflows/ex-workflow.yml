@@ -1,5 +1,7 @@
 name: CI
-
+env:
+  DISTNAME: mf6examples
+  TAG: current
 on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
@@ -14,14 +16,14 @@ on:
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
-
+  workflow_dispatch:
 jobs:
   lint:
-    name: lint python files
+    name: Lint/format example scripts
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout MODFLOW6 examples repo
+      - name: Checkout MODFLOW 6 examples
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -39,21 +41,20 @@ jobs:
       - name: Lint
         run: ruff check .
 
-      - name: Check format
+      - name: Format
         run: ruff format . --check
 
-  zip_files:
-    name: zip input files
+  dist:
+    name: Build example models
     runs-on: ubuntu-latest
     needs: lint
-
     steps:
-      - name: Checkout MODFLOW6 examples repo
+      - name: Checkout MODFLOW6 examples
         uses: actions/checkout@v4
         with:
           path: modflow6-examples
 
-      - name: Checkout MODFLOW 6 repo
+      - name: Checkout MODFLOW 6
         uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6
@@ -67,72 +68,65 @@ jobs:
       - name: Install Python packages
         working-directory: modflow6-examples/etc
         run: |
-          python --version
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
 
-      - name: Update flopy MODFLOW 6 classes
+      - name: Update FloPy classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
-      - name: Install MODFLOW executables release
+      - name: Install MODFLOW executables
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Build and copy MODFLOW 6
+      - name: Build MODFLOW 6
         working-directory: modflow6
         run: |
           meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
           meson install -C builddir
           meson test --verbose --no-rebuild -C builddir
-          cp bin/* ~/.local/bin/modflow/
 
-      - name: Create model
+      - name: Install MODFLOW 6
+        working-directory: modflow6
+        run: cp bin/mf6 ~/.local/bin/modflow/
+
+      - name: Create example models
         working-directory: modflow6-examples/autotest
         # run the scripts via pytest without running the models, just build input files
         run: pytest -v -n=auto --durations=0 test_scripts.py --init
 
-      - name: zip input files
+      - name: Make zipfile
         working-directory: modflow6-examples
         run: |
           import shutil
-          shutil.make_archive("modflow6-examples", "zip", "examples")
+          shutil.make_archive("${{ env.DISTNAME }}", "zip", "examples")
         shell: python
 
-      - name: Upload build artifacts for current release
+      - name: Upload zipfile
         uses: actions/upload-artifact@v3
         with:
-          name: zip_files
-          path: ./modflow6-examples/modflow6-examples.zip
+          name: ${{ env.DISTNAME }}.zip
+          path: modflow6-examples/${{ env.DISTNAME }}.zip
 
-  build:
-    name: current-build
+  docs:
+    name: Run examples, make docs
     runs-on: ubuntu-latest
     needs: lint
     strategy:
       fail-fast: false
       matrix:
         python: [3.9, "3.10", "3.11", "3.12"]
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: Checkout MODFLOW6 examples repo
+      - name: Checkout MODFLOW 6 examples
         uses: actions/checkout@v4
         with:
           path: modflow6-examples
 
-      - name: Checkout MODFLOW 6 repo
+      - name: Checkout MODFLOW 6
         uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6
           path: modflow6
-
-      - name: Install TeX Live and additional TrueType fonts
-        run: |
-          sudo apt-get update
-          sudo apt install texlive-latex-extra texlive-science fonts-liberation
 
       - name: Checkout usgslatex
         uses: actions/checkout@v4
@@ -140,7 +134,12 @@ jobs:
           repository: MODFLOW-USGS/usgslatex
           path: usgslatex
 
-      - name: Install USGS LaTeX style files and Univers font
+      - name: Install LaTeX and extra fonts
+        run: |
+          sudo apt-get update
+          sudo apt install texlive-latex-extra texlive-science fonts-liberation
+
+      - name: Install USGS styles and fonts
         working-directory: usgslatex/usgsLaTeX
         run: sudo ./install.sh --all-users
 
@@ -160,128 +159,111 @@ jobs:
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
 
-      - name: Update flopy MODFLOW 6 classes
+      - name: Update FloPy classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
-      - name: Install MODFLOW executables release
+      - name: Install MODFLOW executables
         uses: modflowpy/install-modflow-action@v1
 
-      - name: Build and copy MODFLOW 6
+      - name: Build MODFLOW 6
         working-directory: modflow6
         run: |
           meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
           meson install -C builddir
           meson test --verbose --no-rebuild -C builddir
-          cp bin/* ~/.local/bin/modflow/
 
-      - name: Test example scripts and create input files
+      - name: Install MODFLOW 6
+        working-directory: modflow6
+        run: cp bin/mf6 ~/.local/bin/modflow/
+
+      - name: Run examples, make plots
         working-directory: modflow6-examples/autotest
         run: pytest -v -n=auto --durations=0 test_scripts.py --plot
 
-      - name: Run processing script
+      - name: Run postprocessing
         working-directory: modflow6-examples/scripts
         if: matrix.python == '3.9'
         run: python process-scripts.py
 
-      - name: Build mf6examples LaTeX document
+      - name: Build PDF document
         working-directory: modflow6-examples/doc
         if: matrix.python == '3.9'
         run: ./build-pdf.sh
 
-      - name: Rename and move the LaTeX document
+      - name: Move PDF document
         working-directory: modflow6-examples
         if: matrix.python == '3.9'
-        run: |
-          ls -l ./doc/
-          mv ./doc/mf6examples.pdf mf6examples.pdf
-          ls -l ./
+        run: mv doc/${{ env.DISTNAME }}.pdf ${{ env.DISTNAME }}.pdf
 
-      - name: Upload build artifacts for current release
+      - name: Upload PDF document
         if: matrix.python == '3.9'
         uses: actions/upload-artifact@v3
         with:
-          name: current
-          path: modflow6-examples/mf6examples.pdf
+          name: ${{ env.DISTNAME}}.pdf
+          path: modflow6-examples/${{ env.DISTNAME }}.pdf
 
-  # make the release if the "build" job was successful
+  # delete the latest if needed and make a new release
   release:
-    name: Make the release
-    needs: [ zip_files, build ]
+    name: Make a release
+    needs: [ dist, docs ]
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout MODFLOW6 examples repo
+      - name: Checkout MODFLOW6 examples
         uses: actions/checkout@v4
 
-      - name: Get Current Time
+      - name: Get current time
         uses: josStorer/get-current-time@v2
-        id: current-time
+        id: time
         with:
           format: MM/DD/YYYY HH:mm
 
-      - name: Set current time as environmental variable
+      - name: Download ${{ env.DISTNAME }}.pdf
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.DISTNAME }}.pdf
+          path: ${{ env.TAG }}
+
+      - name: Download ${{ env.DISTNAME }}.zip
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.DISTNAME }}.zip
+          path: ${{ env.TAG }}
+
+      - name: List release assets
+        run: ls -R ${{ env.TAG }}
+
+      - name: Delete latest release
+        if: |
+          github.repository_owner == 'MODFLOW-USGS' &&
+          github.ref_name == 'master' &&
+          github.event_name == 'push'
         env:
-          TIME: "${{ steps.current-time.outputs.time }}"
-          F_TIME: "${{ steps.current-time.outputs.formattedTime }}"
-        run: |
-          echo "F_TIME=${{ steps.current-time.outputs.formattedTime }}" >> $GITHUB_ENV
-          echo "TIME=${{ steps.current-time.outputs.time }}" >> $GITHUB_ENV
-          echo $TIME
-          echo $F_TIME
-          echo "MODFLOW 6 examples: built at ${F_TIME}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete $TAG -y --cleanup-tag
 
-      - name: Download mf6examples.pdf build artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: current
-          path: ./current/
-
-      - name: Download zip_file build artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: zip_files
-          path: ./current/
-
-      - name: List files in the artifact directory
-        run: ls -R ./current/
-
-      - name: create bodyFile
-        run: |
-          echo "MODFLOW 6 examples: built "${F_TIME} > bodyFile
-          cat bodyFile
-          ls -l .
-
-      - name: Delete the latest release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
-        uses: ame-yu/action-delete-latest-release@v2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create/Update the current release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
+      - name: Create new release
+        if: |
+          github.repository_owner == 'MODFLOW-USGS' &&
+          github.ref_name == 'master' &&
+          github.event_name == 'push'
         uses: ncipollo/release-action@v1
         with:
-          tag: current
-          name: current build
-          bodyFile: ./bodyFile
+          tag: ${{ env.TAG }}
+          name: Latest
+          body: "MODFLOW 6 examples: built ${{ steps.time.outputs.formattedTime }}"
           allowUpdates: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload MODFLOW 6 examples to the current GitHub release
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
+      - name: Upload release assets
+        if: |
+          github.repository_owner == 'MODFLOW-USGS' &&
+          github.ref_name == 'master' &&
+          github.event_name == 'push'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./current/*
-          tag: current
+          file: ${{ env.TAG }}/*
+          tag: ${{ env.TAG }}
           overwrite: true
           file_glob: true
-
-      - name: Delete all Artifacts
-        if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push' && github.ref_name == 'master'
-        uses: GeekyEggo/delete-artifact@v2
-        with:
-          name: |
-            zip_files
-            current

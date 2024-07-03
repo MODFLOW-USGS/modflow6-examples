@@ -14,10 +14,10 @@ on:
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
-
+  workflow_dispatch:
 jobs:
-  rtd_build:
-    name: rtd-build
+  build:
+    name: Build artifacts for RTD
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -25,8 +25,7 @@ jobs:
       run:
         shell: bash
     steps:
-
-      - name: Checkout MODFLOW6 examples repo
+      - name: Checkout MODFLOW6 examples
         uses: actions/checkout@v4
         with:
           path: modflow6-examples
@@ -37,7 +36,7 @@ jobs:
           repository: MODFLOW-USGS/modflow6
           path: modflow6
 
-      - name: Output repo information
+      - name: Show repo information
         run: |
           echo ${{ github.repository_owner }}
           echo ${{ github.repository }}
@@ -45,7 +44,7 @@ jobs:
           echo ${{ github.event_name }}
           echo ${{ github.sha }}
 
-      - name: Install TeX Live and additional TrueType fonts
+      - name: Install LaTeX and extra fonts
         run: |
           sudo apt-get update
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
@@ -75,10 +74,10 @@ jobs:
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
 
-      - name: Update flopy MODFLOW 6 classes
+      - name: Update FloPy classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
-      - name: Install MODFLOW executables release
+      - name: Install MODFLOW executables
         uses: modflowpy/install-modflow-action@v1
 
       - name: Build MODFLOW 6
@@ -89,31 +88,19 @@ jobs:
           meson test --verbose --no-rebuild -C builddir
           cp bin/* ~/.local/bin/modflow/
       
-      - name: Create notebooks and run models
+      - name: Run notebooks, make plots
         working-directory: modflow6-examples/autotest
         run: pytest -v -n=auto --durations=0 test_notebooks.py --plot
 
-      - name: Run processing script
+      - name: Run postprocessing
         working-directory: modflow6-examples/scripts
         run: python process-scripts.py
 
-      - name: Create package tables and examples.rst for ReadtheDocs
+      - name: Create Markdown tables
         working-directory: modflow6-examples/etc
         run: python ci_create_examples_rst.py
 
-      - name: List example rst files for ReadtheDocs
-        working-directory: modflow6-examples
-        run: ls -R .doc/_examples/
-
-      - name: List example image files for ReadtheDocs
-        working-directory: modflow6-examples
-        run: ls -R .doc/_images/
-
-      - name: List example notebook files for ReadtheDocs
-        working-directory: modflow6-examples
-        run: ls -R .doc/_notebooks/
-
-      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: rtd-files-for-${{ github.sha }}
@@ -124,17 +111,24 @@ jobs:
             modflow6-examples/.doc/_images
             modflow6-examples/.doc/_notebooks
 
-  # trigger rtd if "rtd_build" job was successful
-  rtd_trigger:
-    name: rtd-trigger
-    needs: rtd_build
+  trigger:
+    name: Trigger RTD build
+    needs: build
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+    if: |
+      github.repository_owner == 'MODFLOW-USGS' &&
+      (
+        github.ref_name == 'master' ||
+        github.ref_name == 'develop'
+      ) && (
+        github.event_name == 'push' ||
+        github.event_name == 'workflow_dispatch'
+      )
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v4
 
-      - name: Trigger RTDs build
+      - name: Trigger RTD build
         uses: dfm/rtds-action@v1
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
