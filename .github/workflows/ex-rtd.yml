@@ -15,9 +15,54 @@ on:
       - 'README.md'
       - 'DEVELOPER.md'
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'The tag, branch or commit hash to trigger an RTD build for. Branches and tags must be fully formed, e.g. refs/heads/<branch> or refs/tags/<tag> respectively.'
+        required: false
+        type: string
+        default: 'refs/heads/develop'
+      mf6_ref:
+        description: 'The tag, branch or commit hash to build MF6 from. Branches and tags must be fully formed, e.g. refs/heads/<branch> or refs/tags/<tag> respectively.'
+        required: false
+        type: string
+        default: 'refs/heads/develop'
 jobs:
+  set_options:
+    name: Set release options
+    if: github.ref_name != 'master'
+    runs-on: ubuntu-22.04
+    outputs:
+      ref: ${{ steps.set_ref.outputs.ref }}
+      mf6_ref: ${{ steps.set_mf6_ref.outputs.ref }}
+    steps:
+      - name: Set ref
+        id: set_ref
+        run: |
+          # if ref was provided explicitly via workflow_dispatch, use it
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.ref }}") ]]; then
+            ref="${{ inputs.ref }}"
+            echo "using ref $ref from workflow_dispatch"
+          else
+            # otherwise use the current branch
+            ref="${{ github.ref }}"
+            echo "using current ref $ref"
+          fi
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+      - name: Set MF6 ref
+        id: set_mf6_ref
+        run: |
+          # if ref was provided explicitly via workflow_dispatch, use it
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.mf6_ref }}") ]]; then
+            ref="${{ inputs.mf6_ref }}"
+          else
+            # otherwise use the develop branch
+            ref="refs/heads/develop"
+          fi
+          echo "using mf6 ref $ref"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
   build:
     name: Build artifacts for RTD
+    needs: set_options
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,20 +74,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: modflow6-examples
+          ref: ${{ needs.set_options.outputs.ref }}
 
       - name: Checkout MODFLOW 6
         uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6
           path: modflow6
-
-      - name: Show repo information
-        run: |
-          echo ${{ github.repository_owner }}
-          echo ${{ github.repository }}
-          echo ${{ github.ref }}
-          echo ${{ github.event_name }}
-          echo ${{ github.sha }}
+          ref: ${{ needs.set_options.outputs.mf6_ref }}
 
       - name: Install LaTeX and extra fonts
         run: |
@@ -75,7 +114,7 @@ jobs:
           python -m ipykernel install --name python_kernel --user
 
       - name: Update FloPy classes
-        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
+        run: python -m flopy.mf6.utils.generate_classes --ref ${{ needs.set_options.outputs.mf6_ref }} --no-backup
 
       - name: Install MODFLOW executables
         uses: modflowpy/install-modflow-action@v1
@@ -113,7 +152,9 @@ jobs:
 
   trigger:
     name: Trigger RTD build
-    needs: build
+    needs:
+      - set_options
+      - build
     runs-on: ubuntu-latest
     if: |
       github.repository_owner == 'MODFLOW-USGS' &&
@@ -133,4 +174,4 @@ jobs:
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
           webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.ref }}
+          commit_ref: ${{ needs.set_options.outputs.ref }}
