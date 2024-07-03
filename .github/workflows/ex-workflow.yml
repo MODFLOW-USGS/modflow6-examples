@@ -68,7 +68,6 @@ jobs:
       - name: Install Python packages
         working-directory: modflow6-examples/etc
         run: |
-          python --version
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
@@ -88,7 +87,8 @@ jobs:
           meson test --verbose --no-rebuild -C builddir
 
       - name: Install MODFLOW 6
-        run: cp bin/* ~/.local/bin/modflow/
+        working-directory: modflow6
+        run: cp bin/mf6 ~/.local/bin/modflow/
 
       - name: Create example models
         working-directory: modflow6-examples/autotest
@@ -109,23 +109,20 @@ jobs:
           path: modflow6-examples/${{ env.DISTNAME }}.zip
 
   docs:
-    name: Test examples and build docs
+    name: Run examples, make docs
     runs-on: ubuntu-latest
     needs: lint
     strategy:
       fail-fast: false
       matrix:
         python: [3.9, "3.10", "3.11", "3.12"]
-    defaults:
-      run:
-        shell: bash
     steps:
-      - name: Checkout MODFLOW6 examples
+      - name: Checkout MODFLOW 6 examples
         uses: actions/checkout@v4
         with:
           path: modflow6-examples
 
-      - name: Checkout MODFLOW 6 repo
+      - name: Checkout MODFLOW 6
         uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6
@@ -165,7 +162,7 @@ jobs:
       - name: Update FloPy classes
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
-      - name: Install MODFLOW executables release
+      - name: Install MODFLOW executables
         uses: modflowpy/install-modflow-action@v1
 
       - name: Build MODFLOW 6
@@ -176,8 +173,8 @@ jobs:
           meson test --verbose --no-rebuild -C builddir
 
       - name: Install MODFLOW 6
-        working-directory: modfow6
-        run: cp bin/* ~/.local/bin/modflow/
+        working-directory: modflow6
+        run: cp bin/mf6 ~/.local/bin/modflow/
 
       - name: Run examples, make plots
         working-directory: modflow6-examples/autotest
