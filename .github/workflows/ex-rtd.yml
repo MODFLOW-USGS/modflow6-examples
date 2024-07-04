@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       ref: ${{ steps.set_ref.outputs.ref }}
+      sha: ${{ steps.set_sha.outputs.sha }}
       mf6_ref: ${{ steps.set_mf6_ref.outputs.ref }}
     steps:
       - name: Set ref
@@ -48,6 +49,15 @@ jobs:
             echo "using current ref $ref"
           fi
           echo "ref=$ref" >> $GITHUB_OUTPUT
+      - name: Set sha
+        id: set_sha
+        run: |
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.ref }}") ]]; then
+            sha=$(git rev-parse ${{ steps.set_ref.outputs.ref }})
+          else
+            sha="${{ github.sha }}"
+          fi
+          echo "sha=$sha" >> $GITHUB_OUTPUT
       - name: Set MF6 ref
         id: set_mf6_ref
         run: |
@@ -142,7 +152,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: rtd-files-for-${{ github.sha }}
+          name: rtd-files-for-${{ needs.set_options.outputs.sha }}
           path: |
             modflow6-examples/.doc/introduction.md
             modflow6-examples/.doc/examples.rst
