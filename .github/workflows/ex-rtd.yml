@@ -49,6 +49,12 @@ jobs:
             echo "using current ref $ref"
           fi
           echo "ref=$ref" >> $GITHUB_OUTPUT
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.set_ref.outputs.ref }}
+
       - name: Set sha
         id: set_sha
         run: |
@@ -58,6 +64,7 @@ jobs:
             sha="${{ github.sha }}"
           fi
           echo "sha=$sha" >> $GITHUB_OUTPUT
+
       - name: Set MF6 ref
         id: set_mf6_ref
         run: |
