@@ -84,7 +84,7 @@ def build_mf6gwf(sim_folder):
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-    flopy.mf6.ModflowIms(sim)
+    flopy.mf6.ModflowIms(sim, inner_dvclose=1.00e-4)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
         gwf,
