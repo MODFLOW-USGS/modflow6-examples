@@ -212,6 +212,7 @@ def build_mf6gwf(sim_folder):
         sim,
         print_option="summary",
         inner_maximum=300,
+        inner_dvclose=1e-4,
         linear_acceleration="bicgstab",
     )
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
