@@ -1,0 +1,29 @@
+\section{Toth Problem}
+
+% Describe source of problem
+A classic conceptual model of groundwater flow in small drainage basins is described by \cite{toth1963}.  Using a mathematical model of cross-sectional groundwater flow in response to an imposed sinusoidally varying water table, Toth postulated the presence of local, intermediate, and regional groundwater flow systems.  In his classic paper, Toth showed the different types of flow patterns resulting from different water table configurations, domain sizes, and aquifer properties.  This MODFLOW 6 example is intended to approximate the Toth flow system shown in Figure 2i of \cite{toth1963}.
+
+\subsection{Example Description}
+% spatial discretization  and temporal discretization
+Model parameters for the example are summarized in table~\ref{tab:ex-gwf-toth-01}. Confined groundwater flow is simulated within a cross section that is 20,000 ft in the x direction and 10,000 ft in the z direction.  This model domain is discretized into 200 columns, 1 row, and 100 layers. The discretization is 200 ft in the row direction and 50 ft in the layer direction for all cells. A single steady-stress period with a total length of 1 day is simulated.
+
+% add static parameter table(s)
+\input{../tables/ex-gwf-toth-01}
+
+A constant and isotropic hydraulic conductivity of 1.0 $ft/d$ was specified in all cells. An initial head equal to the domain top of 10,000 $ft$ was specified in all model cells. Constant head boundary cells were specified for all cells in model layer 1. The head values assigned for the constant-head cells were calculated from a linearly increasing sine function as reported by \cite{toth1963}.
+
+% for examples without scenarios
+\subsection{Example Results}
+
+Simulated results for this variant of the Toth problem are shown in figure~\ref{fig:ex-gwf-toth}.  Head contours are shown as blue lines.  Contours of the stream function, calculated by accumulating lateral flows in each vertical column of cells, are shown as colored contours.  The head value prescribed to the top model layer is shown as a black sinusoidally varying line varying between elevations of 10,000 and 11,000 ft.
+
+\begin{StandardFigure}{
+                                     Simulation results for the classic Toth problem.
+                                     Simulated contours of head are shown in blue.
+                                     Contours of the stream function are shown as colored contours.
+                                     The black line ranging in elevation between 10,000 and 11,000 ft 
+                                     represents the prescribed head value assigned to the top of the model.
+                                     }{fig:ex-gwf-toth}{../figures/ex-gwf-toth.png}
+\end{StandardFigure}                                 
+
+
