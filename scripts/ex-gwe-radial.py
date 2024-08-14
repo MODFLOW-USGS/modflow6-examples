@@ -23,6 +23,7 @@ import pooch
 from flopy.mf6 import MFSimulation
 from flopy.plot.styles import styles
 from modflow_devtools.misc import get_env, timed
+from scipy.spatial.distance import cdist
 
 # Example name and workspace paths. If this example is running
 # in the git repository, use the folder structure described in
@@ -445,16 +446,9 @@ def build_cell2d_obj(iverts, xc, yc):
 def remove_euclidian_duplicates(pd_with_dupes):
     # Set a threshold to filter out
     thresh = 0.001
-    distances = np.sqrt(
-        np.sum(
-            [
-                (pd_with_dupes[[c]].to_numpy() - pd_with_dupes[c].to_numpy()) ** 2
-                for c in ("X", "Y")
-            ],
-            axis=0,
-        )
-    )
-    msk = np.tril(distances < thresh, k=-1).any(axis=1)
+    coords = pd_with_dupes[["X", "Y"]]
+    dists = cdist(coords, coords, metric="euclidean")
+    msk = np.tril(dists < thresh, k=-1).any(axis=1)
     out = pd_with_dupes[~msk]
 
     return out
