@@ -407,7 +407,8 @@ def build_prt_model():
         filename="{}_1.prp".format(prt_name),
         nreleasepts=len(release_points),
         packagedata=release_points,
-        release_timesrecord=release_times,
+        nreleasetimes=len(release_times),
+        releasetimes=[(t,) for t in release_times],
         # local z coordinates specified, compute global release
         # coord from cell top if saturated or water table if not
         local_z=True,
@@ -416,7 +417,7 @@ def build_prt_model():
     )
 
     # Instantiate the MODFLOW 6 prt output control package
-    tracktimes = list(range(90000, 150001, 2000))
+    track_times = list(range(90000, 150001, 2000))
     flopy.mf6.ModflowPrtoc(
         prt,
         pname="oc",
@@ -425,7 +426,8 @@ def build_prt_model():
         track_release=True,
         track_terminate=True,
         track_usertime=True,
-        track_timesrecord=tracktimes,
+        ntracktimes=len(track_times),
+        tracktimes=[(t,) for t in track_times],
         saverecord=[("BUDGET", "ALL")],
     )
 

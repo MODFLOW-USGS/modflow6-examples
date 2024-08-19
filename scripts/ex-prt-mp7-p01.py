@@ -364,7 +364,8 @@ def build_models(example_name):
         budget_filerecord=budget_record,
         track_filerecord=track_record,
         trackcsv_filerecord=trackcsv_record,
-        track_timesrecord=tracktimes,
+        ntracktimes=len(tracktimes),
+        tracktimes=[(t,) for t in tracktimes],
         saverecord=[("BUDGET", "ALL")],
     )
 
