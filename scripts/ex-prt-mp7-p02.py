@@ -449,14 +449,15 @@ def build_prt_sim():
     budget_record = [budgetfile]
     track_record = [trackfile]
     trackcsv_record = [trackcsvfile]
-    tracktimes = list(range(0, 72000, 1000))
+    track_times = list(range(0, 72000, 1000))
     flopy.mf6.ModflowPrtoc(
         prt,
         pname="oc",
         budget_filerecord=budget_record,
         track_filerecord=track_record,
         trackcsv_filerecord=trackcsv_record,
-        track_timesrecord=tracktimes,
+        ntracktimes=len(track_times),
+        tracktimes=[(t,) for t in track_times],
         saverecord=[("BUDGET", "ALL")],
     )
 
