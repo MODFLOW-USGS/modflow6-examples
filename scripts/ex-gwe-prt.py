@@ -309,8 +309,8 @@ def build_gwe_sim(name):
         heat_capacity_water=cpw,
         density_water=rhow,
         latent_heat_vaporization=lhv,
-        cps=cps,
-        rhos=rhos,
+        heat_capacity_solid=cps,
+        density_solid=rhos,
         pname="EST-e",
         filename="{}.est".format(gwe_name),
     )
