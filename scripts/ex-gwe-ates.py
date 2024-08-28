@@ -714,8 +714,8 @@ def build_model(sim_name, verts, cell2d, top, botm):
         heat_capacity_water=cpw,
         density_water=rhow,
         latent_heat_vaporization=lhv,
-        cps=cps,
-        rhos=rhos,
+        heat_capacity_solid=cps,
+        density_solid=rhos,
         pname="EST",
         filename="{}.est".format(gwename),
     )
