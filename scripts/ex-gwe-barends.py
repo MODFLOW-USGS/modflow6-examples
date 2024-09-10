@@ -42,6 +42,7 @@ import pathlib as pl
 
 import flopy
 import flopy.discretization as fgrid
+import git
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
@@ -50,7 +51,13 @@ from scipy.integrate import quad
 
 # Example name and base workspace
 sim_name = "ex-gwe-barends"
-workspace = pl.Path("../examples")
+try:
+    root = pl.Path(git.Repo(".", search_parent_directories=True).working_dir)
+except:
+    root = None
+
+workspace = root / "examples" if root else pl.Path.cwd()
+figs_path = root / "figures" if root else pl.Path.cwd()
 
 # Settings from environment variables
 write = get_env("WRITE", True)
@@ -962,12 +969,13 @@ def plot_thermal_bleeding(sim_gwe):
     )
     mx.plot_grid()
     # cb_alt = mx.contour_array(analytical_answers[-1], levels=[30, 40, 50, 60, 70, 80], linewidth=0.1)
-    fpth = os.path.join(
-        "..",
-        "figures",
-        f"{sim_name}-gridView.png",
-    )
-    fig.savefig(fpth, dpi=600)
+
+    # save figure
+    if plot_show:
+        plt.show()
+    if plot_save:
+        fpth = os.path.join(figs_path / "{}-gridView{}".format(sim_name, ".png"))
+        fig.savefig(fpth, dpi=600)
 
     # Next, plot model output compared to analytical solution
     fontsize = 8
@@ -1030,13 +1038,12 @@ def plot_thermal_bleeding(sim_gwe):
     cb_sim.set_dashes([(0, (5.0, 6.0))])
 
     ax2.axhline(y=100, color="grey", linestyle="-")
-
-    fpth = os.path.join(
-        "..",
-        "figures",
-        f"{sim_name}-300yrs.png",
-    )
-    fig2.savefig(fpth, dpi=600)
+    # save figure
+    if plot_show:
+        plt.show()
+    if plot_save:
+        fpth = os.path.join(figs_path / "{}-300yrs{}".format(sim_name, ".png"))
+        fig2.savefig(fpth, dpi=600)
 
     return
 
