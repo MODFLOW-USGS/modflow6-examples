@@ -7,13 +7,15 @@
 #    19–22 September 2010.
 #    https://doi.org/10.2118/134670-MS
 #
-# Below is a diagram of the model cell numbering, which is helpful for this
+# Below is a diagram of the model cell numbering (assuming delr = 1.0; values
+# for other ncol discretizations will be different), which is helpful for this
 # DISU setup since the groundwater reservoir is flowing in a 1D, left-to-right
-# manner with no flow in the overburden.  Additionally, heat "bleeds" into
-# the overburden from the flowing reservoir.  Heat bleeds in a 1D upward
-# manner and does not conduct laterally once in the overburden.  Thus, the
+# manner with no flow in the overburden.  Additionally, heat "bleeds"
+# (conduction) into the overburden from the flowing reservoir.  Conduction, or
+# "thermal bleeding" as Barends (2010) refers to it, only occurs in a 1D
+# vertical manner and does not conduct laterally once in the overburden.  Thus, the
 # connections in the DISU grid are such that cells in the overburden are not
-# connected to their lateral neighbors, but only the cells above and below.
+# connected to their lateral neighbors, but only to the cells above and below.
 #
 #           +-------+-------+-------+     +-------+-------+-------+          \
 # Cell IDs  |   0   |   1   |   2   | ... |  997  |  998  |  999  | Layer 1   |
@@ -33,6 +35,11 @@
 #           |       |       |       |     |       |       |       | Layer 3   |
 #           +-------+-------+-------+     +-------+-------+-------+          /
 #                       ----> gw flow direction ---->
+#
+# NOTE: In the current example, ncol is specified as 250.  If users are not
+#       satisfied with GWE fits to the analytical solution, this value may be
+#       increased to 500, 1,000, or more for an improved solution.  Currently,
+#       ncol is kept low for faster run times.
 # -
 
 # +
