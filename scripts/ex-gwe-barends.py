@@ -8,7 +8,7 @@
 #    https://doi.org/10.2118/134670-MS
 #
 # Below is a diagram of the model cell numbering, which is helpful for this
-# DISU setup since the groundwater reservoir is flowing in a 1D left-to-right
+# DISU setup since the groundwater reservoir is flowing in a 1D, left-to-right
 # manner with no flow in the overburden.  Additionally, heat "bleeds" into
 # the overburden from the flowing reservoir.  Heat bleeds in a 1D upward
 # manner and does not conduct laterally once in the overburden.  Thus, the
@@ -77,8 +77,8 @@ length_units = "meters"
 time_units = "seconds"
 
 nrow = 1
-ncol = 1000  # Number of columns ($-$)
-delr = 1.0  # Width along the row ($m$)
+ncol = 250
+L = 1000  # Length of simulation in X direction ($m$)
 delc = 1.0  # Width along the column ($m$)
 nlay_res = 1  # Number of layers in the groundwater reservoir ($-$)
 nlay_overburden = 100  # Number of layer representing the overburden ($-$)
@@ -109,6 +109,12 @@ T0 = 80  # Initial temperature of the active domain ($^{\circ}C$)
 T1 = 30  # Injected temperature ($^{\circ}C}$)
 q = 1.2649e-8  # Darcy velocity ($m/s$)
 
+
+# delr is a calculated value based on the number of desired columns
+assert (
+    L / ncol % 1 == 0
+), "reconsider specification of NCOL such that length of the simulation divided by NCOL results in an even number value"
+delr = L / ncol  # Width along the row ($m$)
 
 # Some values for the analytical solution
 Q_well = q * H * thk  # Injection flow rate ($m^3/day$)
@@ -208,7 +214,7 @@ z_mids = z_tops[:-1] - (z_diffs / 2)
 z_mids[-1] = top_res
 z_mids = z_mids - 100
 
-x_mids = [j * delr + 0.5 for j in np.arange(ncol)]
+x_mids = [j * delr + (delr / 2) for j in np.arange(ncol)]
 X, Y = np.meshgrid(x_mids, z_mids)
 
 # -
@@ -290,7 +296,7 @@ def set_connectiondata(n, lay, top, left, right, bottom):
         ihc.append(delc)  # ihc = 1 for horizontal connection
         cl12.append(delr / 2)  # half the cell width along a horizontal connection
         hwva.append(
-            delr
+            delc
         )  # for horizontal connection, value of hwva is width along a row
         angldeg.append(
             180.0
@@ -301,7 +307,7 @@ def set_connectiondata(n, lay, top, left, right, bottom):
         ihc.append(delc)  # ihc = 1 for horizontal connection
         cl12.append(delr / 2)  # half the cell width along a horizontal connection
         hwva.append(
-            delr
+            delc
         )  # for horizontal connection, value of hwva is width along a row
         angldeg.append(
             0.0
