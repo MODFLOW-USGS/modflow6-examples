@@ -1,55 +1,43 @@
 \section{The Barends Problem}
 
 % Describe source of problem
-Underground thermal energy storage (UTES) systems, sometimes referred to as aquifer thermal energy storage (ATES) systems, can help bolster sustainable energy supply portfolios. In UTES, energy can be injected into an aquifer at one time to be withdrawn as needed at a later time.  However, ``thermal bleeding,'' or in other words conductive heat exchange with over and underlying geological formations may degrade the efficacy of UTES systems as injected heat diffuses away from the storage site.  To better understand the potential exploitation of UTES at various sites, numerical models are often used to verify field tests and further explore the suitability of a site for UTES \citep{barends2010}.  This demonstration of \mf, hereafter referred to as the ``Barends'' problem, compares \mf GWE output to temperatures predicted by an analytical solution that first appeared in \cite{barends2010}.  The Barends problem provides an excellent test of the Conduction (CND) Package.
+Underground thermal energy storage (UTES) systems, sometimes referred to as aquifer thermal energy storage (ATES) systems, can help bolster sustainable energy supply portfolios. In UTES, energy can be injected into an aquifer at one time to be withdrawn as needed at a later time.  However, ``thermal bleeding,'' or in other words conductive heat exchange with over and underlying geological formations may degrade the efficacy of UTES systems as injected heat diffuses away from the storage site.  To better understand the potential of UTES at various sites, numerical models are often used to verify field tests and further explore the suitability of a site for UTES \citep{barends2010}.  This demonstration of \mf is patterned after the ``Barends'' problem.  
 
 \subsection{Example description}
 
-This problem uses a 2D vertical cross-section comprised of two zones - a 100 $m$ thick saturated zone that is overlain by a 100 $m$ thick dry overburden (fig.~\ref{fig:barends-model-setup}). Within the saturated zone, groundwater flow is simulated as a 1-dimensional (1D) flow-field moving from left to right.  Vertical temperature gradients within the groundwater reservoir are ignored by assuming the temperature of the groundwater reservoir is uniform over the entire 100 $m$ thick sequence.  Functionally, this is accomplished using a single layer to represent the groundwater reservoir.  The bottom boundary of the groundwater reservoir is considered sealed for both flow and heat.  However, the upper boundary of the saturated zone - the interface with the overburden - is sealed for flow but not for heat transfer.  
+This problem uses a 2D vertical cross-section comprised of two zones - a 100 $m$ thick saturated zone that is overlain by a 100 $m$ thick overburden (fig.~\ref{fig:barends-model-setup}). Within the saturated zone, groundwater flow is simulated as a 1-dimensional (1D) flow-field moving from left to right.  The bottom boundary of the groundwater reservoir is considered sealed for both flow and heat.  However, the upper boundary of the groundwater reservoir - the interface with the overburden - is sealed for flow but not for heat transfer.  
 
 % a figure
 \begin{StandardFigure}{
-    A simplified depiction of the DISU grid \citep{modflow6gwf} setup that corresponds to the \cite{barends2010} analytical solution. (A) One layer is used to represent the groundwater reservoir, resulting in 1D groundwater flow below the overburden. (B) Multiple 1D vertical columns are aligned next to one another giving the appearance of a 2D grid; however, there are no horizontal connections resulting in vertical heat flow (conduction) only.}
+    A simplified depiction of the DIS grid \citep{modflow6gwf} showing basic model components that corresponds to the \cite{barends2010} problem. For this setup, 100 layers are used to represent the groundwater reservoir; however, thickness-weighted injection/extraction amounts within each layer of the groundwater reservoir result in 1D groundwater flow below the overburden. There is no groundwater flow in the overburden, only conductive heat exchange between these two geologic units}
     {fig:barends-model-setup}{../images/barends-model-setup.png}
 \end{StandardFigure}
 
-For simulating only conductive heat exchange at the overburden-groundwater reservoir interface, the vertical hydraulic conductivities are set extremely low throughout the entire model domain (Table~\ref{tab:ex-gwe-barends-01}).  The horizontal hydraulic conductivities are set such that the horizontal groundwater velocity is $1.2649 \times 10^{-8} \frac {m}{s}$ within the groundwater reservoir.  Flow is injected in the left-most groundwater reservoir cell and extracted from the right-most cell at the same rate.  Within the overburden, there is no convection (as already mentioned) and thermal conduction is 1-dimensional (1D) in the vertical direction (fig.~\ref{fig:barends-model-setup}).  To accomplish this, inter-cell connections are only established for vertically-aligned neighbors using a DISU grid type \citep{modflow6gwf}.  As a reminder, DISU facilitates explicit specification of which cells are connected; thus, by omitting connections between lateral neighbors there is no horizontal exchange (conduction) of heat within the overburden.  
+For simulating only conductive heat exchange at the overburden-groundwater reservoir interface, the vertical hydraulic conductivities are set extremely low throughout the entire model domain (Table~\ref{tab:ex-gwe-barends-01}).  The horizontal hydraulic conductivities are set such that the horizontal groundwater velocity is $1.2649 \times 10^{-8} \frac {m}{s}$ within the groundwater reservoir.  Flow is injected in the left-most groundwater reservoir cells and extracted from the right-most cells at the same rate.  Within the overburden, there is no convection (as already mentioned) and thermal conduction is 2-dimensional (2D), a significant departure from the Barends problem setup (fig.~\ref{fig:barends-model-setup}).  
 
 % add static parameter table(s)
 %\input{../tables/ex-gwe-barends-01}
 
-The model domain is initialized with a uniform temperature of $80^{\circ}C$ at the beginning of the simulation ($T_0$).  $30^{\circ}C$ water enters on the left side of the groundwater reservoir at the start of the simulation ($T_0 > 0$).  As cold water flows into the groundwater reservoir, a thermal gradient between the overburden and saturated zone is established that results in the aforementioned thermal bleeding of heat from the overburden into the groundwater reservoir.  Geometric grid refinement is added in the vertical direction just above the overburden-groundwater reservoir interface (fig.~\ref{fig:ex-gwe-barends-gridView})
+The model domain is initialized with a uniform temperature of $80^{\circ}C$ at the beginning of the simulation ($T_0$).  $30^{\circ}C$ water enters on the left side of the groundwater reservoir at the start of the simulation ($T_0 > 0$).  As cold water flows into the groundwater reservoir, a thermal gradient between the overburden and saturated zone is established that results in the aforementioned thermal bleeding (conduction) of heat from the overburden into the groundwater reservoir.  Geometric grid refinement is added in the vertical direction on both sides of the overburden-groundwater reservoir interface (fig.~\ref{fig:ex-gwe-barends-gridView})
 
 % a figure
 \begin{StandardFigure}{
-    A zoomed-in view of the numerical grid showing enhanced vertical refinement above the overburden-groundwater reservoir interface (y=100 $m$).}
+    A zoomed-in view of the numerical grid showing enhanced vertical refinement above and below the overburden-groundwater reservoir interface (y=100 $m$).}
     {fig:ex-gwe-barends-gridView}{../figures/ex-gwe-barends-gridView.png}
 \end{StandardFigure}
 
-The rate of thermal bleeding at each overburden-groundwater reservoir cell interface changes as the pulse of cold water injected into the groundwater reservoir migrates inward.  Despite the model grid being wired as a series of interconnected 1D cell groupings in both the horizontal (groundwater reservoir) and vertical directions (overburden), its final arrangement has the appearance of a 2D grid, which is how the results are presented.  The analytical solution to which the \mf output is compared is given as Equation 4 in \cite{barends2010},
-
-\begin{equation}
-	T' - T_0 = \dfrac{2 \left( T_1 - T_0 \right)}{\sqrt{\pi}} \cdot e^{\left( \displaystyle{ \frac{x v}{2D} } \right)} {\displaystyle \int\limits_{\dfrac{x}{2 \sqrt{Dt}}}^{\infty} e^{-\sigma^2 - \left( \dfrac{xv}{4D\sigma} \right)^2} erfc \Biggl[ \biggl( \dfrac{x^2 h' \sqrt{D'}}{8DH \sigma^2} + \dfrac{z}{2 \sqrt{D'}} \biggr) \biggl( t - \dfrac{x^2}{4D \sigma^2} \biggr)^{-\frac{1}{2}} \Biggr] d\sigma }
-	\label{eq:bar4}
-\end{equation}
-
-after some helpful manipulations that make it easier to solve Equation~\ref{eq:bar4}, the form of the analytical solution is altered to,
-
-\begin{equation}
-  T' - T_0 = \dfrac{2 \left( T_1 - T_0 \right)}{\sqrt{\pi}} {\displaystyle \int\limits_{\dfrac{x}{2 \sqrt{Dt}}}^{\infty} e^{\displaystyle{ \left( \sigma - \frac{x v}{4 D \sigma} \right)^2}} erfc \Biggl[ \biggl( \dfrac{x^2 h' \sqrt{D'}}{8DH \sigma^2} + \dfrac{z}{2 \sqrt{D'}} \biggr) \biggl( t - \dfrac{x^2}{4D \sigma^2} \biggr)^{-\frac{1}{2}} \Biggr] d\sigma },
-	\label{eq:bar-alt}
-\end{equation}
+The rate of thermal bleeding at each overburden-groundwater reservoir cell interface changes as the pulse of cold water injected into the groundwater reservoir migrates inward.  
 
 
 % brief description of results
 \subsection{Example Results}
 
-After 300 years of simulation time, \mf GWE temperatures compare very well to the analytical solution (fig.~\ref{fig:ex-gwe-barends-300yrs}). 
+After 200 years of simulation time, lower temperatures show an advance into the groundwater reservoir (fig.~\ref{fig:ex-gwe-barends-200yrs}). As cooler water is injected into the aquifer, conduction from the overburden into the groundwater reservoir retards the advance of colder temperatures in the upper portion of the groundwater reservoir compared to the lower portion as shown by the curved temperature contours within the groundwater reservoir.
 
 % a figure
 \begin{StandardFigure}{
-    Temperatures predicted by the \mf GWE model compared to temperatures predicted by an analytical solution after 300 years of simulation time.}
-    {fig:ex-gwe-barends-300yrs}{../figures/ex-gwe-barends-300yrs.png}
+    Temperatures predicted by the \mf GWE model after 200 years of simulation time.}
+    {fig:ex-gwe-barends-200yrs}{../figures/ex-gwe-barends-200yrs.png}
 \end{StandardFigure}
 
 
