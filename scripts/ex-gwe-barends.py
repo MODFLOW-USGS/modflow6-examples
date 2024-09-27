@@ -87,10 +87,6 @@ H = 100.0  # Reservoir height ($m$)
 thk = 1.0  # Unit thickness "into the page" ($m$)
 k11 = 9.80670e-7  # Hydraulic conductivity of the groundwater reservoir($m/d$)
 k33 = 1e-21  # Vertical hydraulic conductivity of the entire domain ($m/s$)
-perlen = 86400.0 * 365  # Period length ($seconds$)
-nstp = 1  # Number of time steps per stress period ($-$)
-tsmult = 1  # Time step multiplier ($-$)
-nper = 200  # Number of simulated stress periods ($-$)
 prsity = 0.25  # Porosity ($-$)
 scheme = "TVD"  # Advection solution scheme ($-$)
 ktw = 0.6  # Thermal conductivity of the fluid ($\dfrac{W}{m \cdot ^{\circ}C}$)
@@ -115,13 +111,6 @@ delr = L / ncol  # Width along the row ($m$)
 
 # Calculated values
 Q_well = q * H * thk  # Injection flow rate ($m^3/day$)
-# Calculate gw reservoir heat capacity (heat capacity by volume)
-rhoCp_bulk = prsity * rhow * cpw + (1 - prsity) * rhos * cps
-# Calculate "thermal conduction velocity"
-v = q * (rhow * cpw) / rhoCp_bulk
-# Calculate bulk thermal conductivity
-kt_bulk = prsity * ktw + (1 - prsity) * kts
-D = kt_bulk / rhoCp_bulk + alpha_l * v
 
 
 # Calculate grid characteristics
@@ -129,15 +118,16 @@ top_overburden = top_res * 2
 k11 = [k33 for i in range(nlay_overburden)] + [k11 for i in range(nlay_res)]
 icelltype = 0
 idomain = 1
-perlen = [perlen] * nper  # Convert to a list
+
 
 # The flow simulation just needs 1 steady-state stress period
-# Transport simulation is transient
-tdis_rc = []
-for i in range(nper):
-    tdis_rc.append((perlen[i], nstp, tsmult))
+# Transport simulation is transient, attempting to solve 200 years in 1 stress period with 10 time steps
+nper = 1  # Number of simulated stress periods ($-$)
+perlen = 86400.0 * 365 * 200  # Period length ($seconds$)
+nstp = 10  # Number of time steps per stress period ($-$)
+tsmult = 1.62088625512342  # Time step multiplier ($-$)
 
-# GWE output control
+tdis_rc = [(perlen, nstp, tsmult)]
 
 
 # Solver parameters
@@ -150,15 +140,13 @@ rclose = 1e-5
 
 # +
 # A few steps to get data ready for setting up the model grid
-def dis_mult(thk, nlay, dis_mult):
-    lay_elv = thk * ((dis_mult - 1) / (dis_mult**nlay - 1))
-    return lay_elv
-
 
 # For the vertical discretization, use a geometric multiplier to refine discretization at
 # the reservoir-overburden interface
+# For 100 layers with the first cell being 0.01 m thick, use: 1.0673002615
+# For 50 layers with the first cell being 0.02 m thick, use: 1.14002980807597
 dismult = 1.0673002615
-Delta_zbot1 = dis_mult(top_res, nlay_overburden, dismult)
+
 botm_seq = [0.01]  # Starting thickness for the geometric expansion of layer thicknesses
 
 for k in np.arange(1, nlay_overburden):
@@ -470,11 +458,9 @@ def build_mf6_heat_model():
         temperature_filerecord="{}.ucn".format(gwename),
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord={
-            99: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
-            100: [],  # Toggle output off
-            199: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
+            0: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
         },
-        printrecord={199: [("BUDGET", "LAST")]},
+        printrecord={0: [("BUDGET", "LAST")]},
     )
 
     # Instantiating MODFLOW 6 Flow-Model Interface package
@@ -547,15 +533,15 @@ def plot_thermal_bleeding(sim_gwe):
     levels = [35, 40, 45, 50, 55, 60, 65, 70, 75]
 
     manual_locations2 = [
-        (20, 102),  # 35
-        (40, 105),  # 40
-        (60, 105),  # 45
+        (10, 102),  # 35
+        (40, 103),  # 40
+        (20, 110),  # 45
         (40, 112),  # 50
         (20, 120),  # 55
         (40, 124),  # 60
-        (20, 135),  # 65
-        (75, 135),  # 70
-        (75, 147),  # 75
+        (20, 130),  # 65
+        (40, 135),  # 70
+        (20, 152),  # 75
     ]
     cb_sim2 = mx2.contour_array(
         temperature[-1, :, 0, :],
