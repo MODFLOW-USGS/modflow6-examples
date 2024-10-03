@@ -606,14 +606,15 @@ def scenario(idx, silent=False):
     sim_gwf = build_mf6_flow_model()
     sim_gwe = build_mf6_heat_model()
 
-    if sim_gwf is not None and sim_gwe is not None:
+    if write and (sim_gwf is not None and sim_gwe is not None):
         write_mf6_models(sim_gwf, sim_gwe, silent=silent)
 
-    success = run_model(sim_gwf, silent=silent)
-    if success:
-        success = run_model(sim_gwe, silent=silent)
+    if run:
+        success = run_model(sim_gwf, silent=silent)
+        if success:
+            success = run_model(sim_gwe, silent=silent)
 
-    if success:
+    if plot and success:
         plot_thermal_bleeding(sim_gwe)
 
 
