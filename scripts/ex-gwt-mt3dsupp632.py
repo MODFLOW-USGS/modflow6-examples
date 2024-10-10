@@ -205,13 +205,12 @@ def build_mf6gwt(sim_folder, distribution_coefficient, decay, decay_sorbed):
         bulk_density=bd,
         distcoef=kd,
     )
-    istsorption = sorption is not None
     if dual_domain:
         flopy.mf6.ModflowGwtist(
             gwt,
             zero_order_decay=zero_order_decay,
             first_order_decay=first_order_decay,
-            sorption=istsorption,
+            sorption=sorption,
             porosity=porosity_immobile / volfrac,
             volfrac=volfrac,
             zetaim=zeta_im,
