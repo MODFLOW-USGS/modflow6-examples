@@ -237,7 +237,6 @@ def build_models(sim_name, lambda_val, leakance, stage):
         print_input=True,
         print_flows=True,
         storage=True,
-        storage_weight=1.0,
         nreaches=nreaches,
         packagedata=pak_data,
         connectiondata=sfr_conn,
