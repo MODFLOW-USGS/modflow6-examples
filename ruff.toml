@@ -1,16 +1,13 @@
+line-length = 88
 target-version = "py39"
-include = [
-    "autotest/**/*.py",
-    "scripts/**/*.py",
-    "etc/**/*.py",
-    ".doc/**/*.py",
-]
-extend-include = [
-    ".doc/**/*.ipynb"
-]
 
 [lint]
-select = ["F", "E", "I001"]
+select = [
+    "D409", # pydocstyle - section-underline-matches-section-length
+    "E",    # pycodestyle error
+    "F",    # Pyflakes
+    "I001", # isort - unsorted-imports
+]
 ignore = [
     "E501", # line too long TODO FIXME
     "E722", # do not use bare `except`
