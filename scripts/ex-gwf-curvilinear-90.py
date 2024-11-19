@@ -978,7 +978,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
         """Generator that iterates through each rows' columns.
 
         Yields
-        -------
+        ------
         (int, int)
             Row index, column index
         """
@@ -995,7 +995,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
             Row index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -1012,7 +1012,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
             Column index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -1141,7 +1141,7 @@ class DisvGridMerger:
         name, and value is the merged grid's cellid.
 
     Notes
-    -------
+    -----
     The following is always true:
 
     ``cell2name[cell] ==  name2vert[cell2name[cell]]``
@@ -2066,7 +2066,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
         """Generator that iterates through the radial band columns, then bands.
 
         Yields
-        -------
+        ------
         (int, int)
             radial band index, column index
         """
@@ -2082,7 +2082,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             Radial index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -2102,7 +2102,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             Column index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -2120,7 +2120,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             Radial index.
 
         Yields
-        -------
+        ------
         int
             column index
         """
