@@ -2297,7 +2297,7 @@ grid_merger.set_vertex_connection("rectgrid", "curvlin2", 19 - 1, 323 - 1)
 # Merge grids into one single model grid
 grid_merger.merge_grids()
 
-# Shift first curvilinear grid for plotting against the orgin.
+# Shift first curvilinear grid for plotting against the origin.
 # (Note, grid_merger no longer needs curvlin1)
 curvlin1.change_origin(0.0, 0.0)
 

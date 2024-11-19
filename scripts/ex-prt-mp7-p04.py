@@ -76,7 +76,7 @@ plot_save = get_env("PLOT_SAVE", True)
 
 # ### Define parameters
 #
-# Define modul units, parameters and other settings.
+# Define model units, parameters and other settings.
 
 # Model units
 length_units = "feet"

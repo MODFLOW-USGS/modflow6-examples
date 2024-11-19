@@ -314,7 +314,7 @@ def build_models(mixelm=0, silent=False):
         obs=obs,
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(
         mt,
         mixelm=mixelm,

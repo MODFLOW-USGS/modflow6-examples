@@ -585,7 +585,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         filename="{}.npf".format(gwfname),
     )
 
-    # Instatiating MODFLOW 6 initial conditions package
+    # Instantiating MODFLOW 6 initial conditions package
     flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
     # Instantiating MODFLOW 6 storage package

@@ -191,7 +191,7 @@ def get_disu_radial_kwargs(
         )
         xc = 0.5 * radius_outer[0]
         yc = 0.5 * perimeter_outer[-1]
-        # all cells have same y-axis cell center; yc is costant
+        # all cells have same y-axis cell center; yc is constant
         #
         # cell2d: [icell2d, xc, yc, ncvert, icvert]; first node: cell2d = [[0, xc, yc, [2, 1, 0]]]
         cell2d = []

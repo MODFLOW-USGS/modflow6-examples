@@ -222,7 +222,7 @@ def build_models(sim_name, mixelm=0, silent=False):
         obs=[(0, 15, 15)],
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(
         mt,
         mixelm=mixelm,

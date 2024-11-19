@@ -9,7 +9,7 @@
 #
 # Below is a diagram of the model cell numbering (assuming delr = 4.0; values
 # for other ncol discretizations will be different).  The model setup is such
-# that the lower half of the model domain is represenative of a "groundwater
+# that the lower half of the model domain is representative of a "groundwater
 # reservoir" that is flowing in a 1D, left-to-right manner with no flow in the
 # overburden.  One of the main purposes of the model is to test heat "bleeding"
 # (conduction) from the warmer overburden to the flowing reservoir.

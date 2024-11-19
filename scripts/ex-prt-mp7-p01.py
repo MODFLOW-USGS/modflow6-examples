@@ -442,7 +442,7 @@ def run_models(*sims, silent=False):
         if isinstance(sim, MFSimulation):
             success, buff = sim.run_simulation(silent=silent, report=True)
         else:
-            succes, buff = sim.run_model(silent=silent, report=True)
+            success, buff = sim.run_model(silent=silent, report=True)
         assert success, pformat(buff)
 
 

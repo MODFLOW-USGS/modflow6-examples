@@ -942,7 +942,7 @@ def plot_results(mf6, idx):
             elif itm[0] > 8:
                 gwsw_exg[(len(gwsw_exg) - (len(gwswp[0]) - i))] = itm[2]
 
-        # Insert the child model gw/sw exchages in their proper sequential spot
+        # Insert the child model gw/sw exchanges in their proper sequential spot
         for j, jtm in enumerate(gwswc[0]):
             gwsw_exg[8 + j] = jtm[2]
 

@@ -1339,12 +1339,12 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
                 elif iupseg > 0:  # Lake connections, signified with negative
                     # numbers, aren't handled here
                     iupseg_rchs = [item for item in orig_rch if item[3] == iupseg]
-                    # Get the index of the last reach of the segement that was
+                    # Get the index of the last reach of the segment that was
                     # the upstream segment in the orig sfr file
                     idx = orig_rch.index(iupseg_rchs[len(iupseg_rchs) - 1])  #
                     upconn.append(idx)
 
-                # Even if the first reach of a segement, it will have an outlet
+                # Even if the first reach of a segment, it will have an outlet
                 # either the next reach in the segment, or first reach of
                 # outseg, which should be taken care of below
                 if len(allrchs) > 1:
@@ -1354,7 +1354,7 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
 
             elif rchx[4] > 1 and not rchx[4] == len(allrchs):
                 # Current reach is 'interior' on the original segment and
-                # therefore should only have 1 upstream & 1 downstream segement
+                # therefore should only have 1 upstream & 1 downstream segment
                 idx = orig_rch.index(rchx)
                 # B/c 0-based, idx will already be incremented by -1
                 upconn.append(int(idx - 1))
