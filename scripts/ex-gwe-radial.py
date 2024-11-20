@@ -603,7 +603,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         filename="{}.npf".format(gwfname),
     )
 
-    # Instatiating MODFLOW 6 initial conditions package
+    # Instantiating MODFLOW 6 initial conditions package
     flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
     # Instantiating MODFLOW 6 storage package

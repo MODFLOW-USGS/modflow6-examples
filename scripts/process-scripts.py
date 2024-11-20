@@ -36,7 +36,7 @@ Flag1 Flag2    Arg1 Arg2  Description
                          Arg2 is optional, and if present replaces Arg1 for
                          pattern matching exdir.
 
--k  --keyword  yes  opt  Proces the expy and exdir that match a Unix
+-k  --keyword  yes  opt  Process the expy and exdir that match a Unix
                          filename search pattern.
                          Arg1 is the Unix filename matching pattern
                          to filter and print the expy and exdir names.

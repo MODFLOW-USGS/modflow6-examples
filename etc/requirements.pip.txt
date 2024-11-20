@@ -22,6 +22,7 @@ jupytext
 pooch
 GitPython
 pyvista
+codespell
 ruff
 meson
 ninja

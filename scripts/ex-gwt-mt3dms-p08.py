@@ -249,7 +249,7 @@ def build_models(mixelm=0, silent=False):
         dt0=5,
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(
         mt,
         mixelm=mixelm,

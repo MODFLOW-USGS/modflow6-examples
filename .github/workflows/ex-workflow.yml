@@ -44,6 +44,10 @@ jobs:
       - name: Format
         run: ruff format . --check
 
+      - name: Check spelling
+        run: codespell
+        # add false-positives to etc/codespell.ignore
+
   dist:
     name: Build example models
     runs-on: ubuntu-latest

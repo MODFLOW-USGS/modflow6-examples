@@ -604,7 +604,7 @@ def build_mt3d_transport_model(
         mxstrn=20000,
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(mt, mixelm=mixelm, percel=percel)
 
     # Instantiate the dispersion package

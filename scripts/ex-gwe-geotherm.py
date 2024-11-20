@@ -351,7 +351,7 @@ def read_finite_element_mesh(f):
             elif read_nodes:
                 t = line.strip().split()
                 # assuming all verts/vert number combos are listed in an
-                # assending order
+                # ascending order
                 verts.append([int(t[0]) - 1, float(t[1]), float(t[2])])
 
                 # If the max node number yet encountered, store it
@@ -518,7 +518,7 @@ def build_mf6_flow_model(sim_name, silent=True):
         filename="{}.npf".format(gwfname),
     )
 
-    # Instatiating MODFLOW 6 initial conditions package
+    # Instantiating MODFLOW 6 initial conditions package
     flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
     # Instantiating MODFLOW 6 storage package
