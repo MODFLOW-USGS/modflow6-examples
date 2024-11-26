@@ -2478,11 +2478,7 @@ def plot_grid(sim, verbose=False):
         fig.tight_layout()
 
         # Save components that made up the main grid
-        fig2, ax2 = plt.subplots(
-            1,
-            3,
-            figsize=figure_size_grid_com,
-        )
+        fig2, ax2 = plt.subplots(1, 3, figsize=figure_size_grid_com)
 
         curvlin1.plot_grid(
             "Left Curvilinear Grid",
@@ -2581,19 +2577,13 @@ def plot_head(sim):
 
         # create MODFLOW 6 cell-by-cell budget object
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-            gwf,
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0], gwf
         )
 
         ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
         cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-        pmv.plot_vector(
-            qx,
-            qy,
-            normalize=False,
-            color="0.75",
-        )
+        pmv.plot_vector(qx, qy, normalize=False, color="0.75")
         cbar = plt.colorbar(cb, shrink=0.25)
         cbar.ax.set_xlabel(r"Head, ($ft$)")
         ax.set_xlabel("x position (ft)")

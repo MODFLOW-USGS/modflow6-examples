@@ -330,9 +330,7 @@ def build_models(example_name):
         filename=f"{prt_name}_1a.prp",
         nreleasepts=len(releasepts_1a),
         packagedata=releasepts_1a,
-        perioddata={
-            0: ["FIRST"],
-        },
+        perioddata={0: ["FIRST"]},
         exit_solve_tolerance=1e-5,
         extend_tracking=True,
     )
@@ -346,9 +344,7 @@ def build_models(example_name):
         filename=f"{prt_name}_1b.prp",
         nreleasepts=len(releasepts_1b),
         packagedata=releasepts_1b,
-        perioddata={
-            0: ["FIRST"],
-        },
+        perioddata={0: ["FIRST"]},
         exit_solve_tolerance=1e-10,
         extend_tracking=True,
     )
@@ -610,13 +606,7 @@ def plot_points(ax, gwf, data, **kwargs):
             label = "Captured by " + dest
             pdata = data[data.dest == dest]
             pts.append(
-                ax.scatter(
-                    pdata["x"],
-                    pdata["y"],
-                    s=3,
-                    color=color,
-                    label=label,
-                )
+                ax.scatter(pdata["x"], pdata["y"], s=3, color=color, label=label)
             )
         return pts
     else:

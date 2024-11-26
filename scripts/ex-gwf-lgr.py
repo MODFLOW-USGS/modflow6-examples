@@ -1032,16 +1032,10 @@ def plot_results(mf6, idx):
         ax1.set_xlabel("Distance Along River ($m$)")
         ax1.set_ylabel(r"Stream Flow ($\frac{m^3}{s}$)")
         ax1.vlines(
-            x=(rch_lengths[7] + rch_lengths[8]) / 2,
-            ymin=-60,
-            ymax=235,
-            linewidth=2,
+            x=(rch_lengths[7] + rch_lengths[8]) / 2, ymin=-60, ymax=235, linewidth=2
         )
         ax1.vlines(
-            x=(rch_lengths[96] + rch_lengths[97]) / 2,
-            ymin=-65,
-            ymax=235,
-            linewidth=2,
+            x=(rch_lengths[96] + rch_lengths[97]) / 2, ymin=-65, ymax=235, linewidth=2
         )
 
         ax2 = ax1.twinx()

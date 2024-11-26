@@ -534,13 +534,7 @@ def get_mf6_pathlines(path):
     pl.reset_index(drop=True, inplace=True)
 
     # convert indices to 0-based
-    for n in [
-        "imdl",
-        "iprp",
-        "irpt",
-        "ilay",
-        "icell",
-    ]:
+    for n in ["imdl", "iprp", "irpt", "ilay", "icell"]:
         pl[n] -= 1
 
     return pl
@@ -622,13 +616,7 @@ def plot_points(fig, ax, gwf, data, colorbar=True, **kwargs):
             label = "Captured by " + dest
             pdata = data[data.dest == dest]
             pts.append(
-                ax.scatter(
-                    pdata["x"],
-                    pdata["y"],
-                    s=3,
-                    color=color,
-                    label=label,
-                )
+                ax.scatter(pdata["x"], pdata["y"], s=3, color=color, label=label)
             )
         return pts
     else:
@@ -917,15 +905,9 @@ def plot_all(gwfsim):
 
     # plot the results
     plot_head(gwf, head=head)
-    plot_pathpoints(
-        gwf,
-        mf6pathlines,
-        title="2000-day points, colored by travel time",
-    )
+    plot_pathpoints(gwf, mf6pathlines, title="2000-day points, colored by travel time")
     plot_pathpoints_3d(
-        gwf,
-        mf6pathlines,
-        title="Pathlines, 2000-day points,\ncolored by destination",
+        gwf, mf6pathlines, title="Pathlines, 2000-day points,\ncolored by destination"
     )
     plot_endpoints(
         gwf,

@@ -414,12 +414,9 @@ def generate_control_volumes(basedata, verts, flat_list, idx, silent=True):
     Lx = abs(right_x - left_x)
 
     # Work up the outer-most control volumes (iverts)
-    (
-        left_chd_spd_slow,
-        right_chd_spd_slow,
-        ivt,
-        idx,
-    ) = create_outer_ring_of_ctrl_vols(next_rad, verts, iverts, xc, yc, ivt, idx)
+    (left_chd_spd_slow, right_chd_spd_slow, ivt, idx) = create_outer_ring_of_ctrl_vols(
+        next_rad, verts, iverts, xc, yc, ivt, idx
+    )
 
     return (
         ivt,
@@ -947,24 +944,17 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
 
     # Get analytical solution
     simname = sim.name[:13]
-    adat = pd.read_csv(
-        fpath,
-        delimiter=",",
-        header=None,
-        names=["x", "y", "temp"],
-    )
+    adat = pd.read_csv(fpath, delimiter=",", header=None, names=["x", "y", "temp"])
     gwe = sim.get_model("gwe-" + simname.split("-")[2])
 
     with styles.USGSPlot():
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
-        temp = (
-            gwe.output.temperature().get_alldata()
-        )  # eventually restore to: .temperature().
-        temp48h = temp[
-            -1
-        ]  # Plot the temperature at 48 hours, same as analytical solution provided
+        # eventually restore to: .temperature().
+        temp = gwe.output.temperature().get_alldata()
+        # Plot the temperature at 48 hours, same as analytical solution provided
+        temp48h = temp[-1]
         ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pmv = flopy.plot.PlotMapView(model=gwe, ax=ax, layer=0)
 
@@ -976,12 +966,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
 
         cs1 = pmv.contour_array(temp48h, levels=levels, colors=cmaplist, linewidths=0.5)
         labels = ax.clabel(
-            cs1,
-            cs1.levels,
-            inline=False,
-            inline_spacing=0.0,
-            fontsize=8,
-            fmt="%1d",
+            cs1, cs1.levels, inline=False, inline_spacing=0.0, fontsize=8, fmt="%1d"
         )
         cs2 = ax.tricontour(
             adat["x"],

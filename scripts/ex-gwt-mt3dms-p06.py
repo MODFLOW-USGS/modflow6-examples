@@ -519,13 +519,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         y_mf6 = mf6cobs["BCKGRND_CN"]
         x_mf6_pare = x_mf6[::20]
         y_mf6_pare = y_mf6[::20]
-        ax.plot(
-            x_mf6_pare,
-            y_mf6_pare,
-            label="MODFLOW 6",
-            marker="x",
-            linestyle=":",
-        )
+        ax.plot(x_mf6_pare, y_mf6_pare, label="MODFLOW 6", marker="x", linestyle=":")
 
         plt.xlim(0, 10)
         plt.ylim(0, 100.0)

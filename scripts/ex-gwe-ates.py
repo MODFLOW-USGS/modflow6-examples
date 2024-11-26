@@ -947,9 +947,8 @@ def make_animated_gif(sim):
         tempmesh.set_array(temps[i].flatten())
         ax.set_title(f"Time = {times[i]} days")
 
-    ani = FuncAnimation(
-        fig, update, range(1, len(times)), init_func=init
-    )  # interval=25,
+    ani = FuncAnimation(fig, update, range(1, len(times)), init_func=init)
+    # interval=25,
     writer = PillowWriter(fps=10)
     fpth = figs_path / "{}{}".format(sim_name, ".gif")
     ani.save(fpth, writer=writer)

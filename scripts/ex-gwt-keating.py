@@ -193,7 +193,10 @@ def build_mf6gwf():
         gwf,
         head_filerecord=head_filerecord,
         budget_filerecord=budget_filerecord,
-        saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
+        saverecord=[
+            ("HEAD", "ALL"),
+            ("BUDGET", "ALL"),
+        ],
     )
     return sim
 
@@ -276,10 +279,7 @@ def build_mf6gwt():
         saverecord=saverecord,
         printrecord=[
             ("CONCENTRATION", "LAST"),
-            (
-                "BUDGET",
-                "ALL",
-            ),
+            ("BUDGET", "ALL"),
         ],
     )
     obs_data = {
@@ -523,11 +523,7 @@ def plot_cvt_results(sims):
         fig, axes = plt.subplots(2, 1, figsize=(6, 4), dpi=300, tight_layout=True)
         ax = axes[0]
         ax.plot(
-            mf6gwt_ra["totim"],
-            mf6gwt_ra["OBS1"],
-            "b-",
-            alpha=1.0,
-            label="MODFLOW 6",
+            mf6gwt_ra["totim"], mf6gwt_ra["OBS1"], "b-", alpha=1.0, label="MODFLOW 6"
         )
         ax.plot(
             obs1ra["totim"],
@@ -546,11 +542,7 @@ def plot_cvt_results(sims):
         styles.graph_legend(ax)
         ax = axes[1]
         ax.plot(
-            mf6gwt_ra["totim"],
-            mf6gwt_ra["OBS2"],
-            "b-",
-            alpha=1.0,
-            label="MODFLOW 6",
+            mf6gwt_ra["totim"], mf6gwt_ra["OBS2"], "b-", alpha=1.0, label="MODFLOW 6"
         )
         ax.plot(
             obs2ra["totim"],

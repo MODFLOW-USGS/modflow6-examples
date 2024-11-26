@@ -185,9 +185,7 @@ def get_disu_radial_kwargs(
     # Build rectangular equivalent of radial coordinates (unwrap radial bands)
     if get_vertex:
         perimeter_outer = np.fromiter(
-            (2.0 * pi * rad for rad in radius_outer),
-            dtype=float,
-            count=nradial,
+            (2.0 * pi * rad for rad in radius_outer), dtype=float, count=nradial
         )
         xc = 0.5 * radius_outer[0]
         yc = 0.5 * perimeter_outer[-1]
@@ -1185,12 +1183,7 @@ def build_models(name):
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
 
     disukwargs = get_disu_radial_kwargs(
-        nlay,
-        nradial,
-        radius_outer,
-        surface_elevation,
-        layer_thickness,
-        get_vertex=True,
+        nlay, nradial, radius_outer, surface_elevation, layer_thickness, get_vertex=True
     )
 
     disu = flopy.mf6.ModflowGwfdisu(gwf, length_units=length_units, **disukwargs)

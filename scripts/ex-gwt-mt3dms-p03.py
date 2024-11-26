@@ -510,10 +510,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         cs1 = mm.contour_array(conc_mt3d[1], levels=[0.1, 1.0, 10.0, 50.0], colors="k")
         plt.clabel(cs1, inline=1, fontsize=10)
         cs2 = mm.contour_array(
-            conc_mf6[1],
-            levels=[0.1, 1.0, 10.0, 50.0],
-            colors="r",
-            linestyles="--",
+            conc_mf6[1], levels=[0.1, 1.0, 10.0, 50.0], colors="r", linestyles="--"
         )
         plt.clabel(cs2, inline=1, fontsize=10)
         labels = ["MT3DMS", "MODFLOW 6"]

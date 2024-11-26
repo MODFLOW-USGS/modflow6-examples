@@ -777,13 +777,7 @@ def plot_grid(sim):
 
         # Create a Rectangle patch
         rect = patches.Rectangle(
-            (28, -0.5),
-            9,
-            6,
-            linewidth=1,
-            edgecolor="r",
-            facecolor="none",
-            zorder=3,
+            (28, -0.5), 9, 6, linewidth=1, edgecolor="r", facecolor="none", zorder=3
         )
 
         # Add the location of the inset plot to current plot
@@ -909,9 +903,8 @@ def plot_temperature(sim, scen, time_):
         fig = plt.figure(figsize=figure_size)
         fig.tight_layout()
 
-        temp = (
-            gwe.output.temperature().get_alldata()
-        )  # eventually restore to: .temperature().
+        # eventually restore to: .temperature().
+        temp = gwe.output.temperature().get_alldata()
         if time_ == 50:  # first of two output times saved was at 50 days
             ct = 0
         elif time_ == 100:  # second of two output times saved was at 100 days
@@ -931,12 +924,7 @@ def plot_temperature(sim, scen, time_):
         cs1 = pmv.contour_array(tempXXd, levels=levels, colors=cmaplist, linewidths=0.5)
 
         labels = ax.clabel(
-            cs1,
-            cs1.levels,
-            inline=False,
-            inline_spacing=0.0,
-            fmt="%1d",
-            fontsize=8,
+            cs1, cs1.levels, inline=False, inline_spacing=0.0, fmt="%1d", fontsize=8
         )
         cs2 = ax.contour(
             Xnew,
@@ -956,9 +944,7 @@ def plot_temperature(sim, scen, time_):
         ax.set_xlim([29, 50])
         ax.set_ylim([-8, 8])
         styles.heading(
-            ax,
-            heading=" Simulated Temperature at " + str(time_) + " days",
-            idx=3,
+            ax, heading=" Simulated Temperature at " + str(time_) + " days", idx=3
         )
 
         # save figure

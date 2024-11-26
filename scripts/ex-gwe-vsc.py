@@ -712,11 +712,7 @@ def plot_results(sim, idx, temp_upper=4.0, temp_lower=4.0):
 
     # Make a difference plot, as in: actually make a difference
     fig, ax = plt.subplots(
-        ncols=1,
-        nrows=1,
-        figsize=figure_size_2,
-        constrained_layout=False,
-        dpi=600,
+        ncols=1, nrows=1, figsize=figure_size_2, constrained_layout=False, dpi=600
     )
 
     mm = flopy.plot.PlotMapView(model=gwt1, ax=ax)

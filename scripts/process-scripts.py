@@ -79,30 +79,14 @@ def _replace_quotes(proc_str):
 
 
 def table_standard_header(caption, label):
-    col_widths = (
-        0.5,
-        0.3,
-    )
-    headings = (
-        "Parameter",
-        "Value",
-    )
+    col_widths = (0.5, 0.3)
+    headings = ("Parameter", "Value")
     return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_scenario_header(caption, label):
-    col_widths = (
-        0.1,
-        0.25,
-        0.3,
-        0.15,
-    )
-    headings = (
-        "Scenario",
-        "Scenario Name",
-        "Parameter",
-        "Value",
-    )
+    col_widths = (0.1, 0.25, 0.3, 0.15)
+    headings = ("Scenario", "Scenario Name", "Parameter", "Value")
     return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
@@ -641,13 +625,7 @@ def build_tex_tables(ex_dict):
         "Grid \\newline Dimensions",
         "Packages",
     )
-    col_widths = (
-        0.10,
-        0.22,
-        0.25,
-        0.15,
-        0.28,
-    )
+    col_widths = (0.10, 0.22, 0.25, 0.15, 0.28)
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
@@ -655,13 +633,7 @@ def build_tex_tables(ex_dict):
 
     on_ex = 0
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):
-        for jdx, (
-            ex_number,
-            namefile,
-            dimensions,
-            model_paks,
-            sim_paks,
-        ) in enumerate(
+        for jdx, (ex_number, namefile, dimensions, model_paks, sim_paks) in enumerate(
             zip(
                 sim_dict["ex_number"],
                 sim_dict["namefiles"],

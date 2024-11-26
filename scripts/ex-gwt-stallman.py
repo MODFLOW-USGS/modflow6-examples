@@ -184,10 +184,7 @@ def build_models(sim_folder):
 
     flopy.mf6.ModflowGwfic(gwf, strt=top)
 
-    flopy.mf6.ModflowGwfchd(
-        gwf,
-        stress_period_data=chd_mf6,
-    )
+    flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_mf6)
 
     head_filerecord = f"{name}.hds"
     budget_filerecord = f"{name}.bud"
@@ -237,10 +234,7 @@ def build_models(sim_folder):
     flopy.mf6.ModflowGwtadv(gwt, scheme="TVD")
     flopy.mf6.ModflowGwtdsp(gwt, xt3d_off=True, alh=alphal, ath1=alphat, diffc=diffc)
     flopy.mf6.ModflowGwtssm(gwt, sources=[[]])
-    flopy.mf6.ModflowGwtcnc(
-        gwt,
-        stress_period_data=cnc_mf6,
-    )
+    flopy.mf6.ModflowGwtcnc(gwt, stress_period_data=cnc_mf6)
     flopy.mf6.ModflowGwtoc(
         gwt,
         budget_filerecord=f"{gwt.name}.cbc",
@@ -322,11 +316,7 @@ def plot_conc(sim, idx):
         # configure plot and save
         ax.plot(zconc, zbotm, "bo", mfc="none", label="MODFLOW6-GWT")
         ax.plot(
-            zanal[:, 1],
-            zanal[:, 0],
-            "k--",
-            linewidth=1.0,
-            label="Analytical solution",
+            zanal[:, 1], zanal[:, 0], "k--", linewidth=1.0, label="Analytical solution"
         )
         ax.set_xlim(T_az - dT, T_az + dT)
         ax.set_ylim(-top, 0)

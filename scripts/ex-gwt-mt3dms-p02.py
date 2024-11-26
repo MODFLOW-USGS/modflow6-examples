@@ -153,18 +153,10 @@ def build_mf6gwf(sim_folder):
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=[[(0, 0, ncol - 1), 1.0]])
     wel_spd = {
         0: [
-            [
-                (0, 0, 0),
-                inflow_rate,
-                source_concentration,
-            ]
+            [(0, 0, 0), inflow_rate, source_concentration],
         ],
         1: [
-            [
-                (0, 0, 0),
-                inflow_rate,
-                0.0,
-            ]
+            [(0, 0, 0), inflow_rate, 0.0],
         ],
     }
     flopy.mf6.ModflowGwfwel(

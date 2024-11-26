@@ -289,17 +289,7 @@ def plot_observations(sim_list, silent=True):
     colors = ("blue", "black")
     labels = ("no leakage", "leakage")
     markers = ("s", "o")
-    mosaic = [
-        ["a"],
-        ["a"],
-        ["a"],
-        ["a"],
-        ["b"],
-        ["b"],
-        ["b"],
-        ["b"],
-        ["c"],
-    ]
+    mosaic = [["a"], ["a"], ["a"], ["a"], ["b"], ["b"], ["b"], ["b"], ["c"]]
 
     analytical = []
     for key, value in parameters.items():

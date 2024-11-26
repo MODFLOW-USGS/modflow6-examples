@@ -628,8 +628,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             plt.show()
         if plot_save:
             fpth = figs_path / "{}{}".format(
-                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
-                ".png",
+                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs", ".png"
             )
             fig.savefig(fpth)
 
@@ -673,8 +672,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             plt.show()
         if plot_save:
             fpth = figs_path / "{}{}".format(
-                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
-                ".png",
+                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs", ".png"
             )
             fig.savefig(fpth)
 
@@ -718,8 +716,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             plt.show()
         if plot_save:
             fpth = figs_path / "{}{}".format(
-                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
-                ".png",
+                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs", ".png"
             )
             fig.savefig(fpth)
 

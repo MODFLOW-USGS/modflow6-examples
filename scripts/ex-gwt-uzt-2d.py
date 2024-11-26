@@ -237,18 +237,7 @@ for k in range(nlay):
         if k == nlay - 1:
             ivertcon = -1
         # <iuzno> <cellid(ncelldim)> <landflag> <ivertcon> <surfdep> <vks> <thtr> <thts> <thti> <eps> [<boundname>]
-        uz = [
-            iuzno,
-            (k, 0, j),
-            lflag,
-            ivertcon,
-            surfdep,
-            vk,
-            thtr,
-            thts,
-            thti,
-            eps,
-        ]
+        uz = [iuzno, (k, 0, j), lflag, ivertcon, surfdep, vk, thtr, thts, thti, eps]
         packagedata.append(uz)
 
         # now some transport book keeping
@@ -938,10 +927,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(
-                sim_name,
-                ".png",
-            )
+            fpth = figs_path / "{}{}".format(sim_name, ".png")
             fig.savefig(fpth)
 
 

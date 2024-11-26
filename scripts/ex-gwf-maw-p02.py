@@ -173,10 +173,7 @@ def build_models():
         filename=obs_file, digits=10, print_input=True, continuous=obs_dict
     )
 
-    flopy.mf6.ModflowGwfoc(
-        gwf,
-        printrecord=[("BUDGET", "LAST")],
-    )
+    flopy.mf6.ModflowGwfoc(gwf, printrecord=[("BUDGET", "LAST")])
     return sim
 
 
@@ -215,31 +212,17 @@ def plot_maw_results(silent=True):
 
         # create the figure
         fig, axes = plt.subplots(
-            ncols=1,
-            nrows=2,
-            sharex=True,
-            figsize=figure_size,
-            constrained_layout=True,
+            ncols=1, nrows=2, sharex=True, figsize=figure_size, constrained_layout=True
         )
 
         ax = axes[0]
         ax.set_xlim(tmin, tmax)
         ax.set_ylim(0, 4500)
         ax.semilogx(
-            time,
-            maw["Q1"],
-            lw=0.75,
-            ls="-",
-            color="blue",
-            label="Upper aquifer",
+            time, maw["Q1"], lw=0.75, ls="-", color="blue", label="Upper aquifer"
         )
         ax.semilogx(
-            time,
-            maw["Q2"],
-            lw=0.75,
-            ls="-",
-            color="red",
-            label="Lower aquifer",
+            time, maw["Q2"], lw=0.75, ls="-", color="red", label="Lower aquifer"
         )
         ax.axhline(0, lw=0.5, color="0.5")
         ax.set_ylabel(" ")
@@ -249,20 +232,8 @@ def plot_maw_results(silent=True):
         ax = axes[1]
         ax.set_xlim(tmin, tmax)
         ax.set_ylim(-4500, 0)
-        ax.axhline(
-            10.0,
-            lw=0.75,
-            ls="-",
-            color="blue",
-            label="Upper aquifer",
-        )
-        ax.axhline(
-            10.0,
-            lw=0.75,
-            ls="-",
-            color="red",
-            label="Lower aquifer",
-        )
+        ax.axhline(10.0, lw=0.75, ls="-", color="blue", label="Upper aquifer")
+        ax.axhline(10.0, lw=0.75, ls="-", color="red", label="Lower aquifer")
         ax.semilogx(
             time,
             maw["FW"],
@@ -306,10 +277,7 @@ def plot_maw_results(silent=True):
 def plot_grid(sim, silent=True):
     gwf = sim.get_model(sim_name)
     with styles.USGSMap():
-        fig = plt.figure(
-            figsize=(4, 4.3),
-            tight_layout=True,
-        )
+        fig = plt.figure(figsize=(4, 4.3), tight_layout=True)
         plt.axis("off")
 
         nrows, ncols = 10, 1

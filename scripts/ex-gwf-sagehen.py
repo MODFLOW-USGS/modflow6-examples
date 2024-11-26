@@ -2346,25 +2346,16 @@ def plot_results(mf6):
         fig = plt.figure(figsize=figure_size_ts, dpi=300, tight_layout=True)
         ax = fig.add_subplot(1, 1, 1)
         vals2.outflow.plot(
-            style="-",
-            linewidth=0.5,
-            color="royalblue",
-            label="Streamflow at Outlet",
+            style="-", linewidth=0.5, color="royalblue", label="Streamflow at Outlet"
         )
         vals2.GroundwaterDischarge.plot(
             style="k-", linewidth=0.7, label="Groundwater Discharge"
         )
         vals2.RejectedInfiltration.plot(
-            style="-",
-            linewidth=0.7,
-            color="brown",
-            label="Rejected Infiltration",
+            style="-", linewidth=0.7, color="brown", label="Rejected Infiltration"
         )
         vals2.gwswExchange.plot(
-            style="-",
-            color="darkgreen",
-            linewidth=0.7,
-            label="GW Discharge to Streams",
+            style="-", color="darkgreen", linewidth=0.7, label="GW Discharge to Streams"
         )
         ax.set_ylim(0, 350000)
         plt.tick_params(

@@ -327,23 +327,13 @@ def build_gwe_sim(name):
         budget_filerecord="{}.cbc".format(gwe_name),
         temperature_filerecord="{}.ucn".format(gwe_name),
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
-        saverecord={
-            0: [("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
-        },
+        saverecord={0: [("TEMPERATURE", "ALL"), ("BUDGET", "ALL")]},
         printrecord=[("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
     )
 
     pd = [
-        (
-            "GWFHEAD",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"),
-            None,
-        ),
-        (
-            "GWFBUDGET",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"),
-            None,
-        ),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"), None),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"), None),
     ]
     flopy.mf6.ModflowGwefmi(gwe, packagedata=pd)
 
@@ -396,22 +386,11 @@ def build_prt_sim(name):
     )
 
     pd = [
-        (
-            "GWFHEAD",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"),
-            None,
-        ),
-        (
-            "GWFBUDGET",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"),
-            None,
-        ),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"), None),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"), None),
     ]
 
-    flopy.mf6.ModflowPrtfmi(
-        prt,
-        packagedata=pd,
-    )
+    flopy.mf6.ModflowPrtfmi(prt, packagedata=pd)
     ems = flopy.mf6.ModflowEms(
         sim,
         pname="ems",
@@ -535,18 +514,10 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
 
         handles.append(
             mpl.lines.Line2D(
-                [0],
-                [0],
-                marker="o",
-                linestyle="",
-                label="Well",
-                markerfacecolor="red",
-            ),
+                [0], [0], marker="o", linestyle="", label="Well", markerfacecolor="red"
+            )
         )
-        ax.legend(
-            handles=handles,
-            loc="lower right",
-        )
+        ax.legend(handles=handles, loc="lower right")
         pmv.plot_vector(qx, qy, normalize=True, alpha=0.25)
         pmv.plot_bc(ftype="WEL")
         mf6_plines = pls.groupby(["iprp", "irpt", "trelease"])
