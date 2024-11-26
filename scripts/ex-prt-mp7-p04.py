@@ -586,9 +586,7 @@ def build_prt():
         filename="{}_4.prp".format(prt_name),
         nreleasepts=len(particles_prt),
         packagedata=particles_prt,
-        perioddata={
-            0: ["FIRST"],
-        },
+        perioddata={0: ["FIRST"]},
         exit_solve_tolerance=1e-5,
         extend_tracking=True,
     )
@@ -640,10 +638,7 @@ def build_mp7(gwf):
         exe_name="mp7",
         model_ws=mp7_ws,
     )
-    mpbas = flopy.modpath.Modpath7Bas(
-        mp,
-        porosity=porosity,
-    )
+    mpbas = flopy.modpath.Modpath7Bas(mp, porosity=porosity)
     mpsim = flopy.modpath.Modpath7Sim(
         mp,
         simulationtype="pathline",
@@ -940,12 +935,7 @@ def plot_all(gwf):
     )
 
     plot_grid(gwf, title="Model grid and boundary conditions")
-    plot_all_pathlines(
-        grid,
-        hds,
-        prt_pl,
-        title="Head and pathlines",
-    )
+    plot_all_pathlines(grid, hds, prt_pl, title="Head and pathlines")
 
 
 # -

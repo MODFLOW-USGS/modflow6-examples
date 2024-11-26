@@ -676,13 +676,7 @@ def get_mp7_timeseries(path, gwf_model):
     mp7ts.set_index(["particlegroup", "particleid"], drop=False, inplace=True)
 
     # convert indices to 1-based (flopy converts them to 0-based, but PRT uses 1-based, so do the same for consistency)
-    kijnames = [
-        "k",
-        "node",
-        "particleid",
-        "particlegroup",
-        "particleidloc",
-    ]
+    kijnames = ["k", "node", "particleid", "particlegroup", "particleidloc"]
 
     for n in kijnames:
         mp7ts[n] += 1
@@ -728,13 +722,7 @@ def get_mp7_endpoints(path, gwf_model):
     mp7ep.set_index(["particlegroup", "particleid"], drop=False, inplace=True)
 
     # convert indices to 1-based (flopy converts them to 0-based, but PRT uses 1-based, so do the same for consistency)
-    kijnames = [
-        "k",
-        "node",
-        "particleid",
-        "particlegroup",
-        "particleidloc",
-    ]
+    kijnames = ["k", "node", "particleid", "particlegroup", "particleidloc"]
 
     for n in kijnames:
         mp7ep[n] += 1
@@ -778,12 +766,7 @@ def get_mp7_endpoints(path, gwf_model):
 
 # +
 # colormap for boundary locations
-cmapbd = mpl.colors.ListedColormap(
-    [
-        "r",
-        "g",
-    ]
-)
+cmapbd = mpl.colors.ListedColormap(["r", "g"])
 
 # time series point colors by layer
 colors = ["green", "orange", "red"]
@@ -914,12 +897,7 @@ def plot_points(ax, gwf, data):
     ax.set_aspect("equal")
     mm = flopy.plot.PlotMapView(model=gwf, ax=ax)
     mm.plot_grid(alpha=0.25)
-    return ax.scatter(
-        data["x"],
-        data["y"],
-        color=data["mc"],
-        s=3,
-    )
+    return ax.scatter(data["x"], data["y"], color=data["mc"], s=3)
 
 
 def plot_tracks(

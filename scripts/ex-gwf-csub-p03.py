@@ -272,22 +272,7 @@ k33 = (
     9.14e-3,
     9.14e-3,
 )
-iconvert = (
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-)
+iconvert = (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 sgm = 1.7
 sgs = 2.0
 cg_theta = 0.3
@@ -336,21 +321,7 @@ ib_thickness = (
     3.0480,
     2.7432,
 )
-ib_rnb = (
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.0,
-    1.92,
-    1.66,
-    2.85,
-)
+ib_rnb = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.92, 1.66, 2.85)
 ib_theta = 0.30
 ib_kv = (
     999.0,
@@ -407,15 +378,7 @@ for idx in range(82, nper):
 
 # Constant head cells
 c6 = []
-for k, tag in zip(
-    (
-        0,
-        5,
-        10,
-        12,
-    ),
-    ("upper", "middle", "middle", "lower"),
-):
+for k, tag in zip((0, 5, 10, 12), ("upper", "middle", "middle", "lower")):
     c6.append([k, 0, 0, tag])
 
 # Solver parameters
@@ -479,13 +442,7 @@ def build_models(
     cpth = opth + ".csv"
     obs_array = []
     for k in range(nlay):
-        obs_array.append(
-            [
-                f"HD{k + 1:02d}",
-                "HEAD",
-                (k, 0, 0),
-            ]
-        )
+        obs_array.append([f"HD{k + 1:02d}", "HEAD", (k, 0, 0)])
     flopy.mf6.ModflowUtlobs(
         gwf,
         digits=10,
@@ -558,21 +515,9 @@ def build_models(
     ]
     for k in (1, 2, 3, 4, 6, 7, 8, 9, 11, 13):
         tag = f"tc{k + 1:02d}"
-        obs.append(
-            (
-                tag,
-                "compaction-cell",
-                (k, 0, 0),
-            )
-        )
+        obs.append((tag, "compaction-cell", (k, 0, 0)))
         tag = f"skc{k + 1:02d}"
-        obs.append(
-            (
-                tag,
-                "coarse-compaction",
-                (k, 0, 0),
-            )
-        )
+        obs.append((tag, "coarse-compaction", (k, 0, 0)))
     orecarray = {csub_csv: obs}
     csub.obs.initialize(
         filename=opth, digits=10, print_input=True, continuous=orecarray
@@ -585,27 +530,12 @@ def build_models(
     chd.ts.initialize(
         filename=csubnam,
         timeseries=chd_ts,
-        time_series_namerecord=[
-            "upper",
-            "middle",
-            "lower",
-        ],
-        interpolation_methodrecord=[
-            "linear",
-            "linear",
-            "linear",
-        ],
-        sfacrecord=[
-            "1.0",
-            "1.0",
-            "1.0",
-        ],
+        time_series_namerecord=["upper", "middle", "lower"],
+        interpolation_methodrecord=["linear", "linear", "linear"],
+        sfacrecord=["1.0", "1.0", "1.0"],
     )
 
-    flopy.mf6.ModflowGwfoc(
-        gwf,
-        printrecord=[("BUDGET", "ALL")],
-    )
+    flopy.mf6.ModflowGwfoc(gwf, printrecord=[("BUDGET", "ALL")])
     return sim
 
 
@@ -954,13 +884,7 @@ def constant_heads(ax, annotate=False, fontsize=6, xrange=(0, 1)):
             if k == 0:
                 y = 0.5 * (edges[k][0] + edges[k + 1][0])
                 ax.text(
-                    x,
-                    y,
-                    text,
-                    fontsize=fontsize,
-                    ha="center",
-                    va="center",
-                    zorder=203,
+                    x, y, text, fontsize=fontsize, ha="center", va="center", zorder=203
                 )
             else:
                 y = edges[k + 1][0]
@@ -1002,12 +926,7 @@ def plot_grid(silent=True):
 
         ax = axes[0]
         ax.fill_between(
-            xrange,
-            edges[0],
-            y2=edges[1],
-            color="green",
-            lw=0,
-            label="Upper aquifer",
+            xrange, edges[0], y2=edges[1], color="green", lw=0, label="Upper aquifer"
         )
 
         label = ""
@@ -1034,12 +953,7 @@ def plot_grid(silent=True):
 
         # lower aquifer
         ax.fill_between(
-            xrange,
-            midz[-1],
-            y2=edges[-1],
-            color="blue",
-            lw=0,
-            label="Lower aquifer",
+            xrange, midz[-1], y2=edges[-1], color="blue", lw=0, label="Lower aquifer"
         )
 
         styles.graph_legend(ax, loc="lower right", frameon=True, framealpha=1)
@@ -1068,12 +982,7 @@ def plot_grid(silent=True):
 
         for k in chds:
             ax.fill_between(
-                xrange,
-                edges[k],
-                y2=edges[k + 1],
-                color="white",
-                lw=0.75,
-                zorder=100,
+                xrange, edges[k], y2=edges[k + 1], color="white", lw=0.75, zorder=100
             )
 
         leg = styles.graph_legend(ax, loc="lower right", frameon=True, framealpha=1)
@@ -1188,12 +1097,7 @@ def plot_head_es_comparison(silent=True):
             mtext = f"mean error = {me[key]:7.4f} {length_units}"
             ax.plot(hb["totim"], hb[key], color="#238A8DFF", lw=1.25, label=otext)
             ax.plot(
-                es["totim"],
-                es[key],
-                color="black",
-                lw=0.75,
-                label=stext,
-                zorder=101,
+                es["totim"], es[key], color="black", lw=0.75, label=stext, zorder=101
             )
             ltext = chr(ord("A") + idx)
             htext = f"{label}"
@@ -1204,13 +1108,7 @@ def plot_head_es_comparison(silent=True):
                 va = "top"
                 ym = 0.85
             ax.text(
-                0.99,
-                ym,
-                mtext,
-                ha="right",
-                va=va,
-                transform=ax.transAxes,
-                fontsize=7,
+                0.99, ym, mtext, ha="right", va=va, transform=ax.transAxes, fontsize=7
             )
             styles.remove_edge_ticks(ax=ax)
             if idx == 0:
@@ -1348,12 +1246,8 @@ def plot_calibration(silent=True):
         ax.set_xlim(xf0, xf1)
         ax.plot([xf0, xf1], [0, 0], lw=0.5, color="0.5")
         ax.plot(
-            [
-                xf0,
-            ],
-            [
-                -10,
-            ],
+            [xf0],
+            [-10],
             marker=".",
             ms=1,
             lw=0,
@@ -1391,12 +1285,7 @@ def plot_calibration(silent=True):
         ax.set_xlim(xf0s, xf1s)
         ax.set_ylim(1.45, 1.15)
         ax.plot(
-            df.index.values,
-            df["observed"].values,
-            marker=".",
-            ms=1,
-            lw=0,
-            color="red",
+            df.index.values, df["observed"].values, marker=".", ms=1, lw=0, color="red"
         )
         ax.plot(
             df_sim.index.values,
@@ -1583,13 +1472,7 @@ def plot_vertical_head(silent=True):
             )
         ypos = -0.5 * (zelevs[2] + zelevs[3])
         ax.text(
-            40,
-            ypos,
-            "Confining unit",
-            ha="left",
-            va="center",
-            size=8,
-            color="white",
+            40, ypos, "Confining unit", ha="left", va="center", size=8, color="white"
         )
 
         label = ""
@@ -1600,13 +1483,7 @@ def plot_vertical_head(silent=True):
             )
         ypos = -0.5 * (zelevs[8] + zelevs[9])
         ax.text(
-            40,
-            ypos,
-            "Thick aquitard",
-            ha="left",
-            va="center",
-            size=8,
-            color="white",
+            40, ypos, "Thick aquitard", ha="left", va="center", size=8, color="white"
         )
 
         zo = 105
@@ -1618,13 +1495,7 @@ def plot_vertical_head(silent=True):
             )
             ax.plot(x, y, lw=0.5, color="black", zorder=201)
             ax.text(
-                xlabel,
-                24,
-                f"{iyear}",
-                ha="center",
-                va="bottom",
-                rotation=90,
-                size=7,
+                xlabel, 24, f"{iyear}", ha="center", va="bottom", rotation=90, size=7
             )
             if iyear == 1996:
                 ax.plot(x1, y1, lw=0.5, color="black", zorder=zo)

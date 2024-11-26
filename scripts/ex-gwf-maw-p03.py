@@ -119,24 +119,7 @@ delr = [
     10.0,
     10.0,
 ]
-delc = [
-    10,
-    9.38,
-    9,
-    6,
-    4,
-    3,
-    2,
-    1.33,
-    1.25,
-    1,
-    1,
-    0.75,
-    0.5,
-    0.3735,
-    0.25,
-    0.1665,
-]
+delc = [10, 9.38, 9, 6, 4, 3, 2, 1.33, 1.25, 1, 1, 0.75, 0.5, 0.3735, 0.25, 0.1665]
 
 # Time discretization
 tdis_ds = ((1.0, 1, 1.0),)
@@ -461,10 +444,7 @@ def plot_maw_results(silent=True):
 
         zelev = sorted(list(set(list(obs_elev.values()))), reverse=True)
 
-        results = {
-            "maw": {},
-            "gwf": {},
-        }
+        results = {"maw": {}, "gwf": {}}
         for z in zelev:
             results["maw"][z] = 0.0
             results["gwf"][z] = 0.0
@@ -490,11 +470,7 @@ def plot_maw_results(silent=True):
 
         # create the figure
         fig, ax = plt.subplots(
-            ncols=1,
-            nrows=1,
-            sharex=True,
-            figsize=(4, 4),
-            constrained_layout=True,
+            ncols=1, nrows=1, sharex=True, figsize=(4, 4), constrained_layout=True
         )
 
         ax.set_xlim(-3.5, 3.5)
@@ -523,14 +499,7 @@ def plot_maw_results(silent=True):
             color="red",
             label="High K well",
         )
-        ax.plot(
-            -1000,
-            -1000,
-            lw=0.5,
-            ls="-",
-            color="0.5",
-            label="Grid cell",
-        )
+        ax.plot(-1000, -1000, lw=0.5, ls="-", color="0.5", label="Grid cell")
 
         styles.graph_legend(ax, loc="upper left", ncol=1, frameon=True)
         styles.add_text(
@@ -571,9 +540,7 @@ def plot_regional_grid(silent=True):
     h = gwf.output.head().get_data()
 
     with styles.USGSMap() as fs:
-        fig = plt.figure(
-            figsize=(6.3, 3.5),
-        )
+        fig = plt.figure(figsize=(6.3, 3.5))
         plt.axis("off")
 
         nrows, ncols = 10, 1
@@ -656,13 +623,7 @@ def plot_regional_grid(silent=True):
             markeredgewidth=1.25,
             label="Local model domain",
         )
-        ax.plot(
-            -10000,
-            -10000,
-            lw=0.5,
-            color="black",
-            label="Head contour, $ft$",
-        )
+        ax.plot(-10000, -10000, lw=0.5, color="black", label="Head contour, $ft$")
         cbar = plt.colorbar(ca, shrink=0.5, orientation="horizontal", ax=ax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $ft$", fontsize=9)
@@ -689,23 +650,14 @@ def plot_local_grid(silent=True):
 
     i, j = maw_loc
     dx, dy = delr[j], delc[i]
-    px = (
-        50.0 - 0.5 * dx,
-        50.0 + 0.5 * dx,
-    )
-    py = (
-        0.0 + dy,
-        0.0 + dy,
-    )
+    px = (50.0 - 0.5 * dx, 50.0 + 0.5 * dx)
+    py = (0.0 + dy, 0.0 + dy)
 
     # get regional heads for constant head boundaries
     h = gwf.output.head().get_data()
 
     with styles.USGSMap() as fs:
-        fig = plt.figure(
-            figsize=(6.3, 4.1),
-            tight_layout=True,
-        )
+        fig = plt.figure(figsize=(6.3, 4.1), tight_layout=True)
         plt.axis("off")
 
         nrows, ncols = 10, 1
@@ -792,11 +744,7 @@ def plot_local_grid(silent=True):
             label="Multi-aquifer well",
         )
         ax.plot(
-            -10000,
-            -10000,
-            lw=0.5,
-            color="black",
-            label="Water-table contour, $ft$",
+            -10000, -10000, lw=0.5, color="black", label="Water-table contour, $ft$"
         )
         styles.graph_legend(ax, loc="lower center", ncol=3)
 

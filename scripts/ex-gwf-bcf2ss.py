@@ -165,14 +165,7 @@ def build_models(name, rewet, wetfct, iwetit, ihdwet, linear_acceleration, newto
         botm=botm,
     )
     if rewet:
-        rewet_record = [
-            "wetfct",
-            wetfct,
-            "iwetit",
-            iwetit,
-            "ihdwet",
-            ihdwet,
-        ]
+        rewet_record = ["wetfct", wetfct, "iwetit", iwetit, "ihdwet", ihdwet]
         wetdry = [wetdry_layer0, 0]
     else:
         rewet_record = None
@@ -244,22 +237,13 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         cond = ("natural conditions", "pumping conditions")
         vmin, vmax = -10, 140
         masked_values = [1e30, -1e30]
-        levels = [
-            np.arange(0, 130, 10),
-            (10, 20, 30, 40, 50, 55, 60),
-        ]
+        levels = [np.arange(0, 130, 10), (10, 20, 30, 40, 50, 55, 60)]
         plot_number = 0
-        for idx, totim in enumerate(
-            (
-                1,
-                2,
-            )
-        ):
+        for idx, totim in enumerate((1, 2)):
             head = ho.get_data(totim=totim)
             head[head < botm_arr] = -1e30
             qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-                co.get_data(text="DATA-SPDIS", kstpkper=(0, totim - 1))[0],
-                gwf,
+                co.get_data(text="DATA-SPDIS", kstpkper=(0, totim - 1))[0], gwf
             )
 
             for k in range(nlay):
@@ -307,24 +291,10 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
 
         # items for legend
         ax.plot(
-            -1000,
-            -1000,
-            "s",
-            ms=5,
-            color="green",
-            mec="black",
-            mew=0.5,
-            label="River",
+            -1000, -1000, "s", ms=5, color="green", mec="black", mew=0.5, label="River"
         )
         ax.plot(
-            -1000,
-            -1000,
-            "s",
-            ms=5,
-            color="red",
-            mec="black",
-            mew=0.5,
-            label="Well",
+            -1000, -1000, "s", ms=5, color="red", mec="black", mew=0.5, label="Well"
         )
         ax.plot(
             -1000,
@@ -353,12 +323,7 @@ def plot_simulated_results(num, gwf, ho, co, silent=True):
         #     color="black",
         #     label="Head, in feet",
         # )
-        styles.graph_legend(
-            ax,
-            ncol=5,
-            frameon=False,
-            loc="upper center",
-        )
+        styles.graph_legend(ax, ncol=5, frameon=False, loc="upper center")
 
         cbar = plt.colorbar(
             cm, ax=ax, shrink=0.5, orientation="horizontal", location="bottom"
@@ -436,24 +401,10 @@ def plot_results(silent=True):
         ax.spines["right"].set_color("none")
         ax.patch.set_alpha(0.0)
         ax.plot(
-            -1100,
-            -1100,
-            "s",
-            ms=5,
-            color="green",
-            mec="black",
-            mew=0.5,
-            label="River",
+            -1100, -1100, "s", ms=5, color="green", mec="black", mew=0.5, label="River"
         )
         ax.plot(
-            -1100,
-            -1100,
-            "s",
-            ms=5,
-            color="red",
-            mec="black",
-            mew=0.5,
-            label="Well",
+            -1100, -1100, "s", ms=5, color="red", mec="black", mew=0.5, label="Well"
         )
         ax.plot(
             -1100,
@@ -465,12 +416,7 @@ def plot_results(silent=True):
             mew=0.5,
             label="Steady-state water table",
         )
-        styles.graph_legend(
-            ax,
-            ncol=3,
-            frameon=False,
-            loc="upper center",
-        )
+        styles.graph_legend(ax, ncol=3, frameon=False, loc="upper center")
 
         if plot_show:
             plt.show()

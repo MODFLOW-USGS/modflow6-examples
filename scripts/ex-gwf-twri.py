@@ -298,13 +298,7 @@ def plot_results(sim, mf, silent=True):
         vmin, vmax = -25, 100
 
         # check that the results are comparable
-        for idx, k in enumerate(
-            (
-                0,
-                2,
-                4,
-            )
-        ):
+        for idx, k in enumerate((0, 2, 4)):
             diff = np.abs(head[k] - head0[idx])
             msg = (
                 "aquifer {}: ".format(idx + 1)
@@ -316,8 +310,7 @@ def plot_results(sim, mf, silent=True):
 
         # extract specific discharge
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            cobj.get_data(text="DATA-SPDIS", kstpkper=(0, 0))[0],
-            gwf,
+            cobj.get_data(text="DATA-SPDIS", kstpkper=(0, 0))[0], gwf
         )
         frf = cobj0.get_data(text="FLOW RIGHT FACE", kstpkper=(0, 0))[0]
         fff = cobj0.get_data(text="FLOW FRONT FACE", kstpkper=(0, 0))[0]
@@ -354,10 +347,7 @@ def plot_results(sim, mf, silent=True):
             fmp.plot_bc("DRN", color="green")
             fmp.plot_bc("WEL", color="0.5")
             cv = fmp.contour_array(
-                head,
-                levels=[-25, 0, 25, 75, 100],
-                linewidths=0.5,
-                colors="black",
+                head, levels=[-25, 0, 25, 75, 100], linewidths=0.5, colors="black"
             )
             plt.clabel(cv, fmt="%1.0f")
             fmp.plot_vector(qx, qy, normalize=True, color="0.75")
@@ -372,10 +362,7 @@ def plot_results(sim, mf, silent=True):
             fmp.plot_bc("DRN", color="green")
             fmp.plot_bc("WEL", color="0.5")
             cv = fmp.contour_array(
-                head0,
-                levels=[-25, 0, 25, 75, 100],
-                linewidths=0.5,
-                colors="black",
+                head0, levels=[-25, 0, 25, 75, 100], linewidths=0.5, colors="black"
             )
             plt.clabel(cv, fmt="%1.0f")
             # fmp.plot_discharge(
@@ -401,23 +388,9 @@ def plot_results(sim, mf, silent=True):
         # ax = axes.flatten()[-2]
         # ax.axis("off")
         ax.plot(
-            -10000,
-            -10000,
-            marker="s",
-            ms=10,
-            mfc="green",
-            mec="green",
-            label="Drain",
+            -10000, -10000, marker="s", ms=10, mfc="green", mec="green", label="Drain"
         )
-        ax.plot(
-            -10000,
-            -10000,
-            marker="s",
-            ms=10,
-            mfc="0.5",
-            mec="0.5",
-            label="Well",
-        )
+        ax.plot(-10000, -10000, marker="s", ms=10, mfc="0.5", mec="0.5", label="Well")
         ax.plot(
             -10000,
             -10000,

@@ -334,10 +334,7 @@ def plot_grid(idx, sim):
         pmv.plot_bc(name="CHD-RIGHT", alpha=0.75)
 
         ax.plot(
-            [200, 500, 500, 200, 200],
-            [200, 200, 500, 500, 200],
-            "r--",
-            linewidth=2.0,
+            [200, 500, 500, 200, 200], [200, 200, 500, 500, 200], "r--", linewidth=2.0
         )
 
         ax.set_xlabel("x position (m)")
@@ -479,13 +476,11 @@ def plot_head(idx, sim):
             gwf_outer.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
             gwf_outer,
         )
-        (
-            qx_inner,
-            qy_inner,
-            qz_inner,
-        ) = flopy.utils.postprocessing.get_specific_discharge(
-            gwf_inner.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-            gwf_inner,
+        (qx_inner, qy_inner, qz_inner) = (
+            flopy.utils.postprocessing.get_specific_discharge(
+                gwf_inner.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
+                gwf_inner,
+            )
         )
 
         # create plot with head values and spdis
@@ -498,18 +493,8 @@ def plot_head(idx, sim):
         cb = pmv_inner.plot_array(head_inner, cmap="jet", vmin=0.0, vmax=1.0)
         pmv.plot_grid()
         pmv_inner.plot_grid()
-        pmv.plot_vector(
-            qx,
-            qy,
-            normalize=False,
-            color="0.75",
-        )
-        pmv_inner.plot_vector(
-            qx_inner,
-            qy_inner,
-            normalize=False,
-            color="0.75",
-        )
+        pmv.plot_vector(qx, qy, normalize=False, color="0.75")
+        pmv_inner.plot_vector(qx_inner, qy_inner, normalize=False, color="0.75")
         cbar = plt.colorbar(cb, shrink=0.25)
         cbar.ax.set_xlabel(r"Head, ($m$)")
         ax.set_xlabel("x position (m)")

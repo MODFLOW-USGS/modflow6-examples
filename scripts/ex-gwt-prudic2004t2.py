@@ -256,30 +256,16 @@ def build_mf6gwf(sim_folder):
         ll = line.strip().split()
         if len(ll) == 4:
             k, i, j, hd = ll
-            chdlist.append(
-                [
-                    (
-                        int(k) - 1,
-                        int(i) - 1,
-                        int(j) - 1,
-                    ),
-                    float(hd),
-                ]
-            )
+            chdlist.append([(int(k) - 1, int(i) - 1, int(j) - 1), float(hd)])
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chdlist, pname="CHD-1")
 
     idomain = dis.idomain.array
     lake_map = np.ones((nlay, nrow, ncol), dtype=np.int32) * -1
     lake_map[0, :, :] = lakibd[:, :] - 1
-    (
-        idomain,
-        lakepakdata_dict,
-        lakeconnectiondata,
-    ) = flopy.mf6.utils.get_lak_connections(
-        gwf.modelgrid,
-        lake_map,
-        idomain=idomain,
-        bedleak=lakebed_leakance,
+    (idomain, lakepakdata_dict, lakeconnectiondata) = (
+        flopy.mf6.utils.get_lak_connections(
+            gwf.modelgrid, lake_map, idomain=idomain, bedleak=lakebed_leakance
+        )
     )
 
     gwf.dis.idomain.set_data(idomain[0], layer=0, multiplier=[1])

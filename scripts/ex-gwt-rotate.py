@@ -423,10 +423,7 @@ def plot_conc(sim, idx):
         times = np.array(times)
 
         # plot times in the original publication
-        plot_times = [
-            2000.0,
-            10000.0,
-        ]
+        plot_times = [2000.0, 10000.0]
 
         nplots = len(plot_times)
         for iplot in range(nplots):

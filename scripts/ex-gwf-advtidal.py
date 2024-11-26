@@ -87,31 +87,13 @@ icelltype = [int(value) for value in icelltype_str.split(",")]
 
 # Recharge zones (constructed with shapely)
 recharge_zone_1 = Polygon(
-    shell=[
-        (0, 0),
-        (3000, 0),
-        (3000, 5500),
-        (1000, 7500),
-        (0, 7500),
-        (0, 0),
-    ],
+    shell=[(0, 0), (3000, 0), (3000, 5500), (1000, 7500), (0, 7500), (0, 0)]
 )
 recharge_zone_2 = Polygon(
-    shell=[
-        (1000, 7500),
-        (3000, 5500),
-        (5000, 7500),
-        (1000, 7500),
-    ],
+    shell=[(1000, 7500), (3000, 5500), (5000, 7500), (1000, 7500)]
 )
 recharge_zone_3 = Polygon(
-    shell=[
-        (3000, 0),
-        (5000, 0),
-        (5000, 7500),
-        (3000, 5500),
-        (3000, 0),
-    ],
+    shell=[(3000, 0), (5000, 0), (5000, 7500), (3000, 5500), (3000, 0)]
 )
 
 # Solver parameters
@@ -243,9 +225,7 @@ def build_models():
         known_hash="md5:6ca7366be279d679b14e8338a195422f",
     )
     tsdict = get_timeseries(
-        fpath,
-        ["well_1_rate", "well_2_rate", "well_6_rate"],
-        3 * ["stepwise"],
+        fpath, ["well_1_rate", "well_2_rate", "well_6_rate"], 3 * ["stepwise"]
     )
     flopy.mf6.ModflowGwfwel(
         gwf,
@@ -430,20 +410,11 @@ def plot_grid(sim):
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax)
         pmv.plot_grid(linewidth=0)
         for ip, (p, fc) in enumerate(
-            [
-                (recharge_zone_1, "r"),
-                (recharge_zone_2, "b"),
-                (recharge_zone_3, "g"),
-            ]
+            [(recharge_zone_1, "r"), (recharge_zone_2, "b"), (recharge_zone_3, "g")]
         ):
             xs, ys = p.exterior.xy
             ax.fill(
-                xs,
-                ys,
-                alpha=0.25,
-                fc=fc,
-                ec="none",
-                label=f"Recharge Zone {ip + 1}",
+                xs, ys, alpha=0.25, fc=fc, ec="none", label=f"Recharge Zone {ip + 1}"
             )
         ax.set_xlabel("x position (m)")
         ax.set_ylabel("y position (m)")

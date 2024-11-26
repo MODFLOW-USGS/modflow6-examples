@@ -223,14 +223,8 @@ def build_models():
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data=chd_spd)
     flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
     flopy.mf6.ModflowGwfevta(gwf, surface=surf, rate=etvrate, depth=etvdepth)
-    (
-        idomain_wlakes,
-        pakdata_dict,
-        lak_conn,
-    ) = flopy.mf6.utils.get_lak_connections(
-        gwf.modelgrid,
-        lake_map,
-        bedleak=lak_bedleak,
+    (idomain_wlakes, pakdata_dict, lak_conn) = flopy.mf6.utils.get_lak_connections(
+        gwf.modelgrid, lake_map, bedleak=lak_bedleak
     )
     lak_packagedata = [[0, lak_strt, pakdata_dict[0]]]
     lak = flopy.mf6.ModflowGwflak(
@@ -301,8 +295,7 @@ def plot_grid(gwf, silent=True):
 
     head = hobj.get_data(kstpkper=kstpkper[0])
     qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
-        gwf,
+        cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0], gwf
     )
 
     # add lake stage to heads
@@ -314,10 +307,7 @@ def plot_grid(gwf, silent=True):
     p2 = (xcenters[13], ycenters[13])
 
     with styles.USGSMap():
-        fig = plt.figure(
-            figsize=(4, 6.9),
-            tight_layout=True,
-        )
+        fig = plt.figure(figsize=(4, 6.9), tight_layout=True)
         plt.axis("off")
 
         nrows, ncols = 10, 1
@@ -451,12 +441,7 @@ def plot_grid(gwf, silent=True):
             label="Observation well",
         )
         ax.plot(
-            -10000,
-            -10000,
-            lw=0.75,
-            ls="-",
-            color="blue",
-            label=r"Head contour, $ft$",
+            -10000, -10000, lw=0.75, ls="-", color="blue", label=r"Head contour, $ft$"
         )
         ax.plot(
             -10000,
@@ -501,11 +486,7 @@ def plot_lak_results(gwf, silent=True):
 
         # create the figure
         fig, ax = plt.subplots(
-            ncols=1,
-            nrows=1,
-            sharex=True,
-            figsize=(6.3, 3.15),
-            constrained_layout=True,
+            ncols=1, nrows=1, sharex=True, figsize=(6.3, 3.15), constrained_layout=True
         )
 
         ax.set_xlim(0, 3000)
@@ -519,12 +500,7 @@ def plot_lak_results(gwf, silent=True):
             label="Lake stage",
         )
         ax.plot(
-            results["time"],
-            results["A"],
-            lw=0.75,
-            ls="-",
-            color="0.5",
-            label="Point A",
+            results["time"], results["A"], lw=0.75, ls="-", color="0.5", label="Point A"
         )
         ax.plot(
             results["time"],

@@ -392,11 +392,7 @@ def calc_compaction_at_surface(sim):
     """Calculate the compaction at the surface"""
     csub_obs = get_csub_observations(sim)
     for tag in plot_tags:
-        for k in (
-            3,
-            2,
-            1,
-        ):
+        for k in (3, 2, 1):
             tag0 = f"{tag}{k}"
             tag1 = f"{tag}{k + 1}"
             csub_obs[tag0] += csub_obs[tag1]
@@ -508,14 +504,7 @@ def plot_grid(sim, silent=True):
             label="Recharge",
         )
         mm.ax.plot(
-            -1000,
-            -1000,
-            "s",
-            ms=5,
-            color="red",
-            mec="black",
-            mew=0.5,
-            label="Well",
+            -1000, -1000, "s", ms=5, color="red", mec="black", mew=0.5, label="Well"
         )
         mm.ax.plot(
             -1000,
@@ -683,11 +672,7 @@ def plot_stresses(sim, silent=True):
         tmax = cd["totim"][-1]
 
         fig, axes = plt.subplots(
-            ncols=1,
-            nrows=4,
-            figsize=figure_size,
-            sharex=True,
-            constrained_layout=True,
+            ncols=1, nrows=4, figsize=figure_size, sharex=True, constrained_layout=True
         )
 
         idx = 0
@@ -695,11 +680,7 @@ def plot_stresses(sim, silent=True):
         ax.set_xlim(0, tmax)
         ax.set_ylim(110, 150)
         ax.plot(
-            cd["totim"],
-            cd["PC1"],
-            color="blue",
-            lw=1,
-            label="Preconsolidation stress",
+            cd["totim"], cd["PC1"], color="blue", lw=1, label="Preconsolidation stress"
         )
         ax.plot(cd["totim"], cd["ES1"], color="red", lw=1, label="Effective stress")
         styles.heading(ax, letter="A", heading="Model layer 1, row 9, column 10")
@@ -732,11 +713,7 @@ def plot_stresses(sim, silent=True):
         )
         ax.plot([-100, -50], [-100, -100], color="red", lw=1, label="Effective stress")
         ax.plot(cd["totim"], cd["GS2"], color="black", lw=1, label="Geostatic stress")
-        styles.graph_legend(
-            ax,
-            ncol=3,
-            bbox_to_anchor=(0.9, -0.6),
-        )
+        styles.graph_legend(ax, ncol=3, bbox_to_anchor=(0.9, -0.6))
         styles.heading(ax, letter="D", heading="Model layer 2, row 9, column 10")
         styles.remove_edge_ticks(ax)
         ax.set_xlabel("Simulation time, in years")
@@ -759,11 +736,7 @@ def plot_compaction(sim, silent=True):
         name = sim.name
 
         fig, axes = plt.subplots(
-            ncols=2,
-            nrows=3,
-            figsize=figure_size,
-            sharex=True,
-            constrained_layout=True,
+            ncols=2, nrows=3, figsize=figure_size, sharex=True, constrained_layout=True
         )
         axes = axes.flatten()
 

@@ -179,22 +179,7 @@ def build_models(
         tsgm = sgm
         tsgs = sgs
     sub6 = [
-        [
-            0,
-            0,
-            0,
-            1,
-            "delay",
-            pc0,
-            bed_thickness,
-            1.0,
-            skv,
-            ske,
-            theta,
-            kv,
-            h0,
-            "ib1",
-        ]
+        [0, 0, 0, 1, "delay", pc0, bed_thickness, 1.0, skv, ske, theta, kv, h0, "ib1"]
     ]
     csub = flopy.mf6.ModflowGwfcsub(
         gwf,
@@ -239,10 +224,7 @@ def build_models(
 
     flopy.mf6.ModflowGwfchd(gwf, stress_period_data={0: c6})
 
-    flopy.mf6.ModflowGwfoc(
-        gwf,
-        printrecord=[("BUDGET", "ALL")],
-    )
+    flopy.mf6.ModflowGwfoc(gwf, printrecord=[("BUDGET", "ALL")])
     return sim
 
 
@@ -659,13 +641,7 @@ def plot_head_comparison(sim, silent=True):
         scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cmap)
 
         # percentages to evaluate
-        pct_vals = (
-            1,
-            5,
-            10,
-            50,
-            100,
-        )
+        pct_vals = (1, 5, 10, 50, 100)
 
         axes = []
         for idx in range(6):
@@ -809,10 +785,7 @@ def scenarios(idx, silent=True):
             run_models(sim, silent=silent)
     else:
         for b, kv in zip(interbed_thickness, interbed_kv):
-            for head_based in (
-                True,
-                False,
-            ):
+            for head_based in (True, False):
                 if head_based:
                     subdir_name = "hb-"
                 else:

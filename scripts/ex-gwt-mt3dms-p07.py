@@ -515,10 +515,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
             conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k"
         )
         cs2 = mm.contour_array(
-            conc_mf6[0],
-            levels=[0.01, 0.05, 0.15, 0.50],
-            colors="r",
-            linestyles=":",
+            conc_mf6[0], levels=[0.01, 0.05, 0.15, 0.50], colors="r", linestyles=":"
         )
         plt.clabel(cs1)
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
@@ -540,10 +537,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         mm.plot_ibound()
         cs = mm.contour_array(conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k")
         cs = mm.contour_array(
-            conc_mf6[0],
-            levels=[0.01, 0.05, 0.15, 0.50],
-            colors="r",
-            linestyles=":",
+            conc_mf6[0], levels=[0.01, 0.05, 0.15, 0.50], colors="r", linestyles=":"
         )
         plt.clabel(cs)
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
@@ -561,10 +555,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         mm.plot_ibound()
         cs = mm.contour_array(conc_mt3d[0], levels=[0.01, 0.05, 0.15, 0.50], colors="k")
         cs = mm.contour_array(
-            conc_mf6[0],
-            levels=[0.01, 0.05, 0.15, 0.50],
-            colors="r",
-            linestyles=":",
+            conc_mf6[0], levels=[0.01, 0.05, 0.15, 0.50], colors="r", linestyles=":"
         )
         plt.clabel(cs)
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
@@ -573,9 +564,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         letter = chr(ord("@") + idx + 3)
         styles.heading(letter=letter, heading=title)
         plt.plot(
-            mf2k5.modelgrid.xcellcenters[7, 2],
-            mf2k5.modelgrid.ycellcenters[7, 2],
-            "ko",
+            mf2k5.modelgrid.xcellcenters[7, 2], mf2k5.modelgrid.ycellcenters[7, 2], "ko"
         )
 
         if plot_show:

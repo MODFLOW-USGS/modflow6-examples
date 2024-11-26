@@ -217,9 +217,8 @@ for ly in np.arange(0, nlay_res):
     Qcell = Q_well * thick_interval / res_thickness
     id_left = (100 + ly, 0, 0)
     id_right = (100 + ly, 0, ncol - 1)
-    wel_spd_left.append(
-        [id_left, Qcell, T1]
-    )  # 30.0 is inflow temperature (auxiliary var)
+    # 30.0 is inflow temperature (auxiliary var)
+    wel_spd_left.append([id_left, Qcell, T1])
     wel_spd_right.append([id_right, -Qcell])
 
     ctp_left.append([id_left, T1])
@@ -458,7 +457,10 @@ def build_mf6_heat_model():
         temperature_filerecord="{}.ucn".format(gwename),
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord={
-            0: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
+            0: [
+                ("TEMPERATURE", "LAST"),
+                ("BUDGET", "LAST"),
+            ]
         },
         printrecord={0: [("BUDGET", "LAST")]},
     )

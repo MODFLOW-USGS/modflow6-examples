@@ -292,16 +292,7 @@ def add_flow(sim):
         for irow in range(nrow_inn):
             irow_outer = irow + 8
             exgdata.append(
-                (
-                    (ilay, irow_outer, 5),
-                    (ilay, irow, 0),
-                    1,
-                    50.0,
-                    25.0,
-                    50.0,
-                    0.0,
-                    75.0,
-                )
+                ((ilay, irow_outer, 5), (ilay, irow, 0), 1, 50.0, 25.0, 50.0, 0.0, 75.0)
             )
     # west
     for ilay in range(nlay):
@@ -911,11 +902,7 @@ def plot_grids(sim):
     gwt_outer = sim.get_model(gwtname_out)
     mm = flopy.plot.PlotMapView(model=gwt_outer)
     mm.plot_grid(color="0.2", alpha=0.7)
-    ax.plot(
-        [xmin, xmax, xmax, xmin, xmin],
-        [ymin, ymin, ymax, ymax, ymin],
-        "r--",
-    )
+    ax.plot([xmin, xmax, xmax, xmin, xmin], [ymin, ymin, ymax, ymax, ymin], "r--")
     fpath = figs_path / "ex-gwtgwt-p10-modelgrid.png"
     fig.savefig(fpath)
 
