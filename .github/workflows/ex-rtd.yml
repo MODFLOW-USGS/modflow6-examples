@@ -120,7 +120,7 @@ jobs:
           python-version: 3.9
 
       - name: Set up headless display
-        uses: pyvista/setup-headless-display-action@v2
+        uses: pyvista/setup-headless-display-action@v3
 
       - name: Install Python packages
         working-directory: modflow6-examples/etc
