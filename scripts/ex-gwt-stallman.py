@@ -387,7 +387,7 @@ def make_animated_gif(sim, idx):
         return line
 
     ani = animation.FuncAnimation(fig, update, times.shape[0], init_func=init)
-    fpth = figs_path / "{}{}".format(sim_name, ".gif")
+    fpth = figs_path / f"{sim_name}.gif"
     ani.save(fpth, fps=50)
 
 

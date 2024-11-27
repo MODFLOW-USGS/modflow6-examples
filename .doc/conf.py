@@ -39,7 +39,7 @@ with open("notebook_examples.rst", "w") as f:
     lines += (len(lines) - 1) * "-" + "\n\n"
     lines += (
         "The Jupyter Notebooks used to create the input files and figures for \n"
-        + "each of the MODFLOW 6 `examples <examples.html>`_.\n\n"
+        "each of the MODFLOW 6 `examples <examples.html>`_.\n\n"
     )
     f.write(lines)
 

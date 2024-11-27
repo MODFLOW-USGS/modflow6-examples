@@ -570,7 +570,7 @@ def build_prt():
 
     # Instantiate the MODFLOW 6 prt model
     prt = flopy.mf6.ModflowPrt(
-        simprt, modelname=prt_name, model_nam_file="{}.nam".format(prt_name)
+        simprt, modelname=prt_name, model_nam_file=f"{prt_name}.nam"
     )
 
     # Instantiate the MODFLOW 6 DISV vertex grid discretization
@@ -583,7 +583,7 @@ def build_prt():
     flopy.mf6.ModflowPrtprp(
         prt,
         pname="prp",
-        filename="{}_4.prp".format(prt_name),
+        filename=f"{prt_name}_4.prp",
         nreleasepts=len(particles_prt),
         packagedata=particles_prt,
         perioddata={0: ["FIRST"]},
@@ -592,10 +592,10 @@ def build_prt():
     )
 
     # Instantiate the MODFLOW 6 prt output control package
-    budgetfile_prt = "{}.cbb".format(prt_name)
+    budgetfile_prt = f"{prt_name}.cbb"
     budget_record = [budgetfile_prt]
-    trackfile_prt = "{}.trk".format(prt_name)
-    trackcsvfile_prt = "{}.trk.csv".format(prt_name)
+    trackfile_prt = f"{prt_name}.trk"
+    trackcsvfile_prt = f"{prt_name}.trk.csv"
     flopy.mf6.ModflowPrtoc(
         prt,
         pname="oc",
@@ -618,7 +618,7 @@ def build_prt():
     ems = flopy.mf6.ModflowEms(
         simprt,
         pname="ems",
-        filename="{}.ems".format(prt_name),
+        filename=f"{prt_name}.ems",
     )
     simprt.register_solution_package(ems, [prt.name])
 

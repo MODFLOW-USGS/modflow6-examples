@@ -518,7 +518,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
 
         plt.xlabel("DISTANCE ALONG X-AXIS, IN METERS")
         plt.ylabel("DISTANCE ALONG Y-AXIS, IN METERS")
-        title = "Plume at Time = 365 " + f"{time_units}"
+        title = f"Plume at Time = 365 {time_units}"
 
         ax.legend(lines, labels, loc="upper left")
 

@@ -210,7 +210,7 @@ masked_values = (0, 1e30, -1e30)
 def plot_maw_results(silent=True):
     with styles.USGSPlot():
         # load the observations
-        name = list(parameters.keys())[0]
+        name = next(iter(parameters.keys()))
         fpth = os.path.join(workspace, name, f"{sim_name}.maw.obs.csv")
         maw0 = flopy.utils.Mf6Obs(fpth).data
         name = list(parameters.keys())[1]
@@ -287,7 +287,7 @@ def plot_grid(silent=True):
         verbosity = 0
     else:
         verbosity = 1
-    name = list(parameters.keys())[0]
+    name = next(iter(parameters.keys()))
     sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity

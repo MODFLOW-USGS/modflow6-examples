@@ -560,7 +560,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         ax.set_xlim(0, 1000)
         ax.set_xlabel("Distance, in m")
         ax.set_ylabel("Concentration")
-        title = "Concentration Profile at Time = 2,000 " + "{}".format(time_units)
+        title = f"Concentration Profile at Time = 2,000 {time_units}"
         ax.legend()
         letter = chr(ord("@") + idx + 1)
         styles.heading(letter=letter, heading=title)

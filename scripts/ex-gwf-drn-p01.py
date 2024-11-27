@@ -589,7 +589,7 @@ def plot_gwseep_results(silent=True):
     """Plot groundwater seepage results"""
     with styles.USGSPlot() as fs:
         # load the observations
-        name = list(parameters.keys())[0]
+        name = next(iter(parameters.keys()))
         fpth = os.path.join(workspace, name, f"{sim_name}.surfrate.obs.csv")
         drn = flopy.utils.Mf6Obs(fpth).data
         name = list(parameters.keys())[1]
@@ -698,7 +698,7 @@ def plot_gwseep_results(silent=True):
 
 def export_tables(silent=True):
     if plot_save:
-        caption = "Infiltration and pumping rates for example {}.".format(sim_name)
+        caption = f"Infiltration and pumping rates for example {sim_name}."
         headings = (
             "Stress period",
             "Infiltration rate",

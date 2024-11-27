@@ -489,7 +489,7 @@ def make_animated_gif(sims):
         idx_end = (np.abs(conc_times - 18000.0)).argmin()
         ani = FuncAnimation(fig, update, range(1, idx_end), init_func=init)
         writer = PillowWriter(fps=25)
-        fpth = figs_path / "{}{}".format(sim_name, ".gif")
+        fpth = figs_path / f"{sim_name}.gif"
         ani.save(fpth, writer=writer)
 
 

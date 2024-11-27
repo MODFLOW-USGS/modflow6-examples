@@ -679,7 +679,7 @@ def export_tables(silent=True):
         col_widths = (0.1, 0.25)
         build_table(caption, fpth, arr, headings=headings, col_widths=col_widths)
 
-        caption = "Interbed storage properties for example {}.".format(sim_name)
+        caption = f"Interbed storage properties for example {sim_name}."
         headings = (
             "Interbed",
             "Layer",
@@ -1023,7 +1023,7 @@ def plot_boundary_heads(silent=True):
                 v[key] *= -1.0
             return v
 
-        name = list(parameters.keys())[0]
+        name = next(iter(parameters.keys()))
         pth = os.path.join(workspace, name, f"{name}.gwf.obs.csv")
         hdata = process_dtw_obs(pth)
 
@@ -1067,7 +1067,7 @@ def plot_boundary_heads(silent=True):
 
 def plot_head_es_comparison(silent=True):
     with styles.USGSPlot() as fs:
-        name = list(parameters.keys())[0]
+        name = next(iter(parameters.keys()))
         pth = os.path.join(workspace, name, f"{name}.csub.obs.csv")
         hb = process_csub_obs(pth)
 
@@ -1362,7 +1362,7 @@ def plot_calibration(silent=True):
         )
 
         for idx, ixc in enumerate(ixs):
-            text = "{}".format(df_iobs_pc.index[ixc].strftime("%m/%d/%Y"))
+            text = f"{df_iobs_pc.index[ixc]:%m/%d/%Y}"
             if df_iobs_pc.index[ixc].month == 4:
                 dxc = -0.001
                 dyc = -1
@@ -1392,8 +1392,8 @@ def plot_calibration(silent=True):
             df_sim_pc.index[0].strftime("%B %d, %Y"), length_units
         )
         ytext = (
-            "Effective stress at the bottom of\nthe lower aquifer, in "
-            + f"{length_units} of water"
+            "Effective stress at the bottom of\n"
+            f"the lower aquifer, in {length_units} of water"
         )
         ax.set_xlabel(xtext)
         ax.set_ylabel(ytext)

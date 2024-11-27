@@ -425,7 +425,7 @@ def plot_results():
         if plot_show:
             plt.show()
         if plot_save:
-            fname = "{}{}".format("ex-gwt-mt3dsupp632", ".png")
+            fname = "ex-gwt-mt3dsupp632.png"
             fpth = figs_path / fname
             fig.savefig(fpth)
 

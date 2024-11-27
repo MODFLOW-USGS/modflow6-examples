@@ -927,7 +927,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(sim_name, ".png")
+            fpth = figs_path / f"{sim_name}.png"
             fig.savefig(fpth)
 
 

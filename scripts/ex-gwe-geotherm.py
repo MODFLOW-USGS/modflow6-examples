@@ -442,7 +442,7 @@ def build_mf6_flow_model(sim_name, silent=True):
         sim,
         modelname=gwfname,
         save_flows=True,
-        model_nam_file="{}.nam".format(gwfname),
+        model_nam_file=f"{gwfname}.nam",
     )
 
     # Instantiating MODFLOW 6 solver for flow model
@@ -471,8 +471,8 @@ def build_mf6_flow_model(sim_name, silent=True):
         number_orthogonalizations=2,
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
-        rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(sim_name),
+        rcloserecord=f"{rclose} strict",
+        filename=f"{sim_name}.ims",
     )
     sim.register_ims_package(imsgwf, [gwf.name])
 
@@ -503,7 +503,7 @@ def build_mf6_flow_model(sim_name, silent=True):
         vertices=verts,
         cell2d=cell2d,
         pname="DISV",
-        filename="{}.disv".format(gwfname),
+        filename=f"{gwfname}.disv",
     )
 
     # Instantiating MODFLOW 6 node property flow package
@@ -515,16 +515,14 @@ def build_mf6_flow_model(sim_name, silent=True):
         save_specific_discharge=True,
         save_saturation=True,
         pname="NPF",
-        filename="{}.npf".format(gwfname),
+        filename=f"{gwfname}.npf",
     )
 
     # Instantiating MODFLOW 6 initial conditions package
     flopy.mf6.ModflowGwfic(gwf, strt=strt)
 
     # Instantiating MODFLOW 6 storage package
-    flopy.mf6.ModflowGwfsto(
-        gwf, ss=0, sy=0, pname="STO", filename="{}.sto".format(gwfname)
-    )
+    flopy.mf6.ModflowGwfsto(gwf, ss=0, sy=0, pname="STO", filename=f"{gwfname}.sto")
 
     # Instantiating 1st instance of MODFLOW 6  constant head package (left side)
     # (setting auxiliary temperature to 0.0)
@@ -536,7 +534,7 @@ def build_mf6_flow_model(sim_name, silent=True):
         auxiliary="TEMPERATURE",
         stress_period_data=chd_spd,
         pname="CHD-LEFT",
-        filename="{}.left.chd".format(sim_name),
+        filename=f"{sim_name}.left.chd",
     )
 
     # Instantiating 2nd instance of MODFLOW 6 constant head package (right side)
@@ -548,12 +546,12 @@ def build_mf6_flow_model(sim_name, silent=True):
         auxiliary="TEMPERATURE",
         stress_period_data=chd_spd,
         pname="CHD-RIGHT",
-        filename="{}.right.chd".format(sim_name),
+        filename=f"{sim_name}.right.chd",
     )
 
     # Instantiating MODFLOW 6 output control package (flow model)
-    head_filerecord = "{}.hds".format(sim_name)
-    budget_filerecord = "{}.cbc".format(sim_name)
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -566,7 +564,7 @@ def build_mf6_flow_model(sim_name, silent=True):
 
 
 def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
-    print("Building mf6gwt model...{}".format(sim_name))
+    print(f"Building mf6gwt model...{sim_name}")
     gwename = "gwe-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name, "mf6gwe")
 
@@ -577,7 +575,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         sim,
         model_type="gwe6",
         modelname=gwename,
-        model_nam_file="{}.nam".format(gwename),
+        model_nam_file=f"{gwename}.nam",
     )
 
     # Create iterative model solution and register the gwe model with it
@@ -606,8 +604,8 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         number_orthogonalizations=2,
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
-        rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(gwename),
+        rcloserecord=f"{rclose} strict",
+        filename=f"{gwename}.ims",
     )
     sim.register_ims_package(imsgwe, [gwe.name])
 
@@ -637,14 +635,14 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         vertices=verts,
         cell2d=cell2d,
         pname="DISV-GWE",
-        filename="{}.disv".format(gwename),
+        filename=f"{gwename}.disv",
     )
 
     # Instantiating MODFLOW 6 heat transport initial temperature
-    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, filename="{}.ic".format(gwename))
+    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, filename=f"{gwename}.ic")
 
     # Instantiating MODFLOW 6 heat transport advection package
-    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, filename="{}.adv".format(gwename))
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, filename=f"{gwename}.adv")
 
     # Instantiating MODFLOW 6 heat transport dispersion package
     if ktw != 0:
@@ -655,7 +653,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
             ktw=ktw,
             kts=kts,
             pname="CND",
-            filename="{}.dsp".format(gwename),
+            filename=f"{gwename}.dsp",
         )
 
     # Instantiating MODFLOW 6 heat transport mass storage package (consider renaming to est)
@@ -668,7 +666,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         heat_capacity_solid=cps,
         density_solid=rhos,
         pname="EST",
-        filename="{}.est".format(gwename),
+        filename=f"{gwename}.est",
     )
 
     # Instantiating MODFLOW 6 heat transport constant temperature package (Dirichlet case)
@@ -688,7 +686,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
             stress_period_data=ctpspd,
             save_flows=False,
             pname="CTP-1",
-            filename="{}.ctp".format(gwename),
+            filename=f"{gwename}.ctp",
         )
 
     if neumann > 0:
@@ -707,7 +705,7 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
             stress_period_data=eslspd,
             save_flows=False,
             pname="ESR-1",
-            filename="{}.src".format(gwename),
+            filename=f"{gwename}.src",
         )
 
     # Instantiating MODFLOW 6 source/sink mixing package for dealing with
@@ -716,15 +714,13 @@ def build_mf6_heat_model(sim_name, dirichlet=0.0, neumann=0.0, silent=False):
         ("CHD-LEFT", "AUX", "TEMPERATURE"),
         ("CHD-RIGHT", "AUX", "TEMPERATURE"),
     ]
-    flopy.mf6.ModflowGwessm(
-        gwe, sources=sourcerecarray, filename="{}.ssm".format(gwename)
-    )
+    flopy.mf6.ModflowGwessm(gwe, sources=sourcerecarray, filename=f"{gwename}.ssm")
 
     # Instantiating MODFLOW 6 heat transport output control package
     flopy.mf6.ModflowGweoc(
         gwe,
-        budget_filerecord="{}.cbc".format(gwename),
-        temperature_filerecord="{}.ucn".format(gwename),
+        budget_filerecord=f"{gwename}.cbc",
+        temperature_filerecord=f"{gwename}.ucn",
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord={
             49: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
@@ -797,7 +793,7 @@ def plot_grid(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(figs_path / "{}-grid{}".format(simname, ".png"))
+            fpth = os.path.join(figs_path / f"{simname}-grid.png")
             fig.savefig(fpth, dpi=300)
 
 
@@ -828,7 +824,7 @@ def plot_grid_inset(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(figs_path / "{}-grid-inset{}".format(simname, ".png"))
+            fpth = os.path.join(figs_path / f"{simname}-grid-inset.png")
             fig.savefig(fpth, dpi=300)
 
 
@@ -857,7 +853,7 @@ def plot_head(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(figs_path / "{}-head{}".format(simname, ".png"))
+            fpth = os.path.join(figs_path / f"{simname}-head.png")
             fig.savefig(fpth, dpi=300)
 
 
@@ -951,7 +947,7 @@ def plot_temperature(sim, scen, time_):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = os.path.join(figs_path / "{}-temp50days{}".format(simname, ".png"))
+            fpth = os.path.join(figs_path / f"{simname}-temp50days.png")
             fig.savefig(fpth, dpi=300)
 
 

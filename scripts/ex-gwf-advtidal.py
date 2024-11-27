@@ -3,7 +3,7 @@
 # This model represents highlands bordered by a tidal estuary.  The model
 # has 3 layers representing an upper aquifer, confining bed, and lower aquifer.
 # The grid is 15 rows by 10 columns.  The length unit is feet and the time unit
-# is days. Each cell is 500 ft × 500 ft.  The estuary is represented by GHB
+# is days. Each cell is 500 ft x 500 ft.  The estuary is represented by GHB
 # boundaries in column 10.  Two rivers cross the area from left to right.
 # Recharge is zoned by the use of three Recharge-Package input files
 
@@ -452,7 +452,7 @@ def plot_ts(sim):
             if plot_show:
                 plt.show()
             if plot_save:
-                fpth = figs_path / "{}-{}{}".format(sim_name, obs_fig[iplot], ".png")
+                fpth = figs_path / f"{sim_name}-{obs_fig[iplot]}.png"
                 fig.savefig(fpth)
 
 

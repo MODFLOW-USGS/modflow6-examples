@@ -346,7 +346,7 @@ def plot_results(silent=True):
         verbosity_level = 1
 
     with styles.USGSMap():
-        name = list(parameters.keys())[0]
+        name = next(iter(parameters.keys()))
         sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level

@@ -4,7 +4,7 @@
 #  Barends, F.B.J., 2010. Complete Solution for Transient Heat Transport in
 #    Porous Media, Following Lauwerier's Concept. Society of Petroleum '
 #    Engineers, Annual Technical Conference and Exhibition, Florence, Italy,
-#    19–22 September 2010.
+#    19-22 September 2010.
 #    https://doi.org/10.2118/134670-MS
 #
 # Below is a diagram of the model cell numbering (assuming delr = 4.0; values
@@ -275,7 +275,7 @@ def build_mf6_flow_model():
         top=top_overburden,
         botm=botm,
         pname="DIS",
-        filename="{}.dis".format(gwf_name),
+        filename=f"{gwf_name}.dis",
     )
 
     # Instantiate node-property flow (NPF) package
@@ -289,12 +289,12 @@ def build_mf6_flow_model():
         k=k11,
         k33=k33,
         pname="NPF-1",
-        filename="{}.npf".format(gwf_name),
+        filename=f"{gwf_name}.npf",
     )
 
     # Instantiate initial conditions package for the GWF model
     flopy.mf6.ModflowGwfic(
-        gwf, strt=top_overburden, pname="IC-1", filename="{}.ic".format(gwf_name)
+        gwf, strt=top_overburden, pname="IC-1", filename=f"{gwf_name}.ic"
     )
 
     # Instantiating MODFLOW 6 storage package
@@ -306,7 +306,7 @@ def build_mf6_flow_model():
         sy=0,
         steady_state={0: True},
         pname="STO",
-        filename="{}.sto".format(gwf_name),
+        filename=f"{gwf_name}.sto",
     )
 
     # Instantiate WEL package for adding water on the left and removing
@@ -316,19 +316,19 @@ def build_mf6_flow_model():
         auxiliary="TEMPERATURE",
         stress_period_data=wel_spd_left,
         pname="WEL-left",
-        filename="{}.wel-left".format(gwf_name),
+        filename=f"{gwf_name}.wel-left",
     )
     # Instantiate WEL package for extracting water on the right
     flopy.mf6.ModflowGwfwel(
         gwf,
         stress_period_data=wel_spd_right,
         pname="WEL-right",
-        filename="{}.wel-right".format(gwf_name),
+        filename=f"{gwf_name}.wel-right",
     )
 
     # Instantiating MODFLOW 6 output control package (flow model)
-    head_filerecord = "{}.hds".format(sim_name)
-    budget_filerecord = "{}.cbc".format(sim_name)
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -344,7 +344,7 @@ def build_mf6_flow_model():
 
 # +
 def build_mf6_heat_model():
-    print("Building mf6gwe model...{}".format(sim_name))
+    print(f"Building mf6gwe model...{sim_name}")
     gwename = sim_name
     sim_ws = os.path.join(workspace, sim_name, "mf6gwe")
 
@@ -355,7 +355,7 @@ def build_mf6_heat_model():
         sim,
         model_type="gwe6",
         modelname=gwename,
-        model_nam_file="{}.nam".format(gwename),
+        model_nam_file=f"{gwename}.nam",
     )
 
     # Instantiate Iterative model solution package
@@ -390,18 +390,14 @@ def build_mf6_heat_model():
         top=top_overburden,
         botm=botm,
         pname="DIS",
-        filename="{}.dis".format(gwename),
+        filename=f"{gwename}.dis",
     )
 
     # Instantiating MODFLOW 6 heat transport initial temperature
-    flopy.mf6.ModflowGweic(
-        gwe, strt=T0, pname="IC-gwe", filename="{}.ic".format(gwename)
-    )
+    flopy.mf6.ModflowGweic(gwe, strt=T0, pname="IC-gwe", filename=f"{gwename}.ic")
 
     # Instantiating MODFLOW 6 heat transport advection package
-    flopy.mf6.ModflowGweadv(
-        gwe, scheme=scheme, pname="ADV", filename="{}.adv".format(gwename)
-    )
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, pname="ADV", filename=f"{gwename}.adv")
 
     # Instantiating MODFLOW 6 heat transport dispersion package
     if ktw != 0:
@@ -413,7 +409,7 @@ def build_mf6_heat_model():
             ktw=ktw,
             kts=kts,
             pname="CND",
-            filename="{}.cnd".format(gwename),
+            filename=f"{gwename}.cnd",
         )
 
     # Instantiating MODFLOW 6 heat transport mass storage package (consider renaming to est)
@@ -425,7 +421,7 @@ def build_mf6_heat_model():
         density_solid=rhos,
         density_water=rhow,
         pname="EST",
-        filename="{}.est".format(gwename),
+        filename=f"{gwename}.est",
     )
 
     flopy.mf6.ModflowGwectp(
@@ -435,7 +431,7 @@ def build_mf6_heat_model():
         maxbound=1,
         stress_period_data=ctp_spd,
         pname="CTP",
-        filename="{}.ctp".format(gwename),
+        filename=f"{gwename}.ctp",
     )
 
     # Instantiating MODFLOW 6 source/sink mixing package for dealing with
@@ -446,15 +442,15 @@ def build_mf6_heat_model():
         print_flows=True,
         sources=sourcerecarray,
         pname="SSM",
-        filename="{}.ssm".format(gwename),
+        filename=f"{gwename}.ssm",
     )
 
     # Instantiating MODFLOW 6 heat transport output control package
     # e.g., day 100 = 100 * 86400 = 8,640,000 = 8.64e6
     flopy.mf6.ModflowGweoc(
         gwe,
-        budget_filerecord="{}.cbc".format(gwename),
-        temperature_filerecord="{}.ucn".format(gwename),
+        budget_filerecord=f"{gwename}.cbc",
+        temperature_filerecord=f"{gwename}.ucn",
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord={
             0: [
@@ -520,7 +516,7 @@ def plot_thermal_bleeding(sim_gwe):
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = os.path.join(figs_path / "{}-gridView{}".format(sim_name, ".png"))
+        fpth = os.path.join(figs_path / f"{sim_name}-gridView.png")
         fig.savefig(fpth, dpi=600)
 
     # Next, plot model output
@@ -594,7 +590,7 @@ def plot_thermal_bleeding(sim_gwe):
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = os.path.join(figs_path / "{}-200yrs{}".format(sim_name, ".png"))
+        fpth = os.path.join(figs_path / f"{sim_name}-200yrs.png")
         fig2.savefig(fpth, dpi=600)
 
     return

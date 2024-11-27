@@ -24,7 +24,6 @@ import os
 import pathlib as pl
 from itertools import cycle
 from math import sqrt
-from typing import Dict, List
 
 import flopy
 import git
@@ -153,10 +152,10 @@ class DisvPropertyContainer:
     nlay: int
     ncpl: int
     nvert: int
-    vertices: List[list]  # [[iv, xv, yv], ...]
-    cell2d: List[list]  # [[ic, xc, yc, ncvert, icvert], ...]
+    vertices: list[list]  # [[iv, xv, yv], ...]
+    cell2d: list[list]  # [[ic, xc, yc, ncvert, icvert], ...]
     top: np.ndarray
-    botm: List[np.ndarray]
+    botm: list[np.ndarray]
     origin_x: float
     origin_y: float
     rotation: float
@@ -1166,7 +1165,7 @@ class DisvGridMerger:
         kwargs to DisvPropertyContainer.plot_grid(...).
     """
 
-    grids: Dict[str, DisvPropertyContainer]
+    grids: dict[str, DisvPropertyContainer]
     merged: DisvPropertyContainer
     snap_vertices: dict
     connect_tolerance: dict
@@ -1333,9 +1332,7 @@ class DisvGridMerger:
         for iv_orig, xv, yv in vertices:
             if iv == iv_orig:
                 return xv, yv
-        raise RuntimeError(
-            "DisvGridMerger: " f"Failed to find vertex {iv} in grid {name}"
-        )
+        raise RuntimeError(f"DisvGridMerger: Failed to find vertex {iv} in grid {name}")
 
     def _find_merged_vertex(self, xv, yv, tol):
         for iv, xv_chk, yv_chk in self.merged.vertices:
@@ -1350,7 +1347,7 @@ class DisvGridMerger:
                 vert[2] = yv
                 return
         raise RuntimeError(
-            "DisvGridMerger: Unknown code error - " f"failed to locate vertex {iv}"
+            f"DisvGridMerger: Unknown code error - failed to locate vertex {iv}"
         )
 
     def _clear_attribute(self):

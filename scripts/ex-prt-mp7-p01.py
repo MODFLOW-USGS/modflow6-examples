@@ -622,7 +622,7 @@ def plot_head(gwf, head):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}")
+        styles.heading(ax=ax, heading=f"Head, layer {ilay + 1!s}")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_grid(lw=0.5)
         mm.plot_bc("WEL", plotAll=True)

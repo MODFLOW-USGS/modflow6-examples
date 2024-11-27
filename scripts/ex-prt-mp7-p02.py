@@ -301,7 +301,7 @@ def build_gwf_sim():
 
     # Instantiate the MODFLOW 6 gwf (groundwater-flow) model
     gwf = flopy.mf6.ModflowGwf(
-        sim, modelname=gwf_name, model_nam_file="{}.nam".format(gwf_name)
+        sim, modelname=gwf_name, model_nam_file=f"{gwf_name}.nam"
     )
     gwf.name_file.save_flows = True
 
@@ -355,9 +355,9 @@ def build_gwf_sim():
     )
 
     # Instantiate the MODFLOW 6 gwf output control package
-    headfile = "{}.hds".format(gwf_name)
+    headfile = f"{gwf_name}.hds"
     head_record = [headfile]
-    budgetfile = "{}.cbb".format(gwf_name)
+    budgetfile = f"{gwf_name}.cbb"
     budget_record = [budgetfile]
     flopy.mf6.ModflowGwfoc(
         gwf,
@@ -406,7 +406,7 @@ def build_prt_sim():
 
     # Instantiate the MODFLOW 6 prt model
     prt = flopy.mf6.ModflowPrt(
-        sim, modelname=prt_name, model_nam_file="{}.nam".format(prt_name)
+        sim, modelname=prt_name, model_nam_file=f"{prt_name}.nam"
     )
 
     # Instantiate the MODFLOW 6 prt discretization package
@@ -443,9 +443,9 @@ def build_prt_sim():
     add_prp("B")
 
     # Instantiate the MODFLOW 6 prt output control package
-    budgetfile = "{}.bud".format(prt_name)
-    trackfile = "{}.trk".format(prt_name)
-    trackcsvfile = "{}.trk.csv".format(prt_name)
+    budgetfile = f"{prt_name}.bud"
+    trackfile = f"{prt_name}.trk"
+    trackcsvfile = f"{prt_name}.trk.csv"
     budget_record = [budgetfile]
     track_record = [trackfile]
     trackcsv_record = [trackcsvfile]
@@ -473,7 +473,7 @@ def build_prt_sim():
     ems = flopy.mf6.ModflowEms(
         sim,
         pname="ems",
-        filename="{}.ems".format(prt_name),
+        filename=f"{prt_name}.ems",
     )
     sim.register_solution_package(ems, [prt.name])
 
@@ -856,7 +856,7 @@ def plot_head(gwf, head, ibd):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading="Head, layer {}".format(ilay + 1))
+        styles.heading(ax=ax, heading=f"Head, layer {ilay + 1}")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_bc("WEL", plotAll=True)
         mm.plot_bc("RIV", plotAll=True, color="teal")
@@ -890,7 +890,7 @@ def plot_head(gwf, head, ibd):
         if plot_show:
             plt.show()
         if plot_save:
-            fig.savefig(figs_path / "{}-head".format(sim_name))
+            fig.savefig(figs_path / f"{sim_name}-head")
 
 
 def plot_points(ax, gwf, data):
@@ -992,7 +992,7 @@ def plot_pathlines_and_points(gwf, mf6pl, ibd, title=None):
     if plot_show:
         plt.show()
     if plot_save:
-        fig.savefig(figs_path / "{}-paths".format(sim_name))
+        fig.savefig(figs_path / f"{sim_name}-paths")
 
 
 def plot_2b(gwf, mf6endpoints, ibd, title=None):
@@ -1011,7 +1011,7 @@ def plot_2b(gwf, mf6endpoints, ibd, title=None):
     if plot_show:
         plt.show()
     if plot_save:
-        fig.savefig(figs_path / "{}-endpts".format(sim_name))
+        fig.savefig(figs_path / f"{sim_name}-endpts")
 
 
 def plot_3d(gwf, pathlines, endpoints=None, title=None):

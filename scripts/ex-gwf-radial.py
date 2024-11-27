@@ -370,8 +370,8 @@ class RadialUnconfinedDrawdown:
         if water_table_elevation is not None and saturated_thickness is not None:
             raise RuntimeError(
                 "RadialUnconfinedDrawdown() must specify only "
-                + "water_table_elevation or saturated_thickness, but not "
-                + "both at the same time."
+                "water_table_elevation or saturated_thickness, but not "
+                "both at the same time."
             )
 
         if water_table_elevation is not None:
@@ -398,15 +398,14 @@ class RadialUnconfinedDrawdown:
         if error:
             raise RuntimeError(
                 "RadialUnconfinedDrawdown: Attempted to solve radial "
-                + "groundwater model\nwith the following input not specified\n"
+                "groundwater model\nwith the following input not specified\n"
                 + "\n".join(error)
             )
         if self.well_top <= self.well_bot:
             raise RuntimeError(
                 "RadialUnconfinedDrawdown: "
-                + "well_screen_elevation_top <= well_screen_elevation_bottom\n"
-                + f"That is: {self.well_top} <= "
-                + f"{self.well_bot}"
+                "well_screen_elevation_top <= well_screen_elevation_bottom\n"
+                f"That is: {self.well_top} <= {self.well_bot}"
             )
 
     def drawdown(
@@ -581,7 +580,7 @@ class RadialUnconfinedDrawdown:
         if ty_time and ts_time:
             raise RuntimeError(
                 "RadialUnconfinedDrawdown.drawdown_times "
-                + "cannot set both ty_time and ts_time to True."
+                "cannot set both ty_time and ts_time to True."
             )
 
         r = radius
@@ -633,7 +632,7 @@ class RadialUnconfinedDrawdown:
         for stp, ts in enumerate(ts_list):
             if show_progress:
                 print(
-                    f"Solving {stp+1:4d} of {nstp}; " + f"time = {self.ts2time(ts, r)}",
+                    f"Solving {stp+1:4d} of {nstp}; time = {self.ts2time(ts, r)}",
                     end="",
                 )
 
@@ -721,23 +720,20 @@ class RadialUnconfinedDrawdown:
             bad_times = "\n".join([str(times[it]) for it in bessel_root_limit_reached])
             warnings.warn(
                 "\n\nRadialUnconfinedDrawdown.drawdown_times failed to "
-                + f"meet convergence sumrtol = {sumrtol}"
-                + "\nwithin the precalculated Bessel root solutions "
-                + "(convergence is evaluated at every second Bessel root).\n\n"
-                + "The number of Bessel roots are automatically increased "
-                + "up to:\n"
-                + f"   {bessel_roots0} * 2^bessel_loop_limit\nwhere:\n"
-                + "   bessel_loop_limit = {bessel_loop_limit}\n"
-                + f"resulting in {1024*2**bessel_loop_limit} roots evaluated, "
-                + "with the last root being {root}\n"
-                + f"(That is, the Neuman integral was solved form 0 to {root})"
-                + "\n\n"
-                + "You can either ignore this warning\n"
-                + "or to remove it attempt to increase bessel_loop_limit\n"
-                + "or increase sumrtol (reducing accuracy).\n\nThe following "
-                + "times are what triggered this warning:\n"
-                + bad_times
-                + "\n"
+                f"meet convergence sumrtol = {sumrtol}"
+                "\nwithin the precalculated Bessel root solutions "
+                "(convergence is evaluated at every second Bessel root).\n\n"
+                "The number of Bessel roots are automatically increased "
+                "up to:\n"
+                f"   {bessel_roots0} * 2^bessel_loop_limit\nwhere:\n"
+                "   bessel_loop_limit = {bessel_loop_limit}\n"
+                f"resulting in {1024*2**bessel_loop_limit} roots evaluated, "
+                "with the last root being {root}\n"
+                f"(That is, the Neuman integral was solved form 0 to {root})\n\n"
+                "You can either ignore this warning\n"
+                "or to remove it attempt to increase bessel_loop_limit\n"
+                "or increase sumrtol (reducing accuracy).\n\nThe following "
+                "times are what triggered this warning:\n" + bad_times + "\n"
             )
         return s
 
@@ -1012,7 +1008,7 @@ class RadialUnconfinedDrawdown:
 
         raise RuntimeError(
             "get_bracket: failed to find bracket interval with opposite "
-            + f"signs, that is: f(a)*f(b) < 0 for func: {func}"
+            f"signs, that is: f(a)*f(b) < 0 for func: {func}"
         )
 
 
@@ -1150,7 +1146,7 @@ obslist = [
     ["h_mid", "head", (get_radial_node(11, (nlay - 1) // 2, nradial),)],
     ["h_bot", "head", (get_radial_node(11, nlay - 1, nradial),)],
 ]
-obsdict = {"{}.obs.head.csv".format(sim_name): obslist}
+obsdict = {f"{sim_name}.obs.head.csv": obslist}
 
 # Solver parameters
 
@@ -1827,7 +1823,7 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
         fig.tight_layout()
 
         if plot_save:
-            fpth = figs_path / "{}-{}{}".format(sim_name, obs_fig, ".png")
+            fpth = figs_path / f"{sim_name}-{obs_fig}.png"
             fig.savefig(fpth)
 
         obs_fig = "obs-dimensionless"
@@ -1869,7 +1865,7 @@ def plot_ts(sim, verbose=False, solve_analytical_solution=False):
         fig.tight_layout()
 
         if plot_save:
-            fpth = figs_path / "{}-{}{}".format(sim_name, obs_fig, ".png")
+            fpth = figs_path / f"{sim_name}-{obs_fig}.png"
             fig.savefig(fpth)
 
 
@@ -1943,7 +1939,7 @@ def plot_grid(verbose=False):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}-grid{}".format(sim_name, ".png")
+            fpth = figs_path / f"{sim_name}-grid.png"
             fig.savefig(fpth)
 
 
