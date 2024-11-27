@@ -344,7 +344,7 @@ def make_animated_gif(sim, idx):
 
         ani = FuncAnimation(fig, update, range(1, times.shape[0]), init_func=init)
         writer = PillowWriter(fps=50)
-        fpth = figs_path / "{}{}".format(sim_name, ".gif")
+        fpth = figs_path / f"{sim_name}.gif"
         ani.save(fpth, writer=writer)
 
 

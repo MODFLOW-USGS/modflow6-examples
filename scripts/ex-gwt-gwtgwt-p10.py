@@ -247,14 +247,14 @@ def build_models():
         exgtype="GWF6-GWT6",
         exgmnamea=gwfname_out,
         exgmnameb=gwtname_out,
-        filename="{}.gwfgwt".format("outer"),
+        filename="outer.gwfgwt",
     )
     flopy.mf6.ModflowGwfgwt(
         sim,
         exgtype="GWF6-GWT6",
         exgmnamea=gwfname_inn,
         exgmnameb=gwtname_inn,
-        filename="{}.gwfgwt".format("inner"),
+        filename="inner.gwfgwt",
     )
 
     return sim
@@ -277,7 +277,7 @@ def add_flow(sim):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format("gwfsolver"),
+        filename="gwfsolver.ims",
     )
 
     gwf_outer = add_outer_gwfmodel(sim)
@@ -576,7 +576,7 @@ def add_transport(sim):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format("gwtsolver"),
+        filename="gwtsolver.ims",
     )
 
     # Instantiating transport advection package

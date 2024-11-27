@@ -527,7 +527,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(sim_name + "-xsec", ".png")
+            fpth = figs_path / f"{sim_name}-xsec.png"
             fig.savefig(fpth)
 
         # second plot
@@ -565,7 +565,7 @@ def plot_results(mt3d, mf6, idx, ax=None, ax2=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(sim_name + "-planView", ".png")
+            fpth = figs_path / f"{sim_name}-planView.png"
             fig.savefig(fpth)
 
 

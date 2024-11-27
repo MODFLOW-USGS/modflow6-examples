@@ -366,7 +366,7 @@ def build_model(sim_name):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwename),
+        filename=f"{gwename}.ims",
     )
     sim.register_ims_package(imsgwe, [gwe.name])
 
@@ -395,9 +395,7 @@ def build_model(sim_name):
     )
 
     # Instantiating MODFLOW 6 transport advection package
-    flopy.mf6.ModflowGweadv(
-        gwe, scheme=scheme, pname="ADV", filename="{}.adv".format(gwename)
-    )
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, pname="ADV", filename=f"{gwename}.adv")
 
     # Instantiating MODFLOW 6 transport dispersion package
     flopy.mf6.ModflowGwecnd(
@@ -463,8 +461,8 @@ def build_model(sim_name):
     flopy.mf6.ModflowGweoc(
         gwe,
         pname="OC",
-        budget_filerecord="{}.cbc".format(gwename),
-        temperature_filerecord="{}.ucn".format(gwename),
+        budget_filerecord=f"{gwename}.cbc",
+        temperature_filerecord=f"{gwename}.ucn",
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
         printrecord=[("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
@@ -477,7 +475,7 @@ def build_model(sim_name):
         exgtype="GWF6-GWE6",
         exgmnamea=gwfname,
         exgmnameb=gwename,
-        filename="{}.gwfgwe".format(gwename),
+        filename=f"{gwename}.gwfgwe",
     )
 
     return sim
@@ -630,7 +628,7 @@ def plot_sim_vs_analytical_sln(sim):
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = figs_path / "{}{}".format("ex-" + gwename + "-01", ".png")
+        fpth = figs_path / f"ex-{gwename}-01.png"
         fig.savefig(fpth, dpi=600)
 
     # Generate plots corresponding to three different times
@@ -716,7 +714,7 @@ def plot_sim_vs_analytical_sln(sim):
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = figs_path / "{}{}".format("ex-" + gwename + "-02", ".png")
+        fpth = figs_path / f"ex-{gwename}-02.png"
         fig.savefig(fpth, dpi=600)
 
 

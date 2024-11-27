@@ -564,7 +564,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         vertices=verts,
         cell2d=cell2d,
         pname="DISV",
-        filename="{}.disv".format(gwfname),
+        filename=f"{gwfname}.disv",
     )
 
     # Instantiating MODFLOW 6 node property flow package
@@ -582,7 +582,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         save_specific_discharge=True,
         save_saturation=True,
         pname="NPF",
-        filename="{}.npf".format(gwfname),
+        filename=f"{gwfname}.npf",
     )
 
     # Instantiating MODFLOW 6 initial conditions package
@@ -596,7 +596,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         sy=sy,
         transient={0: True},
         pname="STO",
-        filename="{}.sto".format(gwfname),
+        filename=f"{gwfname}.sto",
     )
 
     # Instantiate WEL package
@@ -622,12 +622,12 @@ def build_model(sim_name, verts, cell2d, top, botm):
         save_flows=True,
         stress_period_data=wel_spd,
         pname="WEL",
-        filename="{}.wel".format(gwfname),
+        filename=f"{gwfname}.wel",
     )
 
     # Instantiating MODFLOW 6 output control package (flow model)
-    head_filerecord = "{}.hds".format(gwfname)
-    budget_filerecord = "{}.cbc".format(gwfname)
+    head_filerecord = f"{gwfname}.hds"
+    budget_filerecord = f"{gwfname}.cbc"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -645,7 +645,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         sim,
         model_type="gwe6",
         modelname=gwename,
-        model_nam_file="{}.nam".format(gwename),
+        model_nam_file=f"{gwename}.nam",
     )
 
     # Create iterative model solution and register the gwe model with it
@@ -674,8 +674,8 @@ def build_model(sim_name, verts, cell2d, top, botm):
         number_orthogonalizations=2,
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
-        rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(gwename),
+        rcloserecord=f"{rclose} strict",
+        filename=f"{gwename}.ims",
     )
     sim.register_ims_package(imsgwe, [gwe.name])
 
@@ -692,18 +692,14 @@ def build_model(sim_name, verts, cell2d, top, botm):
         vertices=verts,
         cell2d=cell2d,
         pname="DISV-GWE",
-        filename="{}.disv".format(gwename),
+        filename=f"{gwename}.disv",
     )
 
     # Instantiating MODFLOW 6 heat transport initial temperature
-    flopy.mf6.ModflowGweic(
-        gwe, strt=strt_temp, pname="IC", filename="{}.ic".format(gwename)
-    )
+    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, pname="IC", filename=f"{gwename}.ic")
 
     # Instantiating MODFLOW 6 heat transport advection package
-    flopy.mf6.ModflowGweadv(
-        gwe, scheme=scheme, pname="ADV", filename="{}.adv".format(gwename)
-    )
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, pname="ADV", filename=f"{gwename}.adv")
 
     # Instantiating MODFLOW 6 heat transport energy storage package (consider renaming to est)
     prsity = determine_param(low_k_id, high_k_id, "prsity")
@@ -717,7 +713,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         heat_capacity_solid=cps,
         density_solid=rhos,
         pname="EST",
-        filename="{}.est".format(gwename),
+        filename=f"{gwename}.est",
     )
 
     # Instantiating MODFLOW 6 heat transport dispersion package
@@ -730,7 +726,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         ktw=ktw,
         kts=kts,
         pname="CND",
-        filename="{}.cnd".format(gwename),
+        filename=f"{gwename}.cnd",
     )
 
     # Instantiating MODFLOW 6 source/sink mixing package for dealing with
@@ -739,14 +735,14 @@ def build_model(sim_name, verts, cell2d, top, botm):
         ("WEL", "AUX", "TEMPERATURE"),
     ]
     flopy.mf6.ModflowGwessm(
-        gwe, sources=sourcerecarray, pname="SSM", filename="{}.ssm".format(gwename)
+        gwe, sources=sourcerecarray, pname="SSM", filename=f"{gwename}.ssm"
     )
 
     # Instantiating MODFLOW 6 heat transport output control package
     flopy.mf6.ModflowGweoc(
         gwe,
-        budget_filerecord="{}.cbc".format(gwename),
-        temperature_filerecord="{}.ucn".format(gwename),
+        budget_filerecord=f"{gwename}.cbc",
+        temperature_filerecord=f"{gwename}.ucn",
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
         printrecord=[("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
@@ -759,7 +755,7 @@ def build_model(sim_name, verts, cell2d, top, botm):
         exgtype="GWF6-GWE6",
         exgmnamea=gwfname,
         exgmnameb=gwename,
-        filename="{}.gwfgwe".format(gwename),
+        filename=f"{gwename}.gwfgwe",
     )
 
     return sim
@@ -950,7 +946,7 @@ def make_animated_gif(sim):
     ani = FuncAnimation(fig, update, range(1, len(times)), init_func=init)
     # interval=25,
     writer = PillowWriter(fps=10)
-    fpth = figs_path / "{}{}".format(sim_name, ".gif")
+    fpth = figs_path / f"{sim_name}.gif"
     ani.save(fpth, writer=writer)
 
 

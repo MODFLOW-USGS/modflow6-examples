@@ -2166,11 +2166,11 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-finfFact", ".png")
+            fpth = figs_path / f"{mf6.name}-finfFact.png"
             fig.savefig(fpth)
 
         # Start by retrieving some output
-        gwf = mf6.get_model(list(mf6.model_names)[0])
+        gwf = mf6.get_model(next(iter(mf6.model_names)))
         hdsobj = gwf.output.head()
         modobj = gwf.output.budget()
         sfrobj = gwf.sfr.output.budget()
@@ -2204,7 +2204,7 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-gwDepth", ".png")
+            fpth = figs_path / f"{mf6.name}-gwDepth.png"
             fig.savefig(fpth)
 
         drn_disQ = []
@@ -2332,7 +2332,7 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-uzFlow", ".png")
+            fpth = figs_path / f"{mf6.name}-uzFlow.png"
             fig.savefig(fpth)
 
         data_sfr = {
@@ -2374,7 +2374,7 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-swFlow", ".png")
+            fpth = figs_path / f"{mf6.name}-swFlow.png"
             fig.savefig(fpth)
 
 

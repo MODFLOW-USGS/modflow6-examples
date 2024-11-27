@@ -281,7 +281,7 @@ def build_regional(name):
 
 def build_local(name, simulation):
     # get regional heads for constant head boundaries
-    pth = list(parameters.keys())[0]
+    pth = next(iter(parameters.keys()))
     fpth = os.path.join(workspace, pth, f"{sim_name}.hds")
     try:
         h = flopy.utils.HeadFile(fpth).get_data()
@@ -440,7 +440,7 @@ def plot_maw_results(silent=True):
         hgwf /= ihds
 
         if silent:
-            print("MAW head: {}  Average head: {}".format(maw["H0"], hgwf))
+            print(f"MAW head: {maw['H0']}  Average head: {hgwf}")
 
         zelev = sorted(list(set(list(obs_elev.values()))), reverse=True)
 
@@ -529,7 +529,7 @@ def plot_regional_grid(silent=True):
         verbosity = 0
     else:
         verbosity = 1
-    name = list(parameters.keys())[0]
+    name = next(iter(parameters.keys()))
     sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity

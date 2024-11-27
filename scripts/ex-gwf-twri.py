@@ -300,10 +300,7 @@ def plot_results(sim, mf, silent=True):
         # check that the results are comparable
         for idx, k in enumerate((0, 2, 4)):
             diff = np.abs(head[k] - head0[idx])
-            msg = (
-                "aquifer {}: ".format(idx + 1)
-                + f"maximum absolute head difference is {diff.max()}"
-            )
+            msg = f"aquifer {idx + 1}: maximum absolute head difference is {diff.max()}"
             assert diff.max() < 0.05, msg
             if not silent:
                 print(msg)

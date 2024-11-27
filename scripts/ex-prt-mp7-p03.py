@@ -373,7 +373,7 @@ def build_prt_model():
 
     # Instantiate the MODFLOW 6 prt model
     prt = flopy.mf6.ModflowPrt(
-        sim, modelname=prt_name, model_nam_file="{}.nam".format(prt_name)
+        sim, modelname=prt_name, model_nam_file=f"{prt_name}.nam"
     )
 
     # Instantiate the MODFLOW 6 prt discretization package
@@ -404,7 +404,7 @@ def build_prt_model():
     flopy.mf6.ModflowPrtprp(
         prt,
         pname="prp1",
-        filename="{}_1.prp".format(prt_name),
+        filename=f"{prt_name}_1.prp",
         nreleasepts=len(release_points),
         packagedata=release_points,
         nreleasetimes=len(release_times),
@@ -641,7 +641,7 @@ def plot_head(gwf, head):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}, time=0")
+        styles.heading(ax=ax, heading=f"Head, layer {ilay + 1!s}, time=0")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_grid(lw=0.5)
         mm.plot_bc("WEL", plotAll=True)

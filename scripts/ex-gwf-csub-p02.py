@@ -560,14 +560,14 @@ def plot_comp_q_comparison(sim, silent=True):
                 ax.set_xlim(0, 100)
                 ylabel = (
                     "Head-based minus effective stress-based\nsubsidence, "
-                    + "in % of ultimate value"
+                    "in % of ultimate value"
                 )
             else:
                 ax.set_ylim(0, 8)
                 ax.set_xlim(0, 100)
                 ylabel = (
                     "Top minus bottom interbed effective stress-\nbased "
-                    + "rate, in % of head-based drainage rate"
+                    "rate, in % of head-based drainage rate"
                 )
             ax.set_xlabel("Percent of time constant")
             ax.set_ylabel(ylabel)
@@ -652,7 +652,7 @@ def plot_head_comparison(sim, silent=True):
                 styles.heading(ax, letter=chr(ord("A") + idx))
                 ax.set_yticks(yticks)
                 styles.remove_edge_ticks(ax)
-                text = r"$\frac{t}{\tau_0}$ = " + "{}".format(pct_vals[idx] / 100.0)
+                text = r"$\frac{t}{\tau_0}$ = " + f"{pct_vals[idx] / 100.0}"
                 ax.text(
                     0.25,
                     0.01,
@@ -671,8 +671,8 @@ def plot_head_comparison(sim, silent=True):
             else:
                 if idx == 2:
                     text = (
-                        "Difference in head-based and effective stress-based"
-                        + "\ninterbed heads, in percent of head-based interbed heads"
+                        "Difference in head-based and effective stress-based\n"
+                        "interbed heads, in percent of head-based interbed heads"
                     )
                     ax.set_xlabel(text)
                 ax.set_yticklabels([])

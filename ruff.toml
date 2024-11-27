@@ -7,10 +7,15 @@ select = [
     "E",    # pycodestyle error
     "F",    # Pyflakes
     "I001", # isort - unsorted-imports
+    # "ISC",  # implicitly concatenated strings
+    "RUF",  # Ruff-specific rules
+    "UP",   # Pyupgrade
 ]
 ignore = [
     "E501", # line too long TODO FIXME
     "E722", # do not use bare `except`
     "E741", # ambiguous variable name
     "F841", # local variable assigned but never used
+    "RUF005", # collection literal concatenation
+    "UP015", # redundant open modes
 ]

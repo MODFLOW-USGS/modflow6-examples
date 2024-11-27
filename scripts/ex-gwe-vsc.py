@@ -155,7 +155,7 @@ tdis_rc.append((perlen, nstp, 1.0))
 # A function for customizing colormaps
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     new_cmap = colors.LinearSegmentedColormap.from_list(
-        "trunc({n},{a:.2f},{b:.2f})".format(n=cmap.name, a=minval, b=maxval),
+        f"trunc({cmap.name},{minval:.2f},{maxval:.2f})",
         cmap(np.linspace(minval, maxval, n)),
     )
     return new_cmap
@@ -287,7 +287,7 @@ def add_gwf_model(sim, gwfname, activate_vsc):
 
     if activate_vsc:
         # Instantiate viscosity (VSC) package
-        vsc_filerecord = "{}.vsc.bin".format(gwfname)
+        vsc_filerecord = f"{gwfname}.vsc.bin"
         gwename2 = sim_name + "-02"
         vsc_pd = [(iviscspec, dviscdc, cviscref, gwename2, "TEMPERATURE")]
         flopy.mf6.ModflowGwfvsc(
@@ -301,7 +301,7 @@ def add_gwf_model(sim, gwfname, activate_vsc):
             nviscspecies=len(vsc_pd),
             packagedata=vsc_pd,
             pname="VSC",
-            filename="{}.vsc".format(gwfname),
+            filename=f"{gwfname}.vsc",
         )
 
     # Instantiating MODFLOW 6 output control package for flow model
@@ -456,7 +456,7 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwename),
+        filename=f"{gwename}.ims",
     )
     sim.register_ims_package(imsgwe, [gwename])
 
@@ -473,7 +473,7 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
         botm=botm,
         idomain=1,
         pname="DIS",
-        filename="{}.dis".format(gwename),
+        filename=f"{gwename}.dis",
     )
 
     # Instantiate Mobile Storage and Transfer package
@@ -487,7 +487,7 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
         heat_capacity_solid=cps,
         density_solid=rhos,
         pname="EST",
-        filename="{}.est".format(gwename),
+        filename=f"{gwename}.est",
     )
 
     # Instantiate Energy Transport Initial Conditions package
@@ -502,7 +502,7 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
         maxbound=len(ctp_spd),
         stress_period_data=ctp_spd,
         pname="CTP",
-        filename="{}.ctp".format(gwename),
+        filename=f"{gwename}.ctp",
     )
 
     # Instantiate Dispersion package (also handles conduction)
@@ -512,7 +512,7 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
         ktw=ktw,
         kts=kts,
         pname="CND",
-        filename="{}.cnd".format(gwename),
+        filename=f"{gwename}.cnd",
     )
 
     # Instantiating MODFLOW 6 transport source-sink mixing package
@@ -522,17 +522,17 @@ def add_gwe_model(sim, gwename, temp_upper=4.0, temp_lower=4.0):
         ("WEL-1", "AUX", "TEMPERATURE"),
     ]
     flopy.mf6.ModflowGwessm(
-        gwe, sources=sourcerecarray, pname="SSM", filename="{}.ssm".format(gwename)
+        gwe, sources=sourcerecarray, pname="SSM", filename=f"{gwename}.ssm"
     )
 
     # Instantiate Output Control package for transport
     flopy.mf6.ModflowGweoc(
         gwe,
-        temperature_filerecord="{}.ucn".format(gwename),
+        temperature_filerecord=f"{gwename}.ucn",
         saverecord=[("TEMPERATURE", "ALL")],
         temperatureprintrecord=[("COLUMNS", 3, "WIDTH", 20, "DIGITS", 8, "GENERAL")],
         printrecord=[("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
-        filename="{}.oc".format(gwename),
+        filename=f"{gwename}.oc",
     )
 
     return sim
@@ -589,7 +589,7 @@ def build_models(sim_name, silent=False, temp_upper=4.0, temp_lower=4.0):
                 exgtype="GWF6-GWE6",
                 exgmnamea=gwfname,
                 exgmnameb=gwename,
-                filename="{}.gwfgwe".format(gwename),
+                filename=f"{gwename}.gwfgwe",
             )
 
     return sim

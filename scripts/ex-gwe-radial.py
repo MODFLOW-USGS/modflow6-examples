@@ -537,7 +537,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         sim,
         modelname=gwfname,
         save_flows=True,
-        model_nam_file="{}.nam".format(gwfname),
+        model_nam_file=f"{gwfname}.nam",
     )
 
     # Instantiating MODFLOW 6 solver for flow model
@@ -566,8 +566,8 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         number_orthogonalizations=2,
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
-        rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(sim_name),
+        rcloserecord=f"{rclose} strict",
+        filename=f"{sim_name}.ims",
     )
     sim.register_ims_package(imsgwf, [gwf.name])
 
@@ -585,7 +585,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         vertices=verts,
         cell2d=cell2d,
         pname="DISV",
-        filename="{}.disv".format(gwfname),
+        filename=f"{gwfname}.disv",
     )
 
     # Instantiating MODFLOW 6 node property flow package
@@ -597,7 +597,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         save_specific_discharge=True,
         save_saturation=True,
         pname="NPF",
-        filename="{}.npf".format(gwfname),
+        filename=f"{gwfname}.npf",
     )
 
     # Instantiating MODFLOW 6 initial conditions package
@@ -612,7 +612,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         sy=0,
         steady_state={0: True},
         pname="STO",
-        filename="{}.sto".format(gwfname),
+        filename=f"{gwfname}.sto",
     )
 
     # Instantiating 1st instance of MODFLOW 6 constant head package (left side)
@@ -623,7 +623,7 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         auxiliary="TEMPERATURE",
         stress_period_data=left_chd_spd,
         pname="CHD-LEFT",
-        filename="{}.left.chd".format(sim_name),
+        filename=f"{sim_name}.left.chd",
     )
 
     right_chd_spd = {0: right_chd_spd}
@@ -632,12 +632,12 @@ def build_mf6_flow_model(sim_name, left_chd_spd=None, right_chd_spd=None, silent
         auxiliary="TEMPERATURE",
         stress_period_data=right_chd_spd,
         pname="CHD-RIGHT",
-        filename="{}.right.chd".format(sim_name),
+        filename=f"{sim_name}.right.chd",
     )
 
     # Instantiating MODFLOW 6 output control package (flow model)
-    head_filerecord = "{}.hds".format(sim_name)
-    budget_filerecord = "{}.cbc".format(sim_name)
+    head_filerecord = f"{sim_name}.hds"
+    budget_filerecord = f"{sim_name}.cbc"
     flopy.mf6.ModflowGwfoc(
         gwf,
         head_filerecord=head_filerecord,
@@ -656,7 +656,7 @@ def build_mf6_heat_model(
     gwvelocity=0.0,
     silent=False,
 ):
-    print("Building mf6gwt model...{}".format(sim_name))
+    print(f"Building mf6gwt model...{sim_name}")
     gwename = "gwe-" + sim_name.split("-")[2]
     sim_ws = os.path.join(workspace, sim_name[:-2], "mf6gwe" + scen_ext)
     sim = flopy.mf6.MFSimulation(sim_name=sim_name, sim_ws=sim_ws, exe_name="mf6")
@@ -666,7 +666,7 @@ def build_mf6_heat_model(
         sim,
         model_type="gwe6",
         modelname=gwename,
-        model_nam_file="{}.nam".format(gwename),
+        model_nam_file=f"{gwename}.nam",
     )
 
     # Create iterative model solution and register the gwe model with it
@@ -695,8 +695,8 @@ def build_mf6_heat_model(
         number_orthogonalizations=2,
         preconditioner_levels=8,
         preconditioner_drop_tolerance=0.001,
-        rcloserecord="{} strict".format(rclose),
-        filename="{}.ims".format(gwename),
+        rcloserecord=f"{rclose} strict",
+        filename=f"{gwename}.ims",
     )
     sim.register_ims_package(imsgwe, [gwe.name])
 
@@ -731,14 +731,14 @@ def build_mf6_heat_model(
         vertices=verts,
         cell2d=cell2d,
         pname="DISV-GWE",
-        filename="{}.disv".format(gwename),
+        filename=f"{gwename}.disv",
     )
 
     # Instantiating MODFLOW 6 heat transport initial temperature
-    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, filename="{}.ic".format(gwename))
+    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, filename=f"{gwename}.ic")
 
     # Instantiating MODFLOW 6 heat transport advection package
-    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, filename="{}.adv".format(gwename))
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, filename=f"{gwename}.adv")
 
     # Instantiating MODFLOW 6 heat transport dispersion package
     if ktw != 0:
@@ -749,7 +749,7 @@ def build_mf6_heat_model(
             ktw=ktw,
             kts=kts,
             pname="CND",
-            filename="{}.cnd".format(gwename),
+            filename=f"{gwename}.cnd",
         )
 
     # Instantiating MODFLOW 6 heat transport mass storage package (consider renaming to est)
@@ -762,7 +762,7 @@ def build_mf6_heat_model(
         heat_capacity_solid=cps,
         density_solid=rhos,
         pname="EST",
-        filename="{}.est".format(gwename),
+        filename=f"{gwename}.est",
     )
 
     # Instantiating MODFLOW 6 heat transport constant temperature package (Dirichlet case)
@@ -777,7 +777,7 @@ def build_mf6_heat_model(
             stress_period_data=ctpspd,
             save_flows=False,
             pname="CTP-1",
-            filename="{}.ctp".format(gwename),
+            filename=f"{gwename}.ctp",
         )
 
     if neumann > 0 and dirichlet == 0:
@@ -791,7 +791,7 @@ def build_mf6_heat_model(
             stress_period_data=esl_spd,
             save_flows=False,
             pname="ESL-1",
-            filename="{}.esl".format(gwename),
+            filename=f"{gwename}.esl",
         )
 
     # Instantiating MODFLOW 6 source/sink mixing package for dealing with
@@ -800,15 +800,13 @@ def build_mf6_heat_model(
         ("CHD-LEFT", "AUX", "TEMPERATURE"),
         ("CHD-RIGHT", "AUX", "TEMPERATURE"),
     ]
-    flopy.mf6.ModflowGwessm(
-        gwe, sources=sourcerecarray, filename="{}.ssm".format(gwename)
-    )
+    flopy.mf6.ModflowGwessm(gwe, sources=sourcerecarray, filename=f"{gwename}.ssm")
 
     # Instantiating MODFLOW 6 heat transport output control package
     flopy.mf6.ModflowGweoc(
         gwe,
-        budget_filerecord="{}.cbc".format(gwename),
-        temperature_filerecord="{}.ucn".format(gwename),
+        budget_filerecord=f"{gwename}.cbc",
+        temperature_filerecord=f"{gwename}.ucn",
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord={47: [("TEMPERATURE", "LAST"), ("BUDGET", "LAST")]},
         printrecord=[("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
@@ -875,7 +873,7 @@ def plot_grid(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}-grid{}".format(simname, ".png")
+            fpth = figs_path / f"{simname}-grid.png"
             fig.savefig(fpth, dpi=300)
 
 
@@ -907,7 +905,7 @@ def plot_grid_inset(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}-gridinset{}".format(simname, ".png")
+            fpth = figs_path / f"{simname}-gridinset.png"
             fig.savefig(fpth, dpi=300)
 
 
@@ -935,7 +933,7 @@ def plot_head(sim):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}-head{}".format(simname, ".png")
+            fpth = figs_path / f"{simname}-head.png"
             fig.savefig(fpth, dpi=300)
 
 
@@ -1010,7 +1008,7 @@ def plot_temperature(sim, idx, scen_txt, vel_txt):
             plt.show()
         if plot_save:
             fname = sim.name
-            fpth = figs_path / "{}-temp48{}".format(sim_name, ".png")
+            fpth = figs_path / f"{sim_name}-temp48.png"
             fig.savefig(fpth, dpi=300)
 
 

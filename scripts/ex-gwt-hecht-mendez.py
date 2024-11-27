@@ -938,7 +938,7 @@ def plot_results(
             plt.show()
         if plot_save:
             letter = chr(ord("@") + idx + 1)
-            fpth = figs_path / "{}{}".format("ex-" + sim_name + "-" + letter, ".png")
+            fpth = figs_path / f"ex-{sim_name}-{letter}.png"
             fig.savefig(fpth)
 
 
