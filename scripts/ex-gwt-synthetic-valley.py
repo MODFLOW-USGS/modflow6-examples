@@ -326,7 +326,7 @@ bot_l2 = np.full(bot_vg.shape, -51.0 * ft2m, dtype=float)
 bot_l3 = np.full(bot_vg.shape, -100.0 * ft2m, dtype=float)
 bot_l4 = bot_vg + 0.5 * (bot_l3 - bot_vg)
 # set the bottom of the 3rd layer in areas where the confining unit exists
-bot_l2[idomain_2] = -50.0 * ft2m
+bot_l2[idomain_2 == -1] = -50.0 * ft2m
 # create a list with bottom data
 botm = [-5.0 * ft2m, -50.0 * ft2m, bot_l2, -100.0 * ft2m, bot_l4, bot_vg]
 # -
