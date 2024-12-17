@@ -228,7 +228,7 @@ def build_models(sim_name, mixelm=0, silent=False):
         dt0=0,
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(
         mt,
         mixelm=mixelm,
@@ -579,10 +579,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(
-                sim_name,
-                ".png",
-            )
+            fpth = figs_path / f"{sim_name}.png"
             fig.savefig(fpth)
 
 

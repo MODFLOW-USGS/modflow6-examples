@@ -237,18 +237,7 @@ for k in range(nlay):
         if k == nlay - 1:
             ivertcon = -1
         # <iuzno> <cellid(ncelldim)> <landflag> <ivertcon> <surfdep> <vks> <thtr> <thts> <thti> <eps> [<boundname>]
-        uz = [
-            iuzno,
-            (k, 0, j),
-            lflag,
-            ivertcon,
-            surfdep,
-            vk,
-            thtr,
-            thts,
-            thti,
-            eps,
-        ]
+        uz = [iuzno, (k, 0, j), lflag, ivertcon, surfdep, vk, thtr, thts, thti, eps]
         packagedata.append(uz)
 
         # now some transport book keeping
@@ -393,7 +382,7 @@ def build_models(
         dt0=0.05,
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(
         mt,
         mixelm=mixelm,
@@ -444,7 +433,7 @@ def build_models(
     mxss = len(cnc0)
     flopy.mt3d.Mt3dSsm(mt, mxss=mxss, stress_period_data=ssmspd)
 
-    # Instantiate unsaturated zone tranport package
+    # Instantiate unsaturated zone transport package
     cuzinf = np.zeros((nrow, ncol), dtype=int)
     cuzinf[0, 15:25] = 1.0
     uzt = flopy.mt3d.Mt3dUzt(mt, iuzfbnd=iuzfbnd, iet=0, cuzinf=cuzinf)
@@ -798,7 +787,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
     fname_mfnwt = os.path.join(mt3d_out_path, "uzt-2d-mf.hds")
     hds_mfnwt = flopy.utils.HeadFile(fname_mfnwt)
     hds = hds_mfnwt.get_alldata()
-    # Make list of verticies for plotting the saturated zone as a polygon
+    # Make list of vertices for plotting the saturated zone as a polygon
     # Start by adding fixed locations
     satzn = []
     satzn.append([40 * delr, 0])
@@ -938,10 +927,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(
-                sim_name,
-                ".png",
-            )
+            fpth = figs_path / f"{sim_name}.png"
             fig.savefig(fpth)
 
 

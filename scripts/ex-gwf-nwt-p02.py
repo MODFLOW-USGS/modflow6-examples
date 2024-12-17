@@ -171,14 +171,7 @@ def build_models(
         botm=botm,
     )
     if rewet:
-        rewet_record = [
-            "wetfct",
-            wetfct,
-            "iwetit",
-            iwetit,
-            "ihdwet",
-            ihdwet,
-        ]
+        rewet_record = ["wetfct", wetfct, "iwetit", iwetit, "ihdwet", ihdwet]
         wetdry = 9 * [wetdry] + 5 * [0]
     else:
         rewet_record = None
@@ -250,7 +243,7 @@ def plot_results(silent=True):
 
     with styles.USGSMap():
         # load the newton model
-        name = list(parameters.keys())[0]
+        name = next(iter(parameters.keys()))
         sim_ws = os.path.join(workspace, name)
         sim = flopy.mf6.MFSimulation.load(
             sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity_level
@@ -278,11 +271,7 @@ def plot_results(silent=True):
 
         # Create figure for simulation
         fig, axes = plt.subplots(
-            ncols=1,
-            nrows=4,
-            sharex=True,
-            figsize=figure_size,
-            constrained_layout=False,
+            ncols=1, nrows=4, sharex=True, figsize=figure_size, constrained_layout=False
         )
 
         # plot the results
@@ -308,13 +297,7 @@ def plot_results(silent=True):
             )
             mm.plot_bc("CHD", color="cyan")
             mm.plot_grid(lw=0.5)
-            ax.plot(
-                xnode,
-                head[0, :],
-                lw=0.75,
-                color="black",
-                label="Newton-Raphson",
-            )
+            ax.plot(xnode, head[0, :], lw=0.75, color="black", label="Newton-Raphson")
             ax.plot(
                 xnode,
                 head1[0, :],

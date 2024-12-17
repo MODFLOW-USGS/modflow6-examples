@@ -273,19 +273,13 @@ def plot_head(idx, sim):
 
         # create MODFLOW 6 cell-by-cell budget object
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-            gwf,
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0], gwf
         )
 
         ax = fig.add_subplot(1, 2, 1, aspect="equal")
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
         cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-        pmv.plot_vector(
-            qx,
-            qy,
-            normalize=False,
-            color="0.75",
-        )
+        pmv.plot_vector(qx, qy, normalize=False, color="0.75")
         cbar = plt.colorbar(cb, shrink=0.25)
         cbar.ax.set_xlabel(r"Head, ($m$)")
         ax.set_xlabel("x position (m)")
@@ -295,12 +289,7 @@ def plot_head(idx, sim):
         ax = fig.add_subplot(1, 2, 2, aspect="equal")
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=1)
         cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-        pmv.plot_vector(
-            qx,
-            qy,
-            normalize=False,
-            color="0.75",
-        )
+        pmv.plot_vector(qx, qy, normalize=False, color="0.75")
         cbar = plt.colorbar(cb, shrink=0.25)
         cbar.ax.set_xlabel(r"Head, ($m$)")
         ax.set_xlabel("x position (m)")

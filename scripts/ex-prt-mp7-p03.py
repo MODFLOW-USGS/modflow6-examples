@@ -373,7 +373,7 @@ def build_prt_model():
 
     # Instantiate the MODFLOW 6 prt model
     prt = flopy.mf6.ModflowPrt(
-        sim, modelname=prt_name, model_nam_file="{}.nam".format(prt_name)
+        sim, modelname=prt_name, model_nam_file=f"{prt_name}.nam"
     )
 
     # Instantiate the MODFLOW 6 prt discretization package
@@ -404,18 +404,20 @@ def build_prt_model():
     flopy.mf6.ModflowPrtprp(
         prt,
         pname="prp1",
-        filename="{}_1.prp".format(prt_name),
+        filename=f"{prt_name}_1.prp",
         nreleasepts=len(release_points),
         packagedata=release_points,
-        release_timesrecord=release_times,
+        nreleasetimes=len(release_times),
+        releasetimes=[(t,) for t in release_times],
         # local z coordinates specified, compute global release
         # coord from cell top if saturated or water table if not
         local_z=True,
         exit_solve_tolerance=1e-5,
+        extend_tracking=True,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
-    tracktimes = list(range(90000, 150001, 2000))
+    track_times = list(range(90000, 150001, 2000))
     flopy.mf6.ModflowPrtoc(
         prt,
         pname="oc",
@@ -424,7 +426,8 @@ def build_prt_model():
         track_release=True,
         track_terminate=True,
         track_usertime=True,
-        track_timesrecord=tracktimes,
+        ntracktimes=len(track_times),
+        tracktimes=[(t,) for t in track_times],
         saverecord=[("BUDGET", "ALL")],
     )
 
@@ -531,13 +534,7 @@ def get_mf6_pathlines(path):
     pl.reset_index(drop=True, inplace=True)
 
     # convert indices to 0-based
-    for n in [
-        "imdl",
-        "iprp",
-        "irpt",
-        "ilay",
-        "icell",
-    ]:
+    for n in ["imdl", "iprp", "irpt", "ilay", "icell"]:
         pl[n] -= 1
 
     return pl
@@ -619,13 +616,7 @@ def plot_points(fig, ax, gwf, data, colorbar=True, **kwargs):
             label = "Captured by " + dest
             pdata = data[data.dest == dest]
             pts.append(
-                ax.scatter(
-                    pdata["x"],
-                    pdata["y"],
-                    s=3,
-                    color=color,
-                    label=label,
-                )
+                ax.scatter(pdata["x"], pdata["y"], s=3, color=color, label=label)
             )
         return pts
     else:
@@ -650,7 +641,7 @@ def plot_head(gwf, head):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}, time=0")
+        styles.heading(ax=ax, heading=f"Head, layer {ilay + 1!s}, time=0")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_grid(lw=0.5)
         mm.plot_bc("WEL", plotAll=True)
@@ -914,15 +905,9 @@ def plot_all(gwfsim):
 
     # plot the results
     plot_head(gwf, head=head)
-    plot_pathpoints(
-        gwf,
-        mf6pathlines,
-        title="2000-day points, colored by travel time",
-    )
+    plot_pathpoints(gwf, mf6pathlines, title="2000-day points, colored by travel time")
     plot_pathpoints_3d(
-        gwf,
-        mf6pathlines,
-        title="Pathlines, 2000-day points,\ncolored by destination",
+        gwf, mf6pathlines, title="Pathlines, 2000-day points,\ncolored by destination"
     )
     plot_endpoints(
         gwf,
@@ -952,4 +937,4 @@ def scenario(silent=False):
 
 # Run the MODPATH 7 example problem 3 scenario.
 
-scenario(silent=False)
+scenario(silent=True)

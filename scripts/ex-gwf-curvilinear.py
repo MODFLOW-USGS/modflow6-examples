@@ -24,7 +24,6 @@ import os
 import pathlib as pl
 from itertools import cycle
 from math import sqrt
-from typing import Dict, List
 
 import flopy
 import git
@@ -153,10 +152,10 @@ class DisvPropertyContainer:
     nlay: int
     ncpl: int
     nvert: int
-    vertices: List[list]  # [[iv, xv, yv], ...]
-    cell2d: List[list]  # [[ic, xc, yc, ncvert, icvert], ...]
+    vertices: list[list]  # [[iv, xv, yv], ...]
+    cell2d: list[list]  # [[ic, xc, yc, ncvert, icvert], ...]
     top: np.ndarray
-    botm: List[np.ndarray]
+    botm: list[np.ndarray]
     origin_x: float
     origin_y: float
     rotation: float
@@ -978,7 +977,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
         """Generator that iterates through each rows' columns.
 
         Yields
-        -------
+        ------
         (int, int)
             Row index, column index
         """
@@ -995,7 +994,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
             Row index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -1012,7 +1011,7 @@ class DisvStructuredGridBuilder(DisvPropertyContainer):
             Column index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -1141,7 +1140,7 @@ class DisvGridMerger:
         name, and value is the merged grid's cellid.
 
     Notes
-    -------
+    -----
     The following is always true:
 
     ``cell2name[cell] ==  name2vert[cell2name[cell]]``
@@ -1166,7 +1165,7 @@ class DisvGridMerger:
         kwargs to DisvPropertyContainer.plot_grid(...).
     """
 
-    grids: Dict[str, DisvPropertyContainer]
+    grids: dict[str, DisvPropertyContainer]
     merged: DisvPropertyContainer
     snap_vertices: dict
     connect_tolerance: dict
@@ -1333,9 +1332,7 @@ class DisvGridMerger:
         for iv_orig, xv, yv in vertices:
             if iv == iv_orig:
                 return xv, yv
-        raise RuntimeError(
-            "DisvGridMerger: " f"Failed to find vertex {iv} in grid {name}"
-        )
+        raise RuntimeError(f"DisvGridMerger: Failed to find vertex {iv} in grid {name}")
 
     def _find_merged_vertex(self, xv, yv, tol):
         for iv, xv_chk, yv_chk in self.merged.vertices:
@@ -1350,7 +1347,7 @@ class DisvGridMerger:
                 vert[2] = yv
                 return
         raise RuntimeError(
-            "DisvGridMerger: Unknown code error - " f"failed to locate vertex {iv}"
+            f"DisvGridMerger: Unknown code error - failed to locate vertex {iv}"
         )
 
     def _clear_attribute(self):
@@ -2066,7 +2063,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
         """Generator that iterates through the radial band columns, then bands.
 
         Yields
-        -------
+        ------
         (int, int)
             radial band index, column index
         """
@@ -2082,7 +2079,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             Radial index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -2102,7 +2099,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             Column index.
 
         Yields
-        -------
+        ------
         int
             cellid index
         """
@@ -2120,7 +2117,7 @@ class DisvCurvilinearBuilder(DisvPropertyContainer):
             Radial index.
 
         Yields
-        -------
+        ------
         int
             column index
         """
@@ -2297,7 +2294,7 @@ grid_merger.set_vertex_connection("rectgrid", "curvlin2", 19 - 1, 323 - 1)
 # Merge grids into one single model grid
 grid_merger.merge_grids()
 
-# Shift first curvilinear grid for plotting against the orgin.
+# Shift first curvilinear grid for plotting against the origin.
 # (Note, grid_merger no longer needs curvlin1)
 curvlin1.change_origin(0.0, 0.0)
 
@@ -2478,11 +2475,7 @@ def plot_grid(sim, verbose=False):
         fig.tight_layout()
 
         # Save components that made up the main grid
-        fig2, ax2 = plt.subplots(
-            1,
-            3,
-            figsize=figure_size_grid_com,
-        )
+        fig2, ax2 = plt.subplots(1, 3, figsize=figure_size_grid_com)
 
         curvlin1.plot_grid(
             "Left Curvilinear Grid",
@@ -2581,19 +2574,13 @@ def plot_head(sim):
 
         # create MODFLOW 6 cell-by-cell budget object
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-            gwf,
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0], gwf
         )
 
         ax = fig.add_subplot(1, 1, 1, aspect="equal")
         pmv = flopy.plot.PlotMapView(model=gwf, ax=ax, layer=0)
         cb = pmv.plot_array(head, cmap="jet", vmin=0.0, vmax=head.max())
-        pmv.plot_vector(
-            qx,
-            qy,
-            normalize=False,
-            color="0.75",
-        )
+        pmv.plot_vector(qx, qy, normalize=False, color="0.75")
         cbar = plt.colorbar(cb, shrink=0.25)
         cbar.ax.set_xlabel(r"Head, ($ft$)")
         ax.set_xlabel("x position (ft)")

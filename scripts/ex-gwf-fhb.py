@@ -251,7 +251,7 @@ def plot_ts(sim):
             ax.set_ylabel(ylabel[iplot])
             styles.graph_legend(ax)
             if plot_save:
-                fpth = figs_path / "{}-{}{}".format(sim_name, obs_fig[iplot], ".png")
+                fpth = figs_path / f"{sim_name}-{obs_fig[iplot]}.png"
                 fig.savefig(fpth)
 
 

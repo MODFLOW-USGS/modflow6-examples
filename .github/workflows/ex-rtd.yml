@@ -14,10 +14,72 @@ on:
     paths-ignore:
       - 'README.md'
       - 'DEVELOPER.md'
-
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'The tag, branch or commit hash to trigger an RTD build for. Branches and tags must be fully formed, e.g. refs/heads/<branch> or refs/tags/<tag> respectively.'
+        required: false
+        type: string
+        default: 'refs/heads/develop'
+      mf6_ref:
+        description: 'The tag, branch or commit hash to build MF6 from. Branches and tags must be fully formed, e.g. refs/heads/<branch> or refs/tags/<tag> respectively.'
+        required: false
+        type: string
+        default: 'refs/heads/develop'
 jobs:
-  rtd_build:
-    name: rtd-build
+  set_options:
+    name: Set release options
+    if: github.ref_name != 'master'
+    runs-on: ubuntu-22.04
+    outputs:
+      ref: ${{ steps.set_ref.outputs.ref }}
+      sha: ${{ steps.set_sha.outputs.sha }}
+      mf6_ref: ${{ steps.set_mf6_ref.outputs.ref }}
+    steps:
+      - name: Set ref
+        id: set_ref
+        run: |
+          # if ref was provided explicitly via workflow_dispatch, use it
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.ref }}") ]]; then
+            ref="${{ inputs.ref }}"
+            echo "using ref $ref from workflow_dispatch"
+          else
+            # otherwise use the current branch
+            ref="${{ github.ref }}"
+            echo "using current ref $ref"
+          fi
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.set_ref.outputs.ref }}
+
+      - name: Set sha
+        id: set_sha
+        run: |
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.ref }}") ]]; then
+            sha=$(git rev-parse ${{ steps.set_ref.outputs.ref }})
+          else
+            sha="${{ github.sha }}"
+          fi
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+
+      - name: Set MF6 ref
+        id: set_mf6_ref
+        run: |
+          # if ref was provided explicitly via workflow_dispatch, use it
+          if [[ ("${{ github.event_name }}" == "workflow_dispatch") && (-n "${{ inputs.mf6_ref }}") ]]; then
+            ref="${{ inputs.mf6_ref }}"
+          else
+            # otherwise use the develop branch
+            ref="refs/heads/develop"
+          fi
+          echo "using mf6 ref $ref"
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+  build:
+    name: Build artifacts for RTD
+    needs: set_options
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -25,27 +87,20 @@ jobs:
       run:
         shell: bash
     steps:
-
-      - name: Checkout MODFLOW6 examples repo
+      - name: Checkout MODFLOW6 examples
         uses: actions/checkout@v4
         with:
           path: modflow6-examples
+          ref: ${{ needs.set_options.outputs.ref }}
 
       - name: Checkout MODFLOW 6
         uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6
           path: modflow6
+          ref: ${{ needs.set_options.outputs.mf6_ref }}
 
-      - name: Output repo information
-        run: |
-          echo ${{ github.repository_owner }}
-          echo ${{ github.repository }}
-          echo ${{ github.ref }}
-          echo ${{ github.event_name }}
-          echo ${{ github.sha }}
-
-      - name: Install TeX Live and additional TrueType fonts
+      - name: Install LaTeX and extra fonts
         run: |
           sudo apt-get update
           sudo apt install texlive-latex-extra texlive-science fonts-liberation
@@ -65,7 +120,7 @@ jobs:
           python-version: 3.9
 
       - name: Set up headless display
-        uses: pyvista/setup-headless-display-action@v2
+        uses: pyvista/setup-headless-display-action@v3
 
       - name: Install Python packages
         working-directory: modflow6-examples/etc
@@ -75,10 +130,10 @@ jobs:
           pip install -r requirements.usgs.txt
           python -m ipykernel install --name python_kernel --user
 
-      - name: Update flopy MODFLOW 6 classes
-        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
+      - name: Update FloPy classes
+        run: python -m flopy.mf6.utils.generate_classes --ref ${{ needs.set_options.outputs.mf6_ref }} --no-backup
 
-      - name: Install MODFLOW executables release
+      - name: Install MODFLOW executables
         uses: modflowpy/install-modflow-action@v1
 
       - name: Build MODFLOW 6
@@ -89,34 +144,22 @@ jobs:
           meson test --verbose --no-rebuild -C builddir
           cp bin/* ~/.local/bin/modflow/
       
-      - name: Create notebooks and run models
+      - name: Run notebooks, make plots
         working-directory: modflow6-examples/autotest
         run: pytest -v -n=auto --durations=0 test_notebooks.py --plot
 
-      - name: Run processing script
+      - name: Run postprocessing
         working-directory: modflow6-examples/scripts
         run: python process-scripts.py
 
-      - name: Create package tables and examples.rst for ReadtheDocs
+      - name: Create Markdown tables
         working-directory: modflow6-examples/etc
         run: python ci_create_examples_rst.py
 
-      - name: List example rst files for ReadtheDocs
-        working-directory: modflow6-examples
-        run: ls -R .doc/_examples/
-
-      - name: List example image files for ReadtheDocs
-        working-directory: modflow6-examples
-        run: ls -R .doc/_images/
-
-      - name: List example notebook files for ReadtheDocs
-        working-directory: modflow6-examples
-        run: ls -R .doc/_notebooks/
-
-      - name: Upload completed jupyter notebooks as an artifact for ReadtheDocs
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: rtd-files-for-${{ github.sha }}
+          name: rtd-files-for-${{ needs.set_options.outputs.sha }}
           path: |
             modflow6-examples/.doc/introduction.md
             modflow6-examples/.doc/examples.rst
@@ -124,19 +167,28 @@ jobs:
             modflow6-examples/.doc/_images
             modflow6-examples/.doc/_notebooks
 
-  # trigger rtd if "rtd_build" job was successful
-  rtd_trigger:
-    name: rtd-trigger
-    needs: rtd_build
+  trigger:
+    name: Trigger RTD build
+    needs:
+      - set_options
+      - build
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+    if: |
+      github.repository_owner == 'MODFLOW-USGS' &&
+      (
+        github.ref_name == 'master' ||
+        github.ref_name == 'develop'
+      ) && (
+        github.event_name == 'push' ||
+        github.event_name == 'workflow_dispatch'
+      )
     steps:
       - name: Checkout MODFLOW6 examples repo
         uses: actions/checkout@v4
 
-      - name: Trigger RTDs build
+      - name: Trigger RTD build
         uses: dfm/rtds-action@v1
         with:
           webhook_url: ${{ secrets.RTDS_WEBHOOK_URL }}
           webhook_token: ${{ secrets.RTDS_WEBHOOK_TOKEN }}
-          commit_ref: ${{ github.ref }}
+          commit_ref: ${{ needs.set_options.outputs.ref }}

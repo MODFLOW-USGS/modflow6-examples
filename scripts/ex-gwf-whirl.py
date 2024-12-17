@@ -177,8 +177,7 @@ def plot_spdis(sim):
 
         # create MODFLOW 6 cell-by-cell budget object
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0],
-            gwf,
+            gwf.output.budget().get_data(text="DATA-SPDIS", totim=1.0)[0], gwf
         )
 
         ax = fig.add_subplot(1, 1, 1)

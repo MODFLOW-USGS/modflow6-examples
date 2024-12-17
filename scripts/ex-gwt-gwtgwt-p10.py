@@ -247,14 +247,14 @@ def build_models():
         exgtype="GWF6-GWT6",
         exgmnamea=gwfname_out,
         exgmnameb=gwtname_out,
-        filename="{}.gwfgwt".format("outer"),
+        filename="outer.gwfgwt",
     )
     flopy.mf6.ModflowGwfgwt(
         sim,
         exgtype="GWF6-GWT6",
         exgmnamea=gwfname_inn,
         exgmnameb=gwtname_inn,
-        filename="{}.gwfgwt".format("inner"),
+        filename="inner.gwfgwt",
     )
 
     return sim
@@ -277,7 +277,7 @@ def add_flow(sim):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format("gwfsolver"),
+        filename="gwfsolver.ims",
     )
 
     gwf_outer = add_outer_gwfmodel(sim)
@@ -292,16 +292,7 @@ def add_flow(sim):
         for irow in range(nrow_inn):
             irow_outer = irow + 8
             exgdata.append(
-                (
-                    (ilay, irow_outer, 5),
-                    (ilay, irow, 0),
-                    1,
-                    50.0,
-                    25.0,
-                    50.0,
-                    0.0,
-                    75.0,
-                )
+                ((ilay, irow_outer, 5), (ilay, irow, 0), 1, 50.0, 25.0, 50.0, 0.0, 75.0)
             )
     # west
     for ilay in range(nlay):
@@ -585,7 +576,7 @@ def add_transport(sim):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format("gwtsolver"),
+        filename="gwtsolver.ims",
     )
 
     # Instantiating transport advection package
@@ -911,11 +902,7 @@ def plot_grids(sim):
     gwt_outer = sim.get_model(gwtname_out)
     mm = flopy.plot.PlotMapView(model=gwt_outer)
     mm.plot_grid(color="0.2", alpha=0.7)
-    ax.plot(
-        [xmin, xmax, xmax, xmin, xmin],
-        [ymin, ymin, ymax, ymax, ymin],
-        "r--",
-    )
+    ax.plot([xmin, xmax, xmax, xmin, xmin], [ymin, ymin, ymax, ymax, ymin], "r--")
     fpath = figs_path / "ex-gwtgwt-p10-modelgrid.png"
     fig.savefig(fpath)
 

@@ -604,7 +604,7 @@ def build_mt3d_transport_model(
         mxstrn=20000,
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(mt, mixelm=mixelm, percel=percel)
 
     # Instantiate the dispersion package
@@ -879,20 +879,7 @@ def plot_results(
     R = 2.59  # From Hecht-Mendez manuscript
 
     tr_sln = hechtMendez3d(
-        x_pos,
-        t,
-        Y,
-        Z,
-        al,
-        ath,
-        atv,
-        thermdiff,
-        va,
-        n,
-        R,
-        Fplanar,
-        cw,
-        rhow,
+        x_pos, t, Y, Z, al, ath, atv, thermdiff, va, n, R, Fplanar, cw, rhow
     )
 
     # list of where to draw vertical lines
@@ -923,10 +910,7 @@ def plot_results(
             ax.axvline(x=xc, color="k", linestyle=":", alpha=0.1)
 
         ss_ln = ax.plot(
-            x_pos,
-            y_ss_anly_sln,
-            "r-",
-            label="Steady state analytical solution",
+            x_pos, y_ss_anly_sln, "r-", label="Steady state analytical solution"
         )
         tr_ln = ax.plot(
             x_pos, y_tr_anly_sln, "b-", label="Transient analytical solution"
@@ -940,11 +924,7 @@ def plot_results(
 
         mf6_ss_ln = ax.plot(x_pos, y_150_mf6_sln, "rx", label="Steady-state MF6-GWT")
         mf6_tr_ln = ax.plot(
-            x_pos,
-            y_10_mf6_sln,
-            "bo",
-            markerfacecolor="none",
-            label="Transient MF6-GWT",
+            x_pos, y_10_mf6_sln, "bo", markerfacecolor="none", label="Transient MF6-GWT"
         )
         ax.set_xlim(1, 100)
         ax.set_ylim(285.15 - 2.1, 285.15 + 0.5)
@@ -958,10 +938,7 @@ def plot_results(
             plt.show()
         if plot_save:
             letter = chr(ord("@") + idx + 1)
-            fpth = figs_path / "{}{}".format(
-                "ex-" + sim_name + "-" + letter,
-                ".png",
-            )
+            fpth = figs_path / f"ex-{sim_name}-{letter}.png"
             fig.savefig(fpth)
 
 
@@ -989,12 +966,7 @@ def scenario(idx, runMT3D=False, silent=True):
         run_models(sim_mf6gwf, sim_mf6gwt, mf2k5=mf2k5, mt3d=mt3d, silent=silent)
     if plot:
         plot_results(
-            sim_mf6gwf,
-            sim_mf6gwt,
-            idx,
-            mf2k5=mf2k5,
-            mt3d=mt3d,
-            **parameter_dict,
+            sim_mf6gwf, sim_mf6gwt, idx, mf2k5=mf2k5, mt3d=mt3d, **parameter_dict
         )
 
 

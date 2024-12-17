@@ -36,7 +36,7 @@ Flag1 Flag2    Arg1 Arg2  Description
                          Arg2 is optional, and if present replaces Arg1 for
                          pattern matching exdir.
 
--k  --keyword  yes  opt  Proces the expy and exdir that match a Unix
+-k  --keyword  yes  opt  Process the expy and exdir that match a Unix
                          filename search pattern.
                          Arg1 is the Unix filename matching pattern
                          to filter and print the expy and exdir names.
@@ -79,30 +79,14 @@ def _replace_quotes(proc_str):
 
 
 def table_standard_header(caption, label):
-    col_widths = (
-        0.5,
-        0.3,
-    )
-    headings = (
-        "Parameter",
-        "Value",
-    )
+    col_widths = (0.5, 0.3)
+    headings = ("Parameter", "Value")
     return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
 def table_scenario_header(caption, label):
-    col_widths = (
-        0.1,
-        0.25,
-        0.3,
-        0.15,
-    )
-    headings = (
-        "Scenario",
-        "Scenario Name",
-        "Parameter",
-        "Value",
-    )
+    col_widths = (0.1, 0.25, 0.3, 0.15)
+    headings = ("Scenario", "Scenario Name", "Parameter", "Value")
     return get_header(caption, label, headings, col_widths=col_widths, center=False)
 
 
@@ -175,11 +159,9 @@ def make_tables():
                         except:
                             units = " (unknown)"
                     if len(table_line) > 0:
-                        table_line += "\t{}{} & {}".format(text_to_write, units, value)
+                        table_line += f"\t{text_to_write}{units} & {value}"
                     else:
-                        table_line = "\t& & {}{} & {}".format(
-                            text_to_write, units, value
-                        )
+                        table_line = f"\t& & {text_to_write}{units} & {value}"
                     table_line += " \\\\\n"
                     if len(row_color) > 0:
                         f.write(row_color)
@@ -385,7 +367,7 @@ def build_md_tables(ex_dict):
     for ex_name in ex_paks.keys():
         for ex_root in ex_order:
             if ex_root in ex_name:
-                pak_link[ex_name] = "[{}](_examples/{}.html)".format(ex_name, ex_root)
+                pak_link[ex_name] = f"[{ex_name}](_examples/{ex_root}.html)"
                 break
         if ex_name not in list(pak_link.keys()):
             pak_link[ex_name] = ex_name
@@ -412,23 +394,21 @@ def build_md_tables(ex_dict):
         line = "### Introduction\n\n"
         line += (
             "This document describes example problems for MODFLOW 6. The examples "
-            + "demonstrate use of the capabilities for select components of "
-            + "MODFLOW 6. A pdf of the examples can be downloaded from "
-            + "[ReadtheDocs](https://modflow6-examples.readthedocs.io/en/latest/) "
-            + "or from the [current release](https://github.com/MODFLOW-USGS/"
-            + "modflow6-examples/releases/download/current/mf6examples.pdf) on "
-            + "[GitHub](https://github.com/MODFLOW-USGS/modflow6-examples/).\n\n"
-            + "Examples have been included for the MODFLOW 6 components "
-            + "summarized in the tables below.\n\n"
+            "demonstrate use of the capabilities for select components of "
+            "MODFLOW 6. A pdf of the examples can be downloaded from "
+            "[ReadtheDocs](https://modflow6-examples.readthedocs.io/en/latest/) "
+            "or from the [current release](https://github.com/MODFLOW-USGS/"
+            "modflow6-examples/releases/download/current/mf6examples.pdf) on "
+            "[GitHub](https://github.com/MODFLOW-USGS/modflow6-examples/).\n\n"
+            "Examples have been included for the MODFLOW 6 components "
+            "summarized in the tables below.\n\n"
         )
         f.write(line)
 
         join_fmt = ", "
         header = (
-            "| Package | Examples                                            "
-            + "               |\n"
-            + "|---------|------------------------------"
-            + "--------------------------------------|\n"
+            "| Package | Examples                                                           |\n"
+            "|---------|--------------------------------------------------------------------|\n"
         )
         footer = "\n\n"
 
@@ -641,13 +621,7 @@ def build_tex_tables(ex_dict):
         "Grid \\newline Dimensions",
         "Packages",
     )
-    col_widths = (
-        0.10,
-        0.22,
-        0.25,
-        0.15,
-        0.28,
-    )
+    col_widths = (0.10, 0.22, 0.25, 0.15, 0.28)
     caption = "List of example problems and simulation characteristics."
     label = "tab:ex-table"
 
@@ -655,13 +629,7 @@ def build_tex_tables(ex_dict):
 
     on_ex = 0
     for idx, (key, sim_dict) in enumerate(ex_tex.items()):
-        for jdx, (
-            ex_number,
-            namefile,
-            dimensions,
-            model_paks,
-            sim_paks,
-        ) in enumerate(
+        for jdx, (ex_number, namefile, dimensions, model_paks, sim_paks) in enumerate(
             zip(
                 sim_dict["ex_number"],
                 sim_dict["namefiles"],

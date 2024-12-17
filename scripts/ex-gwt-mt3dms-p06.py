@@ -222,7 +222,7 @@ def build_models(sim_name, mixelm=0, silent=False):
         obs=[(0, 15, 15)],
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(
         mt,
         mixelm=mixelm,
@@ -519,13 +519,7 @@ def plot_results(mt3d, mf6, idx, ax=None):
         y_mf6 = mf6cobs["BCKGRND_CN"]
         x_mf6_pare = x_mf6[::20]
         y_mf6_pare = y_mf6[::20]
-        ax.plot(
-            x_mf6_pare,
-            y_mf6_pare,
-            label="MODFLOW 6",
-            marker="x",
-            linestyle=":",
-        )
+        ax.plot(x_mf6_pare, y_mf6_pare, label="MODFLOW 6", marker="x", linestyle=":")
 
         plt.xlim(0, 10)
         plt.ylim(0, 100.0)

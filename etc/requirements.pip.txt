@@ -3,7 +3,7 @@ pytest-xdist
 appdirs
 requests
 numpy
-matplotlib
+matplotlib<=3.9.4
 bmipy
 affine
 scipy
@@ -22,6 +22,7 @@ jupytext
 pooch
 GitPython
 pyvista
+codespell
 ruff
 meson
 ninja

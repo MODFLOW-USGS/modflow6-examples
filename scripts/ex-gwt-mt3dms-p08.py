@@ -249,7 +249,7 @@ def build_models(mixelm=0, silent=False):
         dt0=5,
     )
 
-    # Instatiate the advection package
+    # Instantiate the advection package
     flopy.mt3d.Mt3dAdv(
         mt,
         mixelm=mixelm,
@@ -627,10 +627,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(
-                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
-                ".png",
-            )
+            fpth = figs_path / f"{mf6.name}-{yr_idx[i] + 1}yrs.png"
             fig.savefig(fpth)
 
         # Plot after 12 years
@@ -672,10 +669,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(
-                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
-                ".png",
-            )
+            fpth = figs_path / f"{mf6.name}-{yr_idx[i] + 1}yrs.png"
             fig.savefig(fpth)
 
         # Plot after 20 years
@@ -717,10 +711,7 @@ def plot_results(mf2k5, mt3d, mf6, idx, ax=None):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(
-                mf6.name + "-" + str(yr_idx[i] + 1) + "yrs",
-                ".png",
-            )
+            fpth = figs_path / f"{mf6.name}-{yr_idx[i] + 1}yrs.png"
             fig.savefig(fpth)
 
 

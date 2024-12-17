@@ -142,7 +142,7 @@ cpw = 4183.0  # Heat capacity of water ($\frac{J}{kg \cdot ^{\circ} C}$)
 ktw = 0.5918  # Thermal conductivity of water ($\frac{W}{m \cdot ^{\circ} C}$)
 kts = 0.27  # Thermal conductivity of solid aquifer material ($\frac{W}{m \cdot ^{\circ} C}$)
 finf = 0.01  # Infiltration rate ($\frac{m}{d}$)
-chdval = 0.05  # Contant head at the model outlet ($m$)
+chdval = 0.05  # Constant head at the model outlet ($m$)
 thtr = 0.0001  # Residual water content of the unsaturated zone ($-$)
 thts = 0.20  # Saturated water content of the unsaturated zone ($-$)
 thti = 0.055  # Initial water content of the unsaturated zone ($-$)
@@ -366,7 +366,7 @@ def build_model(sim_name):
         scaling_method="NONE",
         reordering_method="NONE",
         relaxation_factor=relax,
-        filename="{}.ims".format(gwename),
+        filename=f"{gwename}.ims",
     )
     sim.register_ims_package(imsgwe, [gwe.name])
 
@@ -395,9 +395,7 @@ def build_model(sim_name):
     )
 
     # Instantiating MODFLOW 6 transport advection package
-    flopy.mf6.ModflowGweadv(
-        gwe, scheme=scheme, pname="ADV", filename="{}.adv".format(gwename)
-    )
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, pname="ADV", filename=f"{gwename}.adv")
 
     # Instantiating MODFLOW 6 transport dispersion package
     flopy.mf6.ModflowGwecnd(
@@ -416,9 +414,11 @@ def build_model(sim_name):
         gwe,
         save_flows=True,
         porosity=prsity,
-        cps=cps,
-        rhos=rhos,
-        packagedata=[cpw, rhow, lhv],
+        heat_capacity_water=cpw,
+        density_water=rhow,
+        latent_heat_vaporization=lhv,
+        heat_capacity_solid=cps,
+        density_solid=rhos,
         pname="EST",
         filename=f"{gwename}.est",
     )
@@ -461,8 +461,8 @@ def build_model(sim_name):
     flopy.mf6.ModflowGweoc(
         gwe,
         pname="OC",
-        budget_filerecord="{}.cbc".format(gwename),
-        temperature_filerecord="{}.ucn".format(gwename),
+        budget_filerecord=f"{gwename}.cbc",
+        temperature_filerecord=f"{gwename}.ucn",
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
         saverecord=[("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
         printrecord=[("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
@@ -475,7 +475,7 @@ def build_model(sim_name):
         exgtype="GWF6-GWE6",
         exgmnamea=gwfname,
         exgmnameb=gwename,
-        filename="{}.gwfgwe".format(gwename),
+        filename=f"{gwename}.gwfgwe",
     )
 
     return sim
@@ -628,7 +628,7 @@ def plot_sim_vs_analytical_sln(sim):
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = figs_path / "{}{}".format("ex-" + gwename + "-01", ".png")
+        fpth = figs_path / f"ex-{gwename}-01.png"
         fig.savefig(fpth, dpi=600)
 
     # Generate plots corresponding to three different times
@@ -714,7 +714,7 @@ def plot_sim_vs_analytical_sln(sim):
     if plot_show:
         plt.show()
     if plot_save:
-        fpth = figs_path / "{}{}".format("ex-" + gwename + "-02", ".png")
+        fpth = figs_path / f"ex-{gwename}-02.png"
         fig.savefig(fpth, dpi=600)
 
 

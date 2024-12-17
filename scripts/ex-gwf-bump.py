@@ -171,14 +171,7 @@ def build_models(
         botm=bot,
     )
     if rewet:
-        rewet_record = [
-            "wetfct",
-            wetfct,
-            "iwetit",
-            iwetit,
-            "ihdwet",
-            ihdwet,
-        ]
+        rewet_record = ["wetfct", wetfct, "iwetit", iwetit, "ihdwet", ihdwet]
     else:
         rewet_record = None
     flopy.mf6.ModflowGwfnpf(
@@ -274,11 +267,7 @@ def plot_grid(gwf, silent=True):
         bot_coll = mm.plot_array(bot, vmin=bmin, vmax=bmax)
         mm.plot_bc("CHD", color="cyan")
         cv = mm.contour_array(
-            bot,
-            levels=blevels,
-            linewidths=0.5,
-            linestyles=":",
-            colors=bcolor,
+            bot, levels=blevels, linewidths=0.5, linestyles=":", colors=bcolor
         )
         plt.clabel(cv, fmt="%1.0f")
         ax.set_xlabel("x-coordinate, in meters")
@@ -308,12 +297,7 @@ def plot_grid(gwf, silent=True):
         styles.graph_legend(ax, loc="center", ncol=2)
 
         cax = plt.axes([0.275, 0.125, 0.45, 0.025])
-        cbar = plt.colorbar(
-            bot_coll,
-            shrink=0.8,
-            orientation="horizontal",
-            cax=cax,
-        )
+        cbar = plt.colorbar(bot_coll, shrink=0.8, orientation="horizontal", cax=cax)
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Bottom Elevation, $m$")
 
@@ -343,8 +327,7 @@ def plot_results(idx, sim, silent=True):
         imask = (head > -1e30) & (head <= bot)
         head[imask] = -1e30  # botm[imask]
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            cobj.get_data(text="DATA-SPDIS", totim=1.0)[0],
-            gwf,
+            cobj.get_data(text="DATA-SPDIS", totim=1.0)[0], gwf
         )
 
         # Create figure for simulation
@@ -412,14 +395,7 @@ def plot_results(idx, sim, silent=True):
                 color=bcolor,
                 label="Bottom elevation contour, m",
             )
-        ax.plot(
-            -10000,
-            -10000,
-            lw=0.5,
-            ls="-",
-            color=vcolor,
-            label="Head contour, m",
-        )
+        ax.plot(-10000, -10000, lw=0.5, ls="-", color=vcolor, label="Head contour, m")
         styles.graph_legend(ax, loc="center", ncol=2)
 
         cax = plt.axes([0.275, 0.125, 0.45, 0.025])

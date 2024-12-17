@@ -1339,12 +1339,12 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
                 elif iupseg > 0:  # Lake connections, signified with negative
                     # numbers, aren't handled here
                     iupseg_rchs = [item for item in orig_rch if item[3] == iupseg]
-                    # Get the index of the last reach of the segement that was
+                    # Get the index of the last reach of the segment that was
                     # the upstream segment in the orig sfr file
                     idx = orig_rch.index(iupseg_rchs[len(iupseg_rchs) - 1])  #
                     upconn.append(idx)
 
-                # Even if the first reach of a segement, it will have an outlet
+                # Even if the first reach of a segment, it will have an outlet
                 # either the next reach in the segment, or first reach of
                 # outseg, which should be taken care of below
                 if len(allrchs) > 1:
@@ -1354,7 +1354,7 @@ def gen_mf6_sfr_connections(orig_seg, orig_rch):
 
             elif rchx[4] > 1 and not rchx[4] == len(allrchs):
                 # Current reach is 'interior' on the original segment and
-                # therefore should only have 1 upstream & 1 downstream segement
+                # therefore should only have 1 upstream & 1 downstream segment
                 idx = orig_rch.index(rchx)
                 # B/c 0-based, idx will already be incremented by -1
                 upconn.append(int(idx - 1))
@@ -2166,11 +2166,11 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-finfFact", ".png")
+            fpth = figs_path / f"{mf6.name}-finfFact.png"
             fig.savefig(fpth)
 
         # Start by retrieving some output
-        gwf = mf6.get_model(list(mf6.model_names)[0])
+        gwf = mf6.get_model(next(iter(mf6.model_names)))
         hdsobj = gwf.output.head()
         modobj = gwf.output.budget()
         sfrobj = gwf.sfr.output.budget()
@@ -2204,7 +2204,7 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-gwDepth", ".png")
+            fpth = figs_path / f"{mf6.name}-gwDepth.png"
             fig.savefig(fpth)
 
         drn_disQ = []
@@ -2332,7 +2332,7 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-uzFlow", ".png")
+            fpth = figs_path / f"{mf6.name}-uzFlow.png"
             fig.savefig(fpth)
 
         data_sfr = {
@@ -2346,25 +2346,16 @@ def plot_results(mf6):
         fig = plt.figure(figsize=figure_size_ts, dpi=300, tight_layout=True)
         ax = fig.add_subplot(1, 1, 1)
         vals2.outflow.plot(
-            style="-",
-            linewidth=0.5,
-            color="royalblue",
-            label="Streamflow at Outlet",
+            style="-", linewidth=0.5, color="royalblue", label="Streamflow at Outlet"
         )
         vals2.GroundwaterDischarge.plot(
             style="k-", linewidth=0.7, label="Groundwater Discharge"
         )
         vals2.RejectedInfiltration.plot(
-            style="-",
-            linewidth=0.7,
-            color="brown",
-            label="Rejected Infiltration",
+            style="-", linewidth=0.7, color="brown", label="Rejected Infiltration"
         )
         vals2.gwswExchange.plot(
-            style="-",
-            color="darkgreen",
-            linewidth=0.7,
-            label="GW Discharge to Streams",
+            style="-", color="darkgreen", linewidth=0.7, label="GW Discharge to Streams"
         )
         ax.set_ylim(0, 350000)
         plt.tick_params(
@@ -2383,7 +2374,7 @@ def plot_results(mf6):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(mf6.name + "-swFlow", ".png")
+            fpth = figs_path / f"{mf6.name}-swFlow.png"
             fig.savefig(fpth)
 
 

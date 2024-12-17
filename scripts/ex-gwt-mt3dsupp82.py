@@ -84,7 +84,7 @@ def build_mf6gwf(sim_folder):
     sim = flopy.mf6.MFSimulation(sim_name=name, sim_ws=sim_ws, exe_name="mf6")
     tdis_ds = ((total_time, 1, 1.0),)
     flopy.mf6.ModflowTdis(sim, nper=nper, perioddata=tdis_ds, time_units=time_units)
-    flopy.mf6.ModflowIms(sim)
+    flopy.mf6.ModflowIms(sim, inner_dvclose=1.00e-4)
     gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
     flopy.mf6.ModflowGwfdis(
         gwf,
@@ -115,9 +115,7 @@ def build_mf6gwf(sim_folder):
         print_flows=True,
         save_flows=False,
         pname="CHD-1",
-        auxiliary=[
-            ("CONCENTRATION"),
-        ],
+        auxiliary=[("CONCENTRATION")],
     )
     wellbottom = 0.0
     wellradius = 0.01
@@ -153,9 +151,7 @@ def build_mf6gwf(sim_folder):
         auxiliary=["CONCENTRATION"],
     )
 
-    packages = [
-        ("maw-1",),
-    ]
+    packages = [("maw-1",)]
     perioddata = [
         ("MAW-1", 1, "MAW-1", 2, "factor", 0.5),
         ("MAW-1", 1, "MAW-1", 3, "factor", 0.5),
@@ -255,13 +251,12 @@ def build_mf6gwt(sim_folder):
         concentrationprintrecord=[
             ("COLUMNS", ncol, "WIDTH", 15, "DIGITS", 6, "GENERAL")
         ],
-        saverecord=[("CONCENTRATION", "ALL")],
+        saverecord=[
+            ("CONCENTRATION", "ALL"),
+        ],
         printrecord=[
             ("CONCENTRATION", "ALL"),
-            (
-                "BUDGET",
-                "ALL",
-            ),
+            ("BUDGET", "ALL"),
         ],
     )
     return sim
@@ -301,8 +296,8 @@ def build_mf2005(sim_folder):
         [0, 15, 15, q],  # injection
         [0, 15, 20, -q],  # extraction
         [0, 4, 15, 0.5 * q],  # reinjection
-        [0, 26, 15, 0.5 * q],
-    ]  # reinjection
+        [0, 26, 15, 0.5 * q],  # reinjection
+    ]
     wel = flopy.modflow.ModflowWel(mf, stress_period_data=welspd)
     return mf
 

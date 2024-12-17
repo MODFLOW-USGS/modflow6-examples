@@ -330,10 +330,9 @@ def build_models(example_name):
         filename=f"{prt_name}_1a.prp",
         nreleasepts=len(releasepts_1a),
         packagedata=releasepts_1a,
-        perioddata={
-            0: ["FIRST"],
-        },
+        perioddata={0: ["FIRST"]},
         exit_solve_tolerance=1e-5,
+        extend_tracking=True,
     )
 
     # Instantiate the MODFLOW 6 prt particle release point (prp) package for example 1B,
@@ -345,10 +344,9 @@ def build_models(example_name):
         filename=f"{prt_name}_1b.prp",
         nreleasepts=len(releasepts_1b),
         packagedata=releasepts_1b,
-        perioddata={
-            0: ["FIRST"],
-        },
+        perioddata={0: ["FIRST"]},
         exit_solve_tolerance=1e-10,
+        extend_tracking=True,
     )
 
     # Instantiate the MODFLOW 6 prt output control package
@@ -362,7 +360,8 @@ def build_models(example_name):
         budget_filerecord=budget_record,
         track_filerecord=track_record,
         trackcsv_filerecord=trackcsv_record,
-        track_timesrecord=tracktimes,
+        ntracktimes=len(tracktimes),
+        tracktimes=[(t,) for t in tracktimes],
         saverecord=[("BUDGET", "ALL")],
     )
 
@@ -439,7 +438,7 @@ def run_models(*sims, silent=False):
         if isinstance(sim, MFSimulation):
             success, buff = sim.run_simulation(silent=silent, report=True)
         else:
-            succes, buff = sim.run_model(silent=silent, report=True)
+            success, buff = sim.run_model(silent=silent, report=True)
         assert success, pformat(buff)
 
 
@@ -607,13 +606,7 @@ def plot_points(ax, gwf, data, **kwargs):
             label = "Captured by " + dest
             pdata = data[data.dest == dest]
             pts.append(
-                ax.scatter(
-                    pdata["x"],
-                    pdata["y"],
-                    s=3,
-                    color=color,
-                    label=label,
-                )
+                ax.scatter(pdata["x"], pdata["y"], s=3, color=color, label=label)
             )
         return pts
     else:
@@ -629,7 +622,7 @@ def plot_head(gwf, head):
         cint = 0.25
         hmin = head[ilay, 0, :].min()
         hmax = head[ilay, 0, :].max()
-        styles.heading(ax=ax, heading=f"Head, layer {str(ilay + 1)}")
+        styles.heading(ax=ax, heading=f"Head, layer {ilay + 1!s}")
         mm = flopy.plot.PlotMapView(gwf, ax=ax, layer=ilay)
         mm.plot_grid(lw=0.5)
         mm.plot_bc("WEL", plotAll=True)
@@ -995,4 +988,4 @@ def scenario(silent=False):
 
 
 # We are now ready to run the example problem. Subproblems 1A and 1B are solved by a single MODFLOW 6 run and a single MODPATH 7 run, so they are included under one "scenario". Each of the two subproblems is represented by its own particle release package (for MODFLOW 6) or particle group (for MODPATH 7).
-scenario(silent=False)
+scenario(silent=True)

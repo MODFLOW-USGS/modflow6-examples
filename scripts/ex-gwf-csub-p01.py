@@ -206,10 +206,7 @@ def build_models():
         sfacrecord=["1.05"],
     )
 
-    flopy.mf6.ModflowGwfoc(
-        gwf,
-        printrecord=[("BUDGET", "ALL")],
-    )
+    flopy.mf6.ModflowGwfoc(gwf, printrecord=[("BUDGET", "ALL")])
     return sim
 
 
@@ -289,12 +286,7 @@ def plot_results(sim, silent=True):
             ls="dashed",
         )
         ax.text(
-            delr.sum() / 2,
-            -10,
-            "static water-level",
-            va="bottom",
-            ha="center",
-            size=9,
+            delr.sum() / 2, -10, "static water-level", va="bottom", ha="center", size=9
         )
         ax.set_ylabel("Elevation, in meters")
         ax.set_xlabel("x-coordinate, in meters")
@@ -355,11 +347,7 @@ def plot_results(sim, silent=True):
 
             ax = axe
             ax.plot(
-                sim_date,
-                sim_obs["W3_1_1"],
-                color="black",
-                lw=0.75,
-                label="Simulated",
+                sim_date, sim_obs["W3_1_1"], color="black", lw=0.75, label="Simulated"
             )
             ax.plot(
                 obs_date,

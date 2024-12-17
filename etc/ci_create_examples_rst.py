@@ -112,7 +112,8 @@ for ex in examples:
     if stdout:
         print(stdout.decode("utf-8"))
     if stderr:
-        print("Errors:\n{}".format(stderr.decode("utf-8")))
+        print("Errors:")
+        print(stderr.decode("utf-8"))
 
     # read restructured text file as a string
     print(f"reading...'{dst}'")
@@ -125,10 +126,10 @@ for ex in examples:
     eq_labels = []
     for v in ex_regex.findall(lines):
         tag = f"\\label{{{v}}}"
-        label = "   :label: {}".format(v.replace(":", "-"))
+        label = f"   :label: {v.replace(':', '-')}"
         eq_labels.append(label)
-        tag = "`[{0}] <#{0}>`__".format(v)
-        replace_eq_labels[tag] = ":eq:`{}`".format(v.replace(":", "-"))
+        tag = f"`[{v}] <#{v}>`__"
+        replace_eq_labels[tag] = f":eq:`{v.replace(':', '-')}`"
 
     # find figure references in lines
     ex_regex = re.compile("\\`(.*?)\\`__")
@@ -168,7 +169,7 @@ for ex in examples:
                 if key in line:
                     line = line.replace(key, value)
 
-            tag = " "
+            tag = "\xa0"  # non-breaking space
             if tag in line:
                 line = line.replace(tag, " ")
 
@@ -273,9 +274,9 @@ for ex in examples:
         line += "----------------\n\n"
         line += (
             "The Jupyter notebook used to create the MODFLOW 6 input files\n"
-            + "for this example and post-process the results is:\n\n"
+            "for this example and post-process the results is:\n\n"
         )
-        line += "* `{0} <../_notebooks/{0}.html>`_\n".format(ex_root)
+        line += f"* `{ex_root} <../_notebooks/{ex_root}.html>`_\n"
         line += "\n"
 
         # Check to see if there is a gif with the same name as the example name

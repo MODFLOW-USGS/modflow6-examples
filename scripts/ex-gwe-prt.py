@@ -208,10 +208,10 @@ def build_gwf_sim(name):
         sy=0,
         steady_state={0: True},
         pname="STO",
-        filename="{}.sto".format(gwf_name),
+        filename=f"{gwf_name}.sto",
     )
 
-    flopy.mf6.ModflowGwfic(gwf, strt=1.0, pname="IC", filename="{}.ic".format(gwf_name))
+    flopy.mf6.ModflowGwfic(gwf, strt=1.0, pname="IC", filename=f"{gwf_name}.ic")
 
     flopy.mf6.ModflowGwfoc(
         gwf,
@@ -219,7 +219,7 @@ def build_gwf_sim(name):
         head_filerecord=f"{gwf_name}.hds",
         saverecord=[("HEAD", "ALL"), ("BUDGET", "ALL")],
         printrecord=[("HEAD", "LAST"), ("BUDGET", "LAST")],
-        filename="{}.oc".format(gwf_name),
+        filename=f"{gwf_name}.oc",
     )
 
     chdlist = []
@@ -241,7 +241,7 @@ def build_gwf_sim(name):
         auxiliary="TEMPERATURE",
         stress_period_data=chdlist,
         pname="CHD",
-        filename="{}.chd".format(gwf_name),
+        filename=f"{gwf_name}.chd",
     )
 
     return sim
@@ -258,7 +258,7 @@ def build_gwe_sim(name):
         sim,
         model_type="gwe6",
         modelname=gwe_name,
-        model_nam_file="{}.nam".format(gwe_name),
+        model_nam_file=f"{gwe_name}.nam",
     )
     imsgwe = flopy.mf6.ModflowIms(
         sim,
@@ -284,14 +284,10 @@ def build_gwe_sim(name):
         top=top,
         botm=botm,
         pname="DISV",
-        filename="{}.disv".format(gwe_name),
+        filename=f"{gwe_name}.disv",
     )
-    flopy.mf6.ModflowGweic(
-        gwe, strt=strt_temp, pname="IC", filename="{}.ic".format(gwe_name)
-    )
-    flopy.mf6.ModflowGweadv(
-        gwe, scheme=scheme, pname="ADV", filename="{}.adv".format(gwe_name)
-    )
+    flopy.mf6.ModflowGweic(gwe, strt=strt_temp, pname="IC", filename=f"{gwe_name}.ic")
+    flopy.mf6.ModflowGweadv(gwe, scheme=scheme, pname="ADV", filename=f"{gwe_name}.adv")
     if ktw != 0:
         flopy.mf6.ModflowGwecnd(
             gwe,
@@ -300,17 +296,19 @@ def build_gwe_sim(name):
             ktw=ktw,
             kts=kts,
             pname="CND-e",
-            filename="{}.cnd".format(gwe_name),
+            filename=f"{gwe_name}.cnd",
         )
 
     flopy.mf6.ModflowGweest(
         gwe,
         porosity=porosity,
-        cps=cps,
-        rhos=rhos,
-        packagedata=[cpw, rhow, lhv],
+        heat_capacity_water=cpw,
+        density_water=rhow,
+        latent_heat_vaporization=lhv,
+        heat_capacity_solid=cps,
+        density_solid=rhos,
         pname="EST-e",
-        filename="{}.est".format(gwe_name),
+        filename=f"{gwe_name}.est",
     )
 
     sourcerecarray = [
@@ -318,30 +316,20 @@ def build_gwe_sim(name):
         ("CHD", "AUX", "TEMPERATURE"),
     ]
     flopy.mf6.ModflowGwessm(
-        gwe, sources=sourcerecarray, pname="SSM-e", filename="{}.ssm".format(gwe_name)
+        gwe, sources=sourcerecarray, pname="SSM-e", filename=f"{gwe_name}.ssm"
     )
     flopy.mf6.ModflowGweoc(
         gwe,
-        budget_filerecord="{}.cbc".format(gwe_name),
-        temperature_filerecord="{}.ucn".format(gwe_name),
+        budget_filerecord=f"{gwe_name}.cbc",
+        temperature_filerecord=f"{gwe_name}.ucn",
         temperatureprintrecord=[("COLUMNS", 10, "WIDTH", 15, "DIGITS", 6, "GENERAL")],
-        saverecord={
-            0: [("TEMPERATURE", "ALL"), ("BUDGET", "ALL")],
-        },
+        saverecord={0: [("TEMPERATURE", "ALL"), ("BUDGET", "ALL")]},
         printrecord=[("TEMPERATURE", "LAST"), ("BUDGET", "LAST")],
     )
 
     pd = [
-        (
-            "GWFHEAD",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"),
-            None,
-        ),
-        (
-            "GWFBUDGET",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"),
-            None,
-        ),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"), None),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"), None),
     ]
     flopy.mf6.ModflowGwefmi(gwe, packagedata=pd)
 
@@ -382,6 +370,7 @@ def build_prt_sim(name):
         boundnames=True,
         stop_at_weak_sink=True,  # currently required for this problem
         exit_solve_tolerance=1e-10,
+        extend_tracking=True,
     )
     prt_track_file = f"{prt_name}.trk"
     prt_track_csv_file = f"{prt_name}.trk.csv"
@@ -393,22 +382,11 @@ def build_prt_sim(name):
     )
 
     pd = [
-        (
-            "GWFHEAD",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"),
-            None,
-        ),
-        (
-            "GWFBUDGET",
-            pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"),
-            None,
-        ),
+        ("GWFHEAD", pl.Path(f"../{gwf_ws.name}/{gwf_name}.hds"), None),
+        ("GWFBUDGET", pl.Path(f"../{gwf_ws.name}/{gwf_name}.cbc"), None),
     ]
 
-    flopy.mf6.ModflowPrtfmi(
-        prt,
-        packagedata=pd,
-    )
+    flopy.mf6.ModflowPrtfmi(prt, packagedata=pd)
     ems = flopy.mf6.ModflowEms(
         sim,
         pname="ems",
@@ -532,18 +510,10 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
 
         handles.append(
             mpl.lines.Line2D(
-                [0],
-                [0],
-                marker="o",
-                linestyle="",
-                label="Well",
-                markerfacecolor="red",
-            ),
+                [0], [0], marker="o", linestyle="", label="Well", markerfacecolor="red"
+            )
         )
-        ax.legend(
-            handles=handles,
-            loc="lower right",
-        )
+        ax.legend(handles=handles, loc="lower right")
         pmv.plot_vector(qx, qy, normalize=True, alpha=0.25)
         pmv.plot_bc(ftype="WEL")
         mf6_plines = pls.groupby(["iprp", "irpt", "trelease"])
@@ -661,7 +631,7 @@ def plot_results(gwf_sim, gwe_sim, prt_sim, silent=True):
         if plot_show:
             plt.show()
         if plot_save:
-            fpth = figs_path / "{}{}".format(sim_name, ".png")
+            fpth = figs_path / f"{sim_name}.png"
             fig.savefig(fpth, dpi=600)
 
 

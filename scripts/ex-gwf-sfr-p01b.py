@@ -3896,15 +3896,13 @@ def build_models():
         continuous=sfr_obs_dict,
     )
 
-    (
-        idomain_wlakes,
-        lakepakdata_dict,
-        lakeconnectiondata,
-    ) = flopy.mf6.utils.get_lak_connections(
-        gwf.modelgrid,
-        lake_map,
-        idomain=gwf.dis.idomain.array,
-        bedleak=lake_leakance,
+    (idomain_wlakes, lakepakdata_dict, lakeconnectiondata) = (
+        flopy.mf6.utils.get_lak_connections(
+            gwf.modelgrid,
+            lake_map,
+            idomain=gwf.dis.idomain.array,
+            bedleak=lake_leakance,
+        )
     )
     lak_pakdata = []
     for key in lakepakdata_dict.keys():
@@ -3973,12 +3971,7 @@ def build_models():
             ("id26_infil", "infiltration", 26),
             ("id126_infil", "infiltration", 126),
             ("id26_dpth=20", "water-content", 26, 20.0),
-            (
-                "id126_dpth=51",
-                "water-content",
-                126,
-                1.0,
-            ),  # DEPTH IS BELOW CELTOP
+            ("id126_dpth=51", "water-content", 126, 1.0),  # DEPTH IS BELOW CELTOP
             ("id26_rch", "uzf-gwrch", 26),
             ("id126_rch", "uzf-gwrch", 126),
             ("id26_gwet", "uzf-gwet", 26),
@@ -4091,11 +4084,7 @@ def plot_grid(gwf, silent=True):
         mm.plot_inactive(color_noflow="0.5")
         mm.plot_grid(lw=0.5, color="black")
         cbar = plt.colorbar(
-            top_coll,
-            shrink=0.8,
-            orientation="horizontal",
-            ax=ax,
-            format="%.0f",
+            top_coll, shrink=0.8, orientation="horizontal", ax=ax, format="%.0f"
         )
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Land surface elevation, $ft$")
@@ -4123,11 +4112,7 @@ def plot_grid(gwf, silent=True):
         mm.plot_inactive(color_noflow="0.5")
         mm.plot_grid(lw=0.5, color="black")
         cbar = plt.colorbar(
-            bot_coll,
-            shrink=0.8,
-            orientation="horizontal",
-            ax=ax,
-            format="%.0f",
+            bot_coll, shrink=0.8, orientation="horizontal", ax=ax, format="%.0f"
         )
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Bottom elevation, $ft$")
@@ -4249,8 +4234,7 @@ def plot_head_results(gwf, silent=True):
         # extract heads and specific discharge for first stress period
         head = hobj.get_data(kstpkper=kstpkper[0])
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0],
-            gwf,
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[0])[0], gwf
         )
 
         ax = axes[0]
@@ -4278,8 +4262,7 @@ def plot_head_results(gwf, silent=True):
         # extract heads and specific discharge for second stress period
         head = hobj.get_data(kstpkper=kstpkper[1])
         qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(
-            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0],
-            gwf,
+            cobj.get_data(text="DATA-SPDIS", kstpkper=kstpkper[1])[0], gwf
         )
 
         ax = axes[1]
@@ -4306,11 +4289,7 @@ def plot_head_results(gwf, silent=True):
         # legend
         ax = axes[-1]
         cbar = plt.colorbar(
-            head_coll,
-            shrink=0.8,
-            orientation="horizontal",
-            ax=ax,
-            format="%.0f",
+            head_coll, shrink=0.8, orientation="horizontal", ax=ax, format="%.0f"
         )
         cbar.ax.tick_params(size=0)
         cbar.ax.set_xlabel(r"Head, $ft$")
@@ -4363,11 +4342,11 @@ def plot_mvr_results(idx, gwf, silent=True):
                     (
                         np.array(mvr_Q.recordarray["kper"] == i),
                         np.array(mvr_Q.recordarray["paknam"] == provider),  # Provider
-                        np.array(mvr_Q.recordarray["paknam2"] == receiver1),
+                        np.array(mvr_Q.recordarray["paknam2"] == receiver1),  # Receiver
                     ),
                     axis=0,
                 )
-            )  # Receiver
+            )
 
             tot_stp_gwirrig = 0
             if len(mvr_idxs[0]) > 0:
@@ -4426,12 +4405,7 @@ def plot_mvr_results(idx, gwf, silent=True):
 
         # Make the plot
         plt.bar(
-            br1,
-            gwirrig,
-            color="r",
-            width=barWidth,
-            edgecolor="grey",
-            label="GW Irrig",
+            br1, gwirrig, color="r", width=barWidth, edgecolor="grey", label="GW Irrig"
         )
         plt.bar(
             br2,

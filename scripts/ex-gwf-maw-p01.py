@@ -181,10 +181,7 @@ def build_models(name, rate=0.0):
         filename=obs_file, digits=10, print_input=True, continuous=obs_dict
     )
 
-    flopy.mf6.ModflowGwfoc(
-        gwf,
-        printrecord=[("BUDGET", "LAST")],
-    )
+    flopy.mf6.ModflowGwfoc(gwf, printrecord=[("BUDGET", "LAST")])
     return sim
 
 
@@ -213,7 +210,7 @@ masked_values = (0, 1e30, -1e30)
 def plot_maw_results(silent=True):
     with styles.USGSPlot():
         # load the observations
-        name = list(parameters.keys())[0]
+        name = next(iter(parameters.keys()))
         fpth = os.path.join(workspace, name, f"{sim_name}.maw.obs.csv")
         maw0 = flopy.utils.Mf6Obs(fpth).data
         name = list(parameters.keys())[1]
@@ -227,31 +224,17 @@ def plot_maw_results(silent=True):
 
         # create the figure
         fig, axes = plt.subplots(
-            ncols=1,
-            nrows=2,
-            sharex=True,
-            figsize=figure_size,
-            constrained_layout=True,
+            ncols=1, nrows=2, sharex=True, figsize=figure_size, constrained_layout=True
         )
 
         ax = axes[0]
         ax.set_xlim(tmin, tmax)
         ax.set_ylim(-1000, 1000)
         ax.semilogx(
-            time,
-            maw0["Q1"],
-            lw=0.75,
-            ls="-",
-            color="blue",
-            label="Upper aquifer",
+            time, maw0["Q1"], lw=0.75, ls="-", color="blue", label="Upper aquifer"
         )
         ax.semilogx(
-            time,
-            maw0["Q2"],
-            lw=0.75,
-            ls="-",
-            color="red",
-            label="Lower aquifer",
+            time, maw0["Q2"], lw=0.75, ls="-", color="red", label="Lower aquifer"
         )
         ax.axhline(0, lw=0.5, color="0.5")
         ax.set_ylabel(" ")
@@ -262,20 +245,10 @@ def plot_maw_results(silent=True):
         ax.set_xlim(tmin, tmax)
         ax.set_ylim(-500, 2500)
         ax.semilogx(
-            time,
-            maw1["Q1"],
-            lw=0.75,
-            ls="-",
-            color="blue",
-            label="Upper aquifer",
+            time, maw1["Q1"], lw=0.75, ls="-", color="blue", label="Upper aquifer"
         )
         ax.semilogx(
-            time,
-            maw1["Q2"],
-            lw=0.75,
-            ls="-",
-            color="red",
-            label="Lower aquifer",
+            time, maw1["Q2"], lw=0.75, ls="-", color="red", label="Lower aquifer"
         )
         ax.axhline(0, lw=0.5, color="0.5")
         ax.set_xlabel(" ")
@@ -314,17 +287,14 @@ def plot_grid(silent=True):
         verbosity = 0
     else:
         verbosity = 1
-    name = list(parameters.keys())[0]
+    name = next(iter(parameters.keys()))
     sim_ws = os.path.join(workspace, name)
     sim = flopy.mf6.MFSimulation.load(
         sim_name=sim_name, sim_ws=sim_ws, verbosity_level=verbosity
     )
     gwf = sim.get_model(sim_name)
     with styles.USGSMap() as fs:
-        fig = plt.figure(
-            figsize=(4, 4.3),
-            tight_layout=True,
-        )
+        fig = plt.figure(figsize=(4, 4.3), tight_layout=True)
         plt.axis("off")
 
         nrows, ncols = 10, 1

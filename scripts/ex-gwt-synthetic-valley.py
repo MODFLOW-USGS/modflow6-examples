@@ -208,20 +208,12 @@ wp = np.array(well_points)
 # create the voronoi grid
 temp_path = pl.Path("temp/triangle_data")
 temp_path.mkdir(parents=True, exist_ok=True)
-tri = Triangle(
-    angle=30,
-    nodes=sg_densify,
-    model_ws=temp_path,
-)
+tri = Triangle(angle=30, nodes=sg_densify, model_ws=temp_path)
 tri.add_polygon(bp_densify)
 tri.add_polygon(rb_densify)
 tri.add_polygon(lp_densify)
 tri.add_region((10, 10), attribute=10, maximum_area=max_boundary_area)
-tri.add_region(
-    (3050.0, 3050.0),
-    attribute=10,
-    maximum_area=max_boundary_area,
-)
+tri.add_region((3050.0, 3050.0), attribute=10, maximum_area=max_boundary_area)
 tri.add_region((900.0, 4600.0), attribute=11, maximum_area=max_lake_area)
 tri.add_region((1200.0, 150.0), attribute=10, maximum_area=max_river_area)
 for idx, w in enumerate(wp):
@@ -302,34 +294,18 @@ extent = voronoi_grid.extent
 # +
 # intersect the rasters with the vertex grid
 top_vg = top_base.resample_to_grid(
-    voronoi_grid,
-    band=top_base.bands[0],
-    method="linear",
-    extrapolate_edges=True,
+    voronoi_grid, band=top_base.bands[0], method="linear", extrapolate_edges=True
 )
 bot_vg = bot.resample_to_grid(
-    voronoi_grid,
-    band=bot.bands[0],
-    method="linear",
-    extrapolate_edges=True,
+    voronoi_grid, band=bot.bands[0], method="linear", extrapolate_edges=True
 )
 lake_cells_vg = lake_location.resample_to_grid(
-    voronoi_grid,
-    band=lake_location.bands[0],
-    method="nearest",
-    extrapolate_edges=True,
+    voronoi_grid, band=lake_location.bands[0], method="nearest", extrapolate_edges=True
 )
 kaq_vg = kaq.resample_to_grid(
-    voronoi_grid,
-    band=kaq.bands[0],
-    method="nearest",
-    extrapolate_edges=True,
+    voronoi_grid, band=kaq.bands[0], method="nearest", extrapolate_edges=True
 )
-kclay_vg = kclay.resample_to_grid(
-    voronoi_grid,
-    band=kclay.bands[0],
-    method="nearest",
-)
+kclay_vg = kclay.resample_to_grid(voronoi_grid, band=kclay.bands[0], method="nearest")
 # -
 
 # +
@@ -350,7 +326,7 @@ bot_l2 = np.full(bot_vg.shape, -51.0 * ft2m, dtype=float)
 bot_l3 = np.full(bot_vg.shape, -100.0 * ft2m, dtype=float)
 bot_l4 = bot_vg + 0.5 * (bot_l3 - bot_vg)
 # set the bottom of the 3rd layer in areas where the confining unit exists
-bot_l2[idomain_2] = -50.0 * ft2m
+bot_l2[idomain_2 == -1] = -50.0 * ft2m
 # create a list with bottom data
 botm = [-5.0 * ft2m, -50.0 * ft2m, bot_l2, -100.0 * ft2m, bot_l4, bot_vg]
 # -
@@ -402,10 +378,7 @@ for idx, (cellid, rlen, rtp) in enumerate(zip(gwf_nodes, sfr_lengths, sfr_bot)):
     sfrpak_data.append(
         (
             idx,
-            (
-                0,
-                cellid,
-            ),
+            (0, cellid),
             rlen,
             sfr_width,
             -sfr_slope,
@@ -432,9 +405,7 @@ lake_map = np.ones(voronoi_grid.ncpl, dtype=int) * -1
 lake_map[idx] = 0
 
 (idomain, lakpak_dict, lak_connections) = flopy.mf6.utils.get_lak_connections(
-    voronoi_grid,
-    lake_map,
-    bedleak=lake_bedleak,
+    voronoi_grid, lake_map, bedleak=lake_bedleak
 )
 
 # add concentration to lake data as aux
@@ -600,10 +571,7 @@ def build_mf6gwt(sim_folder):
         complexity="simple",
         linear_acceleration="bicgstab",
     )
-    gwt = flopy.mf6.ModflowGwt(
-        sim,
-        modelname=name,
-    )
+    gwt = flopy.mf6.ModflowGwt(sim, modelname=name)
     dis = flopy.mf6.ModflowGwtdisv(
         gwt,
         length_units="meters",
@@ -617,10 +585,7 @@ def build_mf6gwt(sim_folder):
         idomain=[1, 1, idomain_2, 1, 1, 1],
     )
     ic = flopy.mf6.ModflowGwtic(gwt, strt=0.0)
-    adv = flopy.mf6.ModflowGwtadv(
-        gwt,
-        scheme="tvd",
-    )
+    adv = flopy.mf6.ModflowGwtadv(gwt, scheme="tvd")
     dsp = flopy.mf6.ModflowGwtdsp(
         gwt,
         diffc=0.0e-12,
@@ -651,9 +616,7 @@ def build_mf6gwt(sim_folder):
     oc = flopy.mf6.ModflowGwtoc(
         gwt,
         concentration_filerecord=f"{name}.ucn",
-        saverecord=[
-            ("CONCENTRATION", "LAST"),
-        ],
+        saverecord=[("CONCENTRATION", "LAST")],
         printrecord=[("BUDGET", "ALL")],
     )
     return sim
@@ -721,21 +684,10 @@ contour_gwt_label_dict = {
     "color": contour_color,
     "linestyle": contour_style,
 }
-clabel_dict = {
-    "inline": True,
-    "fmt": "%1.0f",
-    "fontsize": 6,
-    "inline_spacing": 0.5,
-}
+clabel_dict = {"inline": True, "fmt": "%1.0f", "fontsize": 6, "inline_spacing": 0.5}
 font_dict = {"fontsize": 5, "color": "black"}
 grid_dict = {"lw": 0.25, "color": "0.5"}
-arrowprops = dict(
-    arrowstyle="-",
-    edgecolor="red",
-    lw=0.5,
-    shrinkA=0.15,
-    shrinkB=0.15,
-)
+arrowprops = dict(arrowstyle="-", edgecolor="red", lw=0.5, shrinkA=0.15, shrinkB=0.15)
 river_dict = {"color": "blue", "linestyle": "-", "linewidth": 1}
 lake_cmap = colors.ListedColormap(["cyan"])
 clay_cmap = colors.ListedColormap(["brown"])
@@ -870,22 +822,8 @@ def plot_river_mapping(sims, idx):
         ax = ax0
         ax.set_aspect("equal", "box")
         mm = flopy.plot.PlotMapView(modelgrid=voronoi_grid, ax=ax)
-        mm.plot_array(
-            kclay_loc_vg,
-            masked_values=[
-                0,
-            ],
-            cmap=clay_cmap,
-            alpha=0.5,
-        )
-        mm.plot_array(
-            lake_cells_vg,
-            masked_values=[
-                0,
-            ],
-            cmap=lake_cmap,
-            alpha=0.5,
-        )
+        mm.plot_array(kclay_loc_vg, masked_values=[0], cmap=clay_cmap, alpha=0.5)
+        mm.plot_array(lake_cells_vg, masked_values=[0], cmap=lake_cmap, alpha=0.5)
         mm.plot_grid(**grid_dict)
         plot_river(ax)
         plot_wells(ax, ms=3)
@@ -1001,51 +939,27 @@ def plot_head_results(sims, idx):
         # topography
         ax = ax0
         styles.heading(ax=ax, idx=0)
-        mm = flopy.plot.PlotMapView(
-            model=gwf,
-            ax=ax,
-            extent=voronoi_grid.extent,
-        )
+        mm = flopy.plot.PlotMapView(model=gwf, ax=ax, extent=voronoi_grid.extent)
         cb = mm.plot_array(top_vg, vmin=top_range[0], vmax=top_range[1])
         mm.plot_grid(**grid_dict)
         plot_wells(ax=ax, ms=3)
         plot_river(ax=ax)
         plot_lake(ax=ax)
-        cs = mm.contour_array(
-            top_vg,
-            **sv_contour_dict,
-            levels=top_levels,
-        )
-        ax.clabel(
-            cs,
-            **clabel_dict,
-        )
+        cs = mm.contour_array(top_vg, **sv_contour_dict, levels=top_levels)
+        ax.clabel(cs, **clabel_dict)
         set_ticklabels(ax, fmt="{:.0f}")
 
         # topography colorbar
         cbar = plt.colorbar(cb, ax=ax, orientation="horizontal", shrink=0.65)
         cbar.ax.tick_params(
-            labelsize=5,
-            labelcolor="black",
-            color="black",
-            length=6,
-            pad=2,
+            labelsize=5, labelcolor="black", color="black", length=6, pad=2
         )
-        cbar.ax.set_title(
-            "Elevation (m)",
-            pad=2.5,
-            loc="left",
-            fontdict=font_dict,
-        )
+        cbar.ax.set_title("Elevation (m)", pad=2.5, loc="left", fontdict=font_dict)
 
         # head
         ax = ax1
         styles.heading(ax=ax, idx=1)
-        mm = flopy.plot.PlotMapView(
-            model=gwf,
-            ax=ax,
-            extent=voronoi_grid.extent,
-        )
+        mm = flopy.plot.PlotMapView(model=gwf, ax=ax, extent=voronoi_grid.extent)
         cb = mm.plot_array(head, vmin=head_range[0], vmax=head_range[1])
 
         mm.plot_grid(**grid_dict)
@@ -1065,32 +979,16 @@ def plot_head_results(sims, idx):
         plot_wells(ax=ax, ms=3)
         plot_river(ax=ax)
         plot_lake(ax=ax)
-        cs = mm.contour_array(
-            head,
-            **sv_contour_dict,
-            levels=head_levels,
-        )
-        ax.clabel(
-            cs,
-            **clabel_dict,
-        )
+        cs = mm.contour_array(head, **sv_contour_dict, levels=head_levels)
+        ax.clabel(cs, **clabel_dict)
         set_ticklabels(ax, fmt="{:.0f}", xticks=xticks, yticks=yticks)
 
         # head colorbar
         cbar = plt.colorbar(cb, ax=ax, orientation="horizontal", shrink=0.65)
         cbar.ax.tick_params(
-            labelsize=5,
-            labelcolor="black",
-            color="black",
-            length=6,
-            pad=2,
+            labelsize=5, labelcolor="black", color="black", length=6, pad=2
         )
-        cbar.ax.set_title(
-            "Head (m)",
-            pad=2.5,
-            loc="left",
-            fontdict=font_dict,
-        )
+        cbar.ax.set_title("Head (m)", pad=2.5, loc="left", fontdict=font_dict)
 
         # legend
         ax = ax2
@@ -1158,10 +1056,7 @@ def plot_conc_results(sims):
             ax = axs[k]
             ax.set_title(f"Layer {k + 1}")
             mm = flopy.plot.PlotMapView(
-                model=gwt,
-                ax=ax,
-                extent=gwt.modelgrid.extent,
-                layer=k,
+                model=gwt, ax=ax, extent=gwt.modelgrid.extent, layer=k
             )
 
             xticks = np.arange(extent[0], extent[1], 1000.0).tolist()
@@ -1172,12 +1067,7 @@ def plot_conc_results(sims):
             # plot confining unit
             if k == 2:
                 mm.plot_array(
-                    kclay_loc_vg,
-                    masked_values=[
-                        0,
-                    ],
-                    cmap=clay_cmap,
-                    alpha=0.5,
+                    kclay_loc_vg, masked_values=[0], cmap=clay_cmap, alpha=0.5
                 )
             plot_river(ax=ax)
             plot_lake(ax=ax)
@@ -1191,13 +1081,7 @@ def plot_conc_results(sims):
                 **sv_gwt_contour_dict,
             )
 
-            ax.clabel(
-                cs,
-                inline=True,
-                fmt="%1.3g",
-                fontsize=6,
-                inline_spacing=0.5,
-            )
+            ax.clabel(cs, inline=True, fmt="%1.3g", fontsize=6, inline_spacing=0.5)
 
             set_ticklabels(ax, fmt="{:.0f}", xticks=xticks, yticks=yticks)
 

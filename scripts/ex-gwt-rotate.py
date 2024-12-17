@@ -423,10 +423,7 @@ def plot_conc(sim, idx):
         times = np.array(times)
 
         # plot times in the original publication
-        plot_times = [
-            2000.0,
-            10000.0,
-        ]
+        plot_times = [2000.0, 10000.0]
 
         nplots = len(plot_times)
         for iplot in range(nplots):
@@ -482,7 +479,7 @@ def make_animated_gif(sim, idx):
 
         ani = FuncAnimation(fig, update, range(1, times.shape[0], 5), init_func=init)
         writer = PillowWriter(fps=50)
-        fpth = figs_path / "{}{}".format(sim_name, ".gif")
+        fpth = figs_path / f"{sim_name}.gif"
         ani.save(fpth, writer=writer)
 
 

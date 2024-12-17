@@ -247,12 +247,7 @@ def riv_resample(icoarsen, nrow, ncol, rivdat, idomain, rowcolspan):
         k = 0
         if idomain[k, i, j] == 1:
             rivdatc.append(
-                [
-                    (k, i, j),
-                    stagec_grid[i, j],
-                    condc_grid[i, j],
-                    rbotc_grid[i, j],
-                ]
+                [(k, i, j), stagec_grid[i, j], condc_grid[i, j], rbotc_grid[i, j]]
             )
     return rivdatc
 
@@ -522,20 +517,13 @@ def plot_grid(sim):
         if gwfc is not None:
             pmv = flopy.plot.PlotMapView(model=gwfc, ax=ax, layer=0)
             _ = pmv.plot_array(
-                tpc,
-                cmap="jet",
-                alpha=0.25,
-                masked_values=[1e30],
-                vmin=vmin,
-                vmax=vmax,
+                tpc, cmap="jet", alpha=0.25, masked_values=[1e30], vmin=vmin, vmax=vmax
             )
             pmv.plot_bc(name="RIV")
         if gwfc is not None:
             xmin, xmax, ymin, ymax = child_domain
             ax.plot(
-                [xmin, xmax, xmax, xmin, xmin],
-                [ymin, ymin, ymax, ymax, ymin],
-                "k--",
+                [xmin, xmax, xmax, xmin, xmin], [ymin, ymin, ymax, ymax, ymin], "k--"
             )
         xmin, xmax, ymin, ymax = model_domain
         ax.set_xlim(xmin, xmax)

@@ -861,7 +861,7 @@ def plot_results(mf6, idx):
     with styles.USGSPlot():
         # Start by retrieving some output
         mf6_out_pth = mf6.simulation_data.mfpath.get_sim_path()
-        sfr_parent_bud_file = list(mf6.model_names)[0] + ".sfr.bud"
+        sfr_parent_bud_file = next(iter(mf6.model_names)) + ".sfr.bud"
         sfr_child_bud_file = list(mf6.model_names)[1] + ".sfr.bud"
         sfr_parent_out = os.path.join(mf6_out_pth, sfr_parent_bud_file)
         sfr_child_out = os.path.join(mf6_out_pth, sfr_child_bud_file)
@@ -920,7 +920,7 @@ def plot_results(mf6, idx):
             strmQ[i + (j + 1)] = qc[0][0][jtm][2]
 
         # The flow that is passed between the parent and child grids comes next
-        from_mvr = [itm[2] for itm in dat_fmp[0] if itm[2] > 0][0]
+        from_mvr = next(itm[2] for itm in dat_fmp[0] if itm[2] > 0)
         strmQ[i + j + 2] = from_mvr
 
         # Finally, process the remaining parent model stream reaches
@@ -942,7 +942,7 @@ def plot_results(mf6, idx):
             elif itm[0] > 8:
                 gwsw_exg[(len(gwsw_exg) - (len(gwswp[0]) - i))] = itm[2]
 
-        # Insert the child model gw/sw exchages in their proper sequential spot
+        # Insert the child model gw/sw exchanges in their proper sequential spot
         for j, jtm in enumerate(gwswc[0]):
             gwsw_exg[8 + j] = jtm[2]
 
@@ -1032,16 +1032,10 @@ def plot_results(mf6, idx):
         ax1.set_xlabel("Distance Along River ($m$)")
         ax1.set_ylabel(r"Stream Flow ($\frac{m^3}{s}$)")
         ax1.vlines(
-            x=(rch_lengths[7] + rch_lengths[8]) / 2,
-            ymin=-60,
-            ymax=235,
-            linewidth=2,
+            x=(rch_lengths[7] + rch_lengths[8]) / 2, ymin=-60, ymax=235, linewidth=2
         )
         ax1.vlines(
-            x=(rch_lengths[96] + rch_lengths[97]) / 2,
-            ymin=-65,
-            ymax=235,
-            linewidth=2,
+            x=(rch_lengths[96] + rch_lengths[97]) / 2, ymin=-65, ymax=235, linewidth=2
         )
 
         ax2 = ax1.twinx()

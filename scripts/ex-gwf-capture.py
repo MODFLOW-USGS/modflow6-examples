@@ -208,9 +208,7 @@ def build_models():
     )
     flopy.mf6.ModflowGwfoc(
         gwf,
-        printrecord=[
-            ("BUDGET", "ALL"),
-        ],
+        printrecord=[("BUDGET", "ALL")],
     )
     return sim
 
@@ -329,11 +327,7 @@ def plot_results(silent=True):
         # plot grid
         fig = plt.figure(figsize=(4, 3.75), constrained_layout=True)
         gs = mpl.gridspec.GridSpec(
-            2,
-            2,
-            figure=fig,
-            width_ratios=(4, 1),
-            height_ratios=(1, 6),
+            2, 2, figure=fig, width_ratios=(4, 1), height_ratios=(1, 6)
         )
 
         ax = fig.add_subplot(gs[:, 0])
@@ -372,22 +366,9 @@ def plot_results(silent=True):
             mew=0.5,
             label="Constant head",
         )
+        ax.plot(-1000, -1000, color="cyan", lw=1.25, label="River")
         ax.plot(
-            -1000,
-            -1000,
-            color="cyan",
-            lw=1.25,
-            label="River",
-        )
-        ax.plot(
-            -1000,
-            -1000,
-            "s",
-            ms=5,
-            color="red",
-            mec="black",
-            mew=0.5,
-            label="Well",
+            -1000, -1000, "s", ms=5, color="red", mec="black", mew=0.5, label="Well"
         )
         ax.plot(
             -1000,
@@ -399,12 +380,7 @@ def plot_results(silent=True):
             mew=0.5,
             label="Inactive cell",
         )
-        styles.graph_legend(
-            ax,
-            ncol=1,
-            frameon=False,
-            loc="upper center",
-        )
+        styles.graph_legend(ax, ncol=1, frameon=False, loc="upper center")
 
         if plot_show:
             plt.show()
