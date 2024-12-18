@@ -1,8 +1,15 @@
 # ## Toth Model
 #
-# This is the Toth problem ...
+# A classic conceptual model of groundwater flow in small drainage 
+# basins is described by Toth (1963).  Using a mathematical model of 
+# cross-sectional groundwater flow in response to an imposed sinusoidally 
+# varying water table, Toth postulated the presence of local, intermediate, 
+# and regional groundwater flow systems.  In his classic paper, Toth 
+# showed the different types of flow patterns resulting from different 
+# water table configurations, domain sizes, and aquifer properties.  This 
+# MODFLOW 6 example is intended to approximate the Toth flow system 
+# for one of the cases shown in his paper.
 #
-# One scenario is included.
 
 # ### Initial setup
 #
