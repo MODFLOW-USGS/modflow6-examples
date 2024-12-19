@@ -301,7 +301,7 @@ def build_models():
         ("pc4", "preconstress-cell", (3, 8, 9)),
         ("sk1l2", "ske-cell", (1, 8, 9)),
         ("sk2l4", "ske-cell", (3, 11, 6)),
-        ("t1l2", "theta", "02_09_10"),
+        ("t1l2", "theta", (1, 8, 9)),
         ("w1qie", "elastic-csub", "02_09_10"),
         ("w1qii", "inelastic-csub", "02_09_10"),
         ("w1qaq", "coarse-csub", (1, 8, 9)),
