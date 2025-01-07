@@ -1,4 +1,5 @@
-# +
+# ## Barends Problem
+#
 # This example is roughly patterned after Barends (2010).
 #
 #  Barends, F.B.J., 2010. Complete Solution for Transient Heat Transport in
