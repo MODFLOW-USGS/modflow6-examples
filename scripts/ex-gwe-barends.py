@@ -37,7 +37,7 @@
 # NOTE: In the current example, ncol is specified as 250.  If users prefer,
 #       this value may be increased to 500, 1,000, or more for a more refined
 #       solution.  Currently, ncol is kept low for faster run times.
-# -
+
 
 # +
 import os
