@@ -1276,8 +1276,7 @@ class DisvGridMerger:
     def add_grid(self, name, grid):
         if name == "" or name == "__main__":
             raise RuntimeError(
-                "\nDisvGridMerger.add_grid:\n"
-                'name = "" or "__main__"\nis not allowed.'
+                '\nDisvGridMerger.add_grid:\nname = "" or "__main__"\nis not allowed.'
             )
         if isinstance(grid, DisvPropertyContainer):
             grid = grid.copy()
