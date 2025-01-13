@@ -632,7 +632,7 @@ class RadialUnconfinedDrawdown:
         for stp, ts in enumerate(ts_list):
             if show_progress:
                 print(
-                    f"Solving {stp+1:4d} of {nstp}; time = {self.ts2time(ts, r)}",
+                    f"Solving {stp + 1:4d} of {nstp}; time = {self.ts2time(ts, r)}",
                     end="",
                 )
 
@@ -727,7 +727,7 @@ class RadialUnconfinedDrawdown:
                 "up to:\n"
                 f"   {bessel_roots0} * 2^bessel_loop_limit\nwhere:\n"
                 "   bessel_loop_limit = {bessel_loop_limit}\n"
-                f"resulting in {1024*2**bessel_loop_limit} roots evaluated, "
+                f"resulting in {1024 * 2**bessel_loop_limit} roots evaluated, "
                 "with the last root being {root}\n"
                 f"(That is, the Neuman integral was solved form 0 to {root})\n\n"
                 "You can either ignore this warning\n"
