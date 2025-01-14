@@ -507,10 +507,19 @@ def build_models(
     opth = f"{name}.csub.obs"
     csub_csv = opth + ".csv"
     obs = [
-        ("cunit", "interbed-compaction", "cunit"),
-        ("aquitard", "interbed-compaction", "aquitard"),
-        ("nodelay", "interbed-compaction", "nodelay"),
-        ("delay", "interbed-compaction", "delay"),
+        ("cunit1", "interbed-compaction", (0,)),
+        ("cunit2", "interbed-compaction", (1,)),
+        ("cunit3", "interbed-compaction", (2,)),
+        ("aquitard6", "interbed-compaction", (5,)),
+        ("aquitard7", "interbed-compaction", (6,)),
+        ("aquitard8", "interbed-compaction", (7,)),
+        ("nodelay4", "interbed-compaction", (3,)),
+        ("nodelay5", "interbed-compaction", (4,)),
+        ("nodelay9", "interbed-compaction", (8,)),
+        ("nodelay10", "interbed-compaction", (9,)),
+        ("delay11", "interbed-compaction", (10,)),
+        ("delay12", "interbed-compaction", (11,)),
+        ("delay13", "interbed-compaction", (12,)),
         ("es14", "estress-cell", (nlay - 1, 0, 0)),
     ]
     for k in (1, 2, 3, 4, 6, 7, 8, 9, 11, 13):
@@ -719,7 +728,7 @@ def get_obs_dataframe(file_name, hash):
         known_hash=f"md5:{hash}",
     )
     df = pd.read_csv(fpath, index_col=0)
-    df.index = pd.to_datetime(df.index.values)
+    df.index = pd.to_datetime(df.index.values, format="%m/%d/%y")
     df.rename({"mean": "observed"}, inplace=True, axis=1)
     return df
 
@@ -793,7 +802,9 @@ def process_csub_obs(fpth):
     # transfer data from temporary storage
     for key in pcomp:
         if key != "TOTAL" and key != "SKELETAL":
-            v[key] = tdata[key].copy()
+            for obs_key in tdata.dtype.names:
+                if key in obs_key:
+                    v[key] += tdata[obs_key]
 
     # calculate skeletal
     for key in tdata.dtype.names[1:]:
@@ -1144,6 +1155,8 @@ def plot_calibration(silent=True):
         name = list(parameters.keys())[1]
         fpath = os.path.join(workspace, name, f"{name}.csub.obs.csv")
         df_sim = get_sim_dataframe(fpath)
+        for key in pcomp:
+            df_sim[key]= df_sim[list(df_sim.filter(regex=key))].sum(axis=1)
         df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
         fname = "boundary_heads.csv"
@@ -1198,7 +1211,7 @@ def plot_calibration(silent=True):
         ix0 = df_sim.index.get_loc("1992-10-01 12:00:00")
 
         # get initial simulated compaction
-        cstart = df_sim.simulated[ix0]
+        cstart = df_sim.simulated.iloc[ix0]
 
         # cut off initial portion of simulated compaction
         df_sim_pc = df_sim[ix0:].copy()
@@ -1372,7 +1385,7 @@ def plot_calibration(silent=True):
             else:
                 dxc = 0.001
                 dyc = 1
-            xc = df_iobs_pc.observed[ixc]
+            xc = df_iobs_pc.observed.iloc[ixc]
             yc = es_obs[ixc]
             styles.add_annotation(
                 ax=ax,
