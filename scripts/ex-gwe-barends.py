@@ -105,9 +105,9 @@ q = 1.2649e-8  # Darcy velocity ($m/s$)
 
 
 # delr is a calculated value based on the number of desired columns
-assert L / ncol % 1 == 0, (
-    "reconsider specification of NCOL such that length of the simulation divided by NCOL results in an even number value"
-)
+assert (
+    L / ncol % 1 == 0
+), "reconsider specification of NCOL such that length of the simulation divided by NCOL results in an even number value"
 delr = L / ncol  # Width along the row ($m$)
 
 # Calculated values

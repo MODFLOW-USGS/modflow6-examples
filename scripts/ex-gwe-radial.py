@@ -381,9 +381,9 @@ def generate_control_volumes(basedata, verts, flat_list, idx, silent=True):
                         if xchk == id:
                             xcoll.append(subvertx[num])
                             ycoll.append(subverty[num])
-                assert len(xcoll) == 2, (
-                    "Should only be two points touching the well bore"
-                )
+                assert (
+                    len(xcoll) == 2
+                ), "Should only be two points touching the well bore"
 
                 # was getting divide by zero error in MF6 when putting the
                 # centroid right on the line connecting the two points that
