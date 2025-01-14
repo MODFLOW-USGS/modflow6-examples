@@ -1156,7 +1156,7 @@ def plot_calibration(silent=True):
         fpath = os.path.join(workspace, name, f"{name}.csub.obs.csv")
         df_sim = get_sim_dataframe(fpath)
         for key in pcomp:
-            df_sim[key]= df_sim[list(df_sim.filter(regex=key))].sum(axis=1)
+            df_sim[key] = df_sim[list(df_sim.filter(regex=key))].sum(axis=1)
         df_sim.rename({"TOTAL": "simulated"}, inplace=True, axis=1)
 
         fname = "boundary_heads.csv"
