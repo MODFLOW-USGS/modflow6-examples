@@ -199,8 +199,8 @@ def build_models(
     opth = f"{name}.csub.obs"
     csub_csv = opth + ".csv"
     obs = [
-        ("tcomp", "interbed-compaction", "ib1"),
-        ("sk", "sk", "ib1"),
+        ("tcomp", "interbed-compaction", (0,)),
+        ("sk", "sk", (0,)),
         ("qtop", "delay-flowtop", (0,)),
         ("qbot", "delay-flowbot", (0,)),
     ]

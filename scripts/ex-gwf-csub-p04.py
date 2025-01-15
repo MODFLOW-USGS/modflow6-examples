@@ -142,12 +142,14 @@ for idx, q in enumerate(well_rates):
 # Create interbed package data
 icsubno = 0
 csub_pakdata = []
+boundname_dict = {}
 for i in range(nrow):
     for j in range(ncol):
         if ib[i, j] < 1 or (i, j) in chd_locs:
             continue
         for k in range(nlay):
             boundname = f"{k + 1:02d}_{i + 1:02d}_{j + 1:02d}"
+            boundname_dict[boundname] = (icsubno,)
             ib_lst = [
                 icsubno,
                 (k, i, j),
@@ -262,14 +264,14 @@ def build_models():
     opth = f"{sim_name}.csub.obs"
     csub_csv = opth + ".csv"
     obs = [
-        ("w1l1", "interbed-compaction", "01_09_10"),
-        ("w1l2", "interbed-compaction", "02_09_10"),
-        ("w1l3", "interbed-compaction", "03_09_10"),
-        ("w1l4", "interbed-compaction", "04_09_10"),
-        ("w2l1", "interbed-compaction", "01_12_07"),
-        ("w2l2", "interbed-compaction", "02_12_07"),
-        ("w2l3", "interbed-compaction", "03_12_07"),
-        ("w2l4", "interbed-compaction", "04_12_07"),
+        ("w1l1", "interbed-compaction", boundname_dict["01_09_10"]),
+        ("w1l2", "interbed-compaction", boundname_dict["02_09_10"]),
+        ("w1l3", "interbed-compaction", boundname_dict["03_09_10"]),
+        ("w1l4", "interbed-compaction", boundname_dict["04_09_10"]),
+        ("w2l1", "interbed-compaction", boundname_dict["01_12_07"]),
+        ("w2l2", "interbed-compaction", boundname_dict["02_12_07"]),
+        ("w2l3", "interbed-compaction", boundname_dict["03_12_07"]),
+        ("w2l4", "interbed-compaction", boundname_dict["04_12_07"]),
         ("s1l1", "coarse-compaction", (0, 8, 9)),
         ("s1l2", "coarse-compaction", (1, 8, 9)),
         ("s1l3", "coarse-compaction", (2, 8, 9)),
@@ -302,13 +304,13 @@ def build_models():
         ("sk1l2", "ske-cell", (1, 8, 9)),
         ("sk2l4", "ske-cell", (3, 11, 6)),
         ("t1l2", "theta", (1, 8, 9)),
-        ("w1qie", "elastic-csub", "02_09_10"),
-        ("w1qii", "inelastic-csub", "02_09_10"),
+        ("w1qie", "elastic-csub", boundname_dict["02_09_10"]),
+        ("w1qii", "inelastic-csub", boundname_dict["02_09_10"]),
         ("w1qaq", "coarse-csub", (1, 8, 9)),
         ("w1qt", "csub-cell", (1, 8, 9)),
         ("w1wc", "wcomp-csub-cell", (1, 8, 9)),
-        ("w2qie", "elastic-csub", "04_12_07"),
-        ("w2qii", "inelastic-csub", "04_12_07"),
+        ("w2qie", "elastic-csub", boundname_dict["04_12_07"]),
+        ("w2qii", "inelastic-csub", boundname_dict["04_12_07"]),
         ("w2qaq", "coarse-csub", (3, 11, 6)),
         ("w2qt ", "csub-cell", (3, 11, 6)),
         ("w2wc", "wcomp-csub-cell", (3, 11, 6)),
@@ -821,7 +823,7 @@ def plot_results(sim, silent=True):
 
 
 # +
-def scenario(silent=True):
+def scenario(silent=False):
     sim = build_models()
     if write:
         write_models(sim, silent=silent)
