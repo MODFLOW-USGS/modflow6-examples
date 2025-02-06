@@ -127,7 +127,7 @@ ibound[0, 0, 0] = -1
 ibound[0, 0, -1] = -1
 
 # Set some static transport related model parameter values
-mixelm = 0  # TVD
+mixelm = 0  # upstream
 rhob = 0.25
 sp2 = 0.0  # red, but not used in this problem
 sconc = np.zeros((nlay, nrow, ncol), dtype=float)
@@ -168,7 +168,6 @@ def build_models(
     dispersivity=0.0,
     retardation=0.0,
     decay=0.0,
-    mixelm=0,
     silent=False,
 ):
     mt3d_ws = os.path.join(workspace, sim_name, "mt3d")

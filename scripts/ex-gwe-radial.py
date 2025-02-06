@@ -183,7 +183,7 @@ def create_outer_ring_of_ctrl_vols(outer_v, verts, iverts, xc, yc, ivt, idx):
     # For each outer point, create a new ivert
     # Starts at 9 o'clock and proceeds counter-clockwise
     # As such, 'pt3' will be used by the subsequent iverts
-    # However, 'pt4' will be re-used by each subseqeuent ivert
+    # However, 'pt4' will be reused by each subseqeuent ivert
     pt3_id = pt3_rad = pt3_ang = None
     for ii in np.arange(len(outer_v) - 1):
         # Create all the points involved
@@ -381,9 +381,9 @@ def generate_control_volumes(basedata, verts, flat_list, idx, silent=True):
                         if xchk == id:
                             xcoll.append(subvertx[num])
                             ycoll.append(subverty[num])
-                assert (
-                    len(xcoll) == 2
-                ), "Should only be two points touching the well bore"
+                assert len(xcoll) == 2, (
+                    "Should only be two points touching the well bore"
+                )
 
                 # was getting divide by zero error in MF6 when putting the
                 # centroid right on the line connecting the two points that
